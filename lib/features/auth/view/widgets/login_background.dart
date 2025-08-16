@@ -33,34 +33,84 @@ class LoginBackground extends StatelessWidget {
             ),
           ),
 
-          // Hoja decorativa en la esquina superior izquierda (simulada)
           Positioned(
-            top: 40, // Ajustado para que se vea bien sobre la ola
+            top: 70,
             left: 10,
             child: Transform.rotate(
-              angle: -0.5,
-              child: Icon(
-                Icons.eco,
-                size: 120,
+              angle: -0.3,
+              child: Image.asset(
+                'images/orejas.png',
+                width: 100,
                 color: Colors.white.withOpacity(0.3),
               ),
             ),
           ),
 
-          // Hojas en la parte inferior (simuladas)
+          // Orejas derecha
           Positioned(
-            bottom: -80,
-            left: 0,
-            right: 0,
-            child: Icon(
-              Icons.eco,
-              size: 400,
-              color: const Color(
-                0xFF00796B,
-              ).withOpacity(0.1), // Opacidad reducida
+            top: 50,
+            right: 15,
+            child: Transform.rotate(
+              angle: 0.4,
+              child: Image.asset(
+                'images/orejas.png',
+                width: 90,
+                color: Colors.white.withOpacity(0.35),
+              ),
             ),
           ),
 
+          // 🌿 Hoja izquierda (esquina)
+          Positioned(
+            top: 20,
+            left: 20,
+            child: Icon(
+              Icons.eco,
+              size: 60,
+              color: Colors.white.withOpacity(0.25),
+            ),
+          ),
+
+          // 🌿 Hoja derecha (esquina)
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Transform.rotate(
+              angle: -0.5,
+              child: Icon(
+                Icons.eco,
+                size: 60,
+                color: Colors.white.withOpacity(0.25),
+              ),
+            ),
+          ),
+
+          // Huellas izquierda
+          Positioned(
+            top: 200, // más abajo que antes
+            left: 20, // pegado a la izquierda
+            child: Transform.rotate(
+              angle: -1,
+              child: Image.asset(
+                'images/huellas.png',
+                width: 65,
+                color: Colors.white.withOpacity(0.35),
+              ),
+            ),
+          ),
+
+          Positioned(
+            top: 150,
+            right: 60,
+            child: Transform.rotate(
+              angle: 0.25,
+              child: Image.asset(
+                'images/huellas.png',
+                width: 55,
+                color: Colors.white.withOpacity(0.3),
+              ),
+            ),
+          ),
           // El contenido principal de la pantalla
           SafeArea(child: child),
         ],

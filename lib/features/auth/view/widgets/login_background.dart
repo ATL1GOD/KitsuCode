@@ -23,8 +23,8 @@ class LoginBackground extends StatelessWidget {
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFFE0F2F1), // Un verde azulado muy claro
-                    Color(0xFFB2DFDB), // Un poco más oscuro
+                    Color(0xFFFFDFC4), // Un verde azulado muy claro
+                    Color(0xFFEF6C00), // Un poco más oscuro
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -74,10 +74,11 @@ class WavyClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    path.lineTo(0, size.height * 0.8);
-    var firstControlPoint = Offset(size.width / 4, size.height * 0.7);
-    var firstEndPoint = Offset(size.width / 2, size.height * 0.8);
+    path.lineTo(0, size.height * 0.9);
 
+    // 1ª curva extremo izquierdo
+    var firstControlPoint = Offset(size.width * 0.125, size.height * 1);
+    var firstEndPoint = Offset(size.width * 0.25, size.height * 0.85);
     path.quadraticBezierTo(
       firstControlPoint.dx,
       firstControlPoint.dy,
@@ -85,9 +86,9 @@ class WavyClipper extends CustomClipper<Path> {
       firstEndPoint.dy,
     );
 
-    var secondControlPoint = Offset(size.width * (3 / 4), size.height * 0.9);
-    var secondEndPoint = Offset(size.width, size.height * 0.8);
-
+    // 2ª curva mitad izquierda
+    var secondControlPoint = Offset(size.width * 0.375, size.height * 0.55);
+    var secondEndPoint = Offset(size.width * 0.5, size.height * 0.65);
     path.quadraticBezierTo(
       secondControlPoint.dx,
       secondControlPoint.dy,
@@ -95,14 +96,41 @@ class WavyClipper extends CustomClipper<Path> {
       secondEndPoint.dy,
     );
 
-    path.lineTo(size.width, 0);
+    // Curva extra suaviza valle entre 2ª y 3ª
+    var extraControlPoint = Offset(size.width * 0.55, size.height * 0.7);
+    var extraEndPoint = Offset(size.width * 0.625, size.height * 0.65);
+    path.quadraticBezierTo(
+      extraControlPoint.dx,
+      extraControlPoint.dy,
+      extraEndPoint.dx,
+      extraEndPoint.dy,
+    );
 
+    // 3ª curva mitad-derecho
+    var thirdControlPoint = Offset(size.width * 0.6875, size.height * 0.6);
+    var thirdEndPoint = Offset(size.width * 0.75, size.height * 0.85);
+    path.quadraticBezierTo(
+      thirdControlPoint.dx,
+      thirdControlPoint.dy,
+      thirdEndPoint.dx,
+      thirdEndPoint.dy,
+    );
+
+    // 4ª curva extremo derecho
+    var fourthControlPoint = Offset(size.width * 0.875, size.height * 1.05);
+    var fourthEndPoint = Offset(size.width, size.height * 0.85);
+    path.quadraticBezierTo(
+      fourthControlPoint.dx,
+      fourthControlPoint.dy,
+      fourthEndPoint.dx,
+      fourthEndPoint.dy,
+    );
+
+    path.lineTo(size.width, 0);
     path.close();
     return path;
   }
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
-  }
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

@@ -55,7 +55,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
               children: [
                 const SizedBox(height: 80),
                 const Text(
-                  'Iniciar Sesión',
+                  '',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,

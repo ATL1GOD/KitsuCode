@@ -4,6 +4,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_form.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
 import 'package:kitsucode/features/auth/view/widgets/social_buttons.dart';
+import 'package:kitsucode/features/auth/view/widgets/form_card.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   const LoginView({super.key});
@@ -48,48 +49,64 @@ class _LoginViewState extends ConsumerState<LoginView> {
     return Scaffold(
       // Usamos el widget de fondo
       body: LoginBackground(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 80),
-                const Text(
-                  '',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF263238),
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Usamos el widget de formulario, pasándole todo lo que necesita
-                LoginForm(
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                  isLoading: isLoading,
-                  errorText: authError,
-                  onLoginPressed: _handleLogin, // Pasamos la función de login
-                ),
-
-                // Enlace para recuperar contraseña
-                TextButton(
-                  onPressed: () {
-                    // Lógica para recuperar contraseña
-                  },
-                  child: const Text(
-                    '¿Olvidaste tu contraseña?',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Aquí puedes agregar más elementos al fondo si lo deseas
+            const Positioned(
+              top: 20,
+              left: 50,
+              child: Image(
+                image: AssetImage('assets/images/login_zorro.png'),
+                width: 300,
+                height: 300,
+              ),
             ),
-          ),
+            Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 80),
+                    const Text(
+                      '',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF263238),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Usamos el widget de formulario, pasándole todo lo que necesita
+                    LoginForm(
+                      emailController: _emailController,
+                      passwordController: _passwordController,
+                      isLoading: isLoading,
+                      errorText: authError,
+                      onLoginPressed:
+                          _handleLogin, // Pasamos la función de login
+                    ),
+
+                    // Enlace para recuperar contraseña
+                    TextButton(
+                      onPressed: () {
+                        // Lógica para recuperar contraseña
+                      },
+                      child: const Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

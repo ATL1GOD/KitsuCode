@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/auth/view/widgets/login_form.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
-import 'package:kitsucode/features/auth/view/widgets/social_buttons.dart';
 import 'package:kitsucode/features/auth/view/widgets/form_card.dart';
 
 class LoginView extends ConsumerStatefulWidget {

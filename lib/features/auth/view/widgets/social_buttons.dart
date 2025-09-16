@@ -53,7 +53,7 @@ class SocialButtons extends StatelessWidget {
           borderRadius: BorderRadius.circular(8.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withAlpha(52),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 3),

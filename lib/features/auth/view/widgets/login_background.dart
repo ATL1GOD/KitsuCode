@@ -41,7 +41,7 @@ class LoginBackground extends StatelessWidget {
               child: Image.asset(
                 'images/orejas.png',
                 width: 100,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withAlpha(77),
               ),
             ),
           ),
@@ -55,7 +55,7 @@ class LoginBackground extends StatelessWidget {
               child: Image.asset(
                 'images/orejas.png',
                 width: 90,
-                color: Colors.white.withOpacity(0.35),
+                color: Colors.white.withAlpha(90),
               ),
             ),
           ),
@@ -64,11 +64,7 @@ class LoginBackground extends StatelessWidget {
           Positioned(
             top: 20,
             left: 20,
-            child: Icon(
-              Icons.eco,
-              size: 60,
-              color: Colors.white.withOpacity(0.25),
-            ),
+            child: Icon(Icons.eco, size: 60, color: Colors.white.withAlpha(64)),
           ),
 
           // 🌿 Hoja derecha (esquina)
@@ -80,7 +76,7 @@ class LoginBackground extends StatelessWidget {
               child: Icon(
                 Icons.eco,
                 size: 60,
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withAlpha(64),
               ),
             ),
           ),
@@ -94,7 +90,7 @@ class LoginBackground extends StatelessWidget {
               child: Image.asset(
                 'images/huellas.png',
                 width: 65,
-                color: Colors.white.withOpacity(0.35),
+                color: Colors.white.withAlpha(90),
               ),
             ),
           ),
@@ -107,7 +103,7 @@ class LoginBackground extends StatelessWidget {
               child: Image.asset(
                 'images/huellas.png',
                 width: 55,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withAlpha(77),
               ),
             ),
           ),

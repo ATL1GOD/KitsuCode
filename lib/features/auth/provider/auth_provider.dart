@@ -1,64 +1,69 @@
-// lib/features/auth/provider/auth_provider.dart
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/auth/repository/auth_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// 1. Provider que expone el Stream de estado de autenticación
+// Provider que maneja el repositorio de autenticación
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository(Supabase.instance.client);
+});
+
+// Provider que expone los cambios de estado de autenticación
 final authStateProvider = StreamProvider<AuthState>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
-  return authRepository.authStateChange;
+  return authRepository.authStateChanges;
 });
 
-// 2. ViewModel (Controller) para el manejo del estado del login
-final authControllerProvider = StateNotifierProvider<AuthController, bool>((
+// Provider de estado para la pantalla de login (maneja la carga y errores)
+final loginStateProvider = StateNotifierProvider<LoginState, AsyncValue<void>>((
   ref,
 ) {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return AuthController(authRepository: authRepository);
+  final authRepository = ref.read(authRepositoryProvider);
+  return LoginState(authRepository);
 });
 
-// 3. (NUEVO) Provider para exponer el mensaje de error de autenticación a la UI
-final authErrorProvider = StateProvider<String?>((ref) => null);
+// --- NEW PROVIDER ---
+// Provider de estado para la pantalla de registro
+final registerStateProvider =
+    StateNotifierProvider<RegisterState, AsyncValue<void>>((ref) {
+      final authRepository = ref.read(authRepositoryProvider);
+      return RegisterState(authRepository);
+    });
 
-class AuthController extends StateNotifier<bool> {
+class LoginState extends StateNotifier<AsyncValue<void>> {
   final AuthRepository _authRepository;
+  LoginState(this._authRepository) : super(const AsyncValue.data(null));
 
-  AuthController({required AuthRepository authRepository})
-    : _authRepository = authRepository,
-      super(false); // false = no estamos cargando nada inicialmente
-
-  // Método para iniciar sesión (ahora acepta WidgetRef para manejar errores)
-  Future<bool> login(String email, String password, WidgetRef ref) async {
-    state = true; // Inicia el estado de carga
-    ref.read(authErrorProvider.notifier).state = null; // Limpia errores previos
-
+  Future<void> signInWithEmailPassword(String email, String password) async {
+    state = const AsyncValue.loading();
     try {
-      await _authRepository.signInWithPassword(email, password);
-      state = false; // Finaliza el estado de carga
-      return true; // Éxito
-    } catch (e) {
-      // (MEJORA) Asigna el mensaje de error al provider de errores
-      ref.read(authErrorProvider.notifier).state = e.toString();
-      state = false; // Finaliza el estado de carga
-      if (kDebugMode) {
-        print(e.toString());
-      }
-      return false; // Fracaso
+      await _authRepository.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow; // Permite que el error se propague si es necesario
     }
   }
+}
 
-  // Método para cerrar sesión
-  Future<void> logout() async {
-    state = true;
+// --- NEW STATENOTIFIER ---
+class RegisterState extends StateNotifier<AsyncValue<void>> {
+  final AuthRepository _authRepository;
+  RegisterState(this._authRepository) : super(const AsyncValue.data(null));
+
+  Future<void> signUpWithEmailPassword(String email, String password) async {
+    state = const AsyncValue.loading();
     try {
-      await _authRepository.signOut();
-    } catch (e) {
-      if (kDebugMode) {
-        print(e.toString());
-      }
+      await _authRepository.signUpWithEmailPassword(
+        email: email,
+        password: password,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow; // Permite que el error se propague para ser manejado en la UI
     }
-    state = false;
   }
 }

@@ -18,6 +18,14 @@ class AuthRepository {
     );
   }
 
+  // --- NEW METHOD ---
+  Future<void> signUpWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    await _supabaseClient.auth.signUp(email: email, password: password);
+  }
+
   Future<void> signOut() async {
     await _supabaseClient.auth.signOut();
   }

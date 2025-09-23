@@ -4,8 +4,13 @@ import 'package:kitsucode/features/auth/view/widgets/login_form.dart';
 
 class LoginBackground extends StatelessWidget {
   final bool isMobile;
+  final Widget child;
 
-  const LoginBackground({super.key, required this.isMobile});
+  const LoginBackground({
+    super.key,
+    required this.isMobile,
+    this.child = const LoginForm(),
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +104,7 @@ class LoginBackground extends StatelessWidget {
                       height: isMobile ? 320 : 400,
                     ),
                     const SizedBox(height: 32),
-                    const LoginForm(),
+                    child, // --- USE THE CHILD WIDGET ---
                   ],
                 ),
               ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
-  const LoginForm({super.key});
+  final VoidCallback onSwitchToRegister;
 
+  const LoginForm({super.key, required this.onSwitchToRegister});
   @override
   ConsumerState<LoginForm> createState() => _LoginFormState();
 }
@@ -14,7 +14,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
+  bool _ispasswordVisible = false;
   @override
   void dispose() {
     _emailController.dispose();
@@ -65,17 +65,34 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         children: [
           TextFormField(
             controller: _emailController,
-            decoration: inputDecoration.copyWith(hintText: 'Email'),
+            decoration: inputDecoration.copyWith(
+              hintText: 'Email',
+              prefixIcon: Icon(Icons.person),
+            ),
             keyboardType: TextInputType.emailAddress,
             validator: (value) => value == null || value.isEmpty
                 ? 'Por favor ingresa un correo'
                 : null,
           ),
           const SizedBox(height: 16),
+          //Contrasena
           TextFormField(
             controller: _passwordController,
-            decoration: inputDecoration.copyWith(hintText: 'Contraseña'),
-            obscureText: true,
+            decoration: inputDecoration.copyWith(
+              hintText: 'Contraseña',
+              prefixIcon: Icon(Icons.lock),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _ispasswordVisible ? Icons.visibility : Icons.visibility_off,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _ispasswordVisible = !_ispasswordVisible;
+                  });
+                },
+              ),
+            ),
+            obscureText: !_ispasswordVisible,
             validator: (value) => value == null || value.isEmpty
                 ? 'Por favor ingresa una contraseña'
                 : null,
@@ -105,7 +122,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           const SizedBox(height: 12),
           OutlinedButton(
             // --- UPDATED ---
-            onPressed: () => context.push('/register'),
+            onPressed: widget.onSwitchToRegister,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -114,7 +131,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               side: BorderSide(color: colorScheme.primary),
               foregroundColor: colorScheme.primary,
             ),
-            child: const Text('Registrarse'),
+            child: const Text('No tienes cuenta? Registrarse'),
           ),
         ],
       ),

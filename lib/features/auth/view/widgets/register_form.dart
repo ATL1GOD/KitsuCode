@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 class RegisterForm extends ConsumerStatefulWidget {
-  const RegisterForm({super.key});
+  final VoidCallback onSwitchToLogin;
+
+  const RegisterForm({super.key, required this.onSwitchToLogin});
 
   @override
   ConsumerState<RegisterForm> createState() => _RegisterFormState();
@@ -143,7 +145,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           ),
           const SizedBox(height: 12),
           TextButton(
-            onPressed: () => context.go('/login'),
+            onPressed: widget.onSwitchToLogin,
             child: Text(
               '¿Ya tienes una cuenta? Inicia sesión',
               style: TextStyle(color: colorScheme.primary),

@@ -1,23 +1,23 @@
 // lib/features/profile/view/edit_avatar_view.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 
 class EditAvatarView extends ConsumerStatefulWidget {
-  const EditAvatarView({super.key});
+  final String currentAvatar;
+  const EditAvatarView({super.key, required this.currentAvatar});
 
   @override
   ConsumerState<EditAvatarView> createState() => _EditAvatarViewState();
 }
 
-class _EditAvatarViewState extends ConsumerState<EditAvatarView> { 
-  // Lista de avatares de ejemplo. En el futuro, esto vendría de la base de datos.
+class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
   final List<String> _avatars = [
     'assets/images/login_zorro.png',
-    'assets/images/avatar_placeholder.png',
+    'assets/images/avatar_mono.png',
     'assets/images/login_zorro.png',
     'assets/images/avatar_placeholder.png',
     'assets/images/login_zorro.png',
@@ -28,20 +28,29 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
     'assets/images/avatar_placeholder.png',
   ];
 
-  // Guardará la ruta del avatar que el usuario seleccione.
   late String _selectedAvatar;
 
-  @override
+   @override
   void initState() {
     super.initState();
-    // Por defecto, seleccionamos el primer avatar de la lista.
-    _selectedAvatar = _avatars.first;
+    // 2. El avatar seleccionado inicialmente es el que recibimos de la pantalla anterior
+    _selectedAvatar = widget.currentAvatar;
+  }
+
+  // --- FUNCIÓN DE NAVEGACIÓN SEGURA ---
+  void _navigateBack() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/profile'); // Si no puede regresar, lo mandamos al perfil
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isSaving = ref.watch(profileControllerProvider);
 
     return Scaffold(
       body: Container(
@@ -63,37 +72,37 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                      onPressed: () => context.pop(),
+                       onPressed: () => context.pop(), // Usamos la función segura
                     ),
                     Text(
                       'Editar avatar',
                       style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF4F4F4F)),
                     ),
                     TextButton(
-                      onPressed: () async {
-    // Llamamos al controller para guardar el nuevo avatar
-    final success = await ref
-        .read(profileControllerProvider.notifier)
-        .updateProfile(newAvatar: _selectedAvatar);
-    
-    // Solo regresamos a la pantalla anterior, sin pasarle datos
-    if (mounted) context.pop();
-  },
-                      child: Text(
-                        'Ok',
-                        style: TextStyle(
-                          color: colors.secondary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      onPressed: () {
+                        // Regresa y DEVUELVE la ruta del avatar seleccionado
+                        context.pop(_selectedAvatar); 
+                      },
+                      child: isSaving
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: colors.secondary),
+                            )
+                          : Text(
+                              'Ok',
+                              style: TextStyle(
+                                color: colors.secondary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ],
                 ),
               ),
+              // ... (El resto del código no necesita cambios)
               const SizedBox(height: 20),
-
-              // --- Avatar principal seleccionado (con borde estético) ---
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -103,7 +112,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(38.0),
                   child: Image.asset(
-                    _selectedAvatar, // Muestra el avatar que está seleccionado
+                    _selectedAvatar,
                     width: 140,
                     height: 140,
                     fit: BoxFit.cover,
@@ -111,8 +120,6 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                 ),
               ),
               const SizedBox(height: 20),
-              
-              // --- Pestañas de categorías ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -122,14 +129,12 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // --- Cuadrícula de avatares seleccionables (2 columnas) ---
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: GridView.builder(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // <-- DOS COLUMNAS
+                      crossAxisCount: 2,
                       crossAxisSpacing: 20,
                       mainAxisSpacing: 20,
                     ),
@@ -137,11 +142,8 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                     itemBuilder: (context, index) {
                       final avatarPath = _avatars[index];
                       final isSelected = avatarPath == _selectedAvatar;
-                      
-                      // Usamos GestureDetector para detectar el tap del usuario
                       return GestureDetector(
                         onTap: () {
-                          // Al tocar, actualizamos el estado para cambiar el avatar seleccionado
                           setState(() {
                             _selectedAvatar = avatarPath;
                           });
@@ -151,7 +153,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                             borderRadius: BorderRadius.circular(35),
                             border: Border.all(
                               color: isSelected ? colors.secondary : colors.primary,
-                              width: isSelected ? 4.0 : 2.0, // Borde más grueso si está seleccionado
+                              width: isSelected ? 4.0 : 2.0,
                             ),
                             boxShadow: isSelected
                                 ? [

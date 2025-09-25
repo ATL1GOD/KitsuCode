@@ -15,6 +15,7 @@ import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 
 
 
+
 final routerProvider = Provider<GoRouter>((ref) {
   // Observa el estado de autenticación de forma asíncrona
   final authState = ref.watch(authStateProvider);
@@ -41,7 +42,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   ),  
   GoRoute(
         path: '/edit-avatar',
-        builder: (context, state) => const EditAvatarView(),
+        builder: (context, state) {
+          // Ahora la ruta recibe el avatar actual como un "extra"
+          final currentAvatar = state.extra as String?  ?? 'assets/images/login_zorro.png';
+          return EditAvatarView(currentAvatar: currentAvatar);
+        },
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) {

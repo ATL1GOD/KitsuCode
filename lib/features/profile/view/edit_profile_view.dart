@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/core/utils/app_colors.dart'; // 1. Importamos tu paleta de colores
+import 'package:kitsucode/core/utils/app_colors.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 
@@ -16,11 +16,28 @@ class EditProfileView extends ConsumerStatefulWidget {
 
 class _EditProfileViewState extends ConsumerState<EditProfileView> {
   late final TextEditingController _nameController;
+  // 1. Variable para guardar el estado del avatar en ESTA pantalla
+  late String _currentAvatar;
+
+  // 1. Variables para "recordar" el estado inicial
+  late String _initialName;
+  late String _initialAvatar;
+
+  // 2. Un "getter" para saber si hay cambios
+  bool get _hasChanges =>
+      _nameController.text != _initialName || _currentAvatar != _initialAvatar;
+
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.userProfile.nombrePerfil);
+    // 2. Al iniciar la pantalla, guardamos el avatar que viene del perfil
+    _currentAvatar = widget.userProfile.avatarUrl ?? 'assets/images/login_zorro.png';
+
+    // Guardamos los valores iniciales al cargar la pantalla
+    _initialName = widget.userProfile.nombrePerfil;
+    _initialAvatar = _currentAvatar;
   }
 
   @override
@@ -29,6 +46,41 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     super.dispose();
   }
 
+
+  // 3. Función para mostrar la advertencia de cambios sin guardar
+  Future<bool?> _showUnsavedChangesDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Descartar cambios'),
+        content: const Text('¿Seguro que quieres salir sin guardar los cambios?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false), // El usuario se queda
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true), // El usuario confirma salir
+            child: const Text('Salir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 4. Función inteligente para manejar la navegación hacia atrás
+  Future<void> _handleBackNavigation() async {
+    // Si hay cambios, muestra el diálogo. Si no, solo regresa.
+    if (_hasChanges) {
+      final shouldPop = await _showUnsavedChangesDialog() ?? false;
+      if (shouldPop && mounted) {
+        context.pop();
+      }
+    } else {
+      context.pop();
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     // 2. Obtenemos el esquema de colores del tema actual de la app
@@ -57,7 +109,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                   alignment: Alignment.centerLeft,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                    onPressed: () => context.pop(),
+                    onPressed: () => _handleBackNavigation(), // Usamos la función inteligente
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -82,7 +134,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(40.0),
                         child: Image.asset(
-                          'assets/images/login_zorro.png', // O la imagen del usuario
+                          _currentAvatar, // O la imagen del usuario
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -101,8 +153,17 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                           // 4. FUNCIONALIDAD DEL BOTÓN DEL LÁPIZ
                           child: IconButton(
                             icon: Icon(Icons.edit, color: colors.onSecondary, size: 20),
-                            onPressed: () {
-                              context.go('/edit-avatar'); // Navega a la pantalla de avatares
+                            onPressed: () async{
+                              // Navegamos y ESPERAMOS un resultado de tipo String
+                              final newAvatar = await context.push<String>('/edit-avatar', extra: _currentAvatar,);
+
+                              // Si el usuario presionó "Ok" (newAvatar no es nulo)...
+                              if (newAvatar != null) {
+                                // ...actualizamos el estado para que la pantalla se redibuje con el nuevo avatar
+                                setState(() {
+                                  _currentAvatar = newAvatar; // Navega a la pantalla de avatares
+                                });
+                              }
                             },
                           ),
                         ),
@@ -138,7 +199,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                             child: Text('Nombre', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w500)),
                           ),
                           TextField(
-                            controller: _nameController,
+                            controller: _nameController..addListener(() => setState(() {})), // Actualiza el estado al cambiar
                             decoration: InputDecoration(
                               hintText: 'Nombre de usuario',
                               filled: true,
@@ -152,16 +213,16 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                           ),
                           const SizedBox(height: 30),
                           ElevatedButton(
-  // Si está guardando (isSaving es true), el botón se desactiva (onPressed = null)
-  onPressed: isSaving ? null : () async {
-    // Llamamos al controller para guardar el nuevo nombre
-    final success = await ref
-        .read(profileControllerProvider.notifier)
-        .updateProfile(newName: _nameController.text);
-    
-    // Cerramos la pantalla
-    if (mounted) context.pop();
-  },
+                            // 6. El botón de Guardar ahora regresa a la pantalla anterior
+                            onPressed: isSaving ? null : () async {
+                              final success = await ref.read(profileControllerProvider.notifier).updateProfile(
+                                newName: _nameController.text,
+                                newAvatar: _currentAvatar,
+                              );
+                              if (mounted && success) {
+                                context.pop(); // <-- ¡Ahora sí regresa!
+                              }
+                            },
   style: ElevatedButton.styleFrom(
     backgroundColor: colors.primary,
     foregroundColor: colors.onPrimary,
@@ -179,7 +240,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
 ),
                           const SizedBox(height: 15),
                           ElevatedButton(
-                            onPressed: () => context.pop(),
+                            onPressed: () => _handleBackNavigation(), // Usamos la función inteligente
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colors.primaryContainer,
                               foregroundColor: colors.onPrimaryContainer,

@@ -33,8 +33,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     super.initState();
     _nameController = TextEditingController(text: widget.userProfile.nombrePerfil);
     // 2. Al iniciar la pantalla, guardamos el avatar que viene del perfil
-    _currentAvatar = widget.userProfile.avatarUrl ?? 'assets/images/login_zorro.png';
-
+    _currentAvatar = widget.userProfile.avatarUrl; 
     // Guardamos los valores iniciales al cargar la pantalla
     _initialName = widget.userProfile.nombrePerfil;
     _initialAvatar = _currentAvatar;
@@ -74,10 +73,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     if (_hasChanges) {
       final shouldPop = await _showUnsavedChangesDialog() ?? false;
       if (shouldPop && mounted) {
-        context.pop();
+        context.go('/profile');
       }
     } else {
-      context.pop();
+      context.go('/profile');
     }
   }
   
@@ -220,7 +219,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                 newAvatar: _currentAvatar,
                               );
                               if (mounted && success) {
-                                context.pop(); // <-- ¡Ahora sí regresa!
+                                context.go('/profile'); // <-- ¡Ahora sí regresa!
                               }
                             },
   style: ElevatedButton.styleFrom(

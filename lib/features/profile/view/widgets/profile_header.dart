@@ -51,9 +51,9 @@ class ProfileHeader extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28.0),
                 child: Image.asset(
-                  'assets/images/login_zorro.png',
-                  width: 130,
-                  height: 130,
+                  userProfile.avatarUrl,
+                  width: 150,
+                  height: 150,
                   fit: BoxFit.cover,
                 ),
               ),

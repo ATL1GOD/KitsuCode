@@ -3,15 +3,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 
-class EditAvatarView extends StatefulWidget {
+class EditAvatarView extends ConsumerStatefulWidget {
   const EditAvatarView({super.key});
 
   @override
-  State<EditAvatarView> createState() => _EditAvatarViewState();
+  ConsumerState<EditAvatarView> createState() => _EditAvatarViewState();
 }
 
-class _EditAvatarViewState extends State<EditAvatarView> {
+class _EditAvatarViewState extends ConsumerState<EditAvatarView> { 
   // Lista de avatares de ejemplo. En el futuro, esto vendría de la base de datos.
   final List<String> _avatars = [
     'assets/images/login_zorro.png',
@@ -68,10 +70,15 @@ class _EditAvatarViewState extends State<EditAvatarView> {
                       style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF4F4F4F)),
                     ),
                     TextButton(
-                      onPressed: () {
-                        // TODO: Lógica para guardar el avatar seleccionado
-                        context.pop(_selectedAvatar); // Devolvemos el avatar seleccionado
-                      },
+                      onPressed: () async {
+    // Llamamos al controller para guardar el nuevo avatar
+    final success = await ref
+        .read(profileControllerProvider.notifier)
+        .updateProfile(newAvatar: _selectedAvatar);
+    
+    // Solo regresamos a la pantalla anterior, sin pasarle datos
+    if (mounted) context.pop();
+  },
                       child: Text(
                         'Ok',
                         style: TextStyle(

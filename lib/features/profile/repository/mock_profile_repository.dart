@@ -2,39 +2,41 @@
 
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
+// Este es nuestro repositorio falso.
 class MockProfileRepository {
-  // El método para obtener el perfil se mantiene igual.
+  // Le damos "memoria" con una variable que guardará los datos de prueba.
+  UserProfileModel _mockData = UserProfileModel(
+    userId: '12345',
+    nombreUsuario: 'atl1god',
+    nombrePerfil: 'Atl Yosafat',
+    avatarUrl: 'assets/images/login_zorro.png',
+    siguiendoCount: 23,
+    seguidoresCount: 50,
+  );
+
+  // El método para obtener los datos ahora devuelve la variable con memoria.
   Future<UserProfileModel> fetchUserProfile() async {
     await Future.delayed(const Duration(seconds: 1));
-    return UserProfileModel(
-      userId: '12345',
-      nombreUsuario: 'atl1god',
-      nombrePerfil: 'Atl Yosafat',
-      avatarUrl: 'assets/images/login_zorro.png',
-      siguiendoCount: 23,
-      seguidoresCount: 50,
-    );
+    return _mockData;
   }
 
-  // NUEVO: Método para actualizar el perfil
-  // Recibe el perfil actual y los nuevos valores a cambiar.
-  Future<UserProfileModel> updateUserProfile(
-    UserProfileModel currentUser, {
-    String? newUsername,
-    String? newAvatarUrl,
+  // ¡NUEVO! Un método para actualizar los datos.
+  Future<void> updateUserProfile({
+    required String userId,
+    String? newName,
+    String? newAvatar,
   }) async {
-    print("Simulando actualización en la base de datos...");
-    // Simulamos una llamada a la red
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Simulamos que estamos guardando en la base de datos.
+    await Future.delayed(const Duration(seconds: 2));
 
-    // Usamos el método copyWith que creamos para generar el perfil actualizado.
-    final updatedProfile = currentUser.copyWith(
-      nombreUsuario: newUsername,
-      avatarUrl: newAvatarUrl,
+    // Actualizamos nuestra variable en memoria.
+    _mockData = UserProfileModel(
+      userId: _mockData.userId,
+      nombreUsuario: _mockData.nombreUsuario,
+      nombrePerfil: newName ?? _mockData.nombrePerfil, // Si llega un nombre nuevo, lo usamos.
+      avatarUrl: newAvatar ?? _mockData.avatarUrl,   // Si llega un avatar nuevo, lo usamos.
+      siguiendoCount: _mockData.siguiendoCount,
+      seguidoresCount: _mockData.seguidoresCount,
     );
-
-    print("¡Perfil simulado como actualizado!");
-    // Devolvemos el perfil con los datos ya "guardados".
-    return updatedProfile;
   }
 }

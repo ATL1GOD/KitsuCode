@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_colors.dart'; // 1. Importamos tu paleta de colores
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
   final UserProfileModel userProfile;
@@ -33,6 +34,8 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     // 2. Obtenemos el esquema de colores del tema actual de la app
     final colors = Theme.of(context).colorScheme;
     final cardBackgroundColor = primaryLightColorScheme.primaryFixed;
+        final isSaving = ref.watch(profileControllerProvider); // Escuchamos el estado de carga
+
 
     return Scaffold(
       body: Container(
@@ -149,15 +152,31 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                           ),
                           const SizedBox(height: 30),
                           ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.primary,
-                              foregroundColor: colors.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                            ),
-                            child: const Text('Guardar cambios', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+  // Si está guardando (isSaving es true), el botón se desactiva (onPressed = null)
+  onPressed: isSaving ? null : () async {
+    // Llamamos al controller para guardar el nuevo nombre
+    final success = await ref
+        .read(profileControllerProvider.notifier)
+        .updateProfile(newName: _nameController.text);
+    
+    // Cerramos la pantalla
+    if (mounted) context.pop();
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: colors.primary,
+    foregroundColor: colors.onPrimary,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    padding: const EdgeInsets.symmetric(vertical: 18),
+  ),
+  // Mostramos una ruedita de carga si está guardando
+  child: isSaving
+      ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+        )
+      : const Text('Guardar cambios', style: TextStyle(fontWeight: FontWeight.bold)),
+),
                           const SizedBox(height: 15),
                           ElevatedButton(
                             onPressed: () => context.pop(),

@@ -20,12 +20,12 @@ class ProfileHeader extends StatelessWidget {
 
     return Column(
       children: [
-        //const SizedBox(height: 10),
+        //const SizedBox(height: 10), // Espacio superior opcional creo jaja
         Stack(
           clipBehavior: Clip.none, // Permite que el botón de editar se salga
           alignment: Alignment.center,
           children: [
-            // --- TU DISEÑO DE AVATAR CON RESPLANDOR Y BORDES ---
+            // --- AVATAR CON SOMBRA ---
             Container(
               width: 180,
               height: 180,
@@ -57,7 +57,7 @@ class ProfileHeader extends StatelessWidget {
                 ),
               ),
             ),
-            // --- BOTÓN DE EDITAR FLOTANTE (INTEGRADO A TU DISEÑO) ---
+            // BOTÓN DE EDITAR FLOTANTE
             Positioned(
               bottom: -10,
               right: -10,

@@ -6,6 +6,8 @@ class UserProfileModel {
   final String avatarUrl;
   final int siguiendoCount;  
   final int seguidoresCount; 
+  final int cambiosAvatarHoy;
+  final int cambiosNombrePerfilEsteMes;
 
   UserProfileModel({
     required this.userId,
@@ -15,6 +17,8 @@ class UserProfileModel {
     required this.avatarUrl,
     required this.siguiendoCount,
     required this.seguidoresCount, 
+    required this.cambiosAvatarHoy,
+    required this.cambiosNombrePerfilEsteMes,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +31,9 @@ class UserProfileModel {
       
       siguiendoCount: json['siguiendo_count'] ?? 0,
       seguidoresCount: json['seguidores_count'] ?? 0, 
+      // Nuevos campos con valores por defecto para las RN
+      cambiosAvatarHoy: json['cambios_avatar_hoy'] ?? 0,
+      cambiosNombrePerfilEsteMes: json['cambios_nombre_perfil_este_mes'] ?? 0
     );
   }
 }

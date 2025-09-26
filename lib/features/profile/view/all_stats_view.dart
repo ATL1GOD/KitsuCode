@@ -20,7 +20,6 @@ class AllStatsView extends ConsumerWidget {
       // Usamos un Stack para poner el fondo detrás del contenido
       body: Stack(
         children: [
-          // 2. Colocamos el fondo con el degradado y las estrellas
           const LoginBackground(child: SizedBox.shrink()),
 
           // Contenido principal de la pantalla
@@ -31,12 +30,12 @@ class AllStatsView extends ConsumerWidget {
               data: (stats) {
                 return Column(
                   children: [
-                    // --- 3. HEADER CON BOTÓN DE REGRESO PERSONALIZADO Y TÍTULO ---
+                    // HEADER CON BOTÓN DE REGRESO PERSONALIZADO Y TÍTULO 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Row(
                         children: [
-                          // Botón de regreso estilizado
+                          // Botón de regreso 
                           InkWell(
                             onTap: () => context.pop(),
                             borderRadius: BorderRadius.circular(20),
@@ -49,7 +48,7 @@ class AllStatsView extends ConsumerWidget {
                               child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
                             ),
                           ),
-                          // Título centrado
+                          
                           Expanded(
                             child: Text(
                               'Estadísticas',
@@ -57,7 +56,7 @@ class AllStatsView extends ConsumerWidget {
                               style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          // Espacio para mantener el título centrado
+                          
                           const SizedBox(width: 40),
                         ],
                       ),
@@ -66,7 +65,7 @@ class AllStatsView extends ConsumerWidget {
                       child: ListView(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         children: [
-                          // --- NOMBRE DE USUARIO Y BOTÓN DE HISTORIAL ---
+                          // --- NOMBRE DE USUARIO Y BOTÓN DE HISTORIAL 
                           profileState.when(
                             data: (profile) => FadeInDown(
                               child: Column(
@@ -75,7 +74,7 @@ class AllStatsView extends ConsumerWidget {
                                   Text(profile.nombrePerfil, style: textTheme.headlineSmall),
                                   const SizedBox(height: 10),
                                   ElevatedButton.icon(
-                                    onPressed: () { /* TODO: Navegar al historial */ },
+                                    onPressed: () { /* TODO: Navegar al historial cuando lo haga */ },
                                     icon: const Icon(Icons.history, size: 20),
                                     label: const Text('Ver historial'),
                                     style: ElevatedButton.styleFrom(
@@ -92,7 +91,7 @@ class AllStatsView extends ConsumerWidget {
                           ),
                           const SizedBox(height: 30),
                           
-                          // --- LISTA DE ESTADÍSTICAS ---
+                          // --- LISTA DE ESTADÍSTICAS
                           FadeInUp(
                             delay: const Duration(milliseconds: 200),
                             child: _StatDisplayCard(
@@ -143,7 +142,7 @@ class AllStatsView extends ConsumerWidget {
   }
 }
 
-// --- WIDGET DE LA TARJETA DE ESTADÍSTICA (AJUSTADO PARA EL NUEVO FONDO) ---
+// --- WIDGET DE LA TARJETA DE ESTADÍSTICA 
 class _StatDisplayCard extends StatelessWidget {
   final IconData icon;
   final String title;

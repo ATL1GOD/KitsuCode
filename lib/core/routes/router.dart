@@ -66,7 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Si estamos en la splash screen, decidimos a dónde ir.
           if (isSplashing) {
-            return isAuthenticated ? '/home' : '/login';
+            return isAuthenticated ? '/profile' : '/login';
           }
 
           // Si el usuario no está autenticado y no está en la página de login, redirigir a login.
@@ -74,9 +74,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             return '/login';
           }
 
-          // Si el usuario está autenticado y está en la página de login, redirigir a home.
+          // Si el usuario está autenticado y está en la página de login, redirigir a profile.
           if (isAuthenticated && isLoggingIn) {
-            return '/home';
+            return '/profile';
           }
 
           // En cualquier otro caso, no redirigir.

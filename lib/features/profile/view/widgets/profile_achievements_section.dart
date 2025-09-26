@@ -8,11 +8,13 @@ class ProfileAchievementsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final achievements = [
-      'assets/images/avatar_placeholder.png',
       'assets/images/login_zorro.png',
-      'assets/images/avatar_placeholder.png',
       'assets/images/login_zorro.png',
-      'assets/images/avatar_placeholder.png',
+      'assets/images/login_zorro.png',
+      'assets/images/login_zorro.png',
+      'assets/images/login_zorro.png',
+      'assets/images/login_zorro.png',
+      'assets/images/login_zorro.png',
     ];
 
     return Padding(

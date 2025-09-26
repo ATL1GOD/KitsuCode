@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
+import 'package:animate_do/animate_do.dart'; 
 
 class EditProfileView extends ConsumerStatefulWidget {
   final UserProfileModel userProfile;
@@ -80,20 +81,17 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     }
   }
   
-  @override
+@override
   Widget build(BuildContext context) {
-    // 2. Obtenemos el esquema de colores del tema actual de la app
     final colors = Theme.of(context).colorScheme;
     final cardBackgroundColor = primaryLightColorScheme.primaryFixed;
-        final isSaving = ref.watch(profileControllerProvider); // Escuchamos el estado de carga
-
+    final isSaving = ref.watch(profileControllerProvider);
 
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          // 3. Usamos los colores de la paleta para el degradado
           gradient: LinearGradient(
             colors: [primaryDarkColorScheme.primary, primaryLightColorScheme.primaryFixed],
             begin: Alignment.topCenter,
@@ -104,22 +102,29 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
           child: SafeArea(
             child: Column(
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                    onPressed: () => _handleBackNavigation(), // Usamos la función inteligente
+                // --- Botón de regreso con animación ---
+                FadeInDown(
+                  duration: const Duration(milliseconds: 300),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
+                      onPressed: _handleBackNavigation,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // --- Avatar Editable con diseño estético ---
-                Stack(
-                  clipBehavior: Clip.none, // Permite que el botón se salga
-                  children: [
-                    Container(
-                      width: 160,
-                      height: 160,
+                // --- Avatar Editable con animación ---
+                FadeInDown(
+                  delay: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 400),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 180,
+                        height: 180,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(40),
                         boxShadow: [
@@ -131,52 +136,50 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(40.0),
-                        child: Image.asset(
-                          _currentAvatar, // O la imagen del usuario
-                          fit: BoxFit.cover,
+                          borderRadius: BorderRadius.circular(40.0),
+                          child: Image.asset(_currentAvatar, fit: BoxFit.cover),
                         ),
                       ),
-                    ),
                     Positioned(
-                      bottom: -10,
-                      right: -10,
-                      child: Material(
-                        color: cardBackgroundColor,
-                        shape: const CircleBorder(),
-                        elevation: 4,
-                        shadowColor: colors.shadow.withOpacity(0.3),
-                        child: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: colors.secondary,
-                          // 4. FUNCIONALIDAD DEL BOTÓN DEL LÁPIZ
-                          child: IconButton(
-                            icon: Icon(Icons.edit, color: colors.onSecondary, size: 20),
-                            onPressed: () async{
-                              // Navegamos y ESPERAMOS un resultado de tipo String
-                              final newAvatar = await context.push<String>('/edit-avatar', extra: _currentAvatar,);
-
-                              // Si el usuario presionó "Ok" (newAvatar no es nulo)...
-                              if (newAvatar != null) {
-                                // ...actualizamos el estado para que la pantalla se redibuje con el nuevo avatar
-                                setState(() {
-                                  _currentAvatar = newAvatar; // Navega a la pantalla de avatares
-                                });
-                              }
-                            },
+                        bottom: -10,
+                        right: -10,
+                        // --- Botón de lápiz con animación de pulso ---
+                        child: Swing(
+                          infinite: true,
+                          delay: const Duration(seconds: 2),
+                          child: Material(
+                            color: cardBackgroundColor,
+                            shape: const CircleBorder(),
+                            elevation: 4,
+                            shadowColor: colors.shadow.withOpacity(0.3),
+                            child: CircleAvatar(
+                              radius: 22,
+                              backgroundColor: colors.secondary,
+                              child: IconButton(
+                                icon: Icon(Icons.edit, color: colors.onSecondary, size: 15),
+                                onPressed: () async {
+                                  final newAvatar = await context.push<String>('/edit-avatar', extra: _currentAvatar);
+                                  if (newAvatar != null) {
+                                    setState(() => _currentAvatar = newAvatar);
+                                  }
+                                },
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-
                 const SizedBox(height: 40),
 
-                // --- Tarjeta con el Formulario ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Card(
+                // --- Tarjeta con el Formulario con animación ---
+                FadeInUp(
+                  delay: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 500),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Card(
                     color: cardBackgroundColor,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -247,8 +250,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                               padding: const EdgeInsets.symmetric(vertical: 18),
                             ),
                             child: const Text('Cancelar', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

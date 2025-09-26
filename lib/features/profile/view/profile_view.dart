@@ -7,7 +7,7 @@ import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_info_card.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart'; 
 import 'package:kitsucode/features/profile/view/widgets/profile_achievements_section.dart';
-
+import 'package:animate_do/animate_do.dart'; // Para las animaciones
 
 class ProfileView extends ConsumerWidget {
   const ProfileView({super.key});
@@ -55,10 +55,29 @@ class ProfileView extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  SliverToBoxAdapter(child: ProfileHeader(userProfile: userProfile)),
-                  SliverToBoxAdapter(child: ProfileInfoCard(userProfile: userProfile)),
-                  const SliverToBoxAdapter(child: ProfileProgressSection()),
-                  const SliverToBoxAdapter(child: ProfileAchievementsSection()),
+                  SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    // 2. Envuelve tus widgets con los efectos de animate_do
+                    FadeInDown(
+                      delay: const Duration(milliseconds: 300),
+                      child: ProfileHeader(userProfile: userProfile),
+                    ),
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 400),
+                      child: ProfileInfoCard(userProfile: userProfile),
+                    ),
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 500),
+                      child: const ProfileProgressSection(),
+                    ),
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 600),
+                      child: const ProfileAchievementsSection(),
+                    ),
+                  ],  
+                ),
+              ),
                 ],
               );
             },

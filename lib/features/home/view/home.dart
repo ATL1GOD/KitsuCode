@@ -20,32 +20,32 @@ class HomeView extends StatefulWidget {
 class _PageHomeState extends State<HomeView> {
   final data = <SectionData>[
     SectionData(
-      color: const Color.fromARGB(255, 25, 57, 241),
+      color: Colors.blue,
       colorOscuro: _darkenColor(Colors.blue, 0.1),
       etapa: 1,
       seccion: 1,
-      titulo: 'Introducción a las estructuras de datos',
+      titulo: 'Preséntate',
     ),
     SectionData(
       color: Colors.orange,
       colorOscuro: _darkenColor(Colors.orange, 0.1),
       etapa: 1,
       seccion: 2,
-      titulo: "Pilas y colas",
+      titulo: "Usa el tiempo presente",
     ),
     SectionData(
       color: Colors.green,
       colorOscuro: _darkenColor(Colors.green, 0.1),
       etapa: 1,
       seccion: 3,
-      titulo: "Colas y listas",
+      titulo: "Saluda y despídete",
     ),
     SectionData(
       color: Colors.purple,
       colorOscuro: _darkenColor(Colors.purple, 0.1),
       etapa: 1,
       seccion: 4,
-      titulo: "Listas enlazadas",
+      titulo: "Habla de comida",
     ),
   ];
   int iCurrentSection = 0;
@@ -83,7 +83,7 @@ class _PageHomeState extends State<HomeView> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Image.asset('images/home/italian.png', width: 26, height: 26),
+            SvgPicture.asset('images/home/italian.svg', width: 26, height: 26),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -147,35 +147,25 @@ class _PageHomeState extends State<HomeView> {
           ],
         ),
       ),
-      body: Container(
-        // Decoración para la imagen de fondo
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            // Asegúrate de que la ruta a tu imagen sea correcta
-            image: AssetImage('images/home/fondo_c.png'),
-            fit: BoxFit.cover, // Para que la imagen cubra todo el fondo
-          ),
-        ),
-        child: Stack(
-          children: [
-            ListView.separated(
-              controller: scrollCtrl,
-              itemBuilder: (_, i) => i == 0
-                  ? SizedBox(height: heightFirstBox)
-                  : Section(data: data[i - 1]),
-              separatorBuilder: (_, i) => const SizedBox(height: 24.0),
-              padding: const EdgeInsets.only(
-                bottom: 24.0,
-                left: 16.0,
-                right: 16.0,
-              ),
-              itemCount: data.length + 1,
+      body: Stack(
+        children: [
+          ListView.separated(
+            controller: scrollCtrl,
+            itemBuilder: (_, i) => i == 0
+                ? SizedBox(height: heightFirstBox)
+                : Section(data: data[i - 1]),
+            separatorBuilder: (_, i) => const SizedBox(height: 24.0),
+            padding: const EdgeInsets.only(
+              bottom: 24.0,
+              left: 16.0,
+              right: 16.0,
             ),
-            CurrentSection(data: data[iCurrentSection]),
-          ],
-        ),
+            itemCount: data.length + 1,
+          ),
+          CurrentSection(data: data[iCurrentSection]),
+        ],
       ),
-      // Se ha eliminado la propiedad backgroundColor de aquí
+      backgroundColor: const Color(0xFF131F24),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: Color(0xFF2D3D41))),

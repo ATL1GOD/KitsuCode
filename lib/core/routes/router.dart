@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/auth/view/auth_login.dart';
+import 'package:kitsucode/features/auth/view/auth_view.dart';
 import 'package:kitsucode/features/home/view/home_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {

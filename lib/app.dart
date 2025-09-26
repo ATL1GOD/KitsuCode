@@ -1,7 +1,7 @@
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
-import 'package:kitsucode/core/utils/app_themes.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -12,8 +12,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
+      theme: FlexThemeData.light(scheme: FlexScheme.gold, useMaterial3: true),
       routerConfig: router,
     );
   }

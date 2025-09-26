@@ -1,32 +1,40 @@
+// lib/features/auth/repository/auth_repository.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Provider para el cliente de Supabase
+final supabaseClientProvider = Provider((ref) => Supabase.instance.client);
+
+// Provider para el repositorio de autenticación
+final authRepositoryProvider = Provider(
+  (ref) => AuthRepository(client: ref.watch(supabaseClientProvider)),
+);
 
 class AuthRepository {
-  final SupabaseClient _supabaseClient;
+  final SupabaseClient _client;
 
-  AuthRepository(this._supabaseClient);
+  AuthRepository({required SupabaseClient client}) : _client = client;
 
-  Stream<AuthState> get authStateChanges =>
-      _supabaseClient.auth.onAuthStateChange;
+  // Stream para escuchar cambios en el estado de autenticación
+  Stream<AuthState> get authStateChange => _client.auth.onAuthStateChange;
 
-  Future<void> signInWithPassword({
-    required String email,
-    required String password,
-  }) async {
-    await _supabaseClient.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+  // Iniciar sesión
+  Future<void> signInWithPassword(String email, String password) async {
+    try {
+      await _client.auth.signInWithPassword(email: email, password: password);
+    } on AuthException catch (e) {
+      // Puedes manejar errores específicos aquí o relanzarlos
+      throw Exception('Error al iniciar sesión: ${e.message}');
+    } catch (e) {
+      throw Exception('Ocurrió un error inesperado.');
+    }
   }
 
-  // --- NEW METHOD ---
-  Future<void> signUpWithEmailPassword({
-    required String email,
-    required String password,
-  }) async {
-    await _supabaseClient.auth.signUp(email: email, password: password);
-  }
-
+  // Cerrar sesión
   Future<void> signOut() async {
-    await _supabaseClient.auth.signOut();
+    await _client.auth.signOut();
   }
+
+  // Obtener la sesión actual
+  Session? get currentSession => _client.auth.currentSession;
 }

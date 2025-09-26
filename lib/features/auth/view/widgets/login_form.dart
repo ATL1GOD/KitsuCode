@@ -46,6 +46,22 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     }
   }
 
+  // --- NUEVA FUNCIÓN PARA EL BOTÓN DE GOOGLE ---
+  void _googleSignIn() async {
+    try {
+      await ref.read(loginStateProvider.notifier).signInWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error con Google: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginStateProvider);
@@ -81,6 +97,26 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               text: 'Iniciar Sesión',
               onPressed: _submit,
             ),
+            const SizedBox(height: 12),
+            // --- NUEVO BOTÓN Y DIVISOR ---
+            const Row(
+              children: [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text('O'),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SocialAuthButton(
+              text: 'Continuar con Google',
+              iconPath: 'images/auth/google_logo.png',
+              isLoading: loginState.isLoading,
+              onPressed: _googleSignIn,
+            ),
+            // --- FIN DE LA ADICIÓN ---
             const SizedBox(height: 12),
             SwitchFormButton(
               text: '¿No tienes cuenta? Registrarse',

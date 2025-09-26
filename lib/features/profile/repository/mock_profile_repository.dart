@@ -2,7 +2,7 @@
 
 // import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
-// // Este es nuestro repositorio falso.
+// // Este es el repositorio falso.
 // class MockProfileRepository {
 //   // Le damos "memoria" con una variable que guardará los datos de prueba.
 //   UserProfileModel _mockData = UserProfileModel(

@@ -1,5 +1,3 @@
-// lib/features/profile/provider/profile_provider.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
@@ -21,13 +19,11 @@ final userProfileProvider = FutureProvider<UserProfileModel>((ref) async {
   return profileRepository.fetchUserProfile();
 });
 
-// --- 👇 AÑADE ESTE NUEVO PROVIDER COMPLETO 👇 ---
 final userStatsProvider = FutureProvider<UserStatsModel>((ref) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserStats();
 });
 
-// --- 👇 AÑADE ESTE NUEVO PROVIDER COMPLETO 👇 ---
 final userAchievementsProvider = FutureProvider<List<UserAchievementModel>>((ref) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserAchievements();
@@ -40,13 +36,13 @@ final userAchievementsProvider = FutureProvider<List<UserAchievementModel>>((ref
 // // Importamos nuestro nuevo repositorio falso
 // import 'package:kitsucode/features/profile/repository/mock_profile_repository.dart';
 
-// // Provider para el Repositorio (AHORA USA EL FALSO)
+// // Provider para el Repositorio de Perfil (Falso)
 // final profileRepositoryProvider = Provider((ref) {
 //   // En lugar de conectar a Supabase, creamos una instancia del repositorio falso.
 //   return MockProfileRepository();
 // });
 
-// // FutureProvider para los datos del perfil (Este no cambia)
+// // FutureProvider para los datos del perfil de usuario
 // final userProfileProvider = FutureProvider<UserProfileModel>((ref) async {
 //   final profileRepository = ref.watch(profileRepositoryProvider);
 //   return profileRepository.fetchUserProfile();

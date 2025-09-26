@@ -1,5 +1,3 @@
-// lib/features/profile/view/profile_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
@@ -22,7 +20,6 @@ class ProfileView extends ConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Usamos el fondo de la forma que confirmaste
           const LoginBackground(child: SizedBox.shrink()),
 
           profileState.when(
@@ -37,9 +34,8 @@ class ProfileView extends ConsumerWidget {
                     elevation: 0,
                     pinned: true,
                     expandedHeight: 390.0,
-                    // Dejamos los botones de acción para la navegación
                     leading: Padding(
-                      padding: const EdgeInsets.all(8.0), // Un poco de espacio
+                      padding: const EdgeInsets.all(8.0),
                       child: InkWell(
                         onTap: () => context.pop(), // La acción para regresar
                         borderRadius: BorderRadius.circular(20),
@@ -60,7 +56,7 @@ class ProfileView extends ConsumerWidget {
                       ),
                     ],
                     flexibleSpace: FlexibleSpaceBar(
-                      // IMPORTANTE: Quitamos el `title` para evitar la duplicación
+                      
                       background: Padding(
                         padding: const EdgeInsets.only(top: 60.0),
                         child: FadeInDown(

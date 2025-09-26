@@ -1,22 +1,20 @@
-// lib/features/profile/view/widgets/profile_achievements_section.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:shimmer/shimmer.dart';
 
-// --- FUNCIÓN AYUDANTE PARA MAPEAR LOGROS A IMÁGENES ---
+// Función para obtener la ruta del icono basado en el nombre del logro
 String _getAchievementIconPath(String achievementName) {
   switch (achievementName.toLowerCase()) {
     case 'primer reto':
-      return 'assets/images/logro_1.png'; // Asegúrate de tener esta imagen
+      return 'assets/images/logro_1.png'; 
     case 'racha de 5 días':
-      return 'assets/images/logro_racha.png'; // Asegúrate de tener esta imagen
+      return 'assets/images/logro_racha.png'; 
     case 'experto en java':
-      return 'assets/images/logro_java.png'; // Asegúrate de tener esta imagen
+      return 'assets/images/logro_java.png'; 
     
     default:
-      return 'assets/images/logro_default.png'; // Tu imagen genérica
+      return 'assets/images/logro_default.png'; // Icono por defecto
   }
 }
 
@@ -25,7 +23,6 @@ class ProfileAchievementsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Obtenemos los colores y temas definidos en tus utils
     final achievementsState = ref.watch(userAchievementsProvider);
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
@@ -35,7 +32,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. El título y el botón "Ver todo" ahora están en su propio `when`
+          // El título y el botón "Ver todo" ahora están en su propio `when`
           //    para decidir si el botón debe mostrarse.
           achievementsState.when(
             // Mientras carga o si hay error, solo mostramos el título
@@ -123,7 +120,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
   }
 }
 
-// --- WIDGET DE SHIMMER PARA EL ESTADO DE CARGA ---
+// WIDGET DE SHIMMER PARA EL ESTADO DE CARGA 
 class _AchievementsLoadingShimmer extends StatelessWidget {
   const _AchievementsLoadingShimmer();
 

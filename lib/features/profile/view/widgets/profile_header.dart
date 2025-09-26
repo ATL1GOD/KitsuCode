@@ -1,5 +1,3 @@
-// lib/features/profile/view/widgets/profile_header.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
@@ -10,7 +8,6 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtenemos los colores y temas de la app
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 

@@ -1,9 +1,7 @@
-// lib/features/profile/view/all_stats_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; // 1. Reutilizamos el fondo
+import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; 
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';

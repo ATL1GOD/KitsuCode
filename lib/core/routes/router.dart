@@ -13,17 +13,13 @@ import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
-
-
-
-
 final routerProvider = Provider<GoRouter>((ref) {
   // Observa el estado de autenticación de forma asíncrona
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
     initialLocation: '/splash',
-    //initialLocation: '/profile', // Para pruebas rápidas
+    //initialLocation: '/profile', --lo puse porque no tenia la BD
     routes: [
       GoRoute(
         path: '/splash',
@@ -44,7 +40,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
-          // Ahora la ruta recibe el avatar actual como un "extra"
+          // Recibimos el avatar actual como argumento
           final currentAvatar = state.extra as String?  ?? 'assets/images/login_zorro.png';
           return EditAvatarView(currentAvatar: currentAvatar);
         },
@@ -108,7 +104,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// La clase GoRouterRefreshStream no necesita cambios.
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     notifyListeners();

@@ -1,10 +1,8 @@
-// lib/features/profile/model/user_achievement_model.dart
-
 class UserAchievementModel {
   final int id;
   final String nombre;
   final String descripcion;
-  // Podríamos añadir un campo para el icono si lo guardas en la BD
+  // Creo podriamos añadir un campo para el icono 
   // final String iconUrl; 
 
   UserAchievementModel({
@@ -12,7 +10,7 @@ class UserAchievementModel {
     required this.nombre,
     required this.descripcion,
   });
-
+  
   factory UserAchievementModel.fromJson(Map<String, dynamic> json) {
     // La consulta unirá las tablas, así que los datos vendrán juntos
     return UserAchievementModel(

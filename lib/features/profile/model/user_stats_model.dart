@@ -1,5 +1,3 @@
-// lib/features/profile/model/user_stats_model.dart
-
 class UserStatsModel {
   final int retosCompletados;
   final double porcentajeAciertos;
@@ -28,7 +26,7 @@ class UserStatsModel {
       retosCompletados: json['retos_completados'] ?? 0,
       porcentajeAciertos: (json['porcentaje_aciertos'] as num?)?.toDouble() ?? 0.0,
       // Mapeamos la nueva columna de la base de datos
-      porcentajeFallos: (json['porcentaje_fallos'] as num?)?.toDouble() ?? 0.0, // <-- 4. AÑADE ESTA LÍNEA
+      porcentajeFallos: (json['porcentaje_fallos'] as num?)?.toDouble() ?? 0.0,
       rachaDias: json['racha_dias'] ?? 0,
     );
   }

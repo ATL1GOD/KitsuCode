@@ -1,5 +1,3 @@
-// lib/features/profile/provider/profile_controller.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
@@ -27,7 +25,7 @@ class ProfileController extends StateNotifier<bool> {
     final user = _ref.read(userProfileProvider).value;
     if (user == null) return false;
 
-    state = true; // Empezamos a cargar (el botón mostrará un CircularProgressIndicator)
+    state = true; // Empezamos a cargar (guardando)
     try {
       await _profileRepository.updateUserProfile(
         userId: user.userId,
@@ -35,13 +33,12 @@ class ProfileController extends StateNotifier<bool> {
         newAvatar: newAvatar,
       );
       
-      // FORZAMOS LA ACTUALIZACIÓN del perfil para que la pantalla principal muestre los nuevos datos
       _ref.refresh(userProfileProvider);
 
       state = false; // Terminamos de cargar
       return true; // Éxito
     } catch (e) {
-      state = false; // Terminamos de cargar incluso si hay error
+      state = false; 
       return false; // Fracaso
     }
   }

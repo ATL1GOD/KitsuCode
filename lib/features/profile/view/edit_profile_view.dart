@@ -1,9 +1,7 @@
-// lib/features/profile/view/edit_profile_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; // 1. Importamos el fondo
+import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 import 'package:animate_do/animate_do.dart';
@@ -77,13 +75,13 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
       // Usamos un Stack para poner nuestro fondo personalizado
       body: Stack(
         children: [
-          // 2. Aplicamos el fondo con degradado y estrellas
+          
           const LoginBackground(child: SizedBox.shrink()),
           SafeArea(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // --- 3. HEADER CON BOTÓN DE REGRESO Y TÍTULO PERSONALIZADO ---
+                  //HEADER CON BOTÓN DE REGRESO Y TÍTULO PERSONALIZADO 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     child: Row(
@@ -136,7 +134,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                         Positioned(
                           bottom: -10,
                           right: -10,
-                          child: Swing( // Animación que ya te gustó
+                          child: Swing( // Animación de swing para el botón
                             infinite: true,
                             delay: const Duration(seconds: 2),
                             child: Material(
@@ -164,12 +162,12 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                   ),
                   const SizedBox(height: 80),
 
-                  // --- TARJETA DEL FORMULARIO REDISEÑADA ---
+                  // --- TARJETA DEL FORMULARIO DE EDICIÓN ---
                   FadeInUp(
                     delay: const Duration(milliseconds: 300),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      // Usamos el color de tarjeta del perfil para consistencia
+                      
                       child: Card(
                         color: colors.surface.withOpacity(0.8),
                         elevation: 0,
@@ -189,9 +187,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                 decoration: InputDecoration(
                                   hintText: 'Tu nombre',
                                   filled: true,
-                                  // Un color de fondo más notable
                                   fillColor: colors.surfaceVariant.withOpacity(0.6), 
-                                  // Bordes visibles para que se identifique como un campo de texto
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(15.0),
                                     borderSide: BorderSide(color: colors.primaryContainer),
@@ -228,14 +224,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                               ElevatedButton(
                                 onPressed: _handleBackNavigation,
                                 style: ElevatedButton.styleFrom(
-  // Usamos un color cálido y secundario de tu tema
   backgroundColor: colors.primaryContainer,
-  // El color del texto que mejor contrasta con el fondo
   foregroundColor: colors.onPrimaryContainer,
-  // Mantenemos el padding y la forma
   padding: const EdgeInsets.symmetric(vertical: 16),
   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-  // Le damos una pequeña elevación para que parezca un botón real
   elevation: 2, 
 ),
                                 child: const Text('Cancelar'),

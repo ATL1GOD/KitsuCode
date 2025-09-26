@@ -1,11 +1,7 @@
-// lib/features/profile/view/widgets/profile_info_card.dart
-
 import 'package:flutter/material.dart';
-// 1. Importamos nuestro modelo
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
 class ProfileInfoCard extends StatelessWidget {
-  // 2. Le decimos al widget que va a recibir los datos del perfil
   final UserProfileModel userProfile;
 
   const ProfileInfoCard({super.key, required this.userProfile});
@@ -37,13 +33,13 @@ class ProfileInfoCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // 3. Usamos los datos del modelo en lugar de texto fijo
+                  // Usamos los datos del modelo en lugar de texto fijo
                   Text(
-                    userProfile.nombrePerfil, // <-- DATO REAL
+                    userProfile.nombrePerfil,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   Text(
-                    '@${userProfile.nombreUsuario}', // <-- DATO REAL
+                    '@${userProfile.nombreUsuario}', 
                     style: const TextStyle(fontSize: 16, color: Colors.black54),
                   ),
                 ],
@@ -55,7 +51,7 @@ class ProfileInfoCard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        userProfile.siguiendoCount.toString(), // <-- DATO REAL
+                        userProfile.siguiendoCount.toString(), 
                         style: const TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold),
                       ),
@@ -65,7 +61,7 @@ class ProfileInfoCard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        userProfile.seguidoresCount.toString(), // <-- DATO REAL
+                        userProfile.seguidoresCount.toString(), 
                         style: const TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold),
                       ),

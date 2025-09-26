@@ -1,10 +1,8 @@
-// lib/features/profile/view/edit_avatar_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:animate_do/animate_do.dart'; // 1. Importamos el paquete de animaciones
+import 'package:animate_do/animate_do.dart'; 
 
 enum AvatarCategory { general, exclusive }
 
@@ -18,7 +16,7 @@ class EditAvatarView extends ConsumerStatefulWidget {
 
 class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
   final List<String> _generalAvatars = [
-    'assets/images/login_zorro.png', // Este es transparente
+    'assets/images/login_zorro.png', 
     'assets/images/avatar_mono.png',
     'assets/images/avatar_tiburon.png',
     // ...
@@ -26,12 +24,12 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
 
   final List<String> _exclusiveAvatars = [
     'assets/images/avatar_leon.png',
-    'assets/images/login_zorro.png', // Este es transparente
+    'assets/images/login_zorro.png', 
     'assets/images/avatar_mono.png',
     'assets/images/avatar_tiburon.png',
   ];
   
-  // 2. Lista para identificar avatares que necesitan fondo
+  //Lista para identificar avatares que necesitan fondo
   final Set<String> _transparentAvatars = {
     'assets/images/login_zorro.png',
   };
@@ -66,7 +64,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
         child: SafeArea(
           child: Column(
             children: [
-              // --- Barra de navegación con animación ---
+              // --- Barra de navegación 
               FadeInDown(
                 duration: const Duration(milliseconds: 400),
                 child: Padding(
@@ -112,7 +110,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
               ),
               const SizedBox(height: 20),
 
-              // --- Avatar principal con animación ---
+              // --- Avatar principal 
               FadeIn(
                 delay: const Duration(milliseconds: 200),
                 duration: const Duration(milliseconds: 500),
@@ -124,7 +122,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
               ),
               const SizedBox(height: 30),
 
-              // --- Pestañas con animación ---
+              // --- Pestañas con animación 
               FadeInUp(
                 delay: const Duration(milliseconds: 300),
                 duration: const Duration(milliseconds: 400),
@@ -139,7 +137,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
               ),
               const SizedBox(height: 20),
 
-              // --- Grid de avatares con animación ---
+              // --- Grid de avatares
               Expanded(
                 child: FadeInUp(
                   delay: const Duration(milliseconds: 400),
@@ -169,7 +167,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                             ),
                             child: _buildAvatarWithBackground(
                               avatarPath: avatarPath,
-                              size: 80, // Tamaño para la cuadrícula
+                              size: 80, 
                               colors: colors,
                               isGridItem: true,
                             ),
@@ -187,14 +185,13 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
     );
   }
 
-  // 3. Widget reutilizable para mostrar avatares con o sin fondo
+  //Widget reutilizable para mostrar avatares con o sin fondo
   Widget _buildAvatarWithBackground({
     required String avatarPath,
     required double size,
     required ColorScheme colors,
     bool isGridItem = false,
   }) {
-    // Revisa si el avatar actual está en la lista de transparentes
     final needsBackground = _transparentAvatars.contains(avatarPath);
     
     Widget avatarImage = ClipRRect(
@@ -207,19 +204,17 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          // Le ponemos el fondo naranja de tu tema
+          
           color: colors.primaryContainer,
           shape: BoxShape.circle,
         ),
         child: Padding(
-          // Añadimos un pequeño padding para que no se pegue a los bordes
+          
           padding: EdgeInsets.all(size * 0.1), 
           child: avatarImage,
         ),
       );
     }
-    
-    // Si no necesita fondo, lo regresa como estaba
     return avatarImage;
   }
 
@@ -234,7 +229,6 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
           borderRadius: BorderRadius.circular(25),
           border: isSelected ? null : Border.all(color: colors.primaryContainer.withOpacity(0.5)),
         ),
-        // 4. Aseguramos que el icono siempre use el color naranja del tema
         child: Icon(icon, color: colors.secondary),
       ),
     );

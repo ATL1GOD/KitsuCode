@@ -1,5 +1,3 @@
-// lib/features/profile/view/widgets/profile_progress_section.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
@@ -84,7 +82,7 @@ class ProfileProgressSection extends ConsumerWidget {
                       Expanded(
                         child: _StatCard(
                           icon: Icons.cancel_outlined,
-                          value: '${stats.porcentajeFallos.toStringAsFixed(1)}%', // <-- DATO CORREGIDO
+                          value: '${stats.porcentajeFallos.toStringAsFixed(1)}%', 
                           label: 'Errores',
                         ),
                       ),
@@ -100,7 +98,7 @@ class ProfileProgressSection extends ConsumerWidget {
   }
 }
 
-// --- WIDGET DE LA TARJETA DE ESTADÍSTICA (NUEVO DISEÑO ESTÉTICO) ---
+// --- WIDGET DE LA TARJETA DE ESTADÍSTICAS ---
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -114,17 +112,17 @@ class _StatCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
-      // Usamos un color base del tema con baja opacidad para un look más suave
+      
       color: colors.surfaceVariant.withOpacity(0.5),
-      elevation: 0, // Quitamos la sombra para un diseño más plano y moderno
+      elevation: 0, 
       shape: RoundedRectangleBorder(
-        // Añadimos un borde sutil para definir la tarjeta
+        
         side: BorderSide(color: colors.primaryContainer.withOpacity(0.4), width: 1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-        // Layout vertical para mejorar la jerarquía visual
+        
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -144,7 +142,7 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-// --- WIDGET DE SHIMMER PARA EL ESTADO DE CARGA ---
+// --- WIDGET DE SHIMMER PARA EL ESTADO DE CARGA
 class _ProgressLoadingShimmer extends StatelessWidget {
   const _ProgressLoadingShimmer();
 
@@ -180,7 +178,7 @@ class _ShimmerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 1.5, // Ajusta este valor para que coincida con el alto de tus _StatCard
+      aspectRatio: 1.5, 
       child: Card(
         color: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

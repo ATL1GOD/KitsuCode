@@ -15,22 +15,19 @@ class ProfileRepository {
     }
 
     try {
-      // --- CAMBIO CLAVE AQUÍ ---
-      // Ya no hacemos un SELECT, llamamos a nuestra función con .rpc()
       final response = await _supabase.rpc(
         'get_user_profile_with_stats',
         params: {'user_id': user.id},
       );
-      // --- FIN DEL CAMBIO ---
 
-      // El resultado ya viene listo para nuestro modelo
       return UserProfileModel.fromJson(response);
     } catch (e) {
       throw Exception('Error al cargar el perfil del usuario: $e');
     }
   }
   
-  // --- ACTUALIZAR PERFIL DEL USUARIO (Lo usaremos más adelante) ---
+  // Actualiza el perfil del usuario en la base de datos
+  // recibe el id del usuario, un nuevo nombre y un nuevo avatar (ambos opc
   Future<void> updateUserProfile({required String userId, String? newName, String? newAvatar}) async {
     try {
       final updates = <String, dynamic>{};
@@ -77,7 +74,7 @@ class ProfileRepository {
   }
 
 
-  // --- 👇 AÑADE ESTA NUEVA FUNCIÓN COMPLETA 👇 ---
+  // Consulta los logros del usuario actual
   Future<List<UserAchievementModel>> fetchUserAchievements() async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -85,10 +82,7 @@ class ProfileRepository {
     }
 
     try {
-      // Esta consulta es más avanzada. Le decimos a Supabase:
-      // "Dame todos los datos de la tabla 'logro' (logro.*)
-      //  pero solo aquellos cuyo id exista en la tabla 'usuario_logro'
-      //  para el usuario actual (usuario_logro!inner(*))"
+      // Hacemos la consulta a la tabla de logros uniendo con la tabla intermedia 
       final response = await _supabase
           .from('logro')
           .select('*, usuario_logro!inner(*)')

@@ -20,6 +20,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
   final List<String> _generalAvatars = [
     'assets/images/login_zorro.png', // Este es transparente
     'assets/images/avatar_mono.png',
+    'assets/images/avatar_tiburon.png',
     // ...
   ];
 
@@ -27,6 +28,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
     'assets/images/avatar_leon.png',
     'assets/images/login_zorro.png', // Este es transparente
     'assets/images/avatar_mono.png',
+    'assets/images/avatar_tiburon.png',
   ];
   
   // 2. Lista para identificar avatares que necesitan fondo

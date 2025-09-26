@@ -11,6 +11,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 
 
@@ -21,8 +22,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
-    //initialLocation: '/splash',
-    initialLocation: '/profile', // Para pruebas rápidas
+    initialLocation: '/splash',
+    //initialLocation: '/profile', // Para pruebas rápidas
     routes: [
       GoRoute(
         path: '/splash',
@@ -48,10 +49,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return EditAvatarView(currentAvatar: currentAvatar);
         },
       ),
+     GoRoute(
+        path: '/all-stats',
+        builder: (context, state) => const AllStatsView(),
+      ),
     ],
     redirect: (BuildContext context, GoRouterState state) {
       // Usamos .when para manejar todos los casos del stream de forma segura
-      /*return authState.when(
+      return authState.when(
         data: (data) {
           final isAuthenticated = data.session != null;
           final isLoggingIn = state.matchedLocation == '/login';
@@ -95,7 +100,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
           return '/login';
         },
-      ); */
+      ); 
       return null;
     },
     // Refresca el estado del router cuando cambie el estado de autenticación.

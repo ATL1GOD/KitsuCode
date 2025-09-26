@@ -2,7 +2,9 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 
+// Este provider manejará el estado de "cargando" mientras se guarda
 final profileControllerProvider = StateNotifierProvider<ProfileController, bool>((ref) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return ProfileController(
@@ -12,28 +14,28 @@ final profileControllerProvider = StateNotifierProvider<ProfileController, bool>
 });
 
 class ProfileController extends StateNotifier<bool> {
-  final dynamic _profileRepository;
+  final ProfileRepository _profileRepository;
   final Ref _ref;
 
-  ProfileController({required dynamic profileRepository, required Ref ref})
+  ProfileController({required ProfileRepository profileRepository, required Ref ref})
       : _profileRepository = profileRepository,
         _ref = ref,
-        super(false);
+        super(false); // false = no está cargando/guardando
 
   Future<bool> updateProfile({String? newName, String? newAvatar}) async {
-    // Obtenemos los datos del usuario de forma segura
-    final userProfile = _ref.read(userProfileProvider).value;
-    if (userProfile == null) return false; // Si no hay datos, no hacemos nada
+    // Obtenemos el ID del usuario de forma segura
+    final user = _ref.read(userProfileProvider).value;
+    if (user == null) return false;
 
-    state = true; // Empezamos a cargar
+    state = true; // Empezamos a cargar (el botón mostrará un CircularProgressIndicator)
     try {
       await _profileRepository.updateUserProfile(
-        userId: userProfile.userId,
+        userId: user.userId,
         newName: newName,
         newAvatar: newAvatar,
       );
       
-      // Forzamos la actualización del perfil para que la pantalla principal muestre los nuevos datos
+      // FORZAMOS LA ACTUALIZACIÓN del perfil para que la pantalla principal muestre los nuevos datos
       _ref.refresh(userProfileProvider);
 
       state = false; // Terminamos de cargar

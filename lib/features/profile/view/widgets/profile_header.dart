@@ -1,60 +1,81 @@
 // lib/features/profile/view/widgets/profile_header.dart
 
-import 'package:flutter/material.dart'; // <-- LA LÍNEA MÁGICA Y CORRECTA
-// 1. Importamos nuestro modelo de datos
-import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
 class ProfileHeader extends StatelessWidget {
-  // 2. Le decimos al widget que va a recibir un objeto UserProfileModel
   final UserProfileModel userProfile;
-
-  // 3. Hacemos que sea obligatorio pasárselo en el constructor
   const ProfileHeader({super.key, required this.userProfile});
-
 
   @override
   Widget build(BuildContext context) {
+    // Obtenemos los colores y temas de la app
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget avatarImage;
+    if (userProfile.avatarUrl.startsWith('http')) {
+      avatarImage = Image.network(userProfile.avatarUrl, fit: BoxFit.cover);
+    } else {
+      avatarImage = Image.asset(userProfile.avatarUrl, fit: BoxFit.cover);
+    }
+
     return Column(
       children: [
-        const SizedBox(height: 10),
-
-        // Usamos un Stack para apilar el resplandor y la imagen con borde
+        //const SizedBox(height: 10),
         Stack(
+          clipBehavior: Clip.none, // Permite que el botón de editar se salga
           alignment: Alignment.center,
           children: [
-            // --- CAPA 1: El Resplandor ---
+            // --- TU DISEÑO DE AVATAR CON RESPLANDOR Y BORDES ---
             Container(
-              width: 140,
-              height: 140,
+              width: 180,
+              height: 180,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(35),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFEDA85E).withOpacity(0.7),
-                    blurRadius: 25,
+                    color: colors.secondary.withOpacity(0.6), // Color del tema
+                    blurRadius: 30,
                     spreadRadius: 5,
                   ),
                 ],
               ),
             ),
-
-            // --- CAPA 2: La Imagen con su Borde ---
             Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: const Color(0xFFD28F4D),
-                  width: 2.5,
+                  color: colors.secondary, // Color del tema
+                  width: 3,
                 ),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(28.0),
-                child: Image.asset(
-                  userProfile.avatarUrl,
-                  width: 150,
-                  height: 150,
-                  fit: BoxFit.cover,
+                borderRadius: BorderRadius.circular(27.0),
+                child: SizedBox(
+                  width: 180,
+                  height: 180,
+                  child: avatarImage,
+                ),
+              ),
+            ),
+            // --- BOTÓN DE EDITAR FLOTANTE (INTEGRADO A TU DISEÑO) ---
+            Positioned(
+              bottom: -10,
+              right: -10,
+              child: Material(
+                color: colors.surface,
+                elevation: 4,
+                shadowColor: colors.shadow.withOpacity(0.3),
+                shape: const CircleBorder(),
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: colors.primary,
+                  child: IconButton(
+                    icon: Icon(Icons.edit, color: colors.onPrimary, size: 20),
+                    onPressed: () => context.push('/edit-profile', extra: userProfile),
+                  ),
                 ),
               ),
             ),
@@ -62,27 +83,44 @@ class ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 20),
 
-        // El botón
-        ElevatedButton(
-          onPressed: () {
-            context.go('/edit-profile', extra: userProfile);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFEF6C00),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-            elevation: 5,
-          ),
-          child: const Text(
-            'Editar',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+        // --- NOMBRES DE PERFIL Y USUARIO ---
+        Text(
+          userProfile.nombrePerfil,
+          style: textTheme.headlineSmall,
         ),
-        const SizedBox(height: 30),
+        Text(
+          '@${userProfile.nombreUsuario}',
+          style: textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant.withOpacity(0.8)),
+        ),
+        const SizedBox(height: 20),
+
+        // --- CONTADORES DE SEGUIDORES ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildFollowStat(context, userProfile.siguiendoCount.toString(), 'Siguiendo'),
+            Container(
+              height: 30,
+              width: 1,
+              color: colors.onSurfaceVariant.withOpacity(0.3),
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+            ),
+            _buildFollowStat(context, userProfile.seguidoresCount.toString(), 'Seguidores'),
+          ],
+        ),
+        //const SizedBox(height: 15),
       ],
     );
   }
-}
+
+  // Widget auxiliar para los contadores de seguidores
+  Widget _buildFollowStat(BuildContext context, String count, String label) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        Text(count, style: textTheme.titleLarge),
+        Text(label, style: textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7))),
+      ],
+    );
+  }
+} 

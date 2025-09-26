@@ -2,82 +2,92 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/profile/provider/profile_provider.dart'; // Importamos el provider
-import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
-import 'package:kitsucode/features/profile/view/widgets/profile_info_card.dart';
-import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart'; 
+import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_achievements_section.dart';
-import 'package:animate_do/animate_do.dart'; // Para las animaciones
+import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
+import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ProfileView extends ConsumerWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. "Observamos" el estado de nuestro provider de perfil
     final profileState = ref.watch(userProfileProvider);
+    final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Capa 1: El fondo degradado
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFEDA85E), Color(0xFFF1E1D0)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
+          // Usamos el fondo de la forma que confirmaste
+          const LoginBackground(child: SizedBox.shrink()),
 
-          // Capa 2: Las estrellas (iconos posicionados)
-          const _Sparkles(),
-
-          // Capa 3: El contenido principal de la pantalla
           profileState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => Center(child: Text('Error al cargar el perfil: $error')),
+            loading: () => const _ProfileLoadingShimmer(),
+            error: (error, stackTrace) => Center(child: Text('Error: $error')),
             data: (userProfile) {
               return CustomScrollView(
                 slivers: [
+                  // --- SLIVERAPPBAR SIMPLIFICADO ---
                   SliverAppBar(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                      onPressed: () {},
+                    pinned: true,
+                    expandedHeight: 390.0,
+                    // Dejamos los botones de acción para la navegación
+                    leading: Padding(
+                      padding: const EdgeInsets.all(8.0), // Un poco de espacio
+                      child: InkWell(
+                        onTap: () => context.pop(), // La acción para regresar
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: colors.surface.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
+                        ),
+                      ),
                     ),
                     actions: [
                       IconButton(
-                        icon: const Icon(Icons.settings_outlined, color: Color(0xFF4F4F4F)),
-                        onPressed: () {},
+                        icon: Icon(Icons.settings_outlined, color: colors.onSurface),
+                        onPressed: () { /* TODO: Navegar a settings */ },
                       ),
                     ],
+                    flexibleSpace: FlexibleSpaceBar(
+                      // IMPORTANTE: Quitamos el `title` para evitar la duplicación
+                      background: Padding(
+                        padding: const EdgeInsets.only(top: 60.0),
+                        child: FadeInDown(
+                          duration: const Duration(milliseconds: 500),
+                          // El ProfileHeader es el único responsable de la info del encabezado
+                          child: ProfileHeader(userProfile: userProfile),
+                        ),
+                      ),
+                    ),
                   ),
-                  SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    // 2. Envuelve tus widgets con los efectos de animate_do
-                    FadeInDown(
-                      delay: const Duration(milliseconds: 300),
-                      child: ProfileHeader(userProfile: userProfile),
+
+                  // --- CUERPO DEL PERFIL ---
+                  SliverList(
+                    delegate: SliverChildListDelegate(
+                      [
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 300),
+                          child: const ProfileProgressSection(),
+                        ),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 400),
+                          child: const ProfileAchievementsSection(),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 400),
-                      child: ProfileInfoCard(userProfile: userProfile),
-                    ),
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 500),
-                      child: const ProfileProgressSection(),
-                    ),
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 600),
-                      child: const ProfileAchievementsSection(),
-                    ),
-                  ],  
-                ),
-              ),
+                  ),
                 ],
               );
             },
@@ -88,35 +98,47 @@ class ProfileView extends ConsumerWidget {
   }
 }
 
-// Widget auxiliar para las estrellas del fondo
-class _Sparkles extends StatelessWidget {
-  const _Sparkles();
+
+// --- WIDGET DE SHIMMER PARA EL ESTADO DE CARGA ---
+class _ProfileLoadingShimmer extends StatelessWidget {
+  const _ProfileLoadingShimmer();
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: 100,
-          left: 30,
-          child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 15),
-        ),
-        Positioned(
-          top: 150,
-          right: 40,
-          child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 20),
-        ),
-        Positioned(
-          top: 250,
-          left: 60,
-          child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 10),
-        ),
-         Positioned(
-          top: 80,
-          right: 90,
-          child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 10),
-        ),
-      ],
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[400]!,
+      highlightColor: Colors.grey[200]!,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          Container(
+            height: 380, // Simula el alto del SliverAppBar
+            color: Colors.white,
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0),
+            child: Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0),
+            child: Container(
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

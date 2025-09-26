@@ -1,14 +1,15 @@
+// lib/features/profile/view/edit_profile_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/core/utils/app_colors.dart';
+import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; // 1. Importamos el fondo
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
-import 'package:animate_do/animate_do.dart'; 
+import 'package:animate_do/animate_do.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
   final UserProfileModel userProfile;
-
   const EditProfileView({super.key, required this.userProfile});
 
   @override
@@ -17,25 +18,18 @@ class EditProfileView extends ConsumerStatefulWidget {
 
 class _EditProfileViewState extends ConsumerState<EditProfileView> {
   late final TextEditingController _nameController;
-  // 1. Variable para guardar el estado del avatar en ESTA pantalla
   late String _currentAvatar;
-
-  // 1. Variables para "recordar" el estado inicial
   late String _initialName;
   late String _initialAvatar;
 
-  // 2. Un "getter" para saber si hay cambios
   bool get _hasChanges =>
       _nameController.text != _initialName || _currentAvatar != _initialAvatar;
-
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.userProfile.nombrePerfil);
-    // 2. Al iniciar la pantalla, guardamos el avatar que viene del perfil
-    _currentAvatar = widget.userProfile.avatarUrl; 
-    // Guardamos los valores iniciales al cargar la pantalla
+    _currentAvatar = widget.userProfile.avatarUrl;
     _initialName = widget.userProfile.nombrePerfil;
     _initialAvatar = _currentAvatar;
   }
@@ -46,222 +40,218 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     super.dispose();
   }
 
-
-  // 3. Función para mostrar la advertencia de cambios sin guardar
-  Future<bool?> _showUnsavedChangesDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Descartar cambios'),
-        content: const Text('¿Seguro que quieres salir sin guardar los cambios?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false), // El usuario se queda
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true), // El usuario confirma salir
-            child: const Text('Salir'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 4. Función inteligente para manejar la navegación hacia atrás
   Future<void> _handleBackNavigation() async {
-    // Si hay cambios, muestra el diálogo. Si no, solo regresa.
     if (_hasChanges) {
-      final shouldPop = await _showUnsavedChangesDialog() ?? false;
-      if (shouldPop && mounted) {
-        context.go('/profile');
-      }
+      final shouldPop = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Descartar cambios'),
+          content: const Text('¿Seguro que quieres salir sin guardar?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Salir')),
+          ],
+        ),
+      ) ?? false;
+      if (shouldPop && mounted) context.pop();
     } else {
-      context.go('/profile');
+      context.pop();
     }
   }
   
-@override
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final cardBackgroundColor = primaryLightColorScheme.primaryFixed;
+    final textTheme = Theme.of(context).textTheme;
     final isSaving = ref.watch(profileControllerProvider);
 
+    // Lógica para mostrar el avatar de red o local
+    Widget avatarImage;
+    if (_currentAvatar.startsWith('http')) {
+      avatarImage = Image.network(_currentAvatar, fit: BoxFit.cover);
+    } else {
+      avatarImage = Image.asset(_currentAvatar, fit: BoxFit.cover);
+    }
+
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [primaryDarkColorScheme.primary, primaryLightColorScheme.primaryFixed],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SingleChildScrollView(
-          child: SafeArea(
-            child: Column(
-              children: [
-                // --- Botón de regreso con animación ---
-                FadeInDown(
-                  duration: const Duration(milliseconds: 300),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                      onPressed: _handleBackNavigation,
+      // Usamos un Stack para poner nuestro fondo personalizado
+      body: Stack(
+        children: [
+          // 2. Aplicamos el fondo con degradado y estrellas
+          const LoginBackground(child: SizedBox.shrink()),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // --- 3. HEADER CON BOTÓN DE REGRESO Y TÍTULO PERSONALIZADO ---
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: _handleBackNavigation,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: colors.surface.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface, size: 20),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Editar Perfil',
+                            textAlign: TextAlign.center,
+                            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 40), // Espacio para centrar el título
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // --- Avatar Editable con animación ---
-                FadeInDown(
-                  delay: const Duration(milliseconds: 200),
-                  duration: const Duration(milliseconds: 400),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 180,
-                        height: 180,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(40),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colors.secondary.withOpacity(0.4),
-                            blurRadius: 25,
-                            spreadRadius: 1,
-                          )
-                        ],
-                      ),
-                      child: ClipRRect(
-                          borderRadius: BorderRadius.circular(40.0),
-                          child: Image.asset(_currentAvatar, fit: BoxFit.cover),
+                  // --- AVATAR EDITABLE ---
+                  FadeInDown(
+                    delay: const Duration(milliseconds: 200),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(40),
+                            boxShadow: [
+                              BoxShadow(color: colors.secondary.withOpacity(0.4), blurRadius: 25, spreadRadius: 1)
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(40.0),
+                            child: avatarImage,
+                          ),
                         ),
-                      ),
-                    Positioned(
-                        bottom: -10,
-                        right: -10,
-                        // --- Botón de lápiz con animación de pulso ---
-                        child: Swing(
-                          infinite: true,
-                          delay: const Duration(seconds: 2),
-                          child: Material(
-                            color: cardBackgroundColor,
-                            shape: const CircleBorder(),
-                            elevation: 4,
-                            shadowColor: colors.shadow.withOpacity(0.3),
-                            child: CircleAvatar(
-                              radius: 22,
-                              backgroundColor: colors.secondary,
-                              child: IconButton(
-                                icon: Icon(Icons.edit, color: colors.onSecondary, size: 15),
-                                onPressed: () async {
-                                  final newAvatar = await context.push<String>('/edit-avatar', extra: _currentAvatar);
-                                  if (newAvatar != null) {
-                                    setState(() => _currentAvatar = newAvatar);
+                        Positioned(
+                          bottom: -10,
+                          right: -10,
+                          child: Swing( // Animación que ya te gustó
+                            infinite: true,
+                            delay: const Duration(seconds: 2),
+                            child: Material(
+                              color: colors.surface,
+                              elevation: 4,
+                              shape: const CircleBorder(),
+                              child: CircleAvatar(
+                                radius: 22,
+                                backgroundColor: colors.secondary,
+                                child: IconButton(
+                                  icon: Icon(Icons.edit, color: colors.onSecondary, size: 18),
+                                  onPressed: () async {
+                                    final newAvatar = await context.push<String>('/edit-avatar', extra: _currentAvatar);
+                                    if (newAvatar != null) {
+                                      setState(() => _currentAvatar = newAvatar);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 80),
+
+                  // --- TARJETA DEL FORMULARIO REDISEÑADA ---
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 300),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      // Usamos el color de tarjeta del perfil para consistencia
+                      child: Card(
+                        color: colors.surface.withOpacity(0.8),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: colors.primaryContainer.withOpacity(0.3)),
+                          borderRadius: BorderRadius.circular(25)
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text('Nombre de Perfil', style: textTheme.titleMedium),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _nameController..addListener(() => setState(() {})),
+                                decoration: InputDecoration(
+                                  hintText: 'Tu nombre',
+                                  filled: true,
+                                  // Un color de fondo más notable
+                                  fillColor: colors.surfaceVariant.withOpacity(0.6), 
+                                  // Bordes visibles para que se identifique como un campo de texto
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderSide: BorderSide(color: colors.primaryContainer),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    borderSide: BorderSide(color: colors.primary, width: 2),
+                                  ),
+                                  suffixIcon: Icon(Icons.edit, color: colors.secondary.withOpacity(0.8)),
+                                ),
+                              ),
+                              const SizedBox(height: 30),
+                              ElevatedButton(
+                                onPressed: (isSaving || !_hasChanges) ? null : () async {
+                                  final success = await ref.read(profileControllerProvider.notifier).updateProfile(
+                                    newName: _nameController.text,
+                                    newAvatar: _currentAvatar,
+                                  );
+                                  if (mounted && success) {
+                                    context.go('/profile');
                                   }
                                 },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: colors.primary,
+                                  foregroundColor: colors.onPrimary,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                ),
+                                child: isSaving
+                                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Text('Guardar Cambios'),
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // --- Tarjeta con el Formulario con animación ---
-                FadeInUp(
-                  delay: const Duration(milliseconds: 300),
-                  duration: const Duration(milliseconds: 500),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Card(
-                    color: cardBackgroundColor,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text(
-                            'Edición de perfil',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4F4F4F)),
-                          ),
-                          const SizedBox(height: 25),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16.0, bottom: 8.0),
-                            child: Text('Nombre', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w500)),
-                          ),
-                          TextField(
-                            controller: _nameController..addListener(() => setState(() {})), // Actualiza el estado al cambiar
-                            decoration: InputDecoration(
-                              hintText: 'Nombre de usuario',
-                              filled: true,
-                              fillColor: colors.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25.0),
-                                borderSide: BorderSide.none,
-                              ),
-                              suffixIcon: Icon(Icons.edit, color: colors.secondary),
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          ElevatedButton(
-                            // 6. El botón de Guardar ahora regresa a la pantalla anterior
-                            onPressed: isSaving ? null : () async {
-                              final success = await ref.read(profileControllerProvider.notifier).updateProfile(
-                                newName: _nameController.text,
-                                newAvatar: _currentAvatar,
-                              );
-                              if (mounted && success) {
-                                context.go('/profile'); // <-- ¡Ahora sí regresa!
-                              }
-                            },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: colors.primary,
-    foregroundColor: colors.onPrimary,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-    padding: const EdgeInsets.symmetric(vertical: 18),
-  ),
-  // Mostramos una ruedita de carga si está guardando
-  child: isSaving
-      ? const SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-        )
-      : const Text('Guardar cambios', style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: _handleBackNavigation,
+                                style: ElevatedButton.styleFrom(
+  // Usamos un color cálido y secundario de tu tema
+  backgroundColor: colors.primaryContainer,
+  // El color del texto que mejor contrasta con el fondo
+  foregroundColor: colors.onPrimaryContainer,
+  // Mantenemos el padding y la forma
+  padding: const EdgeInsets.symmetric(vertical: 16),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  // Le damos una pequeña elevación para que parezca un botón real
+  elevation: 2, 
 ),
-                          const SizedBox(height: 15),
-                          ElevatedButton(
-                            onPressed: () => _handleBackNavigation(), // Usamos la función inteligente
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.primaryContainer,
-                              foregroundColor: colors.onPrimaryContainer,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                            ),
-                            child: const Text('Cancelar', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ],
+                                child: const Text('Cancelar'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

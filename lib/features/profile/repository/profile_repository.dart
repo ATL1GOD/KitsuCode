@@ -20,6 +20,8 @@ class ProfileRepository {
         params: {'user_id': user.id},
       );
 
+      print('DEBUG: Data cruda de Supabase (Contadores): $response');
+
       return UserProfileModel.fromJson(response);
     } catch (e) {
       throw Exception('Error al cargar el perfil del usuario: $e');

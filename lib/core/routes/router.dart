@@ -12,6 +12,7 @@ import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/features/competences/view/ranking_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Observa el estado de autenticación de forma asíncrona
@@ -28,14 +29,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginView()),
       GoRoute(path: '/home', builder: (context, state) => const HomeView()),
+      GoRoute(
+        path: '/ranking',
+        name: 'ranking',
+        builder: (context, state) => const RankingView(),
+      ),
       GoRoute(path: '/profile', builder: (context, state) => const ProfileView()),
       GoRoute(
     path: '/edit-profile',
-    builder: (context, state) {
       // Recibimos el objeto userProfile que pasamos como argumento
-      final userProfile = state.extra as UserProfileModel;
-      return EditProfileView(userProfile: userProfile);
-    },
+      // final userProfile = state.extra as UserProfileModel;
+      builder: (context, state) => const EditProfileView(),
   ),  
   GoRoute(
         path: '/edit-avatar',

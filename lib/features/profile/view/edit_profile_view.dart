@@ -8,36 +8,41 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
-  final UserProfileModel userProfile;
-  const EditProfileView({super.key, required this.userProfile});
+  const EditProfileView({super.key});
 
   @override
   ConsumerState<EditProfileView> createState() => _EditProfileViewState();
 }
 
 class _EditProfileViewState extends ConsumerState<EditProfileView> {
-  late final TextEditingController _nameController;
+  TextEditingController? _nameController; 
   String? _nameValidationError;
 
   late String _currentAvatar;
   late String _initialName;
+  late UserProfileModel _currentProfileData; 
+  
+  bool _isInitialized = false; 
 
-  @override
-  void initState() {
-    super.initState();
+  void _initializeControllers(UserProfileModel freshProfile) {
+    if (_isInitialized) return;
+
     _nameController =
-        TextEditingController(text: widget.userProfile.nombrePerfil);
+        TextEditingController(text: freshProfile.nombrePerfil);
 
-    _currentAvatar = widget.userProfile.avatarUrl;
-    _initialName = widget.userProfile.nombrePerfil;
+    _currentAvatar = freshProfile.avatarUrl;
+    _initialName = freshProfile.nombrePerfil;
+    _currentProfileData = freshProfile;
 
-    _validateProfileName(_nameController.text);
+    _validateProfileName(_nameController!.text);
 
-    _nameController.addListener(() {
+    _nameController!.addListener(() {
       setState(() {
-        _validateProfileName(_nameController.text);
+        _validateProfileName(_nameController!.text);
       });
     });
+    
+    _isInitialized = true;
   }
 
   void _validateProfileName(String value) {
@@ -56,18 +61,18 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    if (_isInitialized) { 
+        _nameController?.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _handleBackNavigation(bool hasChanges) async {
     if (!hasChanges) {
-      // 🔹 Si NO hay cambios, salir directo
       if (mounted) context.pop();
       return;
     }
 
-    // 🔹 Si hay cambios, mostrar diálogo
     final shouldPop = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -103,16 +108,28 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
         if (profile == null) {
           return const Center(child: Text("No se pudo cargar el perfil"));
         }
+        
+        if (!_isInitialized) {
+            _initializeControllers(profile);
+        }
 
-        // 🔹 Determinar si hay cambios (nombre o avatar) respecto a los iniciales
-        final hasChanges = _nameController.text != _initialName ||
-            _currentAvatar != widget.userProfile.avatarUrl;
+        _currentProfileData = profile; 
 
-        final maxAvatarChanges = profile.cambiosAvatarHoy >= 2;
-        final maxNameChanges = profile.cambiosNombrePerfilEsteMes >= 2;
-        final remainingName = 2 - profile.cambiosNombrePerfilEsteMes;
+        // 1. LÓGICA DE GRAMÁTICA Y REGLAS (Nombre)
+        final remainingName = 2 - _currentProfileData.cambiosNombrePerfilEsteMes;
+        final nameVerb = remainingName == 1 ? 'queda' : 'quedan';
+        final nameNoun = remainingName == 1 ? 'cambio' : 'cambios';
+        final nameMessage = 'Te $nameVerb $remainingName $nameNoun de nombre este mes.';
+        
+        // Lógica de cambios
+        final isNameChanged = _nameController!.text != _initialName;
+        final isAvatarChanged = _currentAvatar != _currentProfileData.avatarUrl;
+        final hasChanges = isNameChanged || isAvatarChanged;
 
-        // Avatar dinámico
+        final maxAvatarChanges = _currentProfileData.cambiosAvatarHoy >= 2;
+        final maxNameChanges = _currentProfileData.cambiosNombrePerfilEsteMes >= 2;
+        
+        // Avatar dinámico (vista previa)
         Widget avatarImage;
         if (_currentAvatar.startsWith('http')) {
           avatarImage = Image.network(_currentAvatar, fit: BoxFit.cover);
@@ -134,7 +151,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // 🔹 HEADER
+                      // 🔹 HEADER (omitted for brevity)
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
@@ -229,34 +246,13 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                           final newAvatar =
                                               await context.push<String>(
                                                   '/edit-avatar',
-                                                  extra: profile.avatarUrl);
-                                          if (newAvatar != null) {
-                                            final updatedProfile = await ref
-                                                .read(profileControllerProvider
-                                                    .notifier)
-                                                .updateProfile(
-                                                  newAvatar: newAvatar,
-                                                  newName:
-                                                      _nameController.text,
-                                                );
-                                            if (mounted &&
-                                                updatedProfile != null) {
-                                              setState(() {
-                                                _currentAvatar =
-                                                    updatedProfile.avatarUrl;
-                                                _initialName =
-                                                    updatedProfile.nombrePerfil;
-                                              });
-                                              // 🔹 Refrescar provider para contadores
-                                              ref.refresh(userProfileProvider);
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Te queda ${2 - updatedProfile.cambiosAvatarHoy} cambio(s) de avatar hoy.'),
-                                                duration: const Duration(
-                                                    seconds: 5),
-                                              ));
-                                            }
+                                                  extra: _currentProfileData.avatarUrl); 
+                                          
+                                          // SÓLO ACTUALIZA LA VISTA PREVIA (STATE LOCAL)
+                                          if (newAvatar != null && newAvatar != _currentAvatar) {
+                                            setState(() {
+                                              _currentAvatar = newAvatar; // Actualiza la PREVIEW
+                                            });
                                           }
                                         },
                                       ),
@@ -320,13 +316,13 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                     ),
                                   ),
 
-                                  // 🔹 Mensaje de cambios de nombre
+                                  // 🔹 Mensaje de cambios de nombre (CON GRAMÁTICA CORREGIDA)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
                                       maxNameChanges
                                           ? "Ya no puedes cambiar tu nombre este mes."
-                                          : "Te quedan $remainingName cambios de nombre este mes.",
+                                          : nameMessage, 
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: maxNameChanges
@@ -336,31 +332,70 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                   ),
 
                                   const SizedBox(height: 30),
+                                  // 🔹 BOTÓN GUARDAR CAMBIOS (Lógica de habilitación corregida)
                                   ElevatedButton(
+                                    // 2. CORRECCIÓN CLAVE: El botón se deshabilita solo si:
+                                    // a) Está guardando.
+                                    // b) No hay cambios.
+                                    // c) El nombre es inválido (y se intentó cambiar).
+                                    // NO se deshabilita por maxNameChanges (porque el avatar podría ser válido).
                                     onPressed: (isSaving ||
                                             !hasChanges ||
-                                            _nameValidationError != null ||
-                                            maxNameChanges)
+                                            (_nameValidationError != null && isNameChanged))
                                         ? null
                                         : () async {
+                                            // 3. Lógica de Pre-Check: Solo para dar feedback inmediato al usuario
+                                            if (isNameChanged && maxNameChanges) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                                  content: Text('Ya no puedes cambiar tu nombre este mes.'),
+                                                  backgroundColor: Colors.red,
+                                                  duration: Duration(seconds: 5),
+                                                ));
+                                                return; 
+                                            }
+                                            
                                             final updatedProfile = await ref
                                                 .read(profileControllerProvider
                                                     .notifier)
                                                 .updateProfile(
+                                                  // Enviamos el nombre solo si cambió, de lo contrario null
                                                   newName:
-                                                      _nameController.text,
-                                                  newAvatar: _currentAvatar,
+                                                      isNameChanged ? _nameController!.text : null,
+                                                  // Enviamos el avatar solo si cambió, de lo contrario null
+                                                  newAvatar: isAvatarChanged ? _currentAvatar : null, 
                                                 );
+                                                
                                             if (mounted &&
                                                 updatedProfile != null) {
+                                                
+                                              // 4. LÓGICA DE GRAMÁTICA Y MOSTRAR SNACKBAR DEL AVATAR (Si el avatar cambió)
+                                              if (isAvatarChanged) {
+                                                  final remainingAvatar = 2 - updatedProfile.cambiosAvatarHoy;
+                                                  final avatarVerb = remainingAvatar == 1 ? 'queda' : 'quedan';
+                                                  final avatarNoun = remainingAvatar == 1 ? 'cambio' : 'cambios';
+
+                                                  String avatarSnackBarMessage;
+                                                  if (remainingAvatar > 0) {
+                                                      avatarSnackBarMessage = 'Te $avatarVerb $remainingAvatar $avatarNoun de avatar hoy.';
+                                                  } else {
+                                                      avatarSnackBarMessage = 'Límite de cambios de avatar alcanzado hoy.';
+                                                  }
+                                                  
+                                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                      content: Text(avatarSnackBarMessage),
+                                                      duration: const Duration(seconds: 5),
+                                                  ));
+                                              }
+                                              
+                                              // 5. Actualizamos el estado local (para la siguiente navegación) y volvemos al perfil
                                               setState(() {
                                                 _initialName =
                                                     updatedProfile.nombrePerfil;
                                                 _currentAvatar =
                                                     updatedProfile.avatarUrl;
+                                                _currentProfileData = updatedProfile; 
                                               });
-                                              // 🔹 Refrescar provider para contadores
-                                              ref.refresh(userProfileProvider);
+                                              
                                               context.go('/profile');
                                             }
                                           },

@@ -71,7 +71,7 @@ class ProfileHeader extends StatelessWidget {
                   backgroundColor: colors.primary,
                   child: IconButton(
                     icon: Icon(Icons.edit, color: colors.onPrimary, size: 20),
-                    onPressed: () => context.push('/edit-profile', extra: userProfile),
+                    onPressed: () => context.push('/edit-profile'),
                   ),
                 ),
               ),

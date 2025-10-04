@@ -14,6 +14,12 @@ class ProfileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 💥 CORRECCIÓN CLAVE: Forzamos la invalidación del proveedor. 
+    // Esto obliga a Riverpod a hacer una nueva solicitud a la red cada vez que 
+    // la vista se construye (por ejemplo, al volver de la pantalla de edición),
+    // garantizando que se obtiene el último contador del servidor.
+    // Future.microtask(() => ref.invalidate(userProfileProvider));
+    
     final profileState = ref.watch(userProfileProvider);
     final colors = Theme.of(context).colorScheme;
 

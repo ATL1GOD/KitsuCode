@@ -1,3 +1,5 @@
+// profile_controller.dart
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
@@ -36,14 +38,18 @@ class ProfileController extends StateNotifier<bool> {
         newAvatar: newAvatar,
       );
       
-      // FORZAR EL REFRESH y capturar el nuevo valor
-      // Esta línea hace que la próxima vez que se lea userProfileProvider, 
-      // se haga una nueva llamada a Supabase.
-      // Usamos .future para esperar a que termine la nueva llamada a Supabase y obtener el resultado.
-      final updatedProfile = await _ref.refresh(userProfileProvider.future); 
+      // 1. FORZAMOS LA INVALIDACIÓN para descartar el valor en caché ANTES de esperar.
+      _ref.invalidate(userProfileProvider);
+      
+      // 2. Mantenemos el respiro de 500ms para que el trigger de Postgres termine.
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 3. LEEMOS el proveedor. La invalidación anterior asegura que se hace
+      //    una nueva llamada a fetchUserProfile() para obtener los contadores frescos.
+      final updatedProfile = await _ref.read(userProfileProvider.future); 
       
       state = false; 
-      // Devolvemos el perfil recién cargado de Supabase, que contiene los contadores actualizados.
+      // Devolvemos el perfil recién cargado de Supabase.
       return updatedProfile; 
       
     } catch (e) {

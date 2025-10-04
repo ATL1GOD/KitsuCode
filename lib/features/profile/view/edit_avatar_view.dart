@@ -74,7 +74,8 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                        onPressed: () => context.pop(),
+                        // CORRECCIÓN: Usamos context.pop(null) para hacer la cancelación explícita.
+                        onPressed: () => context.pop(null), 
                       ),
                       Text(
                         'Editar avatar',

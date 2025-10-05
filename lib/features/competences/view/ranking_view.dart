@@ -7,6 +7,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_error_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
@@ -18,6 +19,9 @@ class RankingView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Nos suscribimos a los cambios en seguimiento_usuario y ranking_usuario
+    ref.watch(followRealtimeProvider);
+    ref.watch(rankingRealtimeProvider);
     final authState = ref.watch(authStateProvider);
     final isLogged = authState.value?.session != null;
 

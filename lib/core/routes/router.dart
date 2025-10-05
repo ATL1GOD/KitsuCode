@@ -35,6 +35,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RankingView(),
       ),
       GoRoute(path: '/profile', builder: (context, state) => const ProfileView()),
+    // Esta ruta es para cuando visitas el perfil de OTRO usuario (ej. /profile/uuid-del-usuario)
+      GoRoute(
+        path: '/profile/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'];
+          return ProfileView(userId: userId);
+        },
+  ),
       GoRoute(
     path: '/edit-profile',
       // Recibimos el objeto userProfile que pasamos como argumento

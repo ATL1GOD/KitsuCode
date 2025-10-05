@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ProfileProgressSection extends ConsumerWidget {
-  const ProfileProgressSection({super.key});
+  // AÑADIMOS ESTA VARIABLE
+  final bool showViewAllButton;
+  const ProfileProgressSection({super.key, this.showViewAllButton = true}); // Por defecto es visible
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,73 +21,52 @@ class ProfileProgressSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
             Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-              'Progreso',
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colors.secondary,
-                foregroundColor: colors.onSecondary,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: colors.secondary, width: 1.5),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Progreso',
+                  style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              onPressed: () => context.push('/all-stats'),
-              child: const Text('Ver todo'),
-              ),
-            ],
+                // AHORA EL BOTÓN ES CONDICIONAL
+                if (showViewAllButton)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.secondary,
+                      foregroundColor: colors.onSecondary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: colors.secondary, width: 1.5),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => context.push('/all-stats'),
+                    child: const Text('Ver todo'),
+                  ),
+              ],
             ),
           const SizedBox(height: 10),
           statsState.when(
             loading: () => const _ProgressLoadingShimmer(),
             error: (error, stack) => const Center(child: Text('No se pudo cargar el progreso.')),
             data: (stats) {
+              // ... El resto del widget no cambia
               return Column(
                 children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.article_outlined,
-                          value: stats.retosCompletados.toString(),
-                          label: 'Retos',
-                        ),
-                      ),
+                      Expanded(child: _StatCard(icon: Icons.article_outlined, value: stats.retosCompletados.toString(), label: 'Retos')),
                       const SizedBox(width: 10),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.local_fire_department_outlined,
-                          value: stats.rachaDias.toString(),
-                          label: 'Racha',
-                        ),
-                      ),
+                      Expanded(child: _StatCard(icon: Icons.local_fire_department_outlined, value: stats.rachaDias.toString(), label: 'Racha')),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.check_circle_outline,
-                          value: '${stats.porcentajeAciertos.toStringAsFixed(1)}%',
-                          label: 'Aciertos',
-                        ),
-                      ),
+                      Expanded(child: _StatCard(icon: Icons.check_circle_outline, value: '${stats.porcentajeAciertos.toStringAsFixed(1)}%', label: 'Aciertos')),
                       const SizedBox(width: 10),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.cancel_outlined,
-                          value: '${stats.porcentajeFallos.toStringAsFixed(1)}%', 
-                          label: 'Errores',
-                        ),
-                      ),
+                      Expanded(child: _StatCard(icon: Icons.cancel_outlined, value: '${stats.porcentajeFallos.toStringAsFixed(1)}%', label: 'Errores')),
                     ],
                   ),
                 ],

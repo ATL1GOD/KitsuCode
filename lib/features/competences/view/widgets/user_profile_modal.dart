@@ -55,19 +55,25 @@ class UserProfileModal extends ConsumerWidget {
                           ),
                           const SizedBox(height: 24),
                           
-                          _FollowButton(userId: userId),
+                          FollowButton(userId: userId),
 
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () => context.pop(),
-                               style: OutlinedButton.styleFrom(
-                                foregroundColor: colors.primary,
-                                side: BorderSide(color: colors.primary.withAlpha(128)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              onPressed: () => context.push('/profile/${user.userId}'),
+                            // --- AJUSTE DE ESTILO AQUÍ ---
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colors.primary,
+                              side: BorderSide(color: colors.primary.withAlpha(128)),
+                              padding: const EdgeInsets.symmetric(vertical: 13), // Aumentamos la altura
+                              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30), // Bordes más redondeados
                               ),
-                              child: const Text('Ver Perfil'),
+                            ),
+                            // --- FIN DEL AJUSTE ---
+                            child: const Text('Ver Perfil'),
                             ),
                           ),
                         ],
@@ -132,9 +138,9 @@ class UserProfileModal extends ConsumerWidget {
   }
 }
 
-class _FollowButton extends ConsumerWidget {
+class FollowButton extends ConsumerWidget {
   final String userId;
-  const _FollowButton({required this.userId});
+  const FollowButton({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -148,20 +154,31 @@ class _FollowButton extends ConsumerWidget {
         data: (isFollowing) {
           return ElevatedButton(
             onPressed: isLoading ? null : () {
-              // --- CORRECCIÓN CLAVE ---
-              // Se ha eliminado el segundo argumento 'ref' que causaba el error.
               ref.read(followControllerProvider.notifier).toggleFollow(userId);
             },
+            // --- AJUSTE DE ESTILO AQUÍ ---
             style: ElevatedButton.styleFrom(
-              // --- CORRECCIÓN DE ADVERTENCIA ---
-              // Se reemplazó el color obsoleto.
               backgroundColor: isFollowing ? colors.surfaceContainerHighest : colors.primary,
               foregroundColor: isFollowing ? colors.onSurfaceVariant : colors.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 13), // Aumentamos la altura
+              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30), // Bordes más redondeados
+              ),
+              elevation: 2, // Le damos una pequeña sombra
             ),
+            // --- FIN DEL AJUSTE ---
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.8, end: 1.0).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
               child: isLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : Text(isFollowing ? 'Siguiendo' : 'Seguir', key: ValueKey(isFollowing)),
@@ -174,6 +191,7 @@ class _FollowButton extends ConsumerWidget {
     );
   }
 }
+
 
 class _DecorativeBackground extends StatefulWidget {
   const _DecorativeBackground();

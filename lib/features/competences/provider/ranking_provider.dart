@@ -2,6 +2,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/repository/competence_repository.dart';
+// ¡Importamos la librería de Supabase para Realtime!
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Proveedores para los filtros (valores iniciales)
 final selectedLanguageProvider = StateProvider.autoDispose<int>((ref) => 1); 
@@ -31,4 +33,28 @@ final globalRankingProvider = FutureProvider.autoDispose<List<RankingModel>>((re
   final diffId = ref.watch(selectedTimeFilterProvider); // Pasamos el filtro de tiempo aquí
   
   return repository.fetchGlobalRanking(langId, diffId);
+});
+
+
+// --- CÓDIGO NUEVO PARA ACTUALIZAR EL RANKING EN TIEMPO REAL ---
+final rankingRealtimeProvider = Provider((ref) {
+  final supabase = Supabase.instance.client;
+  final channel = supabase.channel('public:estadistica_usuario');
+
+  channel.onPostgresChanges(
+    event: PostgresChangeEvent.all, // Escucha cualquier cambio
+    schema: 'public',
+    table: 'estadistica_usuario',
+    callback: (payload) {
+      // Cuando las estadísticas de cualquier usuario cambien...
+      // ignore: avoid_print
+      print('Cambio de estadísticas detectado, actualizando ranking...');
+      // ¡Invalidamos el provider del ranking para que se recargue!
+      ref.invalidate(globalRankingProvider);
+    },
+  ).subscribe();
+
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
 });

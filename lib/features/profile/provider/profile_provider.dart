@@ -1,7 +1,7 @@
 // lib/features/profile/provider/profile_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // No se usa directamente pero es bueno mantenerlo por si acaso
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
@@ -15,14 +15,12 @@ final profileRepositoryProvider = Provider((ref) {
 });
 
 // --- ÚNICA FUENTE DE VERDAD PARA PERFILES DE USUARIO ---
-// Usaremos siempre este provider para obtener cualquier perfil, pasándole el ID que necesitemos.
 final userProfileByIdProvider = FutureProvider.family<UserProfileModel, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserProfileById(userId);
 });
 
-
-// Los providers de estadísticas y logros se quedan igual y no necesitan cambios.
+// Providers de estadísticas y logros (sin cambios).
 final userStatsProvider = FutureProvider<UserStatsModel>((ref) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserStats();
@@ -31,4 +29,38 @@ final userStatsProvider = FutureProvider<UserStatsModel>((ref) {
 final userAchievementsProvider = FutureProvider<List<UserAchievementModel>>((ref) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserAchievements();
+});
+
+// --- CÓDIGO FINAL USANDO TU SOLUCIÓN CORRECTA ---
+final followRealtimeProvider = Provider((ref) {
+  final supabase = Supabase.instance.client;
+  final channel = supabase.channel('public:seguimiento_usuario');
+
+  // Usamos el método onPostgresChanges, que es el correcto y más moderno.
+  channel.onPostgresChanges(
+    event: PostgresChangeEvent.all, // Escucha INSERT, UPDATE y DELETE
+    schema: 'public',
+    table: 'seguimiento_usuario',
+    callback: (payload) {
+      // ignore: avoid_print
+      print('Cambio detectado en seguimiento_usuario: $payload');
+
+      final eventType = payload.eventType;
+      // Usamos los campos correctos del payload: newRecord y oldRecord
+      final record = eventType == PostgresChangeEvent.insert ? payload.newRecord : payload.oldRecord;
+
+      if (record != null && record.isNotEmpty) {
+        final followerId = record['id_usuario'];
+        final followedId = record['id_usuario_seguido'];
+
+        // Invalidamos los perfiles para forzar la actualización en la UI
+        ref.invalidate(userProfileByIdProvider(followerId));
+        ref.invalidate(userProfileByIdProvider(followedId));
+      }
+    },
+  ).subscribe();
+
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
 });

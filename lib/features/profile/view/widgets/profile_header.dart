@@ -4,7 +4,16 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
 class ProfileHeader extends StatelessWidget {
   final UserProfileModel userProfile;
-  const ProfileHeader({super.key, required this.userProfile});
+  // AÑADIMOS ESTE PARÁMETRO
+  final bool isCurrentUserProfile;
+
+  const ProfileHeader({
+    super.key, 
+    required this.userProfile, 
+    // LO HACEMOS REQUERIDO
+    required this.isCurrentUserProfile
+  });
+  
 
   @override
   Widget build(BuildContext context) {
@@ -58,24 +67,27 @@ class ProfileHeader extends StatelessWidget {
               ),
             ),
             // BOTÓN DE EDITAR FLOTANTE
-            Positioned(
-              bottom: -10,
-              right: -10,
-              child: Material(
-                color: colors.surface,
-                elevation: 4,
-                shadowColor: colors.shadow.withOpacity(0.3),
-                shape: const CircleBorder(),
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: colors.primary,
-                  child: IconButton(
-                    icon: Icon(Icons.edit, color: colors.onPrimary, size: 20),
-                    onPressed: () => context.push('/edit-profile'),
+            // BOTÓN DE EDITAR FLOTANTE (AHORA ES CONDICIONAL)
+            // Solo se mostrará si isCurrentUserProfile es true
+            if (isCurrentUserProfile)
+              Positioned(
+                bottom: -10,
+                right: -10,
+                child: Material(
+                  color: colors.surface,
+                  elevation: 4,
+                  shadowColor: colors.shadow.withOpacity(0.3),
+                  shape: const CircleBorder(),
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: colors.primary,
+                    child: IconButton(
+                      icon: Icon(Icons.edit, color: colors.onPrimary, size: 20),
+                      onPressed: () => context.push('/edit-profile'),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 20),

@@ -5,9 +5,9 @@ class RankingModel {
   final String username;
   final String profileName;
   final String avatarUrl;
-  final int totalScore; // Puntuación total (RN-04)
-  final String rank;      // Rango (e.g., Bronce, Plata, Oro)
-  final int position;   // Posición en el ranking (1, 2, 3...)
+  final int totalScore;
+  final String rank;
+  final int position;
 
   RankingModel({
     required this.userId,
@@ -19,16 +19,16 @@ class RankingModel {
     required this.position,
   });
 
-  // Método opcional para simular la creación desde un JSON de Supabase
+  // --- fromJson ACTUALIZADO PARA SER MÁS SEGURO ---
   factory RankingModel.fromJson(Map<String, dynamic> json) {
     return RankingModel(
-      userId: json['user_id'] as String,
-      username: json['username'] as String,
-      profileName: json['profile_name'] as String,
-      avatarUrl: json['avatar_url'] as String,
-      totalScore: json['total_score'] as int,
-      rank: json['rank'] as String,
-      position: json['position'] as int,
+      userId: json['user_id'] ?? '', // Valor por defecto si es nulo
+      username: json['username'] ?? 'N/A',
+      profileName: json['profile_name'] ?? 'Usuario',
+      avatarUrl: json['avatar_url'] ?? 'assets/images/login_zorro.png', // Avatar por defecto
+      totalScore: (json['total_score'] ?? 0) as int,
+      rank: json['rank'] ?? 'Bronce',
+      position: (json['position'] ?? 0) as int,
     );
   }
 }

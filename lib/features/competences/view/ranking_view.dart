@@ -3,13 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart'; 
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 import 'package:animate_do/animate_do.dart';
-// <-- Importamos los widgets modulares
 import 'package:kitsucode/features/competences/view/widgets/ranking_error_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
+import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 
 
 class RankingView extends ConsumerWidget {
@@ -17,47 +18,45 @@ class RankingView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Escuchar el estado de autenticación para la restricción (TA_1 / MSJ_11)
     final authState = ref.watch(authStateProvider);
     final isLogged = authState.value?.session != null;
-    
+
     if (!isLogged) {
       return Scaffold(
         appBar: AppBar(title: const Text('Clasificación')),
         body: _buildNotAuthenticatedScreen(context),
       );
     }
-    
+
     return const Scaffold(
       body: _RankingContent(),
     );
   }
-  
-  // Widget para la Trayectoria Alternativa TA_1 (No autenticado)
+
   Widget _buildNotAuthenticatedScreen(BuildContext context) {
-      final colors = Theme.of(context).colorScheme;
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock_outline, size: 80, color: colors.secondary), 
-              const SizedBox(height: 20),
-              Text(
-                'MSJ_11: Sección inaccesible. Para acceder, primero debes iniciar sesión',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () => context.go('/login'),
-                child: const Text('Ingresar'), 
-              ),
-            ],
-          ),
+    final colors = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline, size: 80, color: colors.secondary),
+            const SizedBox(height: 20),
+            Text(
+              'Para acceder a esta sección, primero debes iniciar sesión.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () => context.go('/login'),
+              child: const Text('Ingresar'),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -68,84 +67,299 @@ class _RankingContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final rankingAsync = ref.watch(globalRankingProvider);
-    final authUser = ref.read(authStateProvider).value?.session?.user; 
-    
-    final currentUsername = authUser?.userMetadata?['user_name'] ?? 'dxniel7'; 
+    final authUser = ref.watch(authStateProvider).value?.session?.user;
+
+    // --- CORRECCIÓN CLAVE: Usamos el ID del usuario, que es más fiable ---
+    final String? currentUserId = authUser?.id;
 
     return Scaffold(
-      // 1. APPBAR ESTÁNDAR (Fijo: Contiene solo el título)
+      backgroundColor: colors.surface,
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: InkWell(
+            onTap: () => context.pop(),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHigh.withAlpha(204),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 20),
+            ),
+          ),
+        ),
+        leadingWidth: 70,
         title: const Text('Tabla de Clasificación'),
         centerTitle: true,
         backgroundColor: colors.surface,
-        elevation: 0, 
+        elevation: 0,
       ),
-      body: Stack(
-        children: [
-          
-          // --- ZORRO ANIMADO Y PERMANENTE (Fijo) ---
-          Positioned(
-            top: 0,
-            right: -50, 
-            child: Pulse(
-              animate: true,
-              infinite: true,
-              delay: const Duration(seconds: 1),
-              duration: const Duration(seconds: 5),
-              child: Opacity( 
-                opacity: 0.5, 
-                child: Image.asset(
-                  'assets/images/login_zorro.png', 
-                  width: 140, 
-                  height: 140,
-                ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            const RankingFiltersWidget(),
+            
+            Expanded(
+              child: rankingAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Center(child: RankingErrorWidget(error: e)),
+                data: (ranking) {
+                  if (ranking.isEmpty) {
+                    return const _EmptyRankingWidget();
+                  }
+
+                  final top3 = ranking.length >= 3 ? ranking.sublist(0, 3) : ranking;
+                  final restOfRanking = ranking.length > 3 ? ranking.sublist(3) : <RankingModel>[];
+                  
+                  // --- CORRECCIÓN: Buscamos al usuario por su ID ---
+                  final currentUserData = (currentUserId == null)
+                      ? null
+                      : ranking.where((user) => user.userId == currentUserId).firstOrNull;
+
+                  return Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            height: 280,
+                            decoration: BoxDecoration(
+                              color: colors.primaryContainer.withAlpha(38),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: const _DecorativeBackground(),
+                          ),
+                          if (top3.isNotEmpty) 
+                            _PodiumWidget(users: top3, colors: colors, currentUserId: currentUserId),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.leaderboard_outlined, color: colors.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Clasificación General',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.only(top: 4),
+                          itemCount: restOfRanking.length,
+                          itemBuilder: (context, index) {
+                            final user = restOfRanking[index];
+                            return FadeInUp(
+                              delay: Duration(milliseconds: index * 30),
+                              child: RankingTile(
+                                user: user,
+                                // --- CORRECCIÓN: Comparamos por ID ---
+                                isCurrentUser: user.userId == currentUserId,
+                                colors: colors,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // Con la corrección, esta condición ahora funcionará correctamente
+                      if (currentUserData != null)
+                        _CurrentUserBanner(user: currentUserData, colors: colors),
+                    ],
+                  );
+                },
               ),
             ),
-          ),
-          
-          // --- CONTENIDO PRINCIPAL (Filtros Fijos + Lista Scrollable) ---
-          Column( 
-            children: [
-              
-              // 2. FILTROS FIJOS (Modularizado)
-              const RankingFiltersWidget(), // 💡 ESTE WIDGET ES ESTATICO
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-              // 3. LISTA SCROLLABLE (Expandida para llenar el espacio restante)
-              Expanded( // Permite que la lista tome el espacio restante para hacer scroll
-                child: rankingAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: RankingErrorWidget(error: e)),
-                  data: (ranking) {
-                    if (ranking.isEmpty) {
-                      return const Center(child: Text('No hay usuarios en este ranking aún.'));
-                    }
-                    
-                    // Usamos ListView.builder para el scroll de la tabla
-                    return ListView.builder(
-                      // IMPORTANTE: quitamos el padding para que el scroll comience justo después de los filtros
-                      padding: EdgeInsets.zero, 
-                      itemCount: ranking.length,
-                      itemBuilder: (context, index) {
-                          final user = ranking[index];
-                          final isCurrentUser = user.username == currentUsername;
-                          
-                          return FadeInUp(
-                            delay: Duration(milliseconds: index * 50),
-                            child: RankingTile(
-                              user: user,
-                              isTop3: index < 3,
-                              isCurrentUser: isCurrentUser,
-                              colors: colors,
-                            ),
-                          );
-                      },
-                    );
-                  },
-                ),
+// --- El resto del archivo no ha cambiado y se mantiene igual ---
+// ... (Widgets _EmptyRankingWidget, _DecorativeBackground, etc.) ...
+class _EmptyRankingWidget extends StatelessWidget {
+  const _EmptyRankingWidget();
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
+      child: FadeIn(
+        duration: const Duration(milliseconds: 500),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/login_zorro.png',
+              width: 150,
+              color: colors.primaryContainer.withAlpha(128),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No hay usuarios en este ranking aún.',
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DecorativeBackground extends StatefulWidget {
+  const _DecorativeBackground();
+  @override
+  State<_DecorativeBackground> createState() => _DecorativeBackgroundState();
+}
+
+class _DecorativeBackgroundState extends State<_DecorativeBackground> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final List<Animation<Alignment>> _animations;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 8))..repeat(reverse: true);
+    _animations = [
+      _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7)).animate(_createCurve(0.0, 0.5)),
+      _createTween(const Alignment(1.2, -0.2), const Alignment(-1.2, 0)).animate(_createCurve(0.2, 0.7)),
+      _createTween(const Alignment(0, 1.1), const Alignment(0, -1.1)).animate(_createCurve(0.4, 1.0)),
+      _createTween(const Alignment(1.1, 1), const Alignment(-1.1, 0.8)).animate(_createCurve(0.1, 0.8)),
+      _createTween(const Alignment(-1.3, 0.9), const Alignment(1.3, -0.9)).animate(_createCurve(0.3, 0.9)),
+    ];
+  }
+  AlignmentTween _createTween(Alignment begin, Alignment end) => AlignmentTween(begin: begin, end: end);
+  CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(parent: _controller, curve: Interval(begin, end, curve: Curves.easeInOutSine));
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  Widget _buildIcon(String assetPath, Animation<Alignment> animation, double size) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Align(alignment: animation.value, child: child),
+      child: Opacity(
+        opacity: 0.1,
+        child: Image.asset(assetPath, width: size, height: size, fit: BoxFit.contain),
+      ),
+    );
+  }
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Stack(
+        children: [
+          _buildIcon('assets/images/logo_python.png', _animations[0], 50),
+          _buildIcon('assets/images/logo_java.png', _animations[1], 60),
+          _buildIcon('assets/images/logo_c.png', _animations[2], 70),
+          _buildIcon('assets/images/logo_python.png', _animations[3], 40),
+          _buildIcon('assets/images/logo_java.png', _animations[4], 55),
+        ],
+      ),
+    );
+  }
+}
+
+class _PodiumWidget extends StatelessWidget {
+  final List<RankingModel> users;
+  final ColorScheme colors;
+  final String? currentUserId; // CORRECCIÓN: Recibe el ID del usuario actual
+  const _PodiumWidget({required this.users, required this.colors, required this.currentUserId});
+  @override
+  Widget build(BuildContext context) {
+    return FadeInDown(
+      duration: const Duration(milliseconds: 400),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (users.length > 1) _PodiumPlace(user: users[1], place: 2, color: Colors.grey.shade400, heightFactor: 0.7, isCurrentUser: users[1].userId == currentUserId),
+            if (users.isNotEmpty) _PodiumPlace(user: users[0], place: 1, color: Colors.amber.shade400, heightFactor: 1.0, isCurrentUser: users[0].userId == currentUserId),
+            if (users.length > 2) _PodiumPlace(user: users[2], place: 3, color: Colors.brown.shade400, heightFactor: 0.55, isCurrentUser: users[2].userId == currentUserId),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PodiumPlace extends StatelessWidget {
+  final RankingModel user;
+  final int place;
+  final Color color;
+  final double heightFactor;
+  final bool isCurrentUser;
+  const _PodiumPlace({required this.user, required this.place, required this.color, required this.heightFactor, required this.isCurrentUser});
+  
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final size = 110.0 * heightFactor;
+    return GestureDetector(
+      onTap: () {
+        if (isCurrentUser) return;
+        showDialog(
+          context: context,
+          builder: (ctx) => UserProfileModal(userId: user.userId),
+        );
+      },
+      child: FadeInUp(
+        delay: Duration(milliseconds: 100 * (4 - place)),
+        child: SizedBox(
+          width: 110,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (place == 1) Icon(Icons.emoji_events, color: color, size: 32),
+              if (place != 1) const SizedBox(height: 32),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(radius: size / 2, backgroundColor: color, child: CircleAvatar(radius: (size / 2) - 4, backgroundImage: AssetImage(user.avatarUrl))),
+                  Positioned(
+                    bottom: -10, left: 0, right: 0,
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: color,
+                      child: Text('$place', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16)),
+                    ),
+                  )
+                ],
               ),
+              const SizedBox(height: 16),
+              Text(user.profileName, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('${user.totalScore} Pts', style: textTheme.bodySmall?.copyWith(color: color, fontWeight: FontWeight.bold)),
             ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrentUserBanner extends StatelessWidget {
+  final RankingModel user;
+  final ColorScheme colors;
+  const _CurrentUserBanner({required this.user, required this.colors});
+  @override
+  Widget build(BuildContext context) {
+    return FadeInUp(
+      child: Container(
+        margin: const EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          color: colors.primaryContainer,
+          boxShadow: [BoxShadow(color: colors.primary.withAlpha(77), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: RankingTile(user: user, isCurrentUser: true, colors: colors),
       ),
     );
   }

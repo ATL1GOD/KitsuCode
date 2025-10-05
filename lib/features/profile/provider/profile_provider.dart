@@ -1,24 +1,29 @@
+// lib/features/profile/provider/profile_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Este provider crea y provee la instancia del ProfileRepository real
+// Provider para el repositorio, no cambia.
 final profileRepositoryProvider = Provider((ref) {
   final supabaseClient = Supabase.instance.client;
   return ProfileRepository(supabaseClient);
 });
 
-// Este provider llama a fetchUserProfile y le da los datos a la pantalla
-final userProfileProvider = FutureProvider<UserProfileModel>((ref) async {
-  // Pide el repositorio real
+// --- ÚNICA FUENTE DE VERDAD PARA PERFILES DE USUARIO ---
+// Usaremos siempre este provider para obtener perfiles, pasándole el ID que necesitemos.
+// Ya no necesitamos un 'userProfileProvider' separado.
+final userProfileByIdProvider = FutureProvider.family<UserProfileModel, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
-  // Llama a la función para obtener los datos de Supabase
-  return profileRepository.fetchUserProfile();
+  return profileRepository.fetchUserProfileById(userId);
 });
 
+
+// Los providers de estadísticas y logros se quedan igual
 final userStatsProvider = FutureProvider<UserStatsModel>((ref) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserStats();
@@ -28,8 +33,7 @@ final userAchievementsProvider = FutureProvider<List<UserAchievementModel>>((ref
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserAchievements();
 });
-
-
+ 
 
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:kitsucode/features/profile/model/user_profile_model.dart';

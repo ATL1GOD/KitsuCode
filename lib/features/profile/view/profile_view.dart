@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_achievements_section.dart';
@@ -14,27 +15,25 @@ class ProfileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 💥 CORRECCIÓN CLAVE: Forzamos la invalidación del proveedor. 
-    // Esto obliga a Riverpod a hacer una nueva solicitud a la red cada vez que 
-    // la vista se construye (por ejemplo, al volver de la pantalla de edición),
-    // garantizando que se obtiene el último contador del servidor.
-    // Future.microtask(() => ref.invalidate(userProfileProvider));
-    
-    final profileState = ref.watch(userProfileProvider);
     final colors = Theme.of(context).colorScheme;
+
+    // --- LÓGICA CORREGIDA PARA OBTENER EL PERFIL ---
+    final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    if (currentUserId == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final profileState = ref.watch(userProfileByIdProvider(currentUserId));
 
     return Scaffold(
       body: Stack(
         children: [
           const LoginBackground(child: SizedBox.shrink()),
-
           profileState.when(
             loading: () => const _ProfileLoadingShimmer(),
             error: (error, stackTrace) => Center(child: Text('Error: $error')),
             data: (userProfile) {
               return CustomScrollView(
                 slivers: [
-                  // --- SLIVERAPPBAR SIMPLIFICADO ---
                   SliverAppBar(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -43,12 +42,12 @@ class ProfileView extends ConsumerWidget {
                     leading: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: InkWell(
-                        onTap: () => context.pop(), // La acción para regresar
+                        onTap: () => context.pop(),
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: colors.surface.withOpacity(0.5),
+                            color: colors.surface.withAlpha(128), // Corregido
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
@@ -62,19 +61,15 @@ class ProfileView extends ConsumerWidget {
                       ),
                     ],
                     flexibleSpace: FlexibleSpaceBar(
-                      
                       background: Padding(
                         padding: const EdgeInsets.only(top: 60.0),
                         child: FadeInDown(
                           duration: const Duration(milliseconds: 500),
-                          // El ProfileHeader es el único responsable de la info del encabezado
                           child: ProfileHeader(userProfile: userProfile),
                         ),
                       ),
                     ),
                   ),
-
-                  // --- CUERPO DEL PERFIL ---
                   SliverList(
                     delegate: SliverChildListDelegate(
                       [
@@ -100,8 +95,6 @@ class ProfileView extends ConsumerWidget {
   }
 }
 
-
-// --- WIDGET DE SHIMMER PARA EL ESTADO DE CARGA ---
 class _ProfileLoadingShimmer extends StatelessWidget {
   const _ProfileLoadingShimmer();
 
@@ -114,7 +107,7 @@ class _ProfileLoadingShimmer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            height: 380, // Simula el alto del SliverAppBar
+            height: 380,
             color: Colors.white,
           ),
           const SizedBox(height: 20),

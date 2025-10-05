@@ -70,7 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Si estamos en la splash screen, decidimos a dónde ir.
           if (isSplashing) {
-            return isAuthenticated ? '/profile' : '/login';
+            return isAuthenticated ? '/ranking' : '/login';
           }
 
           // Si el usuario no está autenticado y no está en la página de login, redirigir a login.

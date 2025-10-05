@@ -1,6 +1,9 @@
+// lib/features/profile/view/all_stats_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // Importar auth_provider
 import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; 
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -12,17 +15,21 @@ class AllStatsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsState = ref.watch(userStatsProvider);
-    final profileState = ref.watch(userProfileProvider);
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    // --- LÓGICA CORREGIDA ---
+    final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    // Si no hay ID, no podemos cargar el perfil
+    if (currentUserId == null) {
+      return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
+    }
+    final profileState = ref.watch(userProfileByIdProvider(currentUserId));
+
     return Scaffold(
-      // Usamos un Stack para poner el fondo detrás del contenido
       body: Stack(
         children: [
           const LoginBackground(child: SizedBox.shrink()),
-
-          // Contenido principal de la pantalla
           SafeArea(
             child: statsState.when(
               loading: () => const _StatsLoadingShimmer(),
@@ -30,25 +37,22 @@ class AllStatsView extends ConsumerWidget {
               data: (stats) {
                 return Column(
                   children: [
-                    // HEADER CON BOTÓN DE REGRESO PERSONALIZADO Y TÍTULO 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Row(
                         children: [
-                          // Botón de regreso 
                           InkWell(
                             onTap: () => context.pop(),
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: colors.surface.withOpacity(0.5),
+                                color: colors.surface.withAlpha(128), // Opacidad corregida
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
                             ),
                           ),
-                          
                           Expanded(
                             child: Text(
                               'Estadísticas',
@@ -56,7 +60,6 @@ class AllStatsView extends ConsumerWidget {
                               style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          
                           const SizedBox(width: 40),
                         ],
                       ),
@@ -65,7 +68,6 @@ class AllStatsView extends ConsumerWidget {
                       child: ListView(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         children: [
-                          // --- NOMBRE DE USUARIO Y BOTÓN DE HISTORIAL 
                           profileState.when(
                             data: (profile) => FadeInDown(
                               child: Column(
@@ -74,7 +76,7 @@ class AllStatsView extends ConsumerWidget {
                                   Text(profile.nombrePerfil, style: textTheme.headlineSmall),
                                   const SizedBox(height: 10),
                                   ElevatedButton.icon(
-                                    onPressed: () { /* TODO: Navegar al historial cuando lo haga */ },
+                                    onPressed: () { /* TODO: Navegar al historial */ },
                                     icon: const Icon(Icons.history, size: 20),
                                     label: const Text('Ver historial'),
                                     style: ElevatedButton.styleFrom(
@@ -90,8 +92,7 @@ class AllStatsView extends ConsumerWidget {
                             error: (e,s) => const SizedBox.shrink(),
                           ),
                           const SizedBox(height: 30),
-                          
-                          // --- LISTA DE ESTADÍSTICAS
+                          // ... (el resto del archivo no cambia)
                           FadeInUp(
                             delay: const Duration(milliseconds: 200),
                             child: _StatDisplayCard(

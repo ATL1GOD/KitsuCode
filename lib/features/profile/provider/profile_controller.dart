@@ -1,7 +1,7 @@
 // lib/features/profile/provider/profile_controller.dart
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // Importar auth_provider
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
@@ -27,7 +27,6 @@ class ProfileController extends StateNotifier<bool> {
         super(false);
 
   Future<UserProfileModel?> updateProfile({String? newName, String? newAvatar}) async {
-    // --- LÓGICA CORREGIDA ---
     final user = _ref.read(authStateProvider).value?.session?.user;
     if (user == null) return null;
 
@@ -41,10 +40,8 @@ class ProfileController extends StateNotifier<bool> {
       
       await Future.delayed(const Duration(milliseconds: 500));
       
-      // Invalida el perfil del usuario actual para forzar la recarga
       _ref.invalidate(userProfileByIdProvider(user.id));
       
-      // Vuelve a leer el proveedor para obtener los datos actualizados
       final updatedProfile = await _ref.read(userProfileByIdProvider(user.id).future);
       
       state = false; 

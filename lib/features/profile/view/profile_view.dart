@@ -17,7 +17,6 @@ class ProfileView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
 
-    // --- LÓGICA CORREGIDA PARA OBTENER EL PERFIL ---
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
     if (currentUserId == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));

@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // Importar auth_provider
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; 
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
@@ -18,9 +18,7 @@ class AllStatsView extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // --- LÓGICA CORREGIDA ---
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
-    // Si no hay ID, no podemos cargar el perfil
     if (currentUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
     }
@@ -47,7 +45,7 @@ class AllStatsView extends ConsumerWidget {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: colors.surface.withAlpha(128), // Opacidad corregida
+                                color: colors.surface.withAlpha(128),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
@@ -92,7 +90,6 @@ class AllStatsView extends ConsumerWidget {
                             error: (e,s) => const SizedBox.shrink(),
                           ),
                           const SizedBox(height: 30),
-                          // ... (el resto del archivo no cambia)
                           FadeInUp(
                             delay: const Duration(milliseconds: 200),
                             child: _StatDisplayCard(

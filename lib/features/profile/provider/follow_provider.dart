@@ -28,17 +28,21 @@ class FollowController extends StateNotifier<bool> {
 
       await _profileRepository.toggleFollow(followedUserId);
       
-      // --- LÓGICA DE ACTUALIZACIÓN CORRECTA ---
+      // --- LÓGICA DE ACTUALIZACIÓN "EN VIVO" ---
+
+      // 1. Refresca el estado del botón (Seguir/Siguiendo)
       _ref.invalidate(isFollowingProvider(followedUserId));
+      
+      // 2. Refresca el perfil del usuario que FUE seguido (actualiza su contador de "Seguidores")
       _ref.invalidate(userProfileByIdProvider(followedUserId));
 
+      // 3. Refresca el perfil del usuario ACTUAL (actualiza su contador de "Siguiendo")
       if (currentUserId != null) {
-        // Invalida el perfil del usuario actual usando el provider unificado
         _ref.invalidate(userProfileByIdProvider(currentUserId));
       }
 
     } catch (e) {
-      // Manejar error
+      // Manejar error si es necesario
     } finally {
       state = false;
     }

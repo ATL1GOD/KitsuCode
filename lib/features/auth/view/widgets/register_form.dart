@@ -109,8 +109,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: Icons.lock_outline,
               isPassword: true,
               validator: (value) {
-                if (value == null || value.isEmpty)
+                if (value == null || value.isEmpty) {
                   return 'Ingresa una contraseña';
+                }
                 if (value.length < 6) return 'Mínimo 6 caracteres';
                 return null;
               },

@@ -65,7 +65,7 @@ class _AuthBackgroundState extends State<AuthBackground>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.primary.withAlpha(204),
                   const Color(0xFF0E0028), // Un morado oscuro/azulado
                 ],
                 begin: Alignment.topLeft,

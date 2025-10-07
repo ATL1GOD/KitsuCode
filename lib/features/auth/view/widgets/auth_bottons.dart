@@ -88,19 +88,19 @@ class _CustomInputFieldState extends State<CustomInputField> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+        hintStyle: TextStyle(color: Colors.white.withAlpha(153)),
         prefixIcon: widget.prefixIcon != null
             ? Icon(widget.prefixIcon, color: Colors.white70)
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withAlpha(26),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+          borderSide: BorderSide(color: Colors.white.withAlpha(77)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -163,7 +163,7 @@ class PrimaryAuthButton extends StatelessWidget {
         backgroundColor: colorScheme.secondary,
         foregroundColor: Colors.black,
         elevation: 5,
-        shadowColor: colorScheme.secondary.withOpacity(0.4),
+        shadowColor: colorScheme.secondary.withAlpha(102),
       ),
       child: isLoading
           ? const SizedBox(
@@ -204,7 +204,7 @@ class SwitchFormButton extends StatelessWidget {
       ),
       child: RichText(
         text: TextSpan(
-          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+          style: TextStyle(color: Colors.white.withAlpha(204)),
           children: [
             TextSpan(text: '$text '),
             TextSpan(
@@ -255,7 +255,7 @@ class SocialAuthButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: Colors.white.withOpacity(0.5)),
+        side: BorderSide(color: Colors.white.withAlpha(128)),
         foregroundColor: Colors.white,
       ),
     );
@@ -269,15 +269,15 @@ class OrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+        Expanded(child: Divider(color: Colors.white.withAlpha(77))),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Text(
             'O',
-            style: TextStyle(color: Colors.white.withOpacity(0.8)),
+            style: TextStyle(color: Colors.white.withAlpha(204)),
           ),
         ),
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+        Expanded(child: Divider(color: Colors.white.withAlpha(77))),
       ],
     );
   }

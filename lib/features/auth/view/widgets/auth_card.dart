@@ -27,7 +27,7 @@ class AuthCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withAlpha(100),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            border: Border.all(color: Colors.white.withAlpha(51)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -37,7 +37,7 @@ class AuthCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withAlpha(51),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: TabBar(

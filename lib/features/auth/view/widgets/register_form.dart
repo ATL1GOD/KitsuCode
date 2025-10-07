@@ -57,21 +57,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     }
   }
 
-  void _googleSignIn() async {
-    try {
-      await ref.read(loginStateProvider.notifier).signInWithGoogle();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error con Google: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final registerState = ref.watch(registerStateProvider);

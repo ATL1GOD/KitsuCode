@@ -112,7 +112,16 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 if (value == null || value.isEmpty) {
                   return 'Ingresa una contraseña';
                 }
-                if (value.length < 6) return 'Mínimo 6 caracteres';
+                if (value.length < 8) {
+                  return 'Mínimo 8 caracteres';
+                }
+                // Expresión regular para validar la contraseña
+                final passwordRegex = RegExp(
+                  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).*$',
+                );
+                if (!passwordRegex.hasMatch(value)) {
+                  return 'Debe incluir mayúsculas, minúsculas, números y símbolos.';
+                }
                 return null;
               },
             ),
@@ -143,18 +152,18 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             ),
           ),
           const SizedBox(height: 16),
-          const AnimatedFadeIn(delay: 500, child: OrDivider()),
-          const SizedBox(height: 16),
-          AnimatedFadeIn(
-            delay: 600,
-            child: SocialAuthButton(
-              text: 'Registrarse con Google',
-              iconPath:
-                  'images/auth/google_logo.png', // Asegúrate que la ruta sea correcta
-              isLoading: isLoading,
-              onPressed: _googleSignIn,
-            ),
-          ),
+          // const AnimatedFadeIn(delay: 500, child: OrDivider()),
+          // const SizedBox(height: 16),
+          // AnimatedFadeIn(
+          //   delay: 600,
+          //   child: SocialAuthButton(
+          //     text: 'Registrarse con Google',
+          //     iconPath:
+          //         'images/auth/google_logo.png', // Asegúrate que la ruta sea correcta
+          //     isLoading: isLoading,
+          //     onPressed: _googleSignIn,
+          //   ),
+          // ),
           const SizedBox(height: 16),
           AnimatedFadeIn(
             delay: 700,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart'; // Import GoRouter
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart'; // Importa el archivo renombrado
 
 class LoginForm extends ConsumerStatefulWidget {
-  const LoginForm({super.key});
+  final VoidCallback onSwitchToRegister;
+
+  const LoginForm({super.key, required this.onSwitchToRegister});
 
   @override
   ConsumerState<LoginForm> createState() => _LoginFormState();
@@ -26,10 +28,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final loginNotifier = ref.read(loginStateProvider.notifier);
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
       try {
-        await loginNotifier.signInWithEmailPassword(email, password);
+        await loginNotifier.signInWithEmailPassword(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -43,78 +46,86 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     }
   }
 
+  void _googleSignIn() async {
+    try {
+      await ref.read(loginStateProvider.notifier).signInWithGoogle();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error con Google: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginStateProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Decoración personalizada para los campos de texto
-    final inputDecoration = InputDecoration(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      filled: true,
-      fillColor: colorScheme.primary.withAlpha(30),
-    );
 
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          TextFormField(
-            controller: _emailController,
-            decoration: inputDecoration.copyWith(hintText: 'Email'),
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) => value == null || value.isEmpty
-                ? 'Por favor ingresa un correo'
-                : null,
+          AnimatedFadeIn(
+            delay: 100,
+            child: CustomInputField(
+              controller: _emailController,
+              hintText: 'Email',
+              prefixIcon: Icons.alternate_email,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Por favor ingresa un correo'
+                  : null,
+            ),
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _passwordController,
-            decoration: inputDecoration.copyWith(hintText: 'Contraseña'),
-            obscureText: true,
-            validator: (value) => value == null || value.isEmpty
-                ? 'Por favor ingresa una contraseña'
-                : null,
+          AnimatedFadeIn(
+            delay: 200,
+            child: CustomInputField(
+              controller: _passwordController,
+              hintText: 'Contraseña',
+              prefixIcon: Icons.lock_outline,
+              isPassword: true,
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Por favor ingresa una contraseña'
+                  : null,
+            ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: loginState.isLoading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
+          AnimatedFadeIn(
+            delay: 300,
+            child: PrimaryAuthButton(
+              isLoading: loginState.isLoading,
+              text: 'Iniciar Sesión',
+              onPressed: _submit,
             ),
-            child: loginState.isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Iniciar Sesion'),
           ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            // --- UPDATED ---
-            onPressed: () => context.push('/register'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              side: BorderSide(color: colorScheme.primary),
-              foregroundColor: colorScheme.primary,
+          const SizedBox(height: 16),
+          const AnimatedFadeIn(delay: 400, child: OrDivider()),
+          const SizedBox(height: 16),
+          AnimatedFadeIn(
+            delay: 500,
+            child: SocialAuthButton(
+              text: 'Continuar con Google',
+              iconPath:
+                  'images/auth/google_logo.png', // Asegúrate que esta ruta sea correcta
+              isLoading: loginState.isLoading,
+              onPressed: _googleSignIn,
             ),
-            child: const Text('Registrarse'),
+          ),
+          const SizedBox(height: 16),
+          AnimatedFadeIn(
+            delay: 600,
+            child: SwitchFormButton(
+              text: '¿No tienes cuenta?',
+              highlightedText: 'Regístrate',
+              onPressed: widget.onSwitchToRegister,
+            ),
           ),
         ],
       ),

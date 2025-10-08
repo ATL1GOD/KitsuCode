@@ -18,12 +18,15 @@ class AuthRepository {
     );
   }
 
-  // --- NEW METHOD ---
   Future<void> signUpWithEmailPassword({
     required String email,
     required String password,
   }) async {
     await _supabaseClient.auth.signUp(email: email, password: password);
+  }
+
+  Future<void> signInWithGoogle() async {
+    await _supabaseClient.auth.signInWithOAuth(OAuthProvider.google);
   }
 
   Future<void> signOut() async {

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/auth_view.dart';
-import 'package:kitsucode/features/home/view/home_view.dart';
+// import 'package:kitsucode/features/home/view/home_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -18,7 +18,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
-      GoRoute(path: '/home', builder: (context, state) => const HomeView()),
+      // GoRoute(path: '/home', builder: (context, state) => const HomeView()),
     ],
     redirect: (BuildContext context, GoRouterState state) {
       return authState.when(

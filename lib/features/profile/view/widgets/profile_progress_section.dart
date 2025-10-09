@@ -6,14 +6,22 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ProfileProgressSection extends ConsumerWidget {
+  // --- CAMBIO 1: AÑADIR PARÁMETROS ---
+  final String userId;
   final bool showViewAllButton;
-  const ProfileProgressSection({super.key, this.showViewAllButton = true});
+
+  const ProfileProgressSection({
+    super.key,
+    required this.userId, // Hacerlo requerido
+    this.showViewAllButton = true,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final statsState = ref.watch(userStatsProvider);
+    // --- CAMBIO 2: PASAR EL userId AL PROVIDER ---
+    final statsState = ref.watch(userStatsProvider(userId));
 
     return _GlassCard(
       child: Padding(

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/auth/view/widgets/login_background.dart'; 
+import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
@@ -14,14 +14,18 @@ class AllStatsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsState = ref.watch(userStatsProvider);
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    // --- CAMBIO 1: OBTENER EL ID DEL USUARIO PRIMERO ---
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
+
     if (currentUserId == null) {
-      return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
+      return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
     }
+
+    // --- CAMBIO 2: PASAR EL ID A AMBOS PROVIDERS ---
+    final statsState = ref.watch(userStatsProvider(currentUserId));
     final profileState = ref.watch(userProfileByIdProvider(currentUserId));
 
     return Scaffold(
@@ -58,7 +62,7 @@ class AllStatsView extends ConsumerWidget {
                               style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          const SizedBox(width: 40),
+                          const SizedBox(width: 40), // Para centrar el título
                         ],
                       ),
                     ),
@@ -140,7 +144,7 @@ class AllStatsView extends ConsumerWidget {
   }
 }
 
-// --- WIDGET DE LA TARJETA DE ESTADÍSTICA 
+// --- WIDGET DE LA TARJETA DE ESTADÍSTICA
 class _StatDisplayCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -159,8 +163,7 @@ class _StatDisplayCard extends StatelessWidget {
       elevation: 2,
       shadowColor: colors.shadow.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      // Usamos el color de la tarjeta de perfil para consistencia
-      color: const Color(0xFFF1E1D0).withOpacity(0.85), 
+      color: const Color(0xFFF1E1D0).withOpacity(0.85),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Row(

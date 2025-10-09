@@ -1,7 +1,7 @@
 // lib/features/profile/provider/profile_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // No se usa directamente pero es bueno mantenerlo por si acaso
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
@@ -20,15 +20,18 @@ final userProfileByIdProvider = FutureProvider.family<UserProfileModel, String>(
   return profileRepository.fetchUserProfileById(userId);
 });
 
-// Providers de estadísticas y logros (sin cambios).
-final userStatsProvider = FutureProvider<UserStatsModel>((ref) {
+// --- CAMBIO CLAVE AQUÍ ---
+// Providers de estadísticas y logros ahora usan .family para aceptar un userId
+final userStatsProvider = FutureProvider.family<UserStatsModel, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
-  return profileRepository.fetchUserStats();
+  // Nota: Necesitarás un método en tu repositorio que acepte el userId
+  return profileRepository.fetchUserStatsById(userId);
 });
 
-final userAchievementsProvider = FutureProvider<List<UserAchievementModel>>((ref) {
+final userAchievementsProvider = FutureProvider.family<List<UserAchievementModel>, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
-  return profileRepository.fetchUserAchievements();
+  // Nota: Necesitarás un método en tu repositorio que acepte el userId
+  return profileRepository.fetchUserAchievementsById(userId);
 });
 
 // --- CÓDIGO FINAL USANDO TU SOLUCIÓN CORRECTA ---

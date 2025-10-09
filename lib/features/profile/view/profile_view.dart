@@ -34,7 +34,7 @@ class ProfileView extends ConsumerWidget {
     if (targetUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
     }
-    
+
     final profileState = ref.watch(userProfileByIdProvider(targetUserId));
     final colors = Theme.of(context).colorScheme;
 
@@ -67,7 +67,7 @@ class ProfileView extends ConsumerWidget {
                 children: [
                   // --- PARTE FIJA (NO SCROLLEABLE) ---
                   SafeArea(
-                    bottom: false, 
+                    bottom: false,
                     child: Column(
                       children: [
                         // Barra superior con botones
@@ -81,7 +81,7 @@ class ProfileView extends ConsumerWidget {
                           isCurrentUserProfile: isCurrentUserProfile,
                           dynamicColor: dynamicColor,
                         ),
-                        // *** CAMBIO AQUÍ: BOTÓN DE SEGUIR AHORA ES FIJO ***
+                        // BOTÓN DE SEGUIR AHORA ES FIJO
                         if (!isCurrentUserProfile)
                           Padding(
                             padding: const EdgeInsets.only(top: 30.0, bottom: 20.0),
@@ -93,24 +93,32 @@ class ProfileView extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  
+
                   // --- PARTE CON SCROLL ---
                   Expanded(
                     child: SingleChildScrollView(
                       child: Padding(
-                        // Ajustamos el padding superior dependiendo de si el botón de seguir es visible
+                        // Ajustamos el padding superior
                         padding: EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
                         child: Column(
                           children: [
                             FadeInUp(
                               from: 20,
                               delay: const Duration(milliseconds: 600),
-                              child: ProfileProgressSection(showViewAllButton: isCurrentUserProfile),
+                              // --- CAMBIO AQUÍ ---
+                              child: ProfileProgressSection(
+                                userId: targetUserId,
+                                showViewAllButton: isCurrentUserProfile,
+                              ),
                             ),
                             FadeInUp(
                               from: 20,
                               delay: const Duration(milliseconds: 700),
-                              child: const ProfileAchievementsSection(),
+                              child: ProfileAchievementsSection(
+                                userId: targetUserId,
+                                isCurrentUserProfile: isCurrentUserProfile,
+                                userProfile: userProfile,
+                                ),
                             ),
                             const SizedBox(height: 70),
                           ],

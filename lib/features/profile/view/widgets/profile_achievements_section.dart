@@ -1,28 +1,41 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// Importamos el modelo de perfil de usuario
+import 'package:kitsucode/features/profile/model/user_profile_model.dart'; 
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 String _getAchievementIconPath(String achievementName) {
   switch (achievementName.toLowerCase()) {
     case 'primer reto':
-      return 'assets/images/logro_1.png'; 
+      return 'assets/images/logro_1.png';
     case 'racha de 5 días':
-      return 'assets/images/logro_racha.png'; 
+      return 'assets/images/logro_racha.png';
     case 'experto en java':
-      return 'assets/images/logro_java.png'; 
+      return 'assets/images/logro_java.png';
     default:
       return 'assets/images/logro_default.png';
   }
 }
 
 class ProfileAchievementsSection extends ConsumerWidget {
-  const ProfileAchievementsSection({super.key});
+  final String userId;
+  final bool isCurrentUserProfile;
+  // --- CAMBIO 1: AÑADIMOS EL PERFIL DEL USUARIO ---
+  final UserProfileModel userProfile;
+
+  const ProfileAchievementsSection({
+    super.key,
+    required this.userId,
+    required this.isCurrentUserProfile,
+    // --- CAMBIO 2: LO HACEMOS REQUERIDO EN EL CONSTRUCTOR ---
+    required this.userProfile,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final achievementsState = ref.watch(userAchievementsProvider);
+    final achievementsState = ref.watch(userAchievementsProvider(userId));
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
@@ -57,10 +70,28 @@ class ProfileAchievementsSection extends ConsumerWidget {
                 error: (error, stack) => const Center(child: Text('No se pudieron cargar los logros')),
                 data: (achievements) {
                   if (achievements.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20.0),
-                        child: Text('¡Aún no has conseguido logros!'),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/zorro_oops.png',
+                            width: 60,
+                            height: 60,
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Text(
+                              // --- CAMBIO 3: USAMOS EL NOMBRE DEL PERFIL ---
+                              isCurrentUserProfile
+                                  ? '¡Aún no has conseguido logros!'
+                                  // Usamos el `nombrePerfil` del objeto `userProfile`
+                                  : '¡${userProfile.nombrePerfil} aún no ha conseguido logros!',
+                              style: textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }
@@ -99,7 +130,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
   }
 }
 
-
+// ... El resto del archivo no cambia
 class _GlassCard extends StatelessWidget {
   final Widget child;
   const _GlassCard({required this.child});

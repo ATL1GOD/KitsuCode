@@ -77,18 +77,14 @@ class ProfileRepository {
     }
   }
 
-  // Obtiene las estadísticas del usuario actual
-  Future<UserStatsModel> fetchUserStats() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) {
-      throw Exception('No hay un usuario autenticado.');
-    }
-
+  // --- ¡MÉTODO AÑADIDO! ---
+  // Obtiene las estadísticas de CUALQUIER usuario por su ID
+  Future<UserStatsModel> fetchUserStatsById(String userId) async {
     try {
       final response = await _supabase
           .from('estadistica_usuario')
           .select()
-          .eq('id_usuario', user.id)
+          .eq('id_usuario', userId) // <-- La única diferencia es aquí
           .maybeSingle();
 
       if (response == null) {
@@ -101,18 +97,14 @@ class ProfileRepository {
     }
   }
 
-  // Obtiene los logros del usuario actual
-  Future<List<UserAchievementModel>> fetchUserAchievements() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) {
-      throw Exception('No hay un usuario autenticado.');
-    }
-
+  // --- ¡MÉTODO AÑADIDO! ---
+  // Obtiene los logros de CUALQUIER usuario por su ID
+  Future<List<UserAchievementModel>> fetchUserAchievementsById(String userId) async {
     try {
       final response = await _supabase
           .from('logro')
           .select('*, usuario_logro!inner(*)')
-          .eq('usuario_logro.id_usuario', user.id);
+          .eq('usuario_logro.id_usuario', userId); // <-- La única diferencia es aquí
 
       final achievements = (response as List)
           .map((json) => UserAchievementModel.fromJson(json))
@@ -122,6 +114,27 @@ class ProfileRepository {
     } catch (e) {
       throw Exception('Error al cargar los logros: $e');
     }
+  }
+
+
+  // --- MÉTODOS ORIGINALES (OPCIONAL: PUEDES BORRARLOS O DEJARLOS SI LOS USAS EN OTRO LADO) ---
+
+  // Obtiene las estadísticas del usuario actual
+  Future<UserStatsModel> fetchUserStats() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception('No hay un usuario autenticado.');
+    }
+    return fetchUserStatsById(user.id); // Reutilizamos el nuevo método
+  }
+
+  // Obtiene los logros del usuario actual
+  Future<List<UserAchievementModel>> fetchUserAchievements() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception('No hay un usuario autenticado.');
+    }
+    return fetchUserAchievementsById(user.id); // Reutilizamos el nuevo método
   }
 }
 

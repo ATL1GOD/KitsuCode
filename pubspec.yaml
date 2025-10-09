@@ -23,6 +23,7 @@ dependencies:
   google_fonts: ^6.3.2
   google_sign_in: ^7.2.0
   lottie: ^3.3.2
+  particles_fly: ^0.0.9
   shimmer: ^3.0.0
   simple_animations: ^5.2.0
   supabase_flutter: ^2.9.1

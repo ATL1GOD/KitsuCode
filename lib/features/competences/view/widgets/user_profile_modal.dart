@@ -61,7 +61,10 @@ class UserProfileModal extends ConsumerWidget {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () => context.push('/profile/${user.userId}'),
+                              onPressed: () {
+                                context.pop(); // Cierra el modal
+                                context.push('/profile/${user.userId}'); // Navega al perfil del usuario
+                              },
                             // --- AJUSTE DE ESTILO AQUÍ ---
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colors.primary,

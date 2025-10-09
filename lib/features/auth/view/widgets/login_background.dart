@@ -39,7 +39,7 @@ class LoginBackground extends StatelessWidget {
             child: Transform.rotate(
               angle: -0.3,
               child: Image.asset(
-                'images/orejas.png',
+                'assets/images/orejas.png',
                 width: 100,
                 color: Colors.white.withAlpha(77),
               ),
@@ -53,7 +53,7 @@ class LoginBackground extends StatelessWidget {
             child: Transform.rotate(
               angle: 0.4,
               child: Image.asset(
-                'images/orejas.png',
+                'assets/images/orejas.png',
                 width: 90,
                 color: Colors.white.withAlpha(90),
               ),
@@ -88,7 +88,7 @@ class LoginBackground extends StatelessWidget {
             child: Transform.rotate(
               angle: -1,
               child: Image.asset(
-                'images/huellas.png',
+                'assets/images/huellas.png',
                 width: 65,
                 color: Colors.white.withAlpha(90),
               ),
@@ -101,7 +101,7 @@ class LoginBackground extends StatelessWidget {
             child: Transform.rotate(
               angle: 0.25,
               child: Image.asset(
-                'images/huellas.png',
+                'assets/images/huellas.png',
                 width: 55,
                 color: Colors.white.withAlpha(77),
               ),

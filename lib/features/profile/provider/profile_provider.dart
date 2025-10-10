@@ -1,7 +1,7 @@
 // lib/features/profile/provider/profile_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+// import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // unused here
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
@@ -52,7 +52,8 @@ final followRealtimeProvider = Provider((ref) {
       // Usamos los campos correctos del payload: newRecord y oldRecord
       final record = eventType == PostgresChangeEvent.insert ? payload.newRecord : payload.oldRecord;
 
-      if (record != null && record.isNotEmpty) {
+      // payload.newRecord/oldRecord are non-nullable maps in this callback, so just check emptiness
+      if (record.isNotEmpty) {
         final followerId = record['id_usuario'];
         final followedId = record['id_usuario_seguido'];
 
@@ -66,4 +67,5 @@ final followRealtimeProvider = Provider((ref) {
   ref.onDispose(() {
     supabase.removeChannel(channel);
   });
+  return channel;
 });

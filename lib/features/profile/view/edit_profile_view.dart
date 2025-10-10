@@ -1,8 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // Importar
-import 'package:kitsucode/features/auth/view/widgets/login_background.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
@@ -24,6 +24,16 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   late UserProfileModel _currentProfileData;
 
   bool _isInitialized = false;
+
+  static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
+    final avatar = userProfile.avatarUrl.toLowerCase();
+    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
+    if (avatar.contains('zorro')) return const Color(0xFFE65100);
+    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
+    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
+    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
+    return colors.primary;
+  }
 
   void _initializeControllers(UserProfileModel freshProfile) {
     if (_isInitialized) return;
@@ -92,8 +102,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isSaving = ref.watch(profileControllerProvider);
-
-    // --- LÓGICA CORREGIDA PARA OBTENER EL PERFIL ---
+    
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
     if (currentUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
@@ -105,34 +114,58 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     return profileAsync.when(
       data: (profile) {
         if (!_isInitialized) {
-          _initializeControllers(profile);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _initializeControllers(profile);
+              });
+            }
+          });
         }
         _currentProfileData = profile;
+        
+        final tempProfileForColor = profile.copyWith(avatarUrl: _isInitialized ? _currentAvatar : profile.avatarUrl);
+        final dynamicColor = getHeaderColor(tempProfileForColor, colors);
 
         final remainingName = 2 - _currentProfileData.cambiosNombrePerfilEsteMes;
         final nameVerb = remainingName == 1 ? 'queda' : 'quedan';
         final nameNoun = remainingName == 1 ? 'cambio' : 'cambios';
         final nameMessage = 'Te $nameVerb $remainingName $nameNoun de nombre este mes.';
         
-        final isNameChanged = _nameController!.text != _initialName;
-        final isAvatarChanged = _currentAvatar != _currentProfileData.avatarUrl;
+        final isNameChanged = _isInitialized && _nameController!.text != _initialName;
+        final isAvatarChanged = _isInitialized && _currentAvatar != _currentProfileData.avatarUrl;
         final hasChanges = isNameChanged || isAvatarChanged;
 
         final maxAvatarChanges = _currentProfileData.cambiosAvatarHoy >= 2;
         final maxNameChanges = _currentProfileData.cambiosNombrePerfilEsteMes >= 2;
         
         Widget avatarImage;
-        if (_currentAvatar.startsWith('http')) {
+        if (_isInitialized && _currentAvatar.startsWith('http')) {
           avatarImage = Image.network(_currentAvatar, fit: BoxFit.cover);
-        } else {
+        } else if (_isInitialized) {
           avatarImage = Image.asset(_currentAvatar, fit: BoxFit.cover);
+        } else {
+          avatarImage = const SizedBox.shrink();
         }
 
         return Scaffold(
           resizeToAvoidBottomInset: true,
           body: Stack(
             children: [
-              const LoginBackground(child: SizedBox.shrink()),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      dynamicColor.withAlpha((255 * 0.4).round()), // Corregido withOpacity
+                      colors.surfaceContainerLowest,
+                    ],
+                    stops: const [0.0, 0.6]
+                  ),
+                ),
+              ),
               SafeArea(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -145,14 +178,14 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                           children: [
                             InkWell(
                               onTap: () => _handleBackNavigation(hasChanges),
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(30),
                               child: Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                  color: colors.surface.withAlpha(128), // Corregido
+                                  color: colors.surface.withAlpha((255 * 0.3).round()), // Corregido withOpacity
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.arrow_back_ios_new, color: colors.onSurface),
+                                child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
                               ),
                             ),
                             Expanded(
@@ -166,7 +199,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 40),
+                            const SizedBox(width: 44),
                           ],
                         ),
                       ),
@@ -175,24 +208,35 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                         delay: const Duration(milliseconds: 200),
                         child: Stack(
                           clipBehavior: Clip.none,
+                          alignment: Alignment.center,
                           children: [
+                            // --- INICIA EL NUEVO DISEÑO DEL AVATAR ---
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
-                              width: isKeyboardVisible ? 120 : 200,
-                              height: isKeyboardVisible ? 120 : 200,
+                              width: isKeyboardVisible ? 120 : 160,
+                              height: isKeyboardVisible ? 120 : 160,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(40),
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(colors: [dynamicColor, colors.primary]),
                                 boxShadow: [
-                                  BoxShadow(color: colors.secondary.withAlpha(102), blurRadius: 25, spreadRadius: 1) // Corregido
+                                  BoxShadow(
+                                    color: dynamicColor.withAlpha((255 * 0.7).round()), // Corregido withOpacity
+                                    blurRadius: 25,
+                                    spreadRadius: 2,
+                                  ),
                                 ],
                               ),
-                              child: ClipRRect(borderRadius: BorderRadius.circular(40.0), child: avatarImage),
+                              padding: const EdgeInsets.all(4), // Espacio para el borde
+                              child: ClipOval(
+                                child: avatarImage,
+                              ),
                             ),
+                            // --- TERMINA EL NUEVO DISEÑO DEL AVATAR ---
                             if (!isKeyboardVisible && !maxAvatarChanges)
                               Positioned(
-                                bottom: -10,
-                                right: -10,
+                                bottom: -5,
+                                right: -5,
                                 child: Swing(
                                   infinite: true,
                                   delay: const Duration(seconds: 2),
@@ -210,7 +254,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                                               content: Text('Ya no puedes cambiar tu avatar hoy (máx 2 veces).'),
                                               backgroundColor: Colors.red,
-                                              duration: Duration(seconds: 5),
                                             ));
                                             return;
                                           }
@@ -231,109 +274,91 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                       const SizedBox(height: 40),
                       FadeInUp(
                         delay: const Duration(milliseconds: 300),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Card(
-                            color: colors.surface.withAlpha(204), // Corregido
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(color: colors.primaryContainer.withAlpha(77)), // Corregido
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(24.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('Nombre de Perfil', style: textTheme.titleMedium),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    controller: _nameController,
-                                    decoration: InputDecoration(
-                                      hintText: 'Tu nombre',
-                                      filled: true,
-                                      fillColor: colors.surfaceContainerHighest.withAlpha(153), // Corregido
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(15.0),
-                                        borderSide: BorderSide(color: colors.primaryContainer),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(15.0),
-                                        borderSide: BorderSide(color: colors.primary, width: 2),
-                                      ),
-                                      errorText: _nameValidationError,
-                                      suffixIcon: Icon(Icons.edit, color: colors.secondary.withAlpha(204)), // Corregido
+                        child: _GlassCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Nombre de Perfil', style: textTheme.titleMedium),
+                                const SizedBox(height: 10),
+                                if (_isInitialized)
+                                TextField(
+                                  controller: _nameController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Tu nombre',
+                                    filled: true,
+                                    fillColor: colors.surfaceContainerHighest.withAlpha((255 * 0.5).round()), // Corregido withOpacity
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      borderSide: BorderSide.none,
                                     ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text(
-                                      maxNameChanges ? "Ya no puedes cambiar tu nombre este mes." : nameMessage, 
-                                      style: TextStyle(fontSize: 12, color: maxNameChanges ? Colors.red : Colors.grey),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(15.0),
+                                      borderSide: BorderSide(color: colors.primary, width: 2),
                                     ),
+                                    errorText: _nameValidationError,
+                                    suffixIcon: Icon(Icons.person_outline, color: colors.onSurfaceVariant.withAlpha((255 * 0.6).round())), // Corregido withOpacity
                                   ),
-                                  const SizedBox(height: 30),
-                                  ElevatedButton(
-                                    onPressed: (isSaving || !hasChanges || (_nameValidationError != null && isNameChanged))
-                                        ? null
-                                        : () async {
-                                            if (isNameChanged && maxNameChanges) {
-                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                                  content: Text('Ya no puedes cambiar tu nombre este mes.'),
-                                                  backgroundColor: Colors.red,
-                                                  duration: Duration(seconds: 5),
-                                                ));
-                                                return; 
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    maxNameChanges ? "Ya no puedes cambiar tu nombre este mes." : nameMessage, 
+                                    style: textTheme.bodySmall?.copyWith(color: maxNameChanges ? colors.error : colors.onSurfaceVariant),
+                                  ),
+                                ),
+                                const SizedBox(height: 30),
+                                ElevatedButton(
+                                  onPressed: (isSaving || !hasChanges || (_nameValidationError != null && isNameChanged))
+                                      ? null
+                                      : () async {
+                                          if (isNameChanged && maxNameChanges) {
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                              content: Text('Ya no puedes cambiar tu nombre este mes.'),
+                                              backgroundColor: Colors.red,
+                                            ));
+                                            return; 
+                                          }
+                                          final updatedProfile = await ref.read(profileControllerProvider.notifier).updateProfile(
+                                            newName: isNameChanged ? _nameController!.text : null,
+                                            newAvatar: isAvatarChanged ? _currentAvatar : null, 
+                                          );
+                                          if (!context.mounted) return;
+                                          if (updatedProfile != null) {
+                                            if (isAvatarChanged) {
+                                              final remainingAvatar = 2 - updatedProfile.cambiosAvatarHoy;
+                                              final avatarSnackBarMessage = remainingAvatar > 0
+                                                ? 'Te queda 1 cambio de avatar hoy.'
+                                                : 'Límite de cambios de avatar alcanzado hoy.';
+                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(avatarSnackBarMessage)));
                                             }
-                                            final updatedProfile = await ref.read(profileControllerProvider.notifier).updateProfile(
-                                                  newName: isNameChanged ? _nameController!.text : null,
-                                                  newAvatar: isAvatarChanged ? _currentAvatar : null, 
-                                                );
-                                            if (!context.mounted) return; // Chequeo de seguridad
-                                            if (updatedProfile != null) {
-                                              if (isAvatarChanged) {
-                                                  final remainingAvatar = 2 - updatedProfile.cambiosAvatarHoy;
-                                                  final avatarVerb = remainingAvatar == 1 ? 'queda' : 'quedan';
-                                                  final avatarNoun = remainingAvatar == 1 ? 'cambio' : 'cambios';
-                                                  String avatarSnackBarMessage;
-                                                  if (remainingAvatar > 0) {
-                                                      avatarSnackBarMessage = 'Te $avatarVerb $remainingAvatar $avatarNoun de avatar hoy.';
-                                                  } else {
-                                                      avatarSnackBarMessage = 'Límite de cambios de avatar alcanzado hoy.';
-                                                  }
-                                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(avatarSnackBarMessage), duration: const Duration(seconds: 5)));
-                                              }
-                                              setState(() {
-                                                _initialName = updatedProfile.nombrePerfil;
-                                                _currentAvatar = updatedProfile.avatarUrl;
-                                                _currentProfileData = updatedProfile; 
-                                              });
-                                              context.go('/profile');
-                                            }
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: colors.primary,
-                                      foregroundColor: colors.onPrimary,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                    ),
-                                    child: isSaving ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Guardar Cambios'),
+                                            context.pop();
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: colors.primary,
+                                    foregroundColor: colors.onPrimary,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
                                   ),
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () => _handleBackNavigation(hasChanges),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: colors.primaryContainer,
-                                      foregroundColor: colors.onPrimaryContainer,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                      elevation: 2,
-                                    ),
-                                    child: const Text('Cancelar'),
+                                  child: isSaving ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Guardar Cambios'),
+                                ),
+                                const SizedBox(height: 10),
+                                OutlinedButton(
+                                  onPressed: () => _handleBackNavigation(hasChanges),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: colors.primary,
+                                    side: BorderSide(color: colors.primary.withAlpha(128)),
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
                                   ),
-                                ],
-                              ),
+                                  child: const Text('Cancelar'),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -348,7 +373,33 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
         );
       },
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text("Error: $e"))),
+      error: (e, _) => Scaffold(body: Center(child: Text("Error al cargar el perfil: $e"))),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  const _GlassCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha((255 * 0.4).round()), // Corregido withOpacity
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withAlpha((255 * 0.5).round())) // Corregido withOpacity
+            ),
+            child: child,
+          ),
+        ),
+      ),
     );
   }
 }

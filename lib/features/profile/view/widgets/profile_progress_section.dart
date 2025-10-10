@@ -6,13 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ProfileProgressSection extends ConsumerWidget {
-  // --- CAMBIO 1: AÑADIR PARÁMETROS ---
   final String userId;
   final bool showViewAllButton;
 
   const ProfileProgressSection({
     super.key,
-    required this.userId, // Hacerlo requerido
+    required this.userId,
     this.showViewAllButton = true,
   });
 
@@ -20,7 +19,6 @@ class ProfileProgressSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    // --- CAMBIO 2: PASAR EL userId AL PROVIDER ---
     final statsState = ref.watch(userStatsProvider(userId));
 
     return _GlassCard(
@@ -33,7 +31,18 @@ class ProfileProgressSection extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Progreso', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  // --- INICIA EL CAMBIO ---
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.bar_chart, // Icono de estadísticas
+                        color: colors.secondary,
+                      ),
+                      const SizedBox(width: 8), // Espacio entre icono y texto
+                      Text('Progreso', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  // --- TERMINA EL CAMBIO ---
                   if (showViewAllButton)
                     TextButton(
                       onPressed: () => context.push('/all-stats'),
@@ -88,7 +97,7 @@ class _CompactStat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant.withOpacity(0.8)),
+          style: textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant.withAlpha(204)),
         ),
       ],
     );
@@ -109,9 +118,9 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withAlpha(102),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.5))
+              border: Border.all(color: Colors.white.withAlpha(128))
             ),
             child: child,
           ),

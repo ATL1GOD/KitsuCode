@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Importamos el modelo de perfil de usuario
 import 'package:kitsucode/features/profile/model/user_profile_model.dart'; 
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:shimmer/shimmer.dart'; 
 
 String _getAchievementIconPath(String achievementName) {
   switch (achievementName.toLowerCase()) {
@@ -22,14 +22,12 @@ String _getAchievementIconPath(String achievementName) {
 class ProfileAchievementsSection extends ConsumerWidget {
   final String userId;
   final bool isCurrentUserProfile;
-  // --- CAMBIO 1: AÑADIMOS EL PERFIL DEL USUARIO ---
   final UserProfileModel userProfile;
 
   const ProfileAchievementsSection({
     super.key,
     required this.userId,
     required this.isCurrentUserProfile,
-    // --- CAMBIO 2: LO HACEMOS REQUERIDO EN EL CONSTRUCTOR ---
     required this.userProfile,
   });
 
@@ -38,6 +36,30 @@ class ProfileAchievementsSection extends ConsumerWidget {
     final achievementsState = ref.watch(userAchievementsProvider(userId));
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
+
+    // Widget para el título, reutilizable para los 3 estados del provider
+    Widget titleWidget(List<dynamic> achievements) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.emoji_events_outlined, // --- ICONO AÑADIDO ---
+                color: colors.secondary,
+              ),
+              const SizedBox(width: 8), // Espacio
+              Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          if (achievements.isNotEmpty)
+            TextButton(
+              onPressed: () {},
+              child: Text('Ver todo', style: TextStyle(color: colors.secondary, fontWeight: FontWeight.bold)),
+            ),
+        ],
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 20.0),
@@ -48,21 +70,9 @@ class ProfileAchievementsSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               achievementsState.when(
-                loading: () => Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface)),
-                error: (e, s) => Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface)),
-                data: (achievements) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                      if (achievements.isNotEmpty)
-                        TextButton(
-                          onPressed: () {},
-                          child: Text('Ver todo', style: TextStyle(color: colors.secondary, fontWeight: FontWeight.bold)),
-                        ),
-                    ],
-                  );
-                },
+                loading: () => titleWidget([]), // Muestra el título sin el botón "Ver todo"
+                error: (e, s) => titleWidget([]), // Muestra el título sin el botón "Ver todo"
+                data: (achievements) => titleWidget(achievements), // Pasa la lista para la lógica del botón
               ),
               const SizedBox(height: 15),
               achievementsState.when(
@@ -83,10 +93,8 @@ class ProfileAchievementsSection extends ConsumerWidget {
                           const SizedBox(width: 20),
                           Expanded(
                             child: Text(
-                              // --- CAMBIO 3: USAMOS EL NOMBRE DEL PERFIL ---
                               isCurrentUserProfile
                                   ? '¡Aún no has conseguido logros!'
-                                  // Usamos el `nombrePerfil` del objeto `userProfile`
                                   : '¡${userProfile.nombrePerfil} aún no ha conseguido logros!',
                               style: textTheme.bodyMedium,
                             ),
@@ -109,7 +117,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
                             message: '${achievement.nombre}\n${achievement.descripcion}',
                             child: CircleAvatar(
                               radius: 40,
-                              backgroundColor: colors.primaryContainer.withOpacity(0.7),
+                              backgroundColor: colors.primaryContainer.withAlpha(178), // Opacidad corregida
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Image.asset(imagePath),
@@ -130,7 +138,6 @@ class ProfileAchievementsSection extends ConsumerWidget {
   }
 }
 
-// ... El resto del archivo no cambia
 class _GlassCard extends StatelessWidget {
   final Widget child;
   const _GlassCard({required this.child});
@@ -145,9 +152,9 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withAlpha(102), // Opacidad corregida
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.5))
+              border: Border.all(color: Colors.white.withAlpha(128)) // Opacidad corregida
             ),
             child: child,
           ),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:animate_do/animate_do.dart'; 
+import 'package:animate_do/animate_do.dart';
 
 enum AvatarCategory { general, exclusive }
 
@@ -16,26 +15,39 @@ class EditAvatarView extends ConsumerStatefulWidget {
 
 class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
   final List<String> _generalAvatars = [
-    'assets/images/login_zorro.png', 
+    'assets/images/login_zorro.png',
     'assets/images/avatar_mono.png',
     'assets/images/avatar_tiburon.png',
-    // ...
+    'assets/images/avatar_leon.png',
+    'assets/images/avatar_gato.png',
+    'assets/images/avatar_panda.png',
   ];
 
   final List<String> _exclusiveAvatars = [
     'assets/images/avatar_leon.png',
-    'assets/images/login_zorro.png', 
+    'assets/images/login_zorro.png',
     'assets/images/avatar_mono.png',
     'assets/images/avatar_tiburon.png',
   ];
-  
-  //Lista para identificar avatares que necesitan fondo
+
   final Set<String> _transparentAvatars = {
     'assets/images/login_zorro.png',
   };
 
   late String _selectedAvatar;
   AvatarCategory _selectedCategory = AvatarCategory.general;
+
+  // --- NUEVA FUNCIÓN: Lógica para el color dinámico del fondo ---
+  Color _getDynamicBackgroundColor(ColorScheme colors) {
+    final avatar = _selectedAvatar.toLowerCase();
+    if (avatar.contains('tiburon')) return const Color(0xFF0097A7); // Azul para tiburón
+    if (avatar.contains('zorro')) return const Color(0xFFE65100); // Naranja oscuro para zorro
+    if (avatar.contains('gato')) return const Color(0xFF7B1FA2); // Morado para gato
+    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17); // Naranja brillante para león
+    if (avatar.contains('panda')) return const Color(0xFF2E7D32); // Verde oscuro para panda
+    // Color por defecto si no coincide
+    return colors.primary; // O un color de tu paleta que sea base
+  }
 
   @override
   void initState() {
@@ -52,19 +64,28 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    final dynamicBgColor = _getDynamicBackgroundColor(colors);
+
     return Scaffold(
-      body: Container(
+      body: AnimatedContainer( // Usamos AnimatedContainer para la transición de color del fondo
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [primaryDarkColorScheme.primary, primaryLightColorScheme.primaryFixed],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          color: colors.inverseSurface, // Color de fondo oscuro principal
+          gradient: RadialGradient(
+            center: const Alignment(0, -0.6),
+            radius: 1.2,
+            colors: [
+              dynamicBgColor.withOpacity(0.3), // El destello cambia con el avatar
+              colors.inverseSurface.withOpacity(0.0),
+            ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // --- Barra de navegación 
               FadeInDown(
                 duration: const Duration(milliseconds: 400),
                 child: Padding(
@@ -73,72 +94,69 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF4F4F4F)),
-                        // CORRECCIÓN: Usamos context.pop(null) para hacer la cancelación explícita.
-                        onPressed: () => context.pop(null), 
+                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
+                        onPressed: () => context.pop(null),
                       ),
                       Text(
-                        'Editar avatar',
-                        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF4F4F4F)),
+                        'Selecciona tu avatar',
+                        textAlign: TextAlign.center,
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
                       ),
                       ElevatedButton(
-  onPressed: () => context.pop(_selectedAvatar),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: colors.primaryContainer, // Color de fondo del tema
-    foregroundColor: colors.onPrimaryContainer, // Color del texto del tema
-    elevation: 2, // Una pequeña sombra para darle profundidad
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20), // Bordes redondeados
-      side: BorderSide(
-        color: colors.secondary.withOpacity(0.8), // Borde con el color naranja
-        width: 1.5,
-      ),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-  ),
-  child: const Text(
-    'Ok',
-    style: TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: 16,
-    ),
-  ),
-),
-
+                        onPressed: () => context.pop(_selectedAvatar),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.secondary,
+                          foregroundColor: colors.onSecondary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          elevation: 8,
+                          shadowColor: colors.secondary.withOpacity(0.6),
+                        ),
+                        child: const Text('Listo', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // --- Avatar principal 
               FadeIn(
                 delay: const Duration(milliseconds: 200),
                 duration: const Duration(milliseconds: 500),
-                child: _buildAvatarWithBackground(
+                child: _SelectedAvatarDisplay(
                   avatarPath: _selectedAvatar,
                   size: 160,
-                  colors: colors,
+                  needsBackground: _transparentAvatars.contains(_selectedAvatar),
+                  dynamicColor: dynamicBgColor, // Pasamos el color dinámico
                 ),
               ),
               const SizedBox(height: 30),
 
-              // --- Pestañas con animación 
               FadeInUp(
                 delay: const Duration(milliseconds: 300),
                 duration: const Duration(milliseconds: 400),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildCategoryTab(icon: Icons.pets, category: AvatarCategory.general, colors: colors),
+                    _CategoryIconButton(
+                      icon: Icons.pets,
+                      isSelected: _selectedCategory == AvatarCategory.general,
+                      onTap: () => setState(() => _selectedCategory = AvatarCategory.general),
+                    ),
                     const SizedBox(width: 20),
-                    _buildCategoryTab(icon: Icons.star_border_purple500_outlined, category: AvatarCategory.exclusive, colors: colors),
+                    _CategoryIconButton(
+                      icon: Icons.star_border_purple500_outlined,
+                      isSelected: _selectedCategory == AvatarCategory.exclusive,
+                      onTap: () => setState(() => _selectedCategory = AvatarCategory.exclusive),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // --- Grid de avatares
               Expanded(
                 child: FadeInUp(
                   delay: const Duration(milliseconds: 400),
@@ -155,24 +173,11 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                       itemBuilder: (context, index) {
                         final avatarPath = _currentAvatarList[index];
                         final isSelected = avatarPath == _selectedAvatar;
-                        return GestureDetector(
+                        return _CircularAvatarCell(
+                          avatarPath: avatarPath,
+                          isSelected: isSelected,
+                          needsBackground: _transparentAvatars.contains(avatarPath),
                           onTap: () => setState(() => _selectedAvatar = avatarPath),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: isSelected ? colors.secondary : colors.primary.withOpacity(0.5),
-                                width: isSelected ? 3.0 : 1.5,
-                              ),
-                              boxShadow: isSelected ? [BoxShadow(color: colors.secondary.withOpacity(0.6), blurRadius: 10, spreadRadius: 1)] : [],
-                            ),
-                            child: _buildAvatarWithBackground(
-                              avatarPath: avatarPath,
-                              size: 80, 
-                              colors: colors,
-                              isGridItem: true,
-                            ),
-                          ),
                         );
                       },
                     ),
@@ -185,52 +190,110 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
       ),
     );
   }
+}
 
-  //Widget reutilizable para mostrar avatares con o sin fondo
-  Widget _buildAvatarWithBackground({
-    required String avatarPath,
-    required double size,
-    required ColorScheme colors,
-    bool isGridItem = false,
-  }) {
-    final needsBackground = _transparentAvatars.contains(avatarPath);
-    
-    Widget avatarImage = ClipRRect(
-      borderRadius: BorderRadius.circular(isGridItem ? 28.0 : 48.0),
-      child: Image.asset(avatarPath, width: size, height: size, fit: BoxFit.cover),
+// --- WIDGETS DE UI ---
+
+class _SelectedAvatarDisplay extends StatelessWidget {
+  final String avatarPath;
+  final double size;
+  final bool needsBackground;
+  final Color dynamicColor; // Nuevo: Recibe el color dinámico
+
+  const _SelectedAvatarDisplay({
+    required this.avatarPath,
+    required this.size,
+    required this.needsBackground,
+    required this.dynamicColor, // Inicializa el nuevo parámetro
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // --- CAMBIO DE DISEÑO: Borde degradado ahora usa dynamicColor ---
+        gradient: LinearGradient(colors: [dynamicColor, colors.primary]),
+        boxShadow: [
+          BoxShadow(color: dynamicColor.withOpacity(0.7), blurRadius: 25, spreadRadius: 4),
+        ],
+      ),
+      padding: const EdgeInsets.all(4),
+      child: ClipOval( // Ya no hay Container intermedio oscuro
+        child: Container(
+          color: needsBackground ? colors.surfaceContainerHighest : Colors.transparent,
+          child: Image.asset(avatarPath, fit: BoxFit.cover),
+        ),
+      ),
     );
-
-    if (needsBackground) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          
-          color: colors.primaryContainer,
-          shape: BoxShape.circle,
-        ),
-        child: Padding(
-          
-          padding: EdgeInsets.all(size * 0.1), 
-          child: avatarImage,
-        ),
-      );
-    }
-    return avatarImage;
   }
+}
 
-  Widget _buildCategoryTab({required IconData icon, required AvatarCategory category, required ColorScheme colors}) {
-    final isSelected = _selectedCategory == category;
+class _CategoryIconButton extends StatelessWidget {
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryIconButton({required this.icon, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () => setState(() => _selectedCategory = category),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? colors.primaryContainer : colors.surface.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(25),
-          border: isSelected ? null : Border.all(color: colors.primaryContainer.withOpacity(0.5)),
+          color: isSelected ? colors.primary : colors.surfaceContainer.withOpacity(0.2),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? colors.secondary : colors.primary.withOpacity(0.3),
+            width: isSelected ? 3 : 1.5,
+          ),
+          boxShadow: isSelected ? [BoxShadow(color: colors.secondary.withOpacity(0.5), blurRadius: 10)] : [],
         ),
-        child: Icon(icon, color: colors.secondary),
+        child: Icon(icon, color: isSelected ? colors.onPrimary : colors.onSurfaceVariant, size: 28),
+      ),
+    );
+  }
+}
+
+class _CircularAvatarCell extends StatelessWidget {
+  final String avatarPath;
+  final bool isSelected;
+  final bool needsBackground;
+  final VoidCallback onTap;
+
+  const _CircularAvatarCell({required this.avatarPath, required this.isSelected, required this.onTap, required this.needsBackground});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
+        transformAlignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? colors.secondary : Colors.transparent,
+            width: isSelected ? 4.0 : 0.0,
+          ),
+          boxShadow: isSelected ? [BoxShadow(color: colors.secondary.withOpacity(0.6), blurRadius: 12)] : [],
+        ),
+        child: ClipOval(
+          child: Container(
+            color: needsBackground ? colors.surfaceContainerHighest : Colors.transparent,
+            child: Image.asset(avatarPath, fit: BoxFit.cover),
+          ),
+        ),
       ),
     );
   }

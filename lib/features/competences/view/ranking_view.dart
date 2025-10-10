@@ -89,7 +89,7 @@ class _RankingContent extends ConsumerWidget {
                 color: colors.surfaceContainerHigh.withAlpha(204),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface, size: 20),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
             ),
           ),
         ),

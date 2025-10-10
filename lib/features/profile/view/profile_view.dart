@@ -14,7 +14,6 @@ class ProfileView extends ConsumerWidget {
   final String? userId;
   const ProfileView({super.key, this.userId});
 
-  // Función para obtener el color dinámico
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
     final avatar = userProfile.avatarUrl.toLowerCase();
     if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
@@ -54,7 +53,7 @@ class ProfileView extends ConsumerWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      dynamicColor.withOpacity(0.4),
+                      dynamicColor.withAlpha((255 * 0.4).round()),
                       colors.surfaceContainerLowest,
                     ],
                     stops: const [0.0, 0.6]
@@ -62,7 +61,7 @@ class ProfileView extends ConsumerWidget {
                 ),
               ),
 
-              // Contenido principal
+              // Contenido principal que sí hace scroll
               Column(
                 children: [
                   // --- PARTE FIJA (NO SCROLLEABLE) ---
@@ -70,23 +69,19 @@ class ProfileView extends ConsumerWidget {
                     bottom: false,
                     child: Column(
                       children: [
-                        // Barra superior con botones
-                        _TopBar(
-                          isCurrentUserProfile: isCurrentUserProfile,
-                          colors: colors,
-                        ),
-                        // Header con avatar y partículas
+                        // --- CAMBIO: La barra superior ya no está aquí ---
+                        // Se ha movido a un Positioned fuera de este Column
+                        SizedBox(height: 56), // Espacio para la barra de botones que ahora está "flotando"
                         ProfileHeader(
                           userProfile: userProfile,
                           isCurrentUserProfile: isCurrentUserProfile,
                           dynamicColor: dynamicColor,
                         ),
-                        // BOTÓN DE SEGUIR AHORA ES FIJO
                         if (!isCurrentUserProfile)
                           Padding(
                             padding: const EdgeInsets.only(top: 30.0, bottom: 20.0),
                             child: SizedBox(
-                              width: 300, // Ancho fijo para el botón
+                              width: 300,
                               child: FollowButton(userId: targetUserId),
                             ),
                           ),
@@ -98,14 +93,12 @@ class ProfileView extends ConsumerWidget {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Padding(
-                        // Ajustamos el padding superior
                         padding: EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
                         child: Column(
                           children: [
                             FadeInUp(
                               from: 20,
                               delay: const Duration(milliseconds: 600),
-                              // --- CAMBIO AQUÍ ---
                               child: ProfileProgressSection(
                                 userId: targetUserId,
                                 showViewAllButton: isCurrentUserProfile,
@@ -118,7 +111,7 @@ class ProfileView extends ConsumerWidget {
                                 userId: targetUserId,
                                 isCurrentUserProfile: isCurrentUserProfile,
                                 userProfile: userProfile,
-                                ),
+                              ),
                             ),
                             const SizedBox(height: 70),
                           ],
@@ -127,6 +120,20 @@ class ProfileView extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+
+              // --- CAMBIO: Barra de botones ahora posicionada absolutamente ---
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea( // Se envuelve en SafeArea para respetar el notch/isla
+                  bottom: false,
+                  child: _TopBar(
+                    isCurrentUserProfile: isCurrentUserProfile,
+                    colors: colors,
+                  ),
+                ),
               ),
             ],
           );
@@ -137,7 +144,7 @@ class ProfileView extends ConsumerWidget {
 }
 
 
-// Widget privado para la barra de botones superior (sin cambios)
+// --- CAMBIO: Widget _TopBar con estilo consistente ---
 class _TopBar extends StatelessWidget {
   final bool isCurrentUserProfile;
   final ColorScheme colors;
@@ -147,31 +154,35 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Botón de Volver
           InkWell(
             onTap: () => context.pop(),
             borderRadius: BorderRadius.circular(30),
             child: Container(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0), // Usamos padding para el tamaño
               decoration: BoxDecoration(
-                color: colors.surface.withOpacity(0.3),
+                color: colors.surface.withAlpha((255 * 0.3).round()),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.arrow_back, color: colors.onSurface),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
             ),
           ),
+          // Botón de Ajustes (condicional)
           if (isCurrentUserProfile)
-            Container(
-              decoration: BoxDecoration(
-                color: colors.surface.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(Icons.settings_outlined, color: colors.onSurface),
-                onPressed: () { /* Navegar a settings */ },
+            InkWell(
+              onTap: () { /* Navegar a settings */ },
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                padding: const EdgeInsets.all(8.0), // Usamos padding para el tamaño
+                decoration: BoxDecoration(
+                  color: colors.surface.withAlpha((255 * 0.3).round()),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.settings_outlined, color: colors.onSurface),
               ),
             ),
         ],

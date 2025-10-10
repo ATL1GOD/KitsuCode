@@ -31,9 +31,33 @@ class UserProfileModel {
       
       siguiendoCount: json['siguiendo_count'] ?? 0,
       seguidoresCount: json['seguidores_count'] ?? 0, 
-      // Nuevos campos con valores por defecto para las RN
       cambiosAvatarHoy: json['cambios_avatar_hoy'] ?? 0,
       cambiosNombrePerfilEsteMes: json['cambios_nombre_perfil_este_mes'] ?? 0
+    );
+  }
+
+  // --- MÉTODO AÑADIDO PARA SOLUCIONAR EL ERROR ---
+  UserProfileModel copyWith({
+    String? userId,
+    String? nombreUsuario,
+    String? correo,
+    String? nombrePerfil,
+    String? avatarUrl,
+    int? siguiendoCount,
+    int? seguidoresCount,
+    int? cambiosAvatarHoy,
+    int? cambiosNombrePerfilEsteMes,
+  }) {
+    return UserProfileModel(
+      userId: userId ?? this.userId,
+      nombreUsuario: nombreUsuario ?? this.nombreUsuario,
+      correo: correo ?? this.correo,
+      nombrePerfil: nombrePerfil ?? this.nombrePerfil,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      siguiendoCount: siguiendoCount ?? this.siguiendoCount,
+      seguidoresCount: seguidoresCount ?? this.seguidoresCount,
+      cambiosAvatarHoy: cambiosAvatarHoy ?? this.cambiosAvatarHoy,
+      cambiosNombrePerfilEsteMes: cambiosNombrePerfilEsteMes ?? this.cambiosNombrePerfilEsteMes,
     );
   }
 }

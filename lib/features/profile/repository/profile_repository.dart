@@ -1,3 +1,6 @@
+// lib/features/profile/repository/profile_repository.dart
+
+import 'dart:async'; // Importa async para los Streams
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
@@ -8,7 +11,30 @@ class ProfileRepository {
 
   ProfileRepository(this._supabase);
 
-  // --- MÉTODO NUEVO: Revisar si se sigue a un usuario ---
+  // --- ¡NUEVO MÉTODO CON STREAM PARA REALTIME! ---
+  // Este método observa los cambios en el perfil de un usuario en tiempo real.
+  Stream<UserProfileModel> watchUserProfileById(String userId) async* {
+    // 1. Emitimos el valor inicial inmediatamente para que la UI no espere.
+    yield await fetchUserProfileById(userId);
+
+    // 2. Creamos un listener de Supabase que se enfoca SÓLO en la fila de este usuario.
+    final stream = _supabase
+        .from('usuarios')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId);
+
+    // 3. Escuchamos el stream. Cada vez que haya un cambio (un UPDATE)...
+    await for (final data in stream) {
+      // ...volvemos a llamar a nuestra función RPC para obtener los datos completos y actualizados...
+      final updatedProfile = await fetchUserProfileById(userId);
+      // ...y los emitimos al provider, que actualizará la UI.
+      yield updatedProfile;
+    }
+  }
+
+
+  // --- MÉTODOS EXISTENTES (sin cambios) ---
+
   Future<bool> isFollowing(String followedUserId) async {
     final currentUser = _supabase.auth.currentUser;
     if (currentUser == null) return false;
@@ -23,7 +49,6 @@ class ProfileRepository {
     return response != null;
   }
 
-  // --- MÉTODO NUEVO: Llamar a la función de seguir/dejar de seguir ---
   Future<bool> toggleFollow(String followedUserId) async {
     final response = await _supabase.rpc(
       'toggle_follow',
@@ -32,17 +57,14 @@ class ProfileRepository {
     return response as bool;
   }
 
-  // Obtiene el perfil del usuario que ha iniciado sesión
   Future<UserProfileModel> fetchUserProfile() async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
       throw Exception('No hay un usuario autenticado.');
     }
-    // Llama a la función reutilizable con el ID del usuario actual
     return fetchUserProfileById(user.id);
   }
 
-  // Obtiene el perfil de CUALQUIER usuario por su ID
   Future<UserProfileModel> fetchUserProfileById(String userId) async {
     try {
       final response = await _supabase.rpc(
@@ -55,7 +77,6 @@ class ProfileRepository {
     }
   }
 
-  // Actualiza el perfil del usuario
   Future<void> updateUserProfile({required String userId, String? newName, String? newAvatar}) async {
     try {
       final updates = <String, dynamic>{};
@@ -77,14 +98,12 @@ class ProfileRepository {
     }
   }
 
-  // --- ¡MÉTODO AÑADIDO! ---
-  // Obtiene las estadísticas de CUALQUIER usuario por su ID
   Future<UserStatsModel> fetchUserStatsById(String userId) async {
     try {
       final response = await _supabase
           .from('estadistica_usuario')
           .select()
-          .eq('id_usuario', userId) // <-- La única diferencia es aquí
+          .eq('id_usuario', userId)
           .maybeSingle();
 
       if (response == null) {
@@ -96,15 +115,13 @@ class ProfileRepository {
       throw Exception('Error al cargar las estadísticas: $e');
     }
   }
-
-  // --- ¡MÉTODO AÑADIDO! ---
-  // Obtiene los logros de CUALQUIER usuario por su ID
+  
   Future<List<UserAchievementModel>> fetchUserAchievementsById(String userId) async {
     try {
       final response = await _supabase
           .from('logro')
           .select('*, usuario_logro!inner(*)')
-          .eq('usuario_logro.id_usuario', userId); // <-- La única diferencia es aquí
+          .eq('usuario_logro.id_usuario', userId);
 
       final achievements = (response as List)
           .map((json) => UserAchievementModel.fromJson(json))
@@ -116,25 +133,20 @@ class ProfileRepository {
     }
   }
 
-
-  // --- MÉTODOS ORIGINALES (OPCIONAL: PUEDES BORRARLOS O DEJARLOS SI LOS USAS EN OTRO LADO) ---
-
-  // Obtiene las estadísticas del usuario actual
   Future<UserStatsModel> fetchUserStats() async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
       throw Exception('No hay un usuario autenticado.');
     }
-    return fetchUserStatsById(user.id); // Reutilizamos el nuevo método
+    return fetchUserStatsById(user.id);
   }
 
-  // Obtiene los logros del usuario actual
   Future<List<UserAchievementModel>> fetchUserAchievements() async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
       throw Exception('No hay un usuario autenticado.');
     }
-    return fetchUserAchievementsById(user.id); // Reutilizamos el nuevo método
+    return fetchUserAchievementsById(user.id);
   }
 }
 

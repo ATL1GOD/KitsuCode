@@ -7,6 +7,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:lottie/lottie.dart'; // ¡Añade esta importación!
 
 class EditProfileView extends ConsumerStatefulWidget {
   const EditProfileView({super.key});
@@ -16,6 +17,7 @@ class EditProfileView extends ConsumerStatefulWidget {
 }
 
 class _EditProfileViewState extends ConsumerState<EditProfileView> {
+  // ... (todo tu código de estado _nameController, etc., sigue igual aquí)
   TextEditingController? _nameController;
   String? _nameValidationError;
 
@@ -97,6 +99,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     if (shouldPop && mounted) context.pop();
   }
 
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -159,13 +162,48 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      dynamicColor.withAlpha((255 * 0.4).round()), // Corregido withOpacity
+                      dynamicColor.withAlpha((255 * 0.4).round()),
                       colors.surfaceContainerLowest,
                     ],
                     stops: const [0.0, 0.6]
                   ),
                 ),
               ),
+
+              // --- CAMBIO: AQUÍ EMPIEZA LA NUEVA ANIMACIÓN DE CABECERA ---
+              AnimatedOpacity(
+                opacity: isKeyboardVisible ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 300),
+                child: ShaderMask(
+                  shaderCallback: (rect) {
+                    return LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.white, Colors.white.withOpacity(0.0)],
+                      stops: const [0.6, 1.0], // La animación será visible en el 60% superior y se desvanecerá en el 40% inferior
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 350, // Limita la altura de la animación
+                    child: ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        colors.secondaryFixedDim.withOpacity(0.5), // Opacidad más baja
+                        BlendMode.srcIn,
+                      ),
+                      child: Lottie.asset(
+                        'assets/animations/spring.json',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // --- FIN DE LA ANIMACIÓN ---
+
               SafeArea(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -182,7 +220,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                  color: colors.surface.withAlpha((255 * 0.3).round()), // Corregido withOpacity
+                                  color: colors.surface.withAlpha((255 * 0.3).round()),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
@@ -210,7 +248,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                           clipBehavior: Clip.none,
                           alignment: Alignment.center,
                           children: [
-                            // --- INICIA EL NUEVO DISEÑO DEL AVATAR ---
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
@@ -221,18 +258,17 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                 gradient: LinearGradient(colors: [dynamicColor, colors.primary]),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: dynamicColor.withAlpha((255 * 0.7).round()), // Corregido withOpacity
+                                    color: dynamicColor.withAlpha((255 * 0.7).round()),
                                     blurRadius: 25,
                                     spreadRadius: 2,
                                   ),
                                 ],
                               ),
-                              padding: const EdgeInsets.all(4), // Espacio para el borde
+                              padding: const EdgeInsets.all(4),
                               child: ClipOval(
                                 child: avatarImage,
                               ),
                             ),
-                            // --- TERMINA EL NUEVO DISEÑO DEL AVATAR ---
                             if (!isKeyboardVisible && !maxAvatarChanges)
                               Positioned(
                                 bottom: -5,
@@ -289,7 +325,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                   decoration: InputDecoration(
                                     hintText: 'Tu nombre',
                                     filled: true,
-                                    fillColor: colors.surfaceContainerHighest.withAlpha((255 * 0.5).round()), // Corregido withOpacity
+                                    fillColor: colors.surfaceContainerHighest.withAlpha((255 * 0.5).round()),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(15.0),
                                       borderSide: BorderSide.none,
@@ -299,7 +335,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                       borderSide: BorderSide(color: colors.primary, width: 2),
                                     ),
                                     errorText: _nameValidationError,
-                                    suffixIcon: Icon(Icons.person_outline, color: colors.onSurfaceVariant.withAlpha((255 * 0.6).round())), // Corregido withOpacity
+                                    suffixIcon: Icon(Icons.person_outline, color: colors.onSurfaceVariant.withAlpha((255 * 0.6).round())),
                                   ),
                                 ),
                                 Padding(
@@ -314,29 +350,29 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                   onPressed: (isSaving || !hasChanges || (_nameValidationError != null && isNameChanged))
                                       ? null
                                       : () async {
-                                          if (isNameChanged && maxNameChanges) {
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                              content: Text('Ya no puedes cambiar tu nombre este mes.'),
-                                              backgroundColor: Colors.red,
-                                            ));
-                                            return; 
+                                        if (isNameChanged && maxNameChanges) {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                            content: Text('Ya no puedes cambiar tu nombre este mes.'),
+                                            backgroundColor: Colors.red,
+                                          ));
+                                          return; 
+                                        }
+                                        final updatedProfile = await ref.read(profileControllerProvider.notifier).updateProfile(
+                                          newName: isNameChanged ? _nameController!.text : null,
+                                          newAvatar: isAvatarChanged ? _currentAvatar : null, 
+                                        );
+                                        if (!context.mounted) return;
+                                        if (updatedProfile != null) {
+                                          if (isAvatarChanged) {
+                                            final remainingAvatar = 2 - updatedProfile.cambiosAvatarHoy;
+                                            final avatarSnackBarMessage = remainingAvatar > 0
+                                              ? 'Te queda 1 cambio de avatar hoy.'
+                                              : 'Límite de cambios de avatar alcanzado hoy.';
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(avatarSnackBarMessage)));
                                           }
-                                          final updatedProfile = await ref.read(profileControllerProvider.notifier).updateProfile(
-                                            newName: isNameChanged ? _nameController!.text : null,
-                                            newAvatar: isAvatarChanged ? _currentAvatar : null, 
-                                          );
-                                          if (!context.mounted) return;
-                                          if (updatedProfile != null) {
-                                            if (isAvatarChanged) {
-                                              final remainingAvatar = 2 - updatedProfile.cambiosAvatarHoy;
-                                              final avatarSnackBarMessage = remainingAvatar > 0
-                                                ? 'Te queda 1 cambio de avatar hoy.'
-                                                : 'Límite de cambios de avatar alcanzado hoy.';
-                                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(avatarSnackBarMessage)));
-                                            }
-                                            context.pop();
-                                          }
-                                        },
+                                          context.pop();
+                                        }
+                                      },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: colors.primary,
                                     foregroundColor: colors.onPrimary,
@@ -392,9 +428,9 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha((255 * 0.4).round()), // Corregido withOpacity
+              color: Colors.white.withAlpha((255 * 0.4).round()),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withAlpha((255 * 0.5).round())) // Corregido withOpacity
+              border: Border.all(color: Colors.white.withAlpha((255 * 0.5).round()))
             ),
             child: child,
           ),

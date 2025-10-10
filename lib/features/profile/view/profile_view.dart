@@ -9,6 +9,7 @@ import 'package:kitsucode/features/profile/view/widgets/profile_achievements_sec
 import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:lottie/lottie.dart'; // Asegúrate de tener esta importación
 
 class ProfileView extends ConsumerWidget {
   final String? userId;
@@ -46,7 +47,7 @@ class ProfileView extends ConsumerWidget {
 
           return Stack(
             children: [
-              // Fondo con degradado dinámico (ocupa toda la pantalla)
+              // Fondo con degradado dinámico
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -61,7 +62,7 @@ class ProfileView extends ConsumerWidget {
                 ),
               ),
 
-              // Contenido principal que sí hace scroll
+              // Contenido principal
               Column(
                 children: [
                   // --- PARTE FIJA (NO SCROLLEABLE) ---
@@ -69,9 +70,7 @@ class ProfileView extends ConsumerWidget {
                     bottom: false,
                     child: Column(
                       children: [
-                        // --- CAMBIO: La barra superior ya no está aquí ---
-                        // Se ha movido a un Positioned fuera de este Column
-                        SizedBox(height: 56), // Espacio para la barra de botones que ahora está "flotando"
+                        const SizedBox(height: 56), // Espacio para la barra de botones
                         ProfileHeader(
                           userProfile: userProfile,
                           isCurrentUserProfile: isCurrentUserProfile,
@@ -94,26 +93,45 @@ class ProfileView extends ConsumerWidget {
                     child: SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
-                        child: Column(
+                        // --- CAMBIO: Se añade Stack para la animación de fondo ---
+                        child: Stack(
                           children: [
-                            FadeInUp(
-                              from: 20,
-                              delay: const Duration(milliseconds: 600),
-                              child: ProfileProgressSection(
-                                userId: targetUserId,
-                                showViewAllButton: isCurrentUserProfile,
+                            // --- Animación de fondo ---
+                            Positioned.fill(
+                              child: ColorFiltered(
+                                colorFilter: ColorFilter.mode(
+                                  colors.secondaryFixedDim.withOpacity(0.3),
+                                  BlendMode.srcIn,
+                                ),
+                                child: Lottie.asset(
+                                  'assets/animations/particles.json',
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
-                            FadeInUp(
-                              from: 20,
-                              delay: const Duration(milliseconds: 700),
-                              child: ProfileAchievementsSection(
-                                userId: targetUserId,
-                                isCurrentUserProfile: isCurrentUserProfile,
-                                userProfile: userProfile,
-                              ),
+                            // --- Contenido del scroll ---
+                            Column(
+                              children: [
+                                FadeInUp(
+                                  from: 20,
+                                  delay: const Duration(milliseconds: 600),
+                                  child: ProfileProgressSection(
+                                    userId: targetUserId,
+                                    showViewAllButton: isCurrentUserProfile,
+                                  ),
+                                ),
+                                FadeInUp(
+                                  from: 20,
+                                  delay: const Duration(milliseconds: 700),
+                                  child: ProfileAchievementsSection(
+                                    userId: targetUserId,
+                                    isCurrentUserProfile: isCurrentUserProfile,
+                                    userProfile: userProfile,
+                                  ),
+                                ),
+                                const SizedBox(height: 70),
+                              ],
                             ),
-                            const SizedBox(height: 70),
                           ],
                         ),
                       ),
@@ -122,12 +140,12 @@ class ProfileView extends ConsumerWidget {
                 ],
               ),
 
-              // --- CAMBIO: Barra de botones ahora posicionada absolutamente ---
+              // Barra de botones posicionada absolutamente
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: SafeArea( // Se envuelve en SafeArea para respetar el notch/isla
+                child: SafeArea(
                   bottom: false,
                   child: _TopBar(
                     isCurrentUserProfile: isCurrentUserProfile,
@@ -144,7 +162,7 @@ class ProfileView extends ConsumerWidget {
 }
 
 
-// --- CAMBIO: Widget _TopBar con estilo consistente ---
+// Widget _TopBar (sin cambios)
 class _TopBar extends StatelessWidget {
   final bool isCurrentUserProfile;
   final ColorScheme colors;
@@ -158,12 +176,11 @@ class _TopBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Botón de Volver
           InkWell(
             onTap: () => context.pop(),
             borderRadius: BorderRadius.circular(30),
             child: Container(
-              padding: const EdgeInsets.all(8.0), // Usamos padding para el tamaño
+              padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
                 color: colors.surface.withAlpha((255 * 0.3).round()),
                 shape: BoxShape.circle,
@@ -171,13 +188,12 @@ class _TopBar extends StatelessWidget {
               child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
             ),
           ),
-          // Botón de Ajustes (condicional)
           if (isCurrentUserProfile)
             InkWell(
               onTap: () { /* Navegar a settings */ },
               borderRadius: BorderRadius.circular(30),
               child: Container(
-                padding: const EdgeInsets.all(8.0), // Usamos padding para el tamaño
+                padding: const EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
                   color: colors.surface.withAlpha((255 * 0.3).round()),
                   shape: BoxShape.circle,

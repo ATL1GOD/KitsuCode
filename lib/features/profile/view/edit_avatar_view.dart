@@ -37,16 +37,16 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
   late String _selectedAvatar;
   AvatarCategory _selectedCategory = AvatarCategory.general;
 
-  // --- NUEVA FUNCIÓN: Lógica para el color dinámico del fondo ---
+  // Función para obtener el color dinámico basado en el avatar seleccionado
   Color _getDynamicBackgroundColor(ColorScheme colors) {
     final avatar = _selectedAvatar.toLowerCase();
-    if (avatar.contains('tiburon')) return const Color(0xFF0097A7); // Azul para tiburón
-    if (avatar.contains('zorro')) return const Color(0xFFE65100); // Naranja oscuro para zorro
-    if (avatar.contains('gato')) return const Color(0xFF7B1FA2); // Morado para gato
-    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17); // Naranja brillante para león
-    if (avatar.contains('panda')) return const Color(0xFF2E7D32); // Verde oscuro para panda
-    // Color por defecto si no coincide
-    return colors.primary; // O un color de tu paleta que sea base
+    if (avatar.contains('tiburon')) return const Color(0xFF0097A7); 
+    if (avatar.contains('zorro')) return const Color(0xFFE65100); 
+    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
+    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
+    if (avatar.contains('panda')) return const Color(0xFF2E7D32); 
+    // Color por defecto 
+    return colors.primary; 
   }
 
   @override

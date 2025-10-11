@@ -13,13 +13,12 @@ class RankingFiltersWidget extends ConsumerWidget {
     final selectedLang = ref.watch(selectedLanguageProvider);
     final allLangs = ref.watch(allLanguagesProvider);
 
-    // --- CAMBIO: Se eliminó toda la lógica de fondo (Stack, Lottie, BackdropFilter) ---
     // Ahora el widget es transparente y se enfoca solo en su contenido.
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Container(
         width: double.infinity,
-        // Damos un fondo muy sutil para que los filtros resalten ligeramente sobre la animación principal.
+        // Fondo translúcido con borde sutil
         decoration: BoxDecoration(
           color: colors.surface.withOpacity(0.1),
           borderRadius: BorderRadius.circular(18),
@@ -31,7 +30,7 @@ class RankingFiltersWidget extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
           children: [
-            /// --- FILTRO DE LENGUAJE ---
+            // 
             SizedBox(
               width: double.infinity,
               child: SegmentedButton<int>(
@@ -60,7 +59,8 @@ class RankingFiltersWidget extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            /// --- FILTRO DE TIEMPO ---
+            /// Pestañas de filtro de tiempo
+            /// (Hoy, Semana, Mes, Todos)
             const _TimeFilterTabs(),
           ],
         ),

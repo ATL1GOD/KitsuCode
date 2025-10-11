@@ -7,7 +7,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:lottie/lottie.dart'; // ¡Añade esta importación!
+import 'package:lottie/lottie.dart'; 
 
 class EditProfileView extends ConsumerStatefulWidget {
   const EditProfileView({super.key});
@@ -17,7 +17,7 @@ class EditProfileView extends ConsumerStatefulWidget {
 }
 
 class _EditProfileViewState extends ConsumerState<EditProfileView> {
-  // ... (todo tu código de estado _nameController, etc., sigue igual aquí)
+  
   TextEditingController? _nameController;
   String? _nameValidationError;
 
@@ -170,7 +170,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                 ),
               ),
 
-              // --- CAMBIO: AQUÍ EMPIEZA LA NUEVA ANIMACIÓN DE CABECERA ---
+              // --- ANIMACIÓN DE FONDO ---
               AnimatedOpacity(
                 opacity: isKeyboardVisible ? 0.0 : 1.0,
                 duration: const Duration(milliseconds: 300),
@@ -202,8 +202,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                   ),
                 ),
               ),
-              // --- FIN DE LA ANIMACIÓN ---
-
+              // --- CONTENIDO PRINCIPAL ---
               SafeArea(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),

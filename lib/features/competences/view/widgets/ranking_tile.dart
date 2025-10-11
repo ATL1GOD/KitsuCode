@@ -44,14 +44,14 @@ class RankingTile extends StatelessWidget {
         onTap: () {
           if (isCurrentUser) return;
 
-          // --- CAMBIO: AHORA LLAMAMOS A showDialog ---
+          // Mostrar el modal con más información del usuario
           showDialog(
             context: context,
             builder: (ctx) => UserProfileModal(userId: user.userId),
           );
         },
         child: ListTile(
-          // ... El contenido del ListTile se mantiene exactamente igual
+          // Ajuste de padding para mejor alineación
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           leading: Row(
             mainAxisSize: MainAxisSize.min,

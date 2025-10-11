@@ -14,12 +14,11 @@ import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:lottie/lottie.dart';
 
-// --- Widget RankingView principal (sin cambios) ---
+// --- WIDGET PRINCIPAL: RankingView ---
 class RankingView extends ConsumerWidget {
   const RankingView({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ... (código sin cambios)
     ref.watch(followRealtimeProvider);
     ref.watch(rankingRealtimeProvider);
     final authState = ref.watch(authStateProvider);
@@ -35,7 +34,7 @@ class RankingView extends ConsumerWidget {
   }
 
   Widget _buildNotAuthenticatedScreen(BuildContext context) {
-    // ... (código sin cambios)
+    // Pantalla para usuarios no autenticados
     final colors = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
@@ -62,7 +61,7 @@ class RankingView extends ConsumerWidget {
   }
 }
 
-// --- WIDGET _RankingContent CON LA CORRECCIÓN DE VISIBILIDAD ---
+// --- WIDGET PRIVADO: _RankingContent ---
 class _RankingContent extends ConsumerWidget {
   const _RankingContent();
 
@@ -75,11 +74,11 @@ class _RankingContent extends ConsumerWidget {
     final String? currentUserId = authUser?.id;
 
     return Scaffold(
-      // --- CORRECCIÓN 1: Fondo claro y sólido ---
+      // Fondo principal con color de acento muy suave
       backgroundColor: colors.primaryContainer.withOpacity(0.05), 
       body: Stack(
         children: [
-          // --- CAPA 1: ANIMACIÓN DEL TREN CON OPACIDAD ---
+          // --- CAPA 1: ANIMACIÓN DE FONDO ---
           Positioned.fill(
             child: Opacity(
               // Opacidad baja para que sea un fondo muy sutil
@@ -91,7 +90,7 @@ class _RankingContent extends ConsumerWidget {
             ),
           ),
           
-          // --- CAPA 2: CONTENIDO PRINCIPAL DE LA UI ---
+          // --- CAPA 2: CONTENIDO PRINCIPAL ---
           Column(
             children: [
               SafeArea(
@@ -215,7 +214,7 @@ class _RankingContent extends ConsumerWidget {
   }
 }
 
-// ... (Pega aquí el resto de tus widgets privados. No han cambiado)
+// --- WIDGETS AUXILIARES ---
 class _EmptyRankingWidget extends StatelessWidget {
  const _EmptyRankingWidget();
  @override

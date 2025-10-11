@@ -60,9 +60,9 @@ class ProfileHeader extends StatelessWidget {
           ),
         ),
 
-        // 2. TU CÓDIGO ORIGINAL (Avatar y textos) AHORA MÁS ARRIBA
+        // 2. EL CONTENIDO DEL HEADER (AVATAR, NOMBRE, STATS)
         Padding(
-          padding: const EdgeInsets.only(top: 70.0), // *** CAMBIO AQUÍ: SUBIMOS EL CONTENIDO ***
+          padding: const EdgeInsets.only(top: 70.0), // Espacio desde arriba hasta el avatar
           child: Column(
             children: [
               // CONTENEDOR DEL AVATAR Y BOTÓN

@@ -12,7 +12,7 @@ import 'package:shimmer/shimmer.dart';
 class AllStatsView extends ConsumerWidget {
   const AllStatsView({super.key});
 
-  // Lógica para el color dinámico, sin cambios.
+  // Lógica para el color dinámico
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
     final avatar = userProfile.avatarUrl.toLowerCase();
     if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
@@ -61,19 +61,17 @@ class AllStatsView extends ConsumerWidget {
                 ),
               ),
 
-              // --- CAMBIO AQUÍ: Animación Lottie envuelta en ColorFiltered ---
+              // ANIMACIÓN DE FONDO CON LOTTIE
               ColorFiltered(
                 colorFilter: ColorFilter.mode(
-                  // Elige el color que quieras de tu paleta.
-                  // colors.primary o colors.secondary funcionan muy bien.
+                  // colors.primary o colors.secondary los estoy considerando jaja
                   colors.secondaryFixedDim.withOpacity(0.8), 
                   
                   // Este modo de fusión tiñe la imagen original.
-                  // BlendMode.srcIn es una excelente opción.
                   BlendMode.srcIn, 
                 ),
                 child: Lottie.asset(
-                  'assets/animations/spring.json', // Cambiado de 'particles.json'
+                  'assets/animations/spring.json', 
                   width: double.infinity,
                   height: double.infinity,
                   fit: BoxFit.cover,

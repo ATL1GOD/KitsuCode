@@ -7,14 +7,14 @@ import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Provider para el repositorio (sin cambios)
+// Provider para el repositorio de perfil
 final profileRepositoryProvider = Provider((ref) {
   final supabaseClient = Supabase.instance.client;
   return ProfileRepository(supabaseClient);
 });
 
+// Provider para obtener el perfil de un usuario por su ID
 // --- CAMBIO CLAVE: De FutureProvider a StreamProvider ---
-// Ahora este provider escuchará los cambios en tiempo real del repositorio.
 final userProfileByIdProvider = StreamProvider.family<UserProfileModel, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   // Llamamos al nuevo método que devuelve un Stream
@@ -23,7 +23,6 @@ final userProfileByIdProvider = StreamProvider.family<UserProfileModel, String>(
 
 // Los providers de estadísticas y logros pueden seguir siendo FutureProviders
 // ya que el userProfileProvider los invalidará si es necesario, o se pueden
-// refactorizar a StreamProviders si también necesitan ser reactivos. Por ahora, los dejamos así.
 final userStatsProvider = FutureProvider.family<UserStatsModel, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserStatsById(userId);

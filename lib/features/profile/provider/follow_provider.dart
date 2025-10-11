@@ -28,7 +28,7 @@ class FollowController extends StateNotifier<bool> {
 
       await _profileRepository.toggleFollow(followedUserId);
       
-      // --- LÓGICA DE ACTUALIZACIÓN "EN VIVO" ---
+      // real time updates:
 
       // 1. Refresca el estado del botón (Seguir/Siguiendo)
       _ref.invalidate(isFollowingProvider(followedUserId));
@@ -42,7 +42,7 @@ class FollowController extends StateNotifier<bool> {
       }
 
     } catch (e) {
-      // Manejar error si es necesario
+      // errores que podemos manejar
     } finally {
       state = false;
     }

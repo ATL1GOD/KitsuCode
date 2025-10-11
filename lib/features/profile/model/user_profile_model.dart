@@ -36,7 +36,7 @@ class UserProfileModel {
     );
   }
 
-  // --- MÉTODO AÑADIDO PARA SOLUCIONAR EL ERROR ---
+  // Método para clonar y modificar instancias
   UserProfileModel copyWith({
     String? userId,
     String? nombreUsuario,

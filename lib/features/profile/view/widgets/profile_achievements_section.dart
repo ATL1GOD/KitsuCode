@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// Importamos el modelo de perfil de usuario
 import 'package:kitsucode/features/profile/model/user_profile_model.dart'; 
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:shimmer/shimmer.dart'; 
@@ -45,7 +44,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
           Row(
             children: [
               Icon(
-                Icons.emoji_events_outlined, // --- ICONO AÑADIDO ---
+                Icons.emoji_events_outlined, 
                 color: colors.secondary,
               ),
               const SizedBox(width: 8), // Espacio
@@ -70,9 +69,9 @@ class ProfileAchievementsSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               achievementsState.when(
-                loading: () => titleWidget([]), // Muestra el título sin el botón "Ver todo"
-                error: (e, s) => titleWidget([]), // Muestra el título sin el botón "Ver todo"
-                data: (achievements) => titleWidget(achievements), // Pasa la lista para la lógica del botón
+                loading: () => titleWidget([]), 
+                error: (e, s) => titleWidget([]), 
+                data: (achievements) => titleWidget(achievements), 
               ),
               const SizedBox(height: 15),
               achievementsState.when(
@@ -117,7 +116,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
                             message: '${achievement.nombre}\n${achievement.descripcion}',
                             child: CircleAvatar(
                               radius: 40,
-                              backgroundColor: colors.primaryContainer.withAlpha(178), // Opacidad corregida
+                              backgroundColor: colors.primaryContainer.withAlpha(178), // Opacidad corregida para mejor visibilidad
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Image.asset(imagePath),
@@ -152,9 +151,9 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(102), // Opacidad corregida
+              color: Colors.white.withAlpha(102), // Opacidad corregida para mejor visibilidad
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withAlpha(128)) // Opacidad corregida
+              border: Border.all(color: Colors.white.withAlpha(128)) // Opacidad corregida para mejor visibilidad
             ),
             child: child,
           ),

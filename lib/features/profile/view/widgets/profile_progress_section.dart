@@ -31,7 +31,7 @@ class ProfileProgressSection extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // --- INICIA EL CAMBIO ---
+                  // icono y título
                   Row(
                     children: [
                       Icon(

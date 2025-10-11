@@ -9,7 +9,7 @@ import 'package:kitsucode/features/profile/view/widgets/profile_achievements_sec
 import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:lottie/lottie.dart'; // Asegúrate de tener esta importación
+import 'package:lottie/lottie.dart'; 
 
 class ProfileView extends ConsumerWidget {
   final String? userId;
@@ -93,7 +93,7 @@ class ProfileView extends ConsumerWidget {
                     child: SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
-                        // --- CAMBIO: Se añade Stack para la animación de fondo ---
+                        // se añade Stack para la animación de fondo ---
                         child: Stack(
                           children: [
                             // --- Animación de fondo ---
@@ -162,7 +162,7 @@ class ProfileView extends ConsumerWidget {
 }
 
 
-// Widget _TopBar (sin cambios)
+// Widget _TopBar con los botones de navegación
 class _TopBar extends StatelessWidget {
   final bool isCurrentUserProfile;
   final ColorScheme colors;

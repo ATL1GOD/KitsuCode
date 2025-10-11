@@ -1,6 +1,4 @@
-// lib/features/profile/repository/profile_repository.dart
-
-import 'dart:async'; // Importa async para los Streams
+import 'dart:async'; 
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
@@ -11,7 +9,6 @@ class ProfileRepository {
 
   ProfileRepository(this._supabase);
 
-  // --- ¡NUEVO MÉTODO CON STREAM PARA REALTIME! ---
   // Este método observa los cambios en el perfil de un usuario en tiempo real.
   Stream<UserProfileModel> watchUserProfileById(String userId) async* {
     // 1. Emitimos el valor inicial inmediatamente para que la UI no espere.
@@ -25,15 +22,15 @@ class ProfileRepository {
 
     // 3. Escuchamos el stream. Cada vez que haya un cambio (un UPDATE)...
     await for (final data in stream) {
-      // ...volvemos a llamar a nuestra función RPC para obtener los datos completos y actualizados...
+      // ...obtenemos el perfil actualizado...
       final updatedProfile = await fetchUserProfileById(userId);
-      // ...y los emitimos al provider, que actualizará la UI.
+      // ...y lo emitimos.
       yield updatedProfile;
     }
   }
 
 
-  // --- MÉTODOS EXISTENTES (sin cambios) ---
+  // Consulta si el usuario actual sigue a otro usuario
 
   Future<bool> isFollowing(String followedUserId) async {
     final currentUser = _supabase.auth.currentUser;

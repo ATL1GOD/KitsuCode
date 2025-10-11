@@ -52,14 +52,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
-          // Pestaña 0: Home (FUNCIONAL)
+          // Pestaña 0: Home 
           StatefulShellBranch(
             routes: [
               GoRoute(path: '/home', builder: (context, state) => const HomeView()),
             ],
           ),
 
-          // Pestaña 1: Ranking (FUNCIONAL)
+          // Pestaña 1: Ranking 
           StatefulShellBranch(
             routes: [
               GoRoute(path: '/ranking', builder: (context, state) => const RankingView()),
@@ -68,8 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // Pestaña 2: Social (INACTIVA PERO SIN ERROR)
           StatefulShellBranch(
-            // SOLUCIÓN: Le damos una ruta temporal que no hace nada.
-            // Esto satisface a go_router y evita el crash.
+            // aun no tiene nada jaja
             routes: [
               GoRoute(
                 path: '/social_placeholder', 
@@ -77,7 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Pestaña 3: Perfil (FUNCIONAL)
+          // Pestaña 3: Perfil 
           StatefulShellBranch(
             routes: [
               GoRoute(

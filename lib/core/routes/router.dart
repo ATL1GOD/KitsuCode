@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Imports de tus vistas
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/login_view.dart';
+import 'package:kitsucode/features/auth/view/register_view.dart'; // Import the new view
 import 'package:kitsucode/features/home/view/home_view.dart';
 import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
@@ -99,8 +100,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       return authState.when(
         data: (data) {
           final isAuthenticated = data.session != null;
-          final isLoggingIn = state.matchedLocation == '/login';
-          final isSplashing = state.matchedLocation == '/splash';
+          final currentLocation = state.matchedLocation;
+
+          // Lista de rutas que el usuario puede visitar SIN estar autenticado
+          // --- UPDATED LIST ---
+          final authRoutes = ['/login', '/register'];
+
+          // ¿El usuario está en una de las rutas de autenticación?
+          final isGoingToAuthRoute = authRoutes.contains(currentLocation);
+          final isSplashing = currentLocation == '/splash';
 
           if (isSplashing) {
             return isAuthenticated ? '/home' : '/login';

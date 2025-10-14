@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart'; // Importa el archivo renombrado
 
 class RegisterForm extends ConsumerStatefulWidget {
-  const RegisterForm({super.key});
+  final VoidCallback onSwitchToLogin;
+
+  const RegisterForm({super.key, required this.onSwitchToLogin});
 
   @override
   ConsumerState<RegisterForm> createState() => _RegisterFormState();
@@ -26,19 +29,16 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
   void _submit() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
       final registerNotifier = ref.read(registerStateProvider.notifier);
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
-
       try {
-        await registerNotifier.signUpWithEmailPassword(email, password);
+        await registerNotifier.signUpWithEmailPassword(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Registro exitoso. Por favor revisa tu correo para la confirmación.',
-              ),
+              content: Text('Registro exitoso. Revisa tu correo.'),
               backgroundColor: Colors.green,
             ),
           );
@@ -60,93 +60,102 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   @override
   Widget build(BuildContext context) {
     final registerState = ref.watch(registerStateProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final inputDecoration = InputDecoration(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      filled: true,
-      fillColor: colorScheme.primary.withAlpha(30),
-    );
+    final loginState = ref.watch(loginStateProvider);
+    final isLoading = registerState.isLoading || loginState.isLoading;
 
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          TextFormField(
-            controller: _emailController,
-            decoration: inputDecoration.copyWith(hintText: 'Email'),
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingresa un correo';
-              }
-              if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                return 'Por favor ingresa un correo válido';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _passwordController,
-            decoration: inputDecoration.copyWith(hintText: 'Contraseña'),
-            obscureText: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Por favor ingresa una contraseña';
-              }
-              if (value.length < 6) {
-                return 'La contraseña debe tener al menos 6 caracteres';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _confirmPasswordController,
-            decoration: inputDecoration.copyWith(
-              hintText: 'Confirmar Contraseña',
+          AnimatedFadeIn(
+            delay: 100,
+            child: CustomInputField(
+              controller: _emailController,
+              hintText: 'Email',
+              prefixIcon: Icons.alternate_email,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Ingresa un correo';
+                if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                  return 'Ingresa un correo válido';
+                }
+                return null;
+              },
             ),
-            obscureText: true,
-            validator: (value) {
-              if (value != _passwordController.text) {
-                return 'Las contraseñas no coinciden';
-              }
-              return null;
-            },
+          ),
+          const SizedBox(height: 16),
+          AnimatedFadeIn(
+            delay: 200,
+            child: CustomInputField(
+              controller: _passwordController,
+              hintText: 'Contraseña',
+              prefixIcon: Icons.lock_outline,
+              isPassword: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Ingresa una contraseña';
+                }
+                if (value.length < 8) {
+                  return 'Mínimo 8 caracteres';
+                }
+                // Expresión regular para validar la contraseña
+                final passwordRegex = RegExp(
+                  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).*$',
+                );
+                if (!passwordRegex.hasMatch(value)) {
+                  return 'Debe incluir mayúsculas, minúsculas, números y símbolos.';
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          AnimatedFadeIn(
+            delay: 300,
+            child: CustomInputField(
+              controller: _confirmPasswordController,
+              hintText: 'Confirmar Contraseña',
+              prefixIcon: Icons.lock_outline,
+              isPassword: true,
+              validator: (value) {
+                if (value != _passwordController.text) {
+                  return 'Las contraseñas no coinciden';
+                }
+                return null;
+              },
+            ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: registerState.isLoading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
+          AnimatedFadeIn(
+            delay: 400,
+            child: PrimaryAuthButton(
+              isLoading: isLoading,
+              text: 'Crear Cuenta',
+              onPressed: _submit,
             ),
-            child: registerState.isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Crear Cuenta'),
           ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () => context.go('/login'),
-            child: Text(
-              '¿Ya tienes una cuenta? Inicia sesión',
-              style: TextStyle(color: colorScheme.primary),
+          const SizedBox(height: 16),
+          // const AnimatedFadeIn(delay: 500, child: OrDivider()),
+          // const SizedBox(height: 16),
+          // AnimatedFadeIn(
+          //   delay: 600,
+          //   child: SocialAuthButton(
+          //     text: 'Registrarse con Google',
+          //     iconPath:
+          //         'images/auth/google_logo.png', // Asegúrate que la ruta sea correcta
+          //     isLoading: isLoading,
+          //     onPressed: _googleSignIn,
+          //   ),
+          // ),
+          const SizedBox(height: 16),
+          AnimatedFadeIn(
+            delay: 700,
+            child: SwitchFormButton(
+              text: '¿Ya tienes una cuenta?',
+              highlightedText: 'Inicia Sesión',
+              onPressed: widget.onSwitchToLogin,
             ),
           ),
         ],

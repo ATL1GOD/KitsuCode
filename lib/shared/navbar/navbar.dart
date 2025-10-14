@@ -1,5 +1,3 @@
-// lib/shared/navbar/navbar.dart
-
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
@@ -18,49 +16,44 @@ class NavBar extends StatelessWidget {
       height: 65.0,
       items: <Widget>[
         Transform.scale(
-          scale: 2.9,
+          scale: 2.9, // <-- Aumenta la imagen visualmente (30 * 1.7 = 51px)
           child: Image.asset(
-            'assets/images/navbar/home_navbar.png',
-            width: 30,
+            'images/navbar/home_navbar.png',
+            width: 30, // <-- Mantiene el espacio del layout pequeño
             height: 30,
           ),
         ),
         Transform.scale(
-          scale: 1.5,
+          scale: 1.5, // <-- Aumenta la imagen visualmente (30 * 1.7 = 51px)
           child: Image.asset(
-            'assets/images/navbar/social_navbar.png',
-            width: 30,
+            'images/navbar/social_navbar.png',
+            width: 30, // <-- Mantiene el espacio del layout pequeño
             height: 30,
           ),
         ),
         Transform.scale(
-          scale: 1.5,
+          scale: 1.5, // <-- Aumenta la imagen visualmente (30 * 1.7 = 51px)
           child: Image.asset(
-            'assets/images/navbar/social_navbar.png',
-            width: 30,
+            'images/navbar/social_navbar.png',
+            width: 30, // <-- Mantiene el espacio del layout pequeño
             height: 30,
           ),
         ),
         Transform.scale(
-          scale: 1.5,
+          scale: 1.5, // <-- Aumenta la imagen visualmente (30 * 1.7 = 51px)
           child: Image.asset(
-            'assets/images/navbar/social_navbar.png',
-            width: 30,
+            'images/navbar/social_navbar.png',
+            width: 30, // <-- Mantiene el espacio del layout pequeño
             height: 30,
           ),
         ),
       ],
-
-      // --- El color de la barra (naranja oscuro). Se mantiene. ---
+      // El color de fondo de la barra será el color primario del tema.
       color: colorScheme.secondary,
-
+      // El color del botón seleccionado será el color secundario del tema.
       buttonBackgroundColor: Colors.transparent,
-
-      // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
-      // El fondo detrás de la curva ahora es del MISMO color que la barra.
-      // Esto crea el efecto de una pieza sólida.
-      backgroundColor: colorScheme.secondaryContainer,
-
+      // El fondo general detrás de la barra es transparente para mostrar el contenido de la pantalla.
+      backgroundColor: Colors.transparent,
       animationCurve: Curves.easeOutCubic,
       animationDuration: const Duration(milliseconds: 600),
       onTap: onTap,

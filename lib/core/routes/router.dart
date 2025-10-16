@@ -9,8 +9,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 // Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
 import 'package:kitsucode/shared/navbar/navigation_scaffold.dart'; // Asegúrate de tener este archivo
-// import 'package:kitsucode/features/home/view/home_view.dart';
-import 'package:kitsucode/features/home/view/widgets/map_home.dart';
+import 'package:kitsucode/features/home/view/home_view.dart';
 
 // --- PLACEHOLDERS PARA LAS OTRAS PANTALLAS ---
 // Reemplaza estos Widgets con tus pantallas reales cuando las crees.
@@ -21,82 +20,6 @@ class CoursesScreen extends StatelessWidget {
     appBar: AppBar(title: const Text('Cursos')),
     body: const Center(child: Text('Pantalla de Cursos')),
   );
-}
-
-class HomeView extends StatelessWidget {
-  const HomeView({super.key});
-
-  // Función auxiliar para oscurecer un color
-  Color _darkenColor(Color color, double factor) {
-    return HSLColor.fromColor(color)
-        .withLightness(
-          (HSLColor.fromColor(color).lightness - factor).clamp(0.0, 1.0),
-        )
-        .toColor();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Datos de ejemplo para las secciones del camino
-    final data = <SectionData>[
-      SectionData(
-        color: const Color(0xFF58CC02), // Verde Duolingo
-        colorOscuro: _darkenColor(const Color(0xFF58CC02), 0.1),
-        etapa: 1,
-        seccion: 1,
-        titulo: 'Fundamentos de Nieve',
-      ),
-      SectionData(
-        color: const Color(0xFF1CB0F6), // Azul Duolingo
-        colorOscuro: _darkenColor(const Color(0xFF1CB0F6), 0.1),
-        etapa: 1,
-        seccion: 2,
-        titulo: "Aventura Congelada",
-      ),
-      SectionData(
-        color: const Color(0xFFFF9600), // Naranja Duolingo
-        colorOscuro: _darkenColor(const Color(0xFFFF9600), 0.1),
-        etapa: 1,
-        seccion: 3,
-        titulo: "Reto del Vértice",
-      ),
-    ];
-
-    return Scaffold(
-      // Hacemos el Scaffold transparente para ver el fondo del Stack
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Camino Infinito'),
-        // El AppBar también transparente
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      // Usamos un Stack para poner la imagen de fondo
-      body: Stack(
-        children: [
-          // Capa 1: El Fondo de Imagen Repetitivo
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                // Usa el nombre de tu archivo de imagen
-                image: AssetImage('images/home/mapa_c1.png'),
-                fit: BoxFit.cover, // Cubre el ancho, se repetirá verticalmente
-                repeat: ImageRepeat
-                    .repeatY, // ¡Esta es la clave para el efecto infinito!
-              ),
-            ),
-          ),
-          // Capa 2: El Camino de Botones (ListView)
-          ListView.separated(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: data.length,
-            itemBuilder: (_, index) => Section(data: data[index]),
-            separatorBuilder: (_, __) => const SizedBox(height: 24.0),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class DirectoryScreen extends StatelessWidget {

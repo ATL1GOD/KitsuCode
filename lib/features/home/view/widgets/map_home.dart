@@ -1,7 +1,9 @@
+// features/home/view/widgets/map_home.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 
-// Clase para contener los datos de cada sección
 class SectionData {
   final Color color;
   final Color colorOscuro;
@@ -18,7 +20,6 @@ class SectionData {
   });
 }
 
-// El Widget que construye la ruta o camino
 class Section extends StatelessWidget {
   final SectionData data;
 
@@ -29,7 +30,6 @@ class Section extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Título de la sección con divisores
         Row(
           children: [
             const Expanded(child: Divider(color: Color(0xFF2D3D41))),
@@ -47,43 +47,25 @@ class Section extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24.0),
-        // Genera los 9 elementos de la sección (8 botones y 1 cofre)
         ...List.generate(
           9,
           (i) => i % 9 != 4
               ? Container(
                   margin: EdgeInsets.only(
                     bottom: i != 8 ? 24.0 : 0,
-                    left: getLeft(i), // Margen izquierdo para el efecto zig-zag
-                    right: getRight(i), // Margen derecho para el efecto zig-zag
+                    left: getLeft(i),
+                    right: getRight(i),
                   ),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: data.colorOscuro, width: 6.0),
-                    ),
-                    borderRadius: BorderRadius.circular(36.0),
-                  ),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Acción al presionar el botón
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: data.color,
-                      fixedSize: const Size(56, 48),
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      minimumSize: Size.zero,
-                    ),
-                    child: SvgPicture.asset(
-                      'assets/estrella.svg', // Icono del botón
-                      width: 24.0,
-                      height: 24.0,
-                    ),
+                  child: ReliefSectionButton(
+                    onPressed: () {},
+                    baseColor: data.color,
+                    reliefColor: data.colorOscuro,
+                    svgAsset: 'assets/estrella.svg',
+                    size: 56.0,
+                    reliefThickness: 6.0,
                   ),
                 )
               : Container(
-                  // Elemento del cofre en el centro
                   margin: const EdgeInsets.only(bottom: 24.0),
                   child: SvgPicture.asset(
                     'assets/cofre-ruta.svg',
@@ -96,39 +78,21 @@ class Section extends StatelessWidget {
     );
   }
 
-  // Calcula el margen izquierdo basado en el índice del elemento
   double getLeft(int indice) {
     const margin = 72.0;
     int pos = indice % 9;
-
-    if (pos == 1) {
-      return margin;
-    }
-    if (pos == 2) {
-      return margin * 2;
-    }
-    if (pos == 3) {
-      return margin;
-    }
-
+    if (pos == 1) return margin;
+    if (pos == 2) return margin * 2;
+    if (pos == 3) return margin;
     return 0.0;
   }
 
-  // Calcula el margen derecho basado en el índice del elemento
   double getRight(int indice) {
     const margin = 72.0;
     int pos = indice % 9;
-
-    if (pos == 5) {
-      return margin;
-    }
-    if (pos == 6) {
-      return margin * 2;
-    }
-    if (pos == 7) {
-      return margin;
-    }
-
+    if (pos == 5) return margin;
+    if (pos == 6) return margin * 2;
+    if (pos == 7) return margin;
     return 0.0;
   }
 }

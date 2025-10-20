@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 // Importamos los widgets desde su nueva ubicación.
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
 
@@ -55,8 +54,7 @@ class _HomeViewState extends State<HomeView> {
   // Se restaura toda la lógica de control de scroll del primer prototipo.
   int iCurrentSection = 0;
   final heightFirstBox = 56.0;
-  final heightSection =
-      764.0; // Ajusta este valor si la altura de tu Section cambió.
+  final heightSection = 816.0; // 840 o 764.0 (altura del Section)
   final scrollCtrl = ScrollController();
 
   @override
@@ -110,8 +108,14 @@ class _HomeViewState extends State<HomeView> {
             padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
             itemCount: data.length + 1,
           ),
+
           // Capa 3: El widget flotante que muestra la sección actual.
-          CurrentSection(data: data[iCurrentSection]),
+          Positioned(
+            top: 40.0,
+            left: 0,
+            right: 0,
+            child: CurrentSection(data: data[iCurrentSection]),
+          ),
         ],
       ),
       backgroundColor: Colors.transparent,
@@ -167,11 +171,11 @@ class CurrentSection extends StatelessWidget {
                 left: BorderSide(color: data.colorOscuro, width: 2.0),
               ),
             ),
-            child: SvgPicture.asset(
-              'assets/leccion.svg',
-              width: 20,
-              height: 20,
-            ),
+            // child: SvgPicture.asset(
+            //   'assets/leccion.svg',
+            //   width: 20,
+            //   height: 20,
+            // ),
           ),
         ],
       ),

@@ -60,15 +60,15 @@ class Section extends StatelessWidget {
                     onPressed: () {},
                     baseColor: data.color,
                     reliefColor: data.colorOscuro,
-                    svgAsset: 'assets/estrella.svg',
+                    svgAsset: 'images/home/estrella.svg',
                     size: 56.0,
                     reliefThickness: 6.0,
                   ),
                 )
               : Container(
                   margin: const EdgeInsets.only(bottom: 24.0),
-                  child: SvgPicture.asset(
-                    'assets/cofre-ruta.svg',
+                  child: Image.asset(
+                    'images/home/3.png',
                     width: 72,
                     height: 72,
                   ),

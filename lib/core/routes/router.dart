@@ -11,6 +11,7 @@ import 'package:kitsucode/features/auth/view/auth_view.dart';
 import 'package:kitsucode/shared/navbar/navigation_scaffold.dart'; // Asegúrate de tener este archivo
 
 // --- TUS VISTAS REALES ---
+import 'package:kitsucode/features/home/view/home_view.dart';
 import 'package:kitsucode/features/competences/view/ranking_view.dart';
 import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
@@ -88,7 +89,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       // --- Rutas internas (ya autenticado) ---
-      GoRoute(path: '/edit-profile', builder: (context, state) => const EditProfileView()),
+      GoRoute(
+        path: '/edit-profile',
+        builder: (context, state) => const EditProfileView(),
+      ),
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
@@ -97,7 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           return EditAvatarView(currentAvatar: currentAvatar);
         },
       ),
-      GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
+      GoRoute(
+        path: '/all-stats',
+        builder: (context, state) => const AllStatsView(),
+      ),
 
       // --- NAVBAR PRINCIPAL ---
       StatefulShellRoute.indexedStack(
@@ -111,9 +118,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) => const Scaffold(
-                  body: Center(child: Text('Pantalla de Inicio (placeholder)')),
-                ),
+                builder: (context, state) => const HomeView(),
               ),
             ],
           ),
@@ -136,7 +141,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/directory',
                 builder: (context, state) => const Scaffold(
-                  body: Center(child: Text('Pantalla de Directorio (placeholder)')),
+                  body: Center(
+                    child: Text('Pantalla de Directorio (placeholder)'),
+                  ),
                 ),
               ),
             ],
@@ -152,9 +159,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: ':userId',
-                    builder: (context, state) => ProfileView(
-                      userId: state.pathParameters['userId'],
-                    ),
+                    builder: (context, state) =>
+                        ProfileView(userId: state.pathParameters['userId']),
                   ),
                 ],
               ),

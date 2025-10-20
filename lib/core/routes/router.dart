@@ -9,44 +9,21 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 // Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
 import 'package:kitsucode/shared/navbar/navigation_scaffold.dart'; // Asegúrate de tener este archivo
-import 'package:kitsucode/features/home/view/home_view.dart';
 
-// --- PLACEHOLDERS PARA LAS OTRAS PANTALLAS ---
-// Reemplaza estos Widgets con tus pantallas reales cuando las crees.
-class CoursesScreen extends StatelessWidget {
-  const CoursesScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Cursos')),
-    body: const Center(child: Text('Pantalla de Cursos')),
-  );
-}
-
-class DirectoryScreen extends StatelessWidget {
-  const DirectoryScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Directorio')),
-    body: const Center(child: Text('Pantalla de Directorio')),
-  );
-}
-
-class AcademiesScreen extends StatelessWidget {
-  const AcademiesScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Academias')),
-    body: const Center(child: Text('Pantalla de Academias')),
-  );
-}
+// --- TUS VISTAS REALES ---
+import 'package:kitsucode/features/competences/view/ranking_view.dart';
+import 'package:kitsucode/features/profile/view/profile_view.dart';
+import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
+import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 // ------------------------------------------------
 
 // Claves para mantener el estado de la navegación en cada pestaña.
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
-  'courses': GlobalKey<NavigatorState>(debugLabel: 'coursesNav'),
+  'ranking': GlobalKey<NavigatorState>(debugLabel: 'rankingNav'),
   'directory': GlobalKey<NavigatorState>(debugLabel: 'directoryNav'),
-  'academies': GlobalKey<NavigatorState>(debugLabel: 'academiesNav'),
+  'profile': GlobalKey<NavigatorState>(debugLabel: 'profileNav'),
 };
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -62,8 +39,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           final isAuthenticated = data.session != null;
           final currentLocation = state.matchedLocation;
 
-          // Lista de rutas que el usuario puede visitar SIN estar autenticado
-          // --- UPDATED LIST ---
           const authRoute = '/auth';
           final isGoingToAuthRoute = currentLocation == authRoute;
           final isSplashing = currentLocation == '/splash';
@@ -102,72 +77,86 @@ final routerProvider = Provider<GoRouter>((ref) {
       );
     },
     routes: [
+      // --- Splash screen ---
       GoRoute(
         path: '/splash',
         builder: (context, state) =>
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
+
+      // --- Ruta pública de autenticación ---
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
-      // StatefulShellRoute para manejar la navegación con BottomNavBar.
-      // Esta es la ruta principal para cuando el usuario está autenticado.
+
+      // --- Rutas internas (ya autenticado) ---
+      GoRoute(path: '/edit-profile', builder: (context, state) => const EditProfileView()),
+      GoRoute(
+        path: '/edit-avatar',
+        builder: (context, state) {
+          final currentAvatar =
+              state.extra as String? ?? 'assets/images/login_zorro.png';
+          return EditAvatarView(currentAvatar: currentAvatar);
+        },
+      ),
+      GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
+
+      // --- NAVBAR PRINCIPAL ---
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          // Este Widget actúa como el "cascarón" que contiene la NavBar
-          // y el contenido de la pestaña actual.
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
-          // Cada 'branch' es una pestaña de la barra de navegación.
-
-          // 1. Pestaña de Inicio (Home)
+          // 1️⃣ HOME
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['home'],
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) => const HomeView(),
-                // Aquí puedes anidar sub-rutas si necesitas navegar
-                // desde la pantalla de inicio a otra pantalla PERO
-                // manteniendo la NavBar visible.
-                // routes: [
-                //   GoRoute(path: 'details', builder: ...),
-                // ],
+                builder: (context, state) => const Scaffold(
+                  body: Center(child: Text('Pantalla de Inicio (placeholder)')),
+                ),
               ),
             ],
           ),
 
-          // 2. Pestaña de Cursos (school icon)
+          // 2️⃣ RANKING
           StatefulShellBranch(
-            navigatorKey: _navigatorKeys['courses'],
+            navigatorKey: _navigatorKeys['ranking'],
             routes: [
               GoRoute(
-                path: '/courses',
-                builder: (context, state) =>
-                    const CoursesScreen(), // Placeholder
+                path: '/ranking',
+                builder: (context, state) => const RankingView(),
               ),
             ],
           ),
 
-          // 3. Pestaña de Directorio (menu_book icon)
+          // 3️⃣ DIRECTORIO (puedes usar para otra sección futura)
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['directory'],
             routes: [
               GoRoute(
                 path: '/directory',
-                builder: (context, state) =>
-                    const DirectoryScreen(), // Placeholder
+                builder: (context, state) => const Scaffold(
+                  body: Center(child: Text('Pantalla de Directorio (placeholder)')),
+                ),
               ),
             ],
           ),
 
-          // 4. Pestaña de Academias (collections_bookmark_sharp icon)
+          // 4️⃣ PERFIL
           StatefulShellBranch(
-            navigatorKey: _navigatorKeys['academies'],
+            navigatorKey: _navigatorKeys['profile'],
             routes: [
               GoRoute(
-                path: '/academies',
-                builder: (context, state) =>
-                    const AcademiesScreen(), // Placeholder
+                path: '/profile',
+                builder: (context, state) => const ProfileView(),
+                routes: [
+                  GoRoute(
+                    path: ':userId',
+                    builder: (context, state) => ProfileView(
+                      userId: state.pathParameters['userId'],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

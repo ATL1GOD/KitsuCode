@@ -1,24 +1,6 @@
-// features/home/view/widgets/map_home.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
-
-class SectionData {
-  final Color color;
-  final Color colorOscuro;
-  final int etapa;
-  final int seccion;
-  final String titulo;
-
-  const SectionData({
-    required this.color,
-    required this.colorOscuro,
-    required this.etapa,
-    required this.seccion,
-    required this.titulo,
-  });
-}
+import 'package:kitsucode/features/home/model/home_model.dart';
 
 class Section extends StatelessWidget {
   final SectionData data;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
+import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Ajusta la ruta
 
 class Section extends StatelessWidget {
   final SectionData data;
@@ -29,33 +30,68 @@ class Section extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24.0),
-        ...List.generate(
-          9,
-          (i) => i % 9 != 4
-              ? Container(
-                  margin: EdgeInsets.only(
-                    bottom: i != 8 ? 24.0 : 0,
-                    left: getLeft(i),
-                    right: getRight(i),
-                  ),
-                  child: ReliefSectionButton(
-                    onPressed: () {},
-                    baseColor: data.color,
-                    reliefColor: data.colorOscuro,
-                    svgAsset: 'images/home/estrella.svg',
-                    size: 56.0,
-                    reliefThickness: 6.0,
-                  ),
-                )
-              : Container(
-                  margin: const EdgeInsets.only(bottom: 24.0),
-                  child: Image.asset(
-                    'images/home/3.png',
-                    width: 72,
-                    height: 72,
-                  ),
-                ),
-        ),
+        ...List.generate(9, (i) {
+          // ----- INICIO DE LA MODIFICACIÓN -----
+
+          // BOTÓN 0: EL RETO/QUIZ
+          if (i == 0) {
+            return Container(
+              margin: EdgeInsets.only(
+                bottom: i != 8 ? 24.0 : 0,
+                left: getLeft(i), //
+                right: getRight(i), //
+              ),
+              child: ReliefSectionButton(
+                onPressed: () {
+                  //
+                  // ¡AQUÍ ESTÁ LA CORRECCIÓN!
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          // Usa data.id y conviértelo a String
+                          QuizLoaderPage(seccionId: data.id.toString()),
+                    ),
+                  );
+                },
+                baseColor: data.color, //
+                reliefColor: data.colorOscuro, //
+                svgAsset: 'images/home/estrella.svg', //
+                size: 56.0, //
+                reliefThickness: 6.0, //
+              ),
+            );
+          }
+
+          // IMAGEN CENTRAL
+          if (i == 4) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 24.0),
+              child: Image.asset('images/home/3.png', width: 72, height: 72),
+            );
+          }
+
+          // OTROS BOTONES (i != 0 y i != 4)
+          return Container(
+            margin: EdgeInsets.only(
+              bottom: i != 8 ? 24.0 : 0,
+              left: getLeft(i),
+              right: getRight(i),
+            ),
+            child: ReliefSectionButton(
+              onPressed: () {
+                // Aquí irá la lógica para las otras lecciones
+                print("Botón $i presionado");
+              },
+              baseColor: data.color,
+              reliefColor: data.colorOscuro,
+              svgAsset: 'images/home/estrella.svg', // Icono de lección normal
+              size: 56.0,
+              reliefThickness: 6.0,
+            ),
+          );
+          // ----- FIN DE LA MODIFICACIÓN -----
+        }),
       ],
     );
   }

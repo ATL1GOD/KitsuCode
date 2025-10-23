@@ -23,6 +23,7 @@ class SectionData {
   final int etapa;
   final int seccion;
   final String titulo;
+  final int id;
   // Podrías añadir el 'id' si lo necesitas
   // final int id;
 
@@ -32,6 +33,7 @@ class SectionData {
     required this.etapa,
     required this.seccion,
     required this.titulo,
+    required this.id,
   });
 
   // Factory constructor para crear una instancia desde un JSON (mapa)
@@ -41,6 +43,7 @@ class SectionData {
 
     return SectionData(
       // id: json['id'] as int, // Descomenta si añades 'id'
+      id: json['id'] as int,
       etapa: json['etapa'] as int,
       seccion: json['seccion'] as int,
       titulo: json['titulo'] as String,

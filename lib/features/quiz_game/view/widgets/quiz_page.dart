@@ -98,7 +98,11 @@ class _QuizPageState extends State<QuizPage> {
           if (context.mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => QuizResultPage(marks: marks),
+                builder: (context) => QuizResultPage(
+                  marks: marks,
+                  totalQuestions: totalQuestions,
+                  durationInSeconds: (30 * totalQuestions) - timer,
+                ),
               ),
             );
           }

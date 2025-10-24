@@ -8,10 +8,11 @@ class QuizResultPage extends StatefulWidget {
 }
 
 class _QuizResultPageState extends State<QuizResultPage> {
+  // ✨ CORRECCIÓN AQUÍ: Se añadieron las rutas completas de los assets.
   final List<String> images = [
-    "images/success.png", // Asegúrate de tener estas imágenes en tu proyecto
-    "images/good.png",
-    "images/bad.png",
+    "assets/images/success.png",
+    "assets/images/good.png",
+    "assets/images/bad.png",
   ];
 
   late String message;
@@ -53,7 +54,7 @@ class _QuizResultPageState extends State<QuizResultPage> {
                 child: Column(
                   children: <Widget>[
                     Material(
-                      child: Container(
+                      child: SizedBox(
                         width: 300.0,
                         height: 300.0,
                         child: ClipRect(child: Image(image: AssetImage(image))),
@@ -88,7 +89,7 @@ class _QuizResultPageState extends State<QuizResultPage> {
                 OutlinedButton(
                   onPressed: () {
                     // Cierra la pantalla de resultados Y la del quiz,
-                    // volviendo al mapa.
+                    // volviendo a la primera ruta (probablemente tu home/mapa).
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   child: const Text(

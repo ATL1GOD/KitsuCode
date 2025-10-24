@@ -1,12 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class QuizData {
+  final Map<String, String> questions;
+  final Map<String, Map<String, dynamic>> options;
+  final Map<String, String> answers;
+  final int totalQuestions;
+
+  QuizData({
+    required this.questions,
+    required this.options,
+    required this.answers,
+  }) : totalQuestions = questions.length;
+}
+
 // Asume que tienes una instancia de Supabase client
 // (Probablemente la defines en tu main.dart)
 final supabase = Supabase.instance.client;
 
 // Este proveedor tomará el ID de la sección y devolverá la lista 'mydata' formateada
-final quizProvider = FutureProvider.family<List, String>((
+final quizProvider = FutureProvider.family<QuizData, String>((
   ref,
   seccionId,
 ) async {
@@ -53,5 +66,9 @@ final quizProvider = FutureProvider.family<List, String>((
   }
 
   // Devuelve la lista en el formato exacto que QuizPage espera
-  return [mapaPreguntas, mapaOpciones, mapaRespuestas];
+  return QuizData(
+    questions: mapaPreguntas,
+    options: mapaOpciones,
+    answers: mapaRespuestas,
+  );
 });

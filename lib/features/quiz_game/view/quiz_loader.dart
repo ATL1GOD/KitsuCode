@@ -16,8 +16,8 @@ class QuizLoaderPage extends ConsumerWidget {
     return quizDataAsync.when(
       // Cuando los datos están listos, muestra la página del quiz
       data: (mydata) {
-        // 'mydata' es la List[Map, Map, Map] que creamos en el provider
-        if (mydata[0].isEmpty) {
+        // 'mydata' es el objeto QuizData que creamos en el provider
+        if (mydata.questions.isEmpty) {
           return Scaffold(
             appBar: AppBar(title: const Text('Error')),
             body: const Center(

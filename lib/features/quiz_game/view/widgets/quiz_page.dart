@@ -16,62 +16,52 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
-  final Color right = Colors.green;
-  final Color wrong = Colors.red;
-
   int marks = 0;
-  int i = 0; // Índice de la pregunta actual
+  int i = 0;
   bool disableAnswer = false;
-  int j = 1; // Contador de preguntas respondidas
+  int j = 1;
   int timer = 30;
-  String showtimer = "30";
-  late List<int> random_array;
+  String _showTimer = "30";
+  late List<int> _randomArray;
   int totalQuestions = 0;
 
   String? selectedAnswer;
 
-  Map<String, Color> btncolor = {
-    "a": Colors.transparent,
-    "b": Colors.transparent,
-    "c": Colors.transparent,
-    "d": Colors.transparent,
-  };
-
-  bool canceltimer = false;
+  bool _cancelTimer = false;
 
   @override
   void initState() {
     super.initState();
-    starttimer();
-    genrandomarray();
-    if (random_array.isNotEmpty) {
-      i = random_array[0];
+    _startTimer();
+    _genRandomArray();
+    if (_randomArray.isNotEmpty) {
+      i = _randomArray[0];
     }
   }
 
   @override
   void dispose() {
-    canceltimer = true;
+    _cancelTimer = true;
     super.dispose();
   }
 
-  void genrandomarray() {
+  void _genRandomArray() {
     if (widget.mydata.questions.isNotEmpty) {
       totalQuestions = widget.mydata.totalQuestions;
       var rand = Random();
       var distinctIds = List<int>.generate(totalQuestions, (index) => index);
       distinctIds.shuffle(rand);
-      random_array = distinctIds;
+      _randomArray = distinctIds;
       if (kDebugMode) {
-        print(random_array);
+        print(_randomArray);
       }
     } else {
       totalQuestions = 0;
-      random_array = [];
+      _randomArray = [];
     }
   }
 
-  void starttimer() async {
+  void _startTimer() async {
     const onesec = Duration(seconds: 1);
     Timer.periodic(onesec, (Timer t) {
       if (!mounted) {
@@ -85,24 +75,24 @@ class _QuizPageState extends State<QuizPage> {
 
         if (timer < 1) {
           t.cancel();
-          checkanswer("", pythonLightColorScheme);
-        } else if (canceltimer == true) {
+          _checkAnswer("", pythonLightColorScheme);
+        } else if (_cancelTimer == true) {
           t.cancel();
         } else {
           timer = timer - 1;
         }
-        showtimer = timer.toString();
+        _showTimer = timer.toString();
       });
     });
   }
 
-  void nextquestion() {
-    canceltimer = false;
+  void _nextQuestion() {
+    _cancelTimer = false;
     timer = 30;
     if (mounted) {
       setState(() {
         if (j < totalQuestions) {
-          i = random_array[j];
+          i = _randomArray[j];
           j++;
         } else {
           if (context.mounted) {
@@ -116,19 +106,12 @@ class _QuizPageState extends State<QuizPage> {
         }
         selectedAnswer = null;
         disableAnswer = false;
-        btncolor = {
-          "a": Colors.transparent,
-          "b": Colors.transparent,
-          "c": Colors.transparent,
-          "d": Colors.transparent,
-        };
       });
     }
-    starttimer();
+    _startTimer();
   }
 
-  // k es la respuesta seleccionada ('a', 'b', 'c', 'd')
-  void checkanswer(String k, ColorScheme pythonColorScheme) {
+  void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     if (k.isNotEmpty &&
         widget.mydata.answers[questionKey] ==
@@ -138,17 +121,13 @@ class _QuizPageState extends State<QuizPage> {
 
     if (mounted) {
       setState(() {
-        canceltimer = true;
+        _cancelTimer = true;
         disableAnswer = true;
       });
     }
-
-    // ✨ CAMBIO: Se eliminó el Timer de 2 segundos para que el avance sea manual.
-    // Timer(const Duration(seconds: 2), nextquestion);
   }
 
-  // --- WIDGET DE BOTÓN REDISEÑADO ---
-  Widget choicebutton(String k, ColorScheme pythonColorScheme) {
+  Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     bool isSelected = selectedAnswer == k;
 
@@ -165,19 +144,19 @@ class _QuizPageState extends State<QuizPage> {
       });
 
       if (k == correctAnswerKey) {
-        buttonColor = Colors.green.withOpacity(0.2);
+        buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
       } else if (isSelected && k != correctAnswerKey) {
-        buttonColor = Colors.red.withOpacity(0.2);
+        buttonColor = Colors.red.withAlpha(51);
         borderColor = Colors.red;
         textColor = Colors.red;
       } else {
-        borderColor = Colors.grey.shade400.withOpacity(0.5);
+        borderColor = Colors.grey.shade400.withAlpha(128);
         textColor = Colors.grey.shade400;
       }
     } else if (isSelected) {
-      buttonColor = pythonColorScheme.primaryContainer.withOpacity(0.3);
+      buttonColor = pythonColorScheme.primaryContainer.withAlpha(77);
       borderColor = pythonColorScheme.primary;
       textColor = pythonColorScheme.primary;
     }
@@ -212,7 +191,6 @@ class _QuizPageState extends State<QuizPage> {
     );
   }
 
-  // --- WIDGET DE BUILD REDISEÑADO ---
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([
@@ -225,7 +203,7 @@ class _QuizPageState extends State<QuizPage> {
         ? pythonDarkColorScheme
         : pythonLightColorScheme;
 
-    if (random_array.isEmpty) {
+    if (_randomArray.isEmpty) {
       return Scaffold(
         backgroundColor: pythonColorScheme.surface,
         body: const Center(child: CircularProgressIndicator()),
@@ -240,9 +218,12 @@ class _QuizPageState extends State<QuizPage> {
         colorScheme: pythonColorScheme,
         useMaterial3: true,
       ).copyWith(scaffoldBackgroundColor: pythonColorScheme.surface),
-      child: WillPopScope(
-        onWillPop: () {
-          return showDialog(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (bool didPop, dynamic _) {
+          if (didPop) return;
+
+          showDialog(
             context: context,
             builder: (context) => AlertDialog(
               title: const Text("Kitsucode"),
@@ -254,7 +235,7 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ],
             ),
-          ).then((value) => value ?? false);
+          );
         },
         child: Scaffold(
           appBar: AppBar(
@@ -304,7 +285,7 @@ class _QuizPageState extends State<QuizPage> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  showtimer,
+                  _showTimer,
                   style: TextStyle(
                     color: pythonColorScheme.onSurface,
                     fontSize: 20.0,
@@ -318,7 +299,6 @@ class _QuizPageState extends State<QuizPage> {
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
               width: double.infinity,
-              // ✨ CAMBIO: Lógica del botón actualizada
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: disableAnswer
@@ -332,18 +312,16 @@ class _QuizPageState extends State<QuizPage> {
                   disabledBackgroundColor: Colors.grey.shade400,
                 ),
                 onPressed: (selectedAnswer == null && !disableAnswer)
-                    ? null // Deshabilita si no se ha seleccionado respuesta
+                    ? null
                     : () {
                         if (disableAnswer) {
-                          // Si la respuesta ya fue comprobada, avanza
-                          nextquestion();
+                          _nextQuestion();
                         } else {
-                          // Si no, comprueba la respuesta
-                          checkanswer(selectedAnswer!, pythonColorScheme);
+                          _checkAnswer(selectedAnswer!, pythonColorScheme);
                         }
                       },
                 child: Text(
-                  disableAnswer ? "CONTINUAR" : "COMPROBAR", // Cambia el texto
+                  disableAnswer ? "CONTINUAR" : "COMPROBAR",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -391,10 +369,10 @@ class _QuizPageState extends State<QuizPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          choicebutton('a', pythonColorScheme),
-                          choicebutton('b', pythonColorScheme),
-                          choicebutton('c', pythonColorScheme),
-                          choicebutton('d', pythonColorScheme),
+                          _choiceButton('a', pythonColorScheme),
+                          _choiceButton('b', pythonColorScheme),
+                          _choiceButton('c', pythonColorScheme),
+                          _choiceButton('d', pythonColorScheme),
                         ],
                       ),
                     ),
@@ -410,7 +388,6 @@ class _QuizPageState extends State<QuizPage> {
   }
 }
 
-// --- WIDGET PARA MOSTRAR LA PREGUNTA COMO DUOLINGO ---
 Widget _buildDuolingoQuestionArea(
   String questionText,
   ColorScheme colorScheme,

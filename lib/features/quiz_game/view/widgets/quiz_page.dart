@@ -295,41 +295,7 @@ class _QuizPageState extends State<QuizPage> {
               ],
             ),
           ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: disableAnswer
-                      ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
-                      : Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  disabledBackgroundColor: Colors.grey.shade400,
-                ),
-                onPressed: (selectedAnswer == null && !disableAnswer)
-                    ? null
-                    : () {
-                        if (disableAnswer) {
-                          _nextQuestion();
-                        } else {
-                          _checkAnswer(selectedAnswer!, pythonColorScheme);
-                        }
-                      },
-                child: Text(
-                  disableAnswer ? "CONTINUAR" : "COMPROBAR",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // ----- `bottomNavigationBar` FUE ELIMINADO DE AQUÍ -----
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -339,7 +305,7 @@ class _QuizPageState extends State<QuizPage> {
                       MediaQuery.of(context).size.height -
                       AppBar().preferredSize.height -
                       MediaQuery.of(context).padding.top -
-                      100,
+                      100, // Ajusta este valor si es necesario
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +342,52 @@ class _QuizPageState extends State<QuizPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+
+                    // ----- INICIA EL BOTÓN MOVIDO -----
+                    // Se usa `symmetric(vertical: 16.0)` para que no sume
+                    // al padding horizontal que ya tiene el `Padding` padre.
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: disableAnswer
+                                ? (marks > (j - 1) * 5
+                                      ? Colors.green
+                                      : Colors.red)
+                                : Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            disabledBackgroundColor: Colors.grey.shade400,
+                          ),
+                          onPressed: (selectedAnswer == null && !disableAnswer)
+                              ? null
+                              : () {
+                                  if (disableAnswer) {
+                                    _nextQuestion();
+                                  } else {
+                                    _checkAnswer(
+                                      selectedAnswer!,
+                                      pythonColorScheme,
+                                    );
+                                  }
+                                },
+                          child: Text(
+                            disableAnswer ? "CONTINUAR" : "COMPROBAR",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ----- TERMINA EL BOTÓN MOVIDO -----
                   ],
                 ),
               ),

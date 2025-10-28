@@ -30,72 +30,56 @@ class Section extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24.0),
-        ...List.generate(9, (i) {
-          // ----- INICIO DE LA MODIFICACIÓN -----
+        // AHORA GENERAMOS LOS BOTONES DINÁMICAMENTE BASADOS EN data.levels
+        // Los niveles vienen ordenados de la DB
+        ...data.levels.asMap().entries.map((entry) {
+          final i = entry.key; // Índice
+          final level = entry.value; // Objeto LevelData
 
-          // BOTÓN 0: EL RETO/QUIZ
-          if (i == 0) {
-            return Container(
-              margin: EdgeInsets.only(
-                bottom: i != 8 ? 24.0 : 0,
-                left: getLeft(i), //
-                right: getRight(i), //
-              ),
-              child: ReliefSectionButton(
-                onPressed: () {
-                  //
-                  // ¡AQUÍ ESTÁ LA CORRECCIÓN!
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          // Usa data.id y conviértelo a String
-                          QuizLoaderPage(seccionId: data.id.toString()),
-                    ),
-                  );
-                },
-                baseColor: data.color, //
-                reliefColor: data.colorOscuro, //
-                svgAsset: 'images/home/estrella.svg', //
-                size: 56.0, //
-                reliefThickness: 6.0, //
-              ),
-            );
-          }
+          // Usa retoId para determinar si es un Reto/Quiz o una Lección normal
+          final bool isQuiz = level.retoId != null;
 
-          // IMAGEN CENTRAL
-          if (i == 4) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 24.0),
-              child: Image.asset('images/home/3.png', width: 72, height: 72),
-            );
-          }
-
-          // OTROS BOTONES (i != 0 y i != 4)
           return Container(
             margin: EdgeInsets.only(
-              bottom: i != 8 ? 24.0 : 0,
+              // El último nivel no tiene margen inferior
+              bottom: i != data.levels.length - 1 ? 24.0 : 0,
+              // Usa la lógica de posición existente
               left: getLeft(i),
               right: getRight(i),
             ),
             child: ReliefSectionButton(
               onPressed: () {
-                // Aquí irá la lógica para las otras lecciones
-                print("Botón $i presionado");
+                if (isQuiz) {
+                  // Si tiene reto_id, navegamos al QuizLoader
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      // Usamos level.retoId como ID de la sección/reto
+                      builder: (context) =>
+                          QuizLoaderPage(seccionId: level.retoId.toString()),
+                    ),
+                  );
+                } else {
+                  // Lógica para una lección normal (sin reto asociado)
+                  print(
+                    "Lección ${level.nivel} presionado (ID: ${level.idNivel})",
+                  );
+                }
               },
               baseColor: data.color,
               reliefColor: data.colorOscuro,
-              svgAsset: 'images/home/estrella.svg', // Icono de lección normal
+              // Usar el asset del ícono cargado de la DB (seguro por la corrección en el modelo)
+              svgAsset: level.iconAsset,
               size: 56.0,
               reliefThickness: 6.0,
             ),
           );
-          // ----- FIN DE LA MODIFICACIÓN -----
-        }),
+        }).toList(),
       ],
     );
   }
 
+  // Lógica de posicionamiento (Sin cambios)
   double getLeft(int indice) {
     const margin = 72.0;
     int pos = indice % 9;
@@ -105,6 +89,7 @@ class Section extends StatelessWidget {
     return 0.0;
   }
 
+  // Lógica de posicionamiento (Sin cambios)
   double getRight(int indice) {
     const margin = 72.0;
     int pos = indice % 9;

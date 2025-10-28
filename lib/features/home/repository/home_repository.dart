@@ -20,15 +20,16 @@ class SectionRepository {
 
   SectionRepository(this._client);
 
-  // Método para obtener las secciones
+  // Método modificado para obtener las secciones Y sus niveles
   Future<List<SectionData>> getSections() async {
     try {
       // 1. Llama a la tabla 'secciones' de Supabase
       final response = await _client
           .from('secciones')
-          .select()
-          .order('etapa', ascending: true) // Ordena por etapa
-          .order('seccion', ascending: true); // y luego por seccion
+          .select('*, seccion_niveles(*)') // Carga secciones y sus niveles
+          .order('etapa', ascending: true) // OK: 'etapa' sí existe
+          // CORRECCIÓN CLAVE: Usamos 'id_seccion' o 'titulo' en lugar de 'seccion'
+          .order('id_seccion', ascending: true);
 
       // 2. Convierte la lista de JSON (List<Map<String, dynamic>>)
       //    en una lista de objetos SectionData
@@ -36,10 +37,15 @@ class SectionRepository {
           .map<SectionData>((json) => SectionData.fromJson(json))
           .toList();
 
+      // DEBUG: Para verificar cuántas secciones se cargan realmente
+      print("Supabase: ${sections.length} secciones cargadas.");
+
       return sections;
     } catch (e) {
       // Maneja el error apropiadamente
-      print("Error en SectionRepository: $e");
+      print(
+        "Error en SectionRepository: $e",
+      ); // Aquí aparecerá el error corregido
       throw Exception('No se pudieron cargar las secciones');
     }
   }

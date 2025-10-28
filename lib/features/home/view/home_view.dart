@@ -8,44 +8,36 @@ class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
 
   @override
-  // 2. Cambia 'State' por 'ConsumerState'
   ConsumerState<HomeView> createState() => _HomeViewState();
 }
 
-// 3. Cambia '_HomeViewState' para que extienda 'ConsumerState<HomeView>'
 class _HomeViewState extends ConsumerState<HomeView> {
-  // 4. ELIMINA la lista estática 'data'
-  // final data = <SectionData>[ ... ]; // <--- BORRAR ESTO
-
   int iCurrentSection = 0;
   final heightFirstBox = 56.0;
-  final heightSection = 816.0;
+  // SUGERENCIA: 600.0 es más realista que 816.0 para forzar el scroll
+  final heightSection = 600.0;
   final scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    // 5. Mueve el listener al 'didChangeDependencies' o 'build'
-    //    para asegurar que 'ref' esté disponible si es necesario,
-    //    aunque aquí no usa 'ref', es buena práctica.
     scrollCtrl.addListener(scrollListener);
   }
 
   void scrollListener() {
-    // 6. Obtén la lista de secciones desde el provider (para saber su 'length')
-    //    Usamos 'ref.read' porque estamos en un callback, no en 'build'.
     final sectionsAsync = ref.read(homeViewModelProvider);
 
-    // Solo calcula si hay datos
     sectionsAsync.whenData((sections) {
+      if (sections.isEmpty) return; // Evita división por cero si no hay datos
+
       final currentScroll = scrollCtrl.position.pixels - heightFirstBox - 24.0;
       int index = (currentScroll / heightSection).floor();
-      if (index < 0) index = 0;
-      if (index >= sections.length) {
-        // Usa sections.length
-        index = sections.length - 1;
+
+      index = index.clamp(0, sections.length - 1); // Limita el índice
+
+      if (index != iCurrentSection) {
+        setState(() => iCurrentSection = index);
       }
-      if (index != iCurrentSection) setState(() => iCurrentSection = index);
     });
   }
 
@@ -58,16 +50,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    // 7. OBSERVA el provider. 'ref.watch' reconstruirá la vista
-    //    cuando el estado cambie (loading, data, error)
     final sectionsAsync = ref.watch(homeViewModelProvider);
 
     return Scaffold(
-      // 8. Usa 'when' para manejar los estados de carga
       body: sectionsAsync.when(
-        // --- Estado: Datos cargados ---
         data: (sections) {
-          // 'sections' es tu List<SectionData> desde Supabase
           if (sections.isEmpty) {
             return const Center(child: Text("No hay secciones disponibles."));
           }
@@ -83,22 +70,27 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   ),
                 ),
               ),
+              // El ListView es lo que maneja el scroll
               ListView.separated(
                 controller: scrollCtrl,
                 itemBuilder: (_, i) => i == 0
                     ? SizedBox(height: heightFirstBox)
-                    // 9. Usa los datos de 'sections'
-                    : Section(data: sections[i - 1]),
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Section(data: sections[i - 1]),
+                          // Esto es opcional, pero ayuda a generar altura
+                          const SizedBox(height: 100.0),
+                        ],
+                      ),
                 separatorBuilder: (_, i) => const SizedBox(height: 24.0),
                 padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
-                // 10. Usa el 'length' de los datos de 'sections'
                 itemCount: sections.length + 1,
               ),
               Positioned(
                 top: 40.0,
                 left: 0,
                 right: 0,
-                // 11. Asegúrate de que iCurrentSection sea válido
                 child: CurrentSection(
                   data: sections[iCurrentSection.clamp(0, sections.length - 1)],
                 ),
@@ -106,9 +98,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
             ],
           );
         },
-        // --- Estado: Cargando ---
         loading: () => const Center(child: CircularProgressIndicator()),
-        // --- Estado: Error ---
         error: (err, stack) => Center(child: Text("Error al cargar: $err")),
       ),
       backgroundColor: Colors.transparent,
@@ -140,7 +130,9 @@ class CurrentSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'ETAPA ${data.etapa}, SECCIÓN ${data.seccion}',
+                  // CORRECCIÓN CLAVE: Se elimina 'SECCIÓN ${data.seccion}'
+                  // Se deja solo 'ETAPA ${data.etapa}'
+                  'ETAPA ${data.etapa}',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontWeight: FontWeight.w500,
@@ -164,11 +156,7 @@ class CurrentSection extends StatelessWidget {
                 left: BorderSide(color: data.colorOscuro, width: 2.0),
               ),
             ),
-            // child: SvgPicture.asset(
-            //   'assets/leccion.svg',
-            //   width: 20,
-            //   height: 20,
-            // ),
+            // Puedes añadir un icono aquí
           ),
         ],
       ),

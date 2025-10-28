@@ -1,3 +1,5 @@
+// home_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
@@ -14,31 +16,96 @@ class HomeView extends ConsumerStatefulWidget {
 class _HomeViewState extends ConsumerState<HomeView> {
   int iCurrentSection = 0;
   final heightFirstBox = 56.0;
-  // SUGERENCIA: 600.0 es más realista que 816.0 para forzar el scroll
   final heightSection = 600.0;
+
+  // Lista de posiciones de scroll (offsets) donde comienza el TÍTULO de cada sección.
+  final List<double> _sectionOffsets = [];
   final scrollCtrl = ScrollController();
+
+  final double _changeThresholdPosition = 40.0; // Valor de 'top' en Positioned
+
+  // Nuevo offset de ajuste (e.g., 80.0 px) para que el cambio ocurra antes
+  // de que el título llegue al umbral de 40.0.
+  final double _aestheticOffset = 80.0;
 
   @override
   void initState() {
     super.initState();
     scrollCtrl.addListener(scrollListener);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateSectionOffsets();
+      scrollListener();
+    });
   }
 
-  void scrollListener() {
+  void _calculateSectionOffsets() {
     final sectionsAsync = ref.read(homeViewModelProvider);
 
     sectionsAsync.whenData((sections) {
-      if (sections.isEmpty) return; // Evita división por cero si no hay datos
+      if (sections.isEmpty) return;
 
-      final currentScroll = scrollCtrl.position.pixels - heightFirstBox - 24.0;
-      int index = (currentScroll / heightSection).floor();
+      // El offset de inicio del título de la primera sección.
+      // (heightFirstBox (56.0) + 24.0 (primer separador))
+      double currentOffset = heightFirstBox + 24.0;
 
-      index = index.clamp(0, sections.length - 1); // Limita el índice
+      _sectionOffsets.clear();
+      // El TÍTULO de la primera sección empieza en 80.0
+      _sectionOffsets.add(currentOffset);
 
-      if (index != iCurrentSection) {
-        setState(() => iCurrentSection = index);
+      for (int i = 0; i < sections.length; i++) {
+        final section = sections[i];
+
+        // Estimación de la altura del contenido de los botones
+        const double buttonHeightWithMargin = 56.0 + 6.0 + 24.0;
+        double sectionContentHeight =
+            section.levels.length * buttonHeightWithMargin;
+
+        // Altura aproximada del Row del título y sus márgenes
+        const double sectionHeaderHeight = 60.0;
+
+        double sectionHeightEstimate =
+            sectionContentHeight + sectionHeaderHeight;
+
+        // Altura del SizedBox opcional (100.0) y el separador (24.0) que siguen a la sección.
+        double totalSectionBlockHeight = sectionHeightEstimate + 100.0 + 24.0;
+
+        currentOffset += totalSectionBlockHeight;
+
+        // El offset de la siguiente sección comienza en este punto.
+        _sectionOffsets.add(currentOffset);
       }
     });
+  }
+
+  void scrollListener() {
+    if (_sectionOffsets.isEmpty) return;
+
+    final currentScroll = scrollCtrl.position.pixels;
+
+    // CORRECCIÓN CLAVE:
+    // 1. Consideramos la posición del indicador: currentScroll + _changeThresholdPosition (40.0)
+    // 2. Aplicamos el _aestheticOffset: Restamos 80.0 para que el cambio ocurra antes.
+    // El cambio ocurre cuando el scroll está 80.0 píxeles por encima del punto de inicio del título.
+    final double titleDisplayPosition =
+        currentScroll + _changeThresholdPosition - _aestheticOffset;
+
+    int newIndex = 0;
+
+    // Buscar el índice del título que ha pasado el umbral ajustado.
+    for (int i = _sectionOffsets.length - 1; i >= 0; i--) {
+      // Si la posición de detección ajustada es mayor o igual al punto de inicio del título de la sección 'i'.
+      if (titleDisplayPosition >= _sectionOffsets[i]) {
+        newIndex = i;
+        break;
+      }
+    }
+
+    final sections = ref.read(homeViewModelProvider).value ?? [];
+    newIndex = newIndex.clamp(0, sections.length - 1);
+
+    if (newIndex != iCurrentSection) {
+      setState(() => iCurrentSection = newIndex);
+    }
   }
 
   @override
@@ -55,6 +122,14 @@ class _HomeViewState extends ConsumerState<HomeView> {
     return Scaffold(
       body: sectionsAsync.when(
         data: (sections) {
+          if (sections.isNotEmpty &&
+              (_sectionOffsets.isEmpty ||
+                  _sectionOffsets.length != sections.length + 1)) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _calculateSectionOffsets(),
+            );
+          }
+
           if (sections.isEmpty) {
             return const Center(child: Text("No hay secciones disponibles."));
           }
@@ -70,7 +145,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   ),
                 ),
               ),
-              // El ListView es lo que maneja el scroll
               ListView.separated(
                 controller: scrollCtrl,
                 itemBuilder: (_, i) => i == 0
@@ -79,7 +153,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Section(data: sections[i - 1]),
-                          // Esto es opcional, pero ayuda a generar altura
                           const SizedBox(height: 100.0),
                         ],
                       ),
@@ -88,7 +161,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 itemCount: sections.length + 1,
               ),
               Positioned(
-                top: 40.0,
+                top: _changeThresholdPosition, // 40.0
                 left: 0,
                 right: 0,
                 child: CurrentSection(
@@ -106,7 +179,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 }
 
-// Widget restaurado para mostrar la sección actual en la parte superior.
 class CurrentSection extends StatelessWidget {
   final SectionData data;
 
@@ -130,8 +202,6 @@ class CurrentSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  // CORRECCIÓN CLAVE: Se elimina 'SECCIÓN ${data.seccion}'
-                  // Se deja solo 'ETAPA ${data.etapa}'
                   'ETAPA ${data.etapa}',
                   style: const TextStyle(
                     color: Colors.white70,

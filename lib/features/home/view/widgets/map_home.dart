@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Ajusta la ruta
+import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
+import 'package:go_router/go_router.dart'; // Importar GoRouter
 
 class Section extends StatelessWidget {
   final SectionData data;
@@ -50,15 +51,9 @@ class Section extends StatelessWidget {
             child: ReliefSectionButton(
               onPressed: () {
                 if (isQuiz) {
-                  // Si tiene reto_id, navegamos al QuizLoader
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      // Usamos level.retoId como ID de la sección/reto
-                      builder: (context) =>
-                          QuizLoaderPage(seccionId: level.retoId.toString()),
-                    ),
-                  );
+                  // CORRECCIÓN: Usar GoRouter para navegar
+                  // Se usa 'push' porque la página del Quiz no tiene navbar y no es parte del Shell.
+                  context.push('/quiz-loader/${level.retoId}');
                 } else {
                   // Lógica para una lección normal (sin reto asociado)
                   print(
@@ -68,7 +63,7 @@ class Section extends StatelessWidget {
               },
               baseColor: data.color,
               reliefColor: data.colorOscuro,
-              // Usar el asset del ícono cargado de la DB (seguro por la corrección en el modelo)
+              // Usar el asset del ícono cargado de la DB
               svgAsset: level.iconAsset,
               size: 56.0,
               reliefThickness: 6.0,

@@ -75,7 +75,13 @@ class _QuizPageState extends State<QuizPage> {
 
         if (timer < 1) {
           t.cancel();
-          _checkAnswer("", pythonLightColorScheme);
+          // Llama a _checkAnswer con una cadena vacía para indicar tiempo agotado
+          // y pasamos el ColorScheme temporalmente
+          final brightness = MediaQuery.of(context).platformBrightness;
+          final pythonColorScheme = (brightness == Brightness.dark)
+              ? pythonDarkColorScheme
+              : pythonLightColorScheme;
+          _checkAnswer("", pythonColorScheme);
         } else if (_cancelTimer == true) {
           t.cancel();
         } else {
@@ -96,12 +102,16 @@ class _QuizPageState extends State<QuizPage> {
           j++;
         } else {
           if (context.mounted) {
+            // Se calcula el tiempo total usado al finalizar
+            int duration = (30 * totalQuestions) - timer;
+            if (duration < 0) duration = 0; // Evita valores negativos
+
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => QuizResultPage(
                   marks: marks,
                   totalQuestions: totalQuestions,
-                  durationInSeconds: (30 * totalQuestions) - timer,
+                  durationInSeconds: duration,
                 ),
               ),
             );
@@ -115,8 +125,10 @@ class _QuizPageState extends State<QuizPage> {
     _startTimer();
   }
 
+  // Se corrige la firma para recibir ColorScheme
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
+    // Solo aumentamos puntos si se selecciona una respuesta (k.isNotEmpty) y es correcta
     if (k.isNotEmpty &&
         widget.mydata.answers[questionKey] ==
             widget.mydata.options[questionKey]![k]) {
@@ -178,11 +190,13 @@ class _QuizPageState extends State<QuizPage> {
             borderRadius: BorderRadius.circular(15.0),
           ),
         ),
-        onPressed: () {
-          setState(() {
-            selectedAnswer = k;
-          });
-        },
+        onPressed: disableAnswer
+            ? null // Deshabilitar si ya se comprobó
+            : () {
+                setState(() {
+                  selectedAnswer = k;
+                });
+              },
         child: Text(
           widget.mydata.options[questionKey]![k] ?? "",
           style: const TextStyle(
@@ -299,7 +313,6 @@ class _QuizPageState extends State<QuizPage> {
               ],
             ),
           ),
-          // ----- `bottomNavigationBar` FUE ELIMINADO DE AQUÍ -----
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -313,27 +326,27 @@ class _QuizPageState extends State<QuizPage> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment:
+                      MainAxisAlignment.start, // Se cambia a start
                   children: <Widget>[
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 10),
-                        Text(
-                          "Selecciona la traducción correcta",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: pythonColorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildDuolingoQuestionArea(
-                          widget.mydata.questions[questionKey] ?? "Cargando...",
-                          pythonColorScheme,
-                        ),
-                      ],
+                    const SizedBox(height: 10),
+                    Text(
+                      "Selecciona la traducción correcta",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: pythonColorScheme.onSurface,
+                      ),
                     ),
+                    const SizedBox(height: 20),
+                    _buildDuolingoQuestionArea(
+                      widget.mydata.questions[questionKey] ?? "Cargando...",
+                      pythonColorScheme,
+                    ),
+                    const SizedBox(
+                      height: 30,
+                    ), // Espacio después de la pregunta
+                    // Opciones de respuesta
                     AbsorbPointer(
                       absorbing: disableAnswer,
                       child: Column(
@@ -346,53 +359,55 @@ class _QuizPageState extends State<QuizPage> {
                         ],
                       ),
                     ),
-
-                    // ----- INICIA EL BOTÓN MOVIDO -----
-                    // Se usa `symmetric(vertical: 16.0)` para que no sume
-                    // al padding horizontal que ya tiene el `Padding` padre.
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: disableAnswer
-                                ? (marks > (j - 1) * 5
-                                      ? Colors.green
-                                      : Colors.red)
-                                : Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            disabledBackgroundColor: Colors.grey.shade400,
-                          ),
-                          onPressed: (selectedAnswer == null && !disableAnswer)
-                              ? null
-                              : () {
-                                  if (disableAnswer) {
-                                    _nextQuestion();
-                                  } else {
-                                    _checkAnswer(
-                                      selectedAnswer!,
-                                      pythonColorScheme,
-                                    );
-                                  }
-                                },
-                          child: Text(
-                            disableAnswer ? "CONTINUAR" : "COMPROBAR",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // ----- TERMINA EL BOTÓN MOVIDO -----
+                    // Espacio para empujar el contenido hacia arriba y dejar espacio al botón fijo
+                    const SizedBox(height: 100),
                   ],
+                ),
+              ),
+            ),
+          ),
+          // Botón inferior fijo
+          bottomNavigationBar: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: disableAnswer
+                        ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
+                        : (selectedAnswer != null
+                              ? pythonColorScheme
+                                    .primary // Si hay respuesta, primario
+                              : Colors
+                                    .green), // Color por defecto si no está deshabilitado
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    disabledBackgroundColor: Colors.grey.shade400,
+                  ),
+                  onPressed: (selectedAnswer == null && !disableAnswer)
+                      ? null
+                      : () {
+                          if (disableAnswer) {
+                            _nextQuestion();
+                          } else {
+                            // Se llama _checkAnswer con el ColorScheme correcto
+                            _checkAnswer(selectedAnswer!, pythonColorScheme);
+                          }
+                        },
+                  child: Text(
+                    disableAnswer ? "CONTINUAR" : "COMPROBAR",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),

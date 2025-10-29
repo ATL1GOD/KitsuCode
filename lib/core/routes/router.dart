@@ -17,6 +17,8 @@ import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+// IMPORTAR EL CARGADOR DEL QUIZ
+import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 // ------------------------------------------------
 
 // Claves para mantener el estado de la navegación en cada pestaña.
@@ -89,6 +91,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       // --- Rutas internas (ya autenticado) ---
+      // AÑADIR LA RUTA DEL QUIZ LOADER AQUÍ
+      GoRoute(
+        path: '/quiz-loader/:seccionId',
+        builder: (context, state) {
+          final seccionId = state.pathParameters['seccionId']!;
+          return QuizLoaderPage(seccionId: seccionId);
+        },
+      ),
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),

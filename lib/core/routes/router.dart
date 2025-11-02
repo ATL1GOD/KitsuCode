@@ -8,7 +8,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 // Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
-import 'package:kitsucode/shared/navbar/navigation_scaffold.dart'; // Asegúrate de tener este archivo
+import 'package:kitsucode/shared/navbar/navigation_scaffold.dart';
 
 // --- TUS VISTAS REALES ---
 import 'package:kitsucode/features/home/view/home_view.dart';
@@ -17,11 +17,14 @@ import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
-// IMPORTAR EL CARGADOR DEL QUIZ
+
+// --- IMPORTAR LOADERS ---
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
+// ¡NUEVO! Importa un placeholder para las otras rutas
+import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart';
 // ------------------------------------------------
 
-// Claves para mantener el estado de la navegación en cada pestaña.
+// Claves (sin cambios)
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
   'ranking': GlobalKey<NavigatorState>(debugLabel: 'rankingNav'),
@@ -37,6 +40,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(ref),
     redirect: (BuildContext context, GoRouterState state) {
+      // ... Tu lógica de redirección (sin cambios) ...
       return authState.when(
         data: (data) {
           final isAuthenticated = data.session != null;
@@ -52,22 +56,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             );
           }
 
-          // Desde el splash, decidimos a dónde ir
           if (isSplashing) {
             return isAuthenticated ? '/home' : authRoute;
           }
-
-          // Si el usuario está autenticado y trata de ir a login/register, llévalo a home
           if (isAuthenticated && isGoingToAuthRoute) {
             return '/home';
           }
-
-          // Si el usuario NO está autenticado y trata de ir a una ruta protegida, llévalo a login
           if (!isAuthenticated && !isGoingToAuthRoute) {
             return authRoute;
           }
-
-          // En cualquier otro caso, no hagas nada.
           return null;
         },
         loading: () => null,
@@ -80,25 +77,53 @@ final routerProvider = Provider<GoRouter>((ref) {
       );
     },
     routes: [
-      // --- Splash screen ---
+      // --- Splash screen (sin cambios) ---
       GoRoute(
         path: '/splash',
         builder: (context, state) =>
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
 
-      // --- Ruta pública de autenticación ---
+      // --- Ruta pública de autenticación (sin cambios) ---
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       // --- Rutas internas (ya autenticado) ---
-      // AÑADIR LA RUTA DEL QUIZ LOADER AQUÍ
+
+      // --- RUTAS DE RETOS (MODIFICADAS) ---
       GoRoute(
-        path: '/quiz-loader/:seccionId',
+        path: '/quiz-loader/:retoId', // <-- CAMBIO DE :seccionId A :retoId
         builder: (context, state) {
-          final seccionId = state.pathParameters['seccionId']!;
-          return QuizLoaderPage(seccionId: seccionId);
+          final retoId = state.pathParameters['retoId']!; // <-- CAMBIO
+          return QuizLoaderPage(retoId: retoId); // <-- CAMBIO
         },
       ),
+      // --- NUEVAS RUTAS PARA OTRAS DINÁMICAS ---
+      GoRoute(
+        path: '/puzzle-loader/:retoId',
+        builder: (context, state) {
+          final retoId = state.pathParameters['retoId']!;
+          // TODO: Reemplazar con tu PuzzleLoaderPage cuando la crees
+          return PlaceholderLoader(retoId: retoId, dinamica: "Puzzle");
+        },
+      ),
+      GoRoute(
+        path: '/columns-loader/:retoId',
+        builder: (context, state) {
+          final retoId = state.pathParameters['retoId']!;
+          // TODO: Reemplazar con tu ColumnsLoaderPage
+          return PlaceholderLoader(retoId: retoId, dinamica: "Columnas");
+        },
+      ),
+      GoRoute(
+        path: '/code-loader/:retoId',
+        builder: (context, state) {
+          final retoId = state.pathParameters['retoId']!;
+          // TODO: Reemplazar con tu CodeLoaderPage
+          return PlaceholderLoader(retoId: retoId, dinamica: "Código");
+        },
+      ),
+
+      // --- Fin de rutas de retos ---
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
@@ -106,6 +131,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
+          // ... (sin cambios)
           final currentAvatar =
               state.extra as String? ?? 'assets/images/login_zorro.png';
           return EditAvatarView(currentAvatar: currentAvatar);
@@ -116,7 +142,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AllStatsView(),
       ),
 
-      // --- NAVBAR PRINCIPAL ---
+      // --- NAVBAR PRINCIPAL (sin cambios) ---
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
@@ -144,7 +170,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // 3️⃣ DIRECTORIO (puedes usar para otra sección futura)
+          // 3️⃣ DIRECTORIO
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['directory'],
             routes: [
@@ -182,6 +208,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+// (Sin cambios)
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     notifyListeners();

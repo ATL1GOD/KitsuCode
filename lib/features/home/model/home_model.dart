@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// --- Helpers de Color ---
+// --- Helpers de Color (Sin cambios) ---
 Color _darkenColor(Color color, double factor) {
   return HSLColor.fromColor(color)
       .withLightness(
@@ -15,37 +15,50 @@ Color _colorFromHex(String hexColor) {
 }
 // --- Fin Helpers ---
 
-// NUEVO MODELO: Para representar un nivel/botón dentro de una sección
+// MODELO DE NIVEL: Actualizado con dinamicaNombre
 class LevelData {
-  final int idNivel; // Viene de seccion_niveles.id_niveles
-  final int nivel; // Viene de seccion_niveles.nivel
-  final int? retoId; // Viene de seccion_niveles.reto_id
-  final String iconAsset; // Viene de seccion_niveles.icon_asset
+  final int idNivel; // Viene de niveles.id_nivel
+  final int nivel; // Viene de niveles.orden
+  final int? retoId; // Viene de niveles.id_reto
+  final String iconAsset; // Viene de niveles.icon_asset
+
+  // --- NUEVO CAMPO ---
+  final String? dinamicaNombre;
+  // --- FIN NUEVO CAMPO ---
 
   const LevelData({
     required this.idNivel,
     required this.nivel,
     this.retoId,
     required this.iconAsset,
+    this.dinamicaNombre, // <-- Añadir al constructor
   });
 
   factory LevelData.fromJson(Map<String, dynamic> json) {
+    // --- LÓGICA MEJORADA ---
+    String? nombreDinamica;
+    if (json['reto'] != null &&
+        json['reto'] is Map &&
+        json['reto']['dinamicas'] != null) {
+      nombreDinamica = json['reto']['dinamicas']['nombre'] as String?;
+    }
+    // --- FIN LÓGICA MEJORADA ---
+
     return LevelData(
-      idNivel: (json['id_niveles'] as int?) ?? 0,
-      nivel: json['nivel'] as int,
-      retoId: json['reto_id'] as int?,
-      // CORRECCIÓN: Usar valor por defecto si el asset de la DB es nulo o vacío
+      idNivel: (json['id_nivel'] as int?) ?? 0,
+      nivel: (json['orden'] as int?) ?? 0, // Usar 'orden' de la tabla niveles
+      retoId: json['id_reto'] as int?,
       iconAsset: (json['icon_asset'] as String?) ?? 'images/home/estrella.svg',
+      dinamicaNombre: nombreDinamica, // <-- Asignar el valor
     );
   }
 }
 
-// MODELO MODIFICADO: SectionData
+// MODELO DE SECCIÓN: Actualizado para 'niveles'
 class SectionData {
   final Color color;
   final Color colorOscuro;
-  final int etapa;
-  // CORRECCIÓN: Se elimina la referencia a la columna 'seccion'
+  final int etapa; // 'orden' de la tabla secciones
   final String titulo;
   final int id; // Mapeado a id_seccion
   final List<LevelData> levels; // Lista de niveles anidados
@@ -62,27 +75,30 @@ class SectionData {
   factory SectionData.fromJson(Map<String, dynamic> json) {
     final baseColor = _colorFromHex(json['color']);
 
-    // Mapear los niveles anidados (que vienen como 'seccion_niveles')
-    final List<dynamic>? levelsJson = json['seccion_niveles'];
+    // Mapear los niveles anidados (que vienen como 'niveles')
+    // --- CORRECCIÓN CLAVE ---
+    final List<dynamic>? levelsJson =
+        json['niveles']; // <-- NO 'seccion_niveles'
+    // --- FIN CORRECCIÓN ---
+
     final List<LevelData> levels = levelsJson != null
         ? levelsJson
               .map<LevelData>((lJson) => LevelData.fromJson(lJson))
               .toList()
         : [];
 
-    // IMPORTANTE: Ordenar los niveles por su campo 'nivel' para mostrarlos en orden
+    // Ordenar los niveles (sin cambios)
     levels.sort((a, b) => a.nivel.compareTo(b.nivel));
 
     return SectionData(
-      id:
-          json['id_seccion']
-              as int, // Usar 'id_seccion' de la tabla 'secciones'
-      etapa: json['etapa'] as int,
-      // Se omite 'seccion' para evitar el error.
+      id: json['id_seccion'] as int,
+      // Usar 'orden' de la tabla 'secciones' como 'etapa'
+      etapa: (json['orden'] as int?) ?? 0,
       titulo: json['titulo'] as String,
       color: baseColor,
-      colorOscuro: _darkenColor(baseColor, 0.1),
-      levels: levels, // Asignar la lista de niveles
+      // Usar 'coloroscuro' que viene de la DB
+      colorOscuro: _colorFromHex(json['coloroscuro']),
+      levels: levels,
     );
   }
 }

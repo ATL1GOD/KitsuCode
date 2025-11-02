@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
+// import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Ya no se importa aquí
 import 'package:go_router/go_router.dart'; // Importar GoRouter
 
 class Section extends StatelessWidget {
@@ -9,12 +9,60 @@ class Section extends StatelessWidget {
 
   const Section({super.key, required this.data});
 
+  // --- NUEVA FUNCIÓN DE NAVEGACIÓN ---
+  void _navegarAReto(BuildContext context, LevelData level) {
+    // Si no hay retoId o no hay nombre de dinámica, es una lección (o no hacer nada)
+    if (level.retoId == null || level.dinamicaNombre == null) {
+      print(
+        "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
+      );
+      // Aquí podrías navegar a una pantalla de "lección" si quisieras
+      // context.push('/leccion/${level.idNivel}');
+      return;
+    }
+
+    final int retoId = level.retoId!;
+    final String dinamica = level.dinamicaNombre!;
+
+    print("Navegando a reto $retoId con dinámica $dinamica");
+
+    // Usa un switch para decidir a qué ruta navegar
+    switch (dinamica) {
+      case 'Quiz':
+        // Navega al cargador de Quiz (que ya tienes)
+        context.push('/quiz-loader/$retoId');
+        break;
+      case 'Puzzle':
+        // Navega a un *nuevo* cargador de Puzzle
+        context.push('/puzzle-loader/$retoId');
+        break;
+      case 'Columnas':
+        // Navega a un *nuevo* cargador de Columnas
+        context.push('/columns-loader/$retoId');
+        break;
+      case 'Codigo':
+        // Navega a un *nuevo* cargador de Código
+        context.push('/code-loader/$retoId');
+        break;
+      default:
+        print("Dinámica no reconocida: $dinamica");
+        // Mostrar un error al usuario
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: Dinámica "$dinamica" no implementada.'),
+          ),
+        );
+    }
+  }
+  // --- FIN NUEVA FUNCIÓN ---
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
+          // ... (Widget del título de la sección, sin cambios) ...
           children: [
             const Expanded(child: Divider(color: Color(0xFF2D3D41))),
             const SizedBox(width: 16),
@@ -31,39 +79,26 @@ class Section extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24.0),
-        // AHORA GENERAMOS LOS BOTONES DINÁMICAMENTE BASADOS EN data.levels
-        // Los niveles vienen ordenados de la DB
+
+        // Generar botones dinámicamente
         ...data.levels.asMap().entries.map((entry) {
-          final i = entry.key; // Índice
-          final level = entry.value; // Objeto LevelData
+          int i = entry.key; // El índice (0, 1, 2...)
+          LevelData level = entry.value;
 
-          // Usa retoId para determinar si es un Reto/Quiz o una Lección normal
-          final bool isQuiz = level.retoId != null;
+          // bool isQuiz = level.retoId != null; // Lógica antigua eliminada
 
-          return Container(
-            margin: EdgeInsets.only(
-              // El último nivel no tiene margen inferior
-              bottom: i != data.levels.length - 1 ? 24.0 : 0,
-              // Usa la lógica de posición existente
-              left: getLeft(i),
-              right: getRight(i),
-            ),
+          return Positioned(
+            top: (i * 96.0) + 40.0,
+            left: getLeft(i),
+            right: getRight(i),
             child: ReliefSectionButton(
               onPressed: () {
-                if (isQuiz) {
-                  // CORRECCIÓN: Usar GoRouter para navegar
-                  // Se usa 'push' porque la página del Quiz no tiene navbar y no es parte del Shell.
-                  context.push('/quiz-loader/${level.retoId}');
-                } else {
-                  // Lógica para una lección normal (sin reto asociado)
-                  print(
-                    "Lección ${level.nivel} presionado (ID: ${level.idNivel})",
-                  );
-                }
+                // --- LÓGICA MODIFICADA ---
+                _navegarAReto(context, level);
+                // --- FIN LÓGICA MODIFICADA ---
               },
               baseColor: data.color,
               reliefColor: data.colorOscuro,
-              // Usar el asset del ícono cargado de la DB
               svgAsset: level.iconAsset,
               size: 56.0,
               reliefThickness: 6.0,
@@ -88,9 +123,14 @@ class Section extends StatelessWidget {
   double getRight(int indice) {
     const margin = 72.0;
     int pos = indice % 9;
+    if (pos == 1) return 0.0;
+    if (pos == 2) return 0.0;
+    if (pos == 3) return margin;
+    if (pos == 4) return margin * 2;
     if (pos == 5) return margin;
-    if (pos == 6) return margin * 2;
+    if (pos == 6) return 0.0;
     if (pos == 7) return margin;
+    if (pos == 8) return margin * 2;
     return 0.0;
   }
 }

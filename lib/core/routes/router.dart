@@ -1,3 +1,4 @@
+// [COMIENZO DEL ARCHIVO router.dart]
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -18,10 +19,9 @@ import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
-// --- IMPORTAR LOADERS ---
-import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
-// ¡NUEVO! Importa un placeholder para las otras rutas
-import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart';
+// --- ¡NUEVO! IMPORTAR EL DISTRIBUIDOR DE RETOS ---
+// (La ruta puede variar según donde lo guardes)
+import 'package:kitsucode/features/challenge/view/reto_distribuidor_page.dart';
 // ------------------------------------------------
 
 // Claves (sin cambios)
@@ -89,40 +89,17 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // --- Rutas internas (ya autenticado) ---
 
-      // --- RUTAS DE RETOS (MODIFICADAS) ---
+      // --- ¡RUTA ÚNICA DE RETOS! (MODIFICADO) ---
       GoRoute(
-        path: '/quiz-loader/:retoId', // <-- CAMBIO DE :seccionId A :retoId
-        builder: (context, state) {
-          final retoId = state.pathParameters['retoId']!; // <-- CAMBIO
-          return QuizLoaderPage(retoId: retoId); // <-- CAMBIO
-        },
-      ),
-      // --- NUEVAS RUTAS PARA OTRAS DINÁMICAS ---
-      GoRoute(
-        path: '/puzzle-loader/:retoId',
+        path: '/reto/:retoId', // <-- RUTA GENERAL
         builder: (context, state) {
           final retoId = state.pathParameters['retoId']!;
-          // TODO: Reemplazar con tu PuzzleLoaderPage cuando la crees
-          return PlaceholderLoader(retoId: retoId, dinamica: "Puzzle");
-        },
-      ),
-      GoRoute(
-        path: '/columns-loader/:retoId',
-        builder: (context, state) {
-          final retoId = state.pathParameters['retoId']!;
-          // TODO: Reemplazar con tu ColumnsLoaderPage
-          return PlaceholderLoader(retoId: retoId, dinamica: "Columnas");
-        },
-      ),
-      GoRoute(
-        path: '/code-loader/:retoId',
-        builder: (context, state) {
-          final retoId = state.pathParameters['retoId']!;
-          // TODO: Reemplazar con tu CodeLoaderPage
-          return PlaceholderLoader(retoId: retoId, dinamica: "Código");
+          // Apunta a tu nuevo distribuidor
+          return RetoDistribuidorPage(retoId: retoId);
         },
       ),
 
+      // --- (Se borran las rutas /quiz-loader, /puzzle-loader, etc.) ---
       // --- Fin de rutas de retos ---
       GoRoute(
         path: '/edit-profile',
@@ -148,6 +125,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
+          // ... (Tus 4 branches de navbar: home, ranking, directory, profile sin cambios) ...
           // 1️⃣ HOME
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['home'],
@@ -217,3 +195,4 @@ class GoRouterRefreshStream extends ChangeNotifier {
     });
   }
 }
+// [FIN DEL ARCHIVO router.dart]

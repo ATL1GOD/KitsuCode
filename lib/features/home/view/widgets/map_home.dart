@@ -1,7 +1,8 @@
+// [COMIENZO DEL ARCHIVO map_home.dart]
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-// import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Ya no se importa aquí
+// import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Ya no se necesita
 import 'package:go_router/go_router.dart'; // Importar GoRouter
 
 class Section extends StatelessWidget {
@@ -9,10 +10,10 @@ class Section extends StatelessWidget {
 
   const Section({super.key, required this.data});
 
-  // --- NUEVA FUNCIÓN DE NAVEGACIÓN (Sin cambios) ---
+  // --- ¡FUNCIÓN DE NAVEGACIÓN SIMPLIFICADA! (MODIFICADA) ---
   void _navegarAReto(BuildContext context, LevelData level) {
-    // Si no hay retoId o no hay nombre de dinámica, es una lección (o no hacer nada)
-    if (level.retoId == null || level.dinamicaNombre == null) {
+    // 1. Si no hay retoId, es una lección (o no hacer nada)
+    if (level.retoId == null) {
       print(
         "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
       );
@@ -21,53 +22,23 @@ class Section extends StatelessWidget {
       return;
     }
 
+    // 2. Si tiene un retoId, ¡simplemente llama a la ruta general!
     final int retoId = level.retoId!;
-    final String dinamica = level.dinamicaNombre!;
 
-    print("Navegando a reto $retoId con dinámica $dinamica");
+    print("Navegando al distribuidor de retos con ID: $retoId");
 
-    // Usa un switch para decidir a qué ruta navegar
-    switch (dinamica) {
-      case 'Quiz':
-        // Navega al cargador de Quiz (que ya tienes)
-        context.push('/quiz-loader/$retoId');
-        break;
-      case 'Puzzle':
-        // Navega a un *nuevo* cargador de Puzzle
-        context.push('/puzzle-loader/$retoId');
-        break;
-      case 'Columnas':
-        // Navega a un *nuevo* cargador de Columnas
-        context.push('/columns-loader/$retoId');
-        break;
-      case 'Codigo':
-        // Navega a un *nuevo* cargador de Código
-        context.push('/code-loader/$retoId');
-        break;
-      default:
-        print("Dinámica no reconocida: $dinamica");
-        // Mostrar un error al usuario
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: Dinámica "$dinamica" no implementada.'),
-          ),
-        );
-    }
+    // ¡ESTA ES LA ÚNICA LÍNEA DE NAVEGACIÓN QUE NECESITAS!
+    // Ya no necesitas el 'dinamicaNombre' ni el 'switch' aquí.
+    context.push('/reto/$retoId');
   }
   // --- FIN NUEVA FUNCIÓN ---
 
   @override
   Widget build(BuildContext context) {
-    // --- CÁLCULO DE ALTURA DEL STACK ---
-    // Calculamos la altura total que ocupará el Stack de botones.
-    // (56.0 de size + 6.0 de reliefThickness)
+    // --- CÁLCULO DE ALTURA DEL STACK (Sin cambios) ---
     const double buttonHeight = 62.0;
-
-    // Si no hay niveles, la altura es 0.
-    // Si hay, calculamos la posición 'top' del último botón y le sumamos su altura.
     final double stackHeight = data.levels.isEmpty
         ? 0.0
-        // (i * 96.0) + 40.0
         : ((data.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
     // --- FIN CÁLCULO DE ALTURA ---
 
@@ -93,9 +64,7 @@ class Section extends StatelessWidget {
         ),
         const SizedBox(height: 24.0),
 
-        // --- CORRECCIÓN: AÑADIR SIZEDBOX Y STACK ---
-        // Usamos un SizedBox para darle al Stack una altura fija.
-        // El Stack ahora es el padre correcto de los Positioned.
+        // --- STACK DE BOTONES (Sin cambios) ---
         SizedBox(
           height: stackHeight,
           child: Stack(
@@ -109,9 +78,8 @@ class Section extends StatelessWidget {
                 right: getRight(i),
                 child: ReliefSectionButton(
                   onPressed: () {
-                    // --- LÓGICA MODIFICADA ---
+                    // --- Llama a la nueva función simplificada ---
                     _navegarAReto(context, level);
-                    // --- FIN LÓGICA MODIFICADA ---
                   },
                   baseColor: data.color,
                   reliefColor: data.colorOscuro,
@@ -123,7 +91,6 @@ class Section extends StatelessWidget {
             }).toList(),
           ),
         ),
-        // --- FIN CORRECCIÓN ---
       ],
     );
   }
@@ -153,3 +120,4 @@ class Section extends StatelessWidget {
     return 0.0;
   }
 }
+// [FIN DEL ARCHIVO map_home.dart]

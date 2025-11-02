@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/result_page.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:kitsucode/features/quiz_game/provider/quiz_provider.dart';
+// import 'package:kitsucode/features/quiz_game/provider/quiz_provider.dart';
+import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 
 class QuizPage extends StatefulWidget {
   final QuizData mydata;

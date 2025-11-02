@@ -14,6 +14,7 @@ import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:kitsucode/features/competences/view/ranking_view.dart';
+import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 
 // El import que tú me especificaste para usar la NavBar
 import 'package:kitsucode/shared/navbar/navigation_scaffold.dart';
@@ -45,6 +46,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
+      GoRoute(
+  path: '/profile/:userId/achievements',
+  builder: (context, state) {
+    final userId = state.pathParameters['userId']!;
+    return AllAchievementsView(userId: userId);
+  },
+),
 
       // --- ESTRUCTURA DE LA NAVBAR ---
       StatefulShellRoute.indexedStack(

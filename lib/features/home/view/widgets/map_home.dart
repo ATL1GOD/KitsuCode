@@ -9,7 +9,7 @@ class Section extends StatelessWidget {
 
   const Section({super.key, required this.data});
 
-  // --- NUEVA FUNCIÓN DE NAVEGACIÓN ---
+  // --- NUEVA FUNCIÓN DE NAVEGACIÓN (Sin cambios) ---
   void _navegarAReto(BuildContext context, LevelData level) {
     // Si no hay retoId o no hay nombre de dinámica, es una lección (o no hacer nada)
     if (level.retoId == null || level.dinamicaNombre == null) {
@@ -58,6 +58,19 @@ class Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- CÁLCULO DE ALTURA DEL STACK ---
+    // Calculamos la altura total que ocupará el Stack de botones.
+    // (56.0 de size + 6.0 de reliefThickness)
+    const double buttonHeight = 62.0;
+
+    // Si no hay niveles, la altura es 0.
+    // Si hay, calculamos la posición 'top' del último botón y le sumamos su altura.
+    final double stackHeight = data.levels.isEmpty
+        ? 0.0
+        // (i * 96.0) + 40.0
+        : ((data.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
+    // --- FIN CÁLCULO DE ALTURA ---
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -80,31 +93,37 @@ class Section extends StatelessWidget {
         ),
         const SizedBox(height: 24.0),
 
-        // Generar botones dinámicamente
-        ...data.levels.asMap().entries.map((entry) {
-          int i = entry.key; // El índice (0, 1, 2...)
-          LevelData level = entry.value;
+        // --- CORRECCIÓN: AÑADIR SIZEDBOX Y STACK ---
+        // Usamos un SizedBox para darle al Stack una altura fija.
+        // El Stack ahora es el padre correcto de los Positioned.
+        SizedBox(
+          height: stackHeight,
+          child: Stack(
+            children: data.levels.asMap().entries.map((entry) {
+              int i = entry.key; // El índice (0, 1, 2...)
+              LevelData level = entry.value;
 
-          // bool isQuiz = level.retoId != null; // Lógica antigua eliminada
-
-          return Positioned(
-            top: (i * 96.0) + 40.0,
-            left: getLeft(i),
-            right: getRight(i),
-            child: ReliefSectionButton(
-              onPressed: () {
-                // --- LÓGICA MODIFICADA ---
-                _navegarAReto(context, level);
-                // --- FIN LÓGICA MODIFICADA ---
-              },
-              baseColor: data.color,
-              reliefColor: data.colorOscuro,
-              svgAsset: level.iconAsset,
-              size: 56.0,
-              reliefThickness: 6.0,
-            ),
-          );
-        }).toList(),
+              return Positioned(
+                top: (i * 96.0) + 40.0,
+                left: getLeft(i),
+                right: getRight(i),
+                child: ReliefSectionButton(
+                  onPressed: () {
+                    // --- LÓGICA MODIFICADA ---
+                    _navegarAReto(context, level);
+                    // --- FIN LÓGICA MODIFICADA ---
+                  },
+                  baseColor: data.color,
+                  reliefColor: data.colorOscuro,
+                  svgAsset: level.iconAsset,
+                  size: 56.0,
+                  reliefThickness: 6.0,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        // --- FIN CORRECCIÓN ---
       ],
     );
   }

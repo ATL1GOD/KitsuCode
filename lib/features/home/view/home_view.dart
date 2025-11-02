@@ -16,7 +16,7 @@ class HomeView extends ConsumerStatefulWidget {
 class _HomeViewState extends ConsumerState<HomeView> {
   int iCurrentSection = 0;
   final heightFirstBox = 56.0;
-  final heightSection = 600.0;
+  // final heightSection = 600.0; // Ya no se usa
 
   // Lista de posiciones de scroll (offsets) donde comienza el TÍTULO de cada sección.
   final List<double> _sectionOffsets = [];
@@ -55,19 +55,25 @@ class _HomeViewState extends ConsumerState<HomeView> {
       for (int i = 0; i < sections.length; i++) {
         final section = sections[i];
 
-        // Estimación de la altura del contenido de los botones
-        const double buttonHeightWithMargin = 56.0 + 6.0 + 24.0;
-        double sectionContentHeight =
-            section.levels.length * buttonHeightWithMargin;
+        // --- CORRECCIÓN DEL CÁLCULO DE ALTURA ---
 
-        // Altura aproximada del Row del título y sus márgenes
+        // 1. Altura del Row del título + SizedBox(24.0)
+        // (Usamos 60.0 como estimación de altura del Row del título + márgenes)
         const double sectionHeaderHeight = 60.0;
 
-        double sectionHeightEstimate =
-            sectionContentHeight + sectionHeaderHeight;
+        // 2. Altura del Stack de botones (cálculo IDÉNTICO al de map_home.dart)
+        const double buttonHeight = 56.0 + 6.0; // 62.0
+        final double stackHeight = section.levels.isEmpty
+            ? 0.0
+            : ((section.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
 
-        // Altura del SizedBox opcional (100.0) y el separador (24.0) que siguen a la sección.
-        double totalSectionBlockHeight = sectionHeightEstimate + 100.0 + 24.0;
+        // 3. Altura total del widget Section (Header + Stack)
+        double sectionWidgetHeight = sectionHeaderHeight + stackHeight;
+
+        // 4. Altura del bloque en el ListView (Widget Section + SizedBox(100.0) + Separador(24.0))
+        double totalSectionBlockHeight = sectionWidgetHeight + 100.0 + 24.0;
+
+        // --- FIN CORRECCIÓN ---
 
         currentOffset += totalSectionBlockHeight;
 

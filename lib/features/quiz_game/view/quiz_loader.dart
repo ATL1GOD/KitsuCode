@@ -35,19 +35,6 @@ class QuizLoaderPage extends ConsumerWidget {
     // Ahora trabajamos directamente con 'challengeContent'.
     // --- FIN MODIFICACIÓN ---
 
-    // El distribuidor ya verificó el tipo, pero podemos hacerlo de nuevo
-    // por seguridad.
-    if (challengeContent['tipo'] != 'Quiz') {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Error de Reto')),
-        body: Center(
-          child: Text(
-            'Error: El contenido (ya cargado) no es un Quiz, es tipo "${challengeContent['tipo']}".',
-          ),
-        ),
-      );
-    }
-
     // --- PASO 2: LÓGICA DE TRANSFORMACIÓN (Sin cambios) ---
     final List<dynamic> preguntasList = challengeContent['preguntas'] ?? [];
 

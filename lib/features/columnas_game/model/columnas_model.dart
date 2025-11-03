@@ -1,9 +1,8 @@
 // Representa el reto completo parseado desde el JSON
 class ColumnsChallenge {
-  final String tituloLeccion;
   final List<ColumnPair> pares;
 
-  ColumnsChallenge({required this.tituloLeccion, required this.pares});
+  ColumnsChallenge({required, required this.pares});
 
   factory ColumnsChallenge.fromJson(Map<String, dynamic> json) {
     var paresList = json['pares'] as List;
@@ -11,10 +10,7 @@ class ColumnsChallenge {
         .map((i) => ColumnPair.fromJson(i as Map<String, dynamic>))
         .toList();
 
-    return ColumnsChallenge(
-      tituloLeccion: json['titulo_leccion'] as String,
-      pares: pares,
-    );
+    return ColumnsChallenge(pares: pares);
   }
 }
 

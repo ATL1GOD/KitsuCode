@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Importa tu provider y TODOS tus loaders
-import 'package:kitsucode/features/quiz_game/provider/reto_provider.dart';
+import 'package:kitsucode/features/challenge/provider/reto_provider.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart';
 import 'package:kitsucode/features/columnas_game/view/columnas_loader.dart';
@@ -17,36 +17,44 @@ class RetoDistribuidorPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final int retoIdInt = int.tryParse(retoId) ?? 0;
 
-    // 1. Llama al provider UNA SOLA VEZ para obtener el contenido del reto
     final challengeDataAsync = ref.watch(challengeProvider(retoIdInt));
 
-    // 2. Muestra .when() para manejar los estados de carga
     return challengeDataAsync.when(
-      data: (challengeContent) {
-        // 3. Extrae el "tipo" de dinámica del JSON
-        final String? tipo = challengeContent['tipo'] as String?;
+      data: (challengeData) {
+        // 1. Extrae los 2 datos del objeto ChallengeData
+        final String tipo = challengeData.dinamicaNombre;
+        final Map<String, dynamic> challengeContent = challengeData.contenido;
+        // final String titulo = ... // <-- CAMBIO: LÍNEA ELIMINADA
 
-        // 4. Decide qué Loader mostrar basado en el tipo
+        // 2. Pasa solo el contenido (y retoId donde se necesite)
         switch (tipo) {
           case 'Quiz':
-            // ¡Pasa el contenido ya cargado directamente al loader!
-            return QuizLoaderPage(challengeContent: challengeContent);
+            return QuizLoaderPage(
+              challengeContent: challengeContent,
+              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
+            );
 
           case 'Puzzle':
-            // TODO: Cuando crees PuzzleLoader, haz que acepte challengeContent
-            return PlaceholderLoader(retoId: retoId, dinamica: "Puzzle");
+            return PlaceholderLoader(
+              retoId: retoId,
+              dinamica: "Puzzle",
+              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
+            );
 
           case 'Relacion':
             return ColumnsLoader(
               challengeContent: challengeContent,
               retoId: retoId,
+              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
             );
 
           case 'Codigo':
-            // TODO: Cuando crees CodeLoader, haz que acepte challengeContent
-            return PlaceholderLoader(retoId: retoId, dinamica: "Código");
+            return PlaceholderLoader(
+              retoId: retoId,
+              dinamica: "Código",
+              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
+            );
 
-          // 5. Maneja casos desconocidos o erróneos
           default:
             return Scaffold(
               appBar: AppBar(title: const Text('Error')),
@@ -61,9 +69,8 @@ class RetoDistribuidorPage extends ConsumerWidget {
             );
         }
       },
-      // 6. Muestra pantallas de carga y error mientras el provider trabaja
       loading: () => const Scaffold(
-        backgroundColor: Color(0xFF0A1D25), // O tu color de fondo global
+        backgroundColor: Color(0xFF0A1D25),
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (err, stack) => Scaffold(

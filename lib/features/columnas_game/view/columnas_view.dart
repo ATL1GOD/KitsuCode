@@ -157,11 +157,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1D25), // Tu color de fondo
-      appBar: AppBar(
-        title: Text(widget.challenge.tituloLeccion),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Column(
         children: [
           const Padding(

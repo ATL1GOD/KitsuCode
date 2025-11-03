@@ -1,5 +1,3 @@
-// features/columnas_game/view/columnas_view.dart
-
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,27 +48,50 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     _setupItems();
   }
 
+  // --- ¡FUNCIÓN MODIFICADA! ---
   void _setupItems() {
-    // 1. Crea las "burbujas"
+    final List<ChallengeItem> leftColumn = [];
+    final List<ChallengeItem> rightColumn = [];
+    final random = Random();
+
+    // 1. Asignar cada par a una columna opuesta
     for (var pair in widget.challenge.pares) {
-      _items.add(
-        ChallengeItem(
-          pairId: pair.id,
-          text: pair.termino,
-          type: ItemType.termino,
-        ),
+      final terminoItem = ChallengeItem(
+        pairId: pair.id,
+        text: pair.termino,
+        type: ItemType.termino,
       );
-      _items.add(
-        ChallengeItem(
-          pairId: pair.id,
-          text: pair.definicion,
-          type: ItemType.definicion,
-        ),
+      final definicionItem = ChallengeItem(
+        pairId: pair.id,
+        text: pair.definicion,
+        type: ItemType.definicion,
       );
+
+      // Aleatoriamente decide qué item va a la izquierda y cuál a la derecha
+      if (random.nextBool()) {
+        leftColumn.add(terminoItem);
+        rightColumn.add(definicionItem);
+      } else {
+        leftColumn.add(definicionItem);
+        rightColumn.add(terminoItem);
+      }
     }
-    // 2. ¡Baraja la lista!
-    _items.shuffle(Random());
+
+    // 2. Barajar cada columna de forma independiente
+    // Esto asegura que el orden vertical sea aleatorio, pero
+    // mantiene la regla de que los pares están en columnas opuestas.
+    leftColumn.shuffle(random);
+    rightColumn.shuffle(random);
+
+    // 3. Intercalar las listas para el GridView
+    // El GridView leerá: [L0, R0, L1, R1, L2, R2, ...]
+    _items = [];
+    for (int i = 0; i < leftColumn.length; i++) {
+      _items.add(leftColumn[i]);
+      _items.add(rightColumn[i]);
+    }
   }
+  // --- FIN DE LA FUNCIÓN MODIFICADA ---
 
   void _onItemTapped(ChallengeItem tappedItem) {
     // No hacer nada si ya está resuelto o si estamos en animación de error
@@ -222,7 +243,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 ),
               ),
             ),
-
+            const SizedBox(height: 55),
             // --- Grid de Botones ---
             Expanded(
               child: Padding(
@@ -234,7 +255,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                     crossAxisCount: 2, // Dos columnas fijas
                     childAspectRatio: 2.8, // Ancho / Alto del botón
                     crossAxisSpacing: 12.0, // Espacio horizontal
-                    mainAxisSpacing: 12.0, // Espacio vertical
+                    mainAxisSpacing: 30.0, // Espacio vertical
                   ),
                   itemBuilder: (context, index) {
                     return _buildItemChip(_items[index]);

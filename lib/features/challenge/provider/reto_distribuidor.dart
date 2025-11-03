@@ -7,6 +7,7 @@ import 'package:kitsucode/features/challenge/provider/reto_provider.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart';
 import 'package:kitsucode/features/columnas_game/view/columnas_loader.dart';
+import 'package:kitsucode/features/codigo_game/view/codigo_loader.dart';
 
 class RetoDistribuidorPage extends ConsumerWidget {
   final String retoId;
@@ -49,10 +50,9 @@ class RetoDistribuidorPage extends ConsumerWidget {
             );
 
           case 'Codigo':
-            return PlaceholderLoader(
+            return CodigoLoader(
+              challengeContent: challengeContent,
               retoId: retoId,
-              dinamica: "Código",
-              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
             );
 
           default:

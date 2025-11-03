@@ -1,8 +1,3 @@
-// lib/features/codigo_game/model/codigo_model.dart
-
-import 'dart:convert';
-
-// Modelo principal (Sin cambios)
 class CodigoChallenge {
   final List<CodigoPregunta> preguntas;
 

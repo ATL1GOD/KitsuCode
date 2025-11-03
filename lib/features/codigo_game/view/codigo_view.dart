@@ -20,14 +20,12 @@ class CodigoChallengeView extends StatefulWidget {
 class _CodigoChallengeViewState extends State<CodigoChallengeView> {
   late final PageController _pageController;
 
-  // --- ¡CAMBIOS IMPORTANTES! ---
-  // Ya no es un solo controller, sino una lista
+  // --- ¡CAMBIOS IMPORTANTES (DE NUEVO)! ---
   List<TextEditingController> _controllers = [];
-  // Necesitamos saber qué página estamos viendo para configurar los controllers
+  List<FocusNode> _focusNodes = []; // <-- AÑADIDO: Lista para los nodos de foco
   int _currentPageIndex = 0;
   // --- FIN CAMBIOS ---
 
-  // Estado para la retroalimentación
   bool _mostrandoFeedback = false;
   bool _esRespuestaCorrecta = false;
 
@@ -35,66 +33,83 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    // Preparamos los controllers para la PRIMERA página (index 0)
-    _setupControllersForPage(0);
+    _setupControllersAndFocusNodesForPage(
+      0,
+    ); // <-- Nombre de función actualizado
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    // ¡Importante! Limpiar todos los controllers
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
+    _clearControllersAndFocusNodes(); // <-- Nueva función helper de limpieza
     super.dispose();
   }
 
-  // --- ¡NUEVA FUNCIÓN! ---
-  // Prepara la lista de controllers para una página específica
-  void _setupControllersForPage(int pageIndex) {
-    // 1. Limpia y "disposea" los controllers antiguos
+  // --- ¡NUEVA FUNCIÓN HELPER! ---
+  // Limpia y "disposea" todos los controllers y focus nodes
+  void _clearControllersAndFocusNodes() {
     for (var controller in _controllers) {
       controller.dispose();
     }
+    for (var focusNode in _focusNodes) {
+      focusNode.dispose();
+    }
     _controllers.clear();
+    _focusNodes.clear();
+  }
+  // --- FIN NUEVA FUNCIÓN ---
 
-    // 2. Obtiene la pregunta para la página nueva
+  // --- ¡FUNCIÓN MODIFICADA! ---
+  // Ahora configura ambas listas
+  void _setupControllersAndFocusNodesForPage(int pageIndex) {
+    _clearControllersAndFocusNodes(); // Limpiamos los anteriores
+
     if (pageIndex >= widget.challenge.preguntas.length) return;
     final pregunta = widget.challenge.preguntas[pageIndex];
 
-    // 3. Crea un controller SOLO para los fragmentos de tipo "input"
     for (var fragmento in pregunta.fragmentos) {
       if (fragmento.tipo == 'input') {
         _controllers.add(TextEditingController());
+        _focusNodes.add(
+          FocusNode(),
+        ); // <-- AÑADIDO: Crea un FocusNode por cada input
       }
     }
 
-    // 4. Actualiza el estado
     setState(() {
       _currentPageIndex = pageIndex;
     });
+
+    // --- AÑADIDO ---
+    // Da el foco al primer campo de texto automáticamente
+    if (_focusNodes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNodes.first.requestFocus();
+      });
+    }
   }
-  // --- FIN NUEVA FUNCIÓN ---
 
   // --- ¡FUNCIÓN MODIFICADA! ---
   void _verificarRespuesta() {
     final preguntaActual = widget.challenge.preguntas[_currentPageIndex];
 
-    // Obtenemos solo los fragmentos que son "input"
     final fragmentosInput = preguntaActual.fragmentos
         .where((f) => f.tipo == 'input')
         .toList();
 
     bool todasCorrectas = true;
 
-    // Comparamos cada controller con su respuesta correcta
     for (int i = 0; i < fragmentosInput.length; i++) {
-      final respuestaUsuario = _controllers[i].text.trim().toLowerCase();
-      final respuestaCorrecta = fragmentosInput[i].valor.trim().toLowerCase();
+      // --- ¡LÓGICA MEJORADA! ---
+      // Se quita .toLowerCase() para que sea case-sensitive
+      // Se mantiene .trim() para ignorar espacios al inicio/final
+      final respuestaUsuario = _controllers[i].text.trim();
+      final respuestaCorrecta = fragmentosInput[i].valor.trim();
+      // --- FIN MEJORA ---
 
       if (respuestaUsuario != respuestaCorrecta) {
         todasCorrectas = false;
-        break; // Si una falla, no seguimos revisando
+        break;
       }
     }
 
@@ -124,41 +139,49 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      // OJO: Los controllers se limpian y configuran
-      // gracias al 'onPageChanged' del PageView.
       setState(() {
         _mostrandoFeedback = false;
       });
     } else {
-      Navigator.of(context).pop(); // Fin del reto
+      Navigator.of(context).pop();
     }
+    // NOTA: Los controllers y focus nodes se actualizan
+    // gracias al 'onPageChanged' del PageView.
   }
 
-  // --- ¡NUEVA FUNCIÓN! ---
-  // Helper para construir la lista de TextSpans y WidgetSpans
+  // --- ¡FUNCIÓN MODIFICADA! ---
+  // Ahora construye los spans y asigna los focus nodes y el auto-avance
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
     TextStyle inputStyle,
   ) {
     final List<InlineSpan> spans = [];
-    int controllerIndex = 0; // Para llevar la cuenta de qué controller usar
+    // Obtenemos las respuestas correctas por adelantado
+    final respuestasCorrectas = pregunta.fragmentos
+        .where((f) => f.tipo == 'input')
+        .map((f) => f.valor.trim())
+        .toList();
+
+    int controllerIndex = 0;
 
     for (var fragmento in pregunta.fragmentos) {
       if (fragmento.tipo == 'texto') {
         spans.add(TextSpan(text: fragmento.valor, style: codeStyle));
       } else if (fragmento.tipo == 'input') {
-        // Asegurarnos de que el controller existe (sino, algo salió mal)
         if (controllerIndex < _controllers.length) {
+          final int currentIndex = controllerIndex; // Captura el índice actual
+
           spans.add(
             WidgetSpan(
               alignment: PlaceholderAlignment.baseline,
               baseline: TextBaseline.alphabetic,
               child: IntrinsicWidth(
                 child: TextField(
-                  controller:
-                      _controllers[controllerIndex], // Asigna el controller
-                  autofocus: controllerIndex == 0, // Solo autofocus al primero
+                  controller: _controllers[currentIndex],
+                  focusNode:
+                      _focusNodes[currentIndex], // <-- AÑADIDO: Asigna el FocusNode
+                  // autofocus se maneja en _setupControllers...
                   style: inputStyle,
                   decoration: const InputDecoration(
                     isDense: true,
@@ -168,22 +191,36 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
                       borderSide: BorderSide(color: Colors.cyanAccent),
                     ),
                   ),
+                  // --- ¡NUEVA LÓGICA DE AUTO-AVANCE! ---
+                  onChanged: (value) {
+                    // Compara con la respuesta correcta (case-sensitive)
+                    if (value.trim() == respuestasCorrectas[currentIndex]) {
+                      // Si es correcta, mira si hay un siguiente campo
+                      if (currentIndex + 1 < _focusNodes.length) {
+                        // Si hay, mueve el foco a él
+                        _focusNodes[currentIndex + 1].requestFocus();
+                      } else {
+                        // Si es el último campo, quita el foco (cierra el teclado)
+                        _focusNodes[currentIndex].unfocus();
+                      }
+                    }
+                  },
+                  // --- FIN LÓGICA AUTO-AVANCE ---
                   onSubmitted: (_) => _verificarRespuesta(),
                 ),
               ),
             ),
           );
-          controllerIndex++; // Pasamos al siguiente controller
+          controllerIndex++;
         }
       }
     }
     return spans;
   }
-  // --- FIN NUEVA FUNCIÓN ---
+  // --- FIN MODIFICACIÓN ---
 
   @override
   Widget build(BuildContext context) {
-    // Estilos (sin cambios)
     const codeStyle = TextStyle(
       fontFamily: 'monospace',
       fontSize: 16,
@@ -207,13 +244,16 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: widget.challenge.preguntas.length,
-              // --- ¡MODIFICADO! ---
               onPageChanged: (newIndex) {
-                // Cuando la página cambia, preparamos los controllers para esa NUEVA página
-                _setupControllersForPage(newIndex);
+                // --- ¡MODIFICADO! ---
+                // Llama a la nueva función
+                _setupControllersAndFocusNodesForPage(newIndex);
               },
-              // --- FIN MODIFICACIÓN ---
               itemBuilder: (context, index) {
+                // Asegurarse de que el índice coincida con el estado
+                if (index != _currentPageIndex) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 final pregunta = widget.challenge.preguntas[index];
 
                 return SingleChildScrollView(
@@ -226,7 +266,6 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 24),
-
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16.0),
@@ -234,8 +273,6 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
                           color: const Color(0xFF1E1E1E),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
-                        // --- ¡MODIFICADO! ---
-                        // Usamos la nueva función para construir el RichText
                         child: RichText(
                           text: TextSpan(
                             children: _buildCodeSpans(
@@ -245,7 +282,6 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
                             ),
                           ),
                         ),
-                        // --- FIN MODIFICACIÓN ---
                       ),
                     ],
                   ),

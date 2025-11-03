@@ -21,7 +21,7 @@ import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 // --- ¡NUEVO! IMPORTAR EL DISTRIBUIDOR DE RETOS ---
 // (La ruta puede variar según donde lo guardes)
-import 'package:kitsucode/features/challenge/view/reto_distribuidor_page.dart';
+import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 // ------------------------------------------------
 
 // Claves (sin cambios)

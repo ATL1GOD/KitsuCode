@@ -145,7 +145,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               Container(
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('images/home/camino.png'),
+                    image: AssetImage('assets/images/home/camino.png'),
                     fit: BoxFit.cover,
                     repeat: ImageRepeat.repeatY,
                   ),

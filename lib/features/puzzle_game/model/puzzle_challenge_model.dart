@@ -1,7 +1,5 @@
-// lib/features/puzzle_game/model/puzzle_challenge_model.dart (CORREGIDO)
-
 import 'dart:convert';
-import 'package:flutter/material.dart'; // ¡Necesario para UniqueKey!
+import 'package:flutter/material.dart'; 
 
 PuzzleChallengeModel puzzleChallengeModelFromJson(String str) =>
     PuzzleChallengeModel.fromJson(json.decode(str));
@@ -34,7 +32,7 @@ class PuzzleChallengeModel {
   }
 }
 
-// --- CLASES DE LÍNEAS (Sin cambios) ---
+// --- CLASES DE LÍNEAS 
 abstract class PuzzleLine {
   final String type;
   PuzzleLine(this.type);
@@ -84,18 +82,18 @@ class BlankLine extends PuzzleLine {
   }
 }
 
-// --- CLASE PuzzleOption (¡CORREGIDA!) ---
+// --- CLASE PuzzleOption 
 class PuzzleOption {
   final String id; // El ID semántico (ej: "opt_A")
   final String text;
   
-  // ¡NUEVO CAMPO! Un ID único para esta *instancia* de ficha
+  // campo único para cada instancia de PuzzleOption
   final String uniqueId; 
 
   PuzzleOption({
     required this.id, 
     required this.text,
-    String? uniqueId, // Opcional para el constructor
+    String? uniqueId, 
   }) : uniqueId = uniqueId ?? UniqueKey().toString(); // Asigna un ID de instancia único
 
   factory PuzzleOption.fromJson(Map<String, dynamic> json) {
@@ -106,15 +104,15 @@ class PuzzleOption {
     );
   }
 
-  // ¡CORREGIDO! Ahora compara por 'uniqueId', no por 'id'
+  // Igualdad basada en 'uniqueId'
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is PuzzleOption &&
           runtimeType == other.runtimeType &&
-          uniqueId == other.uniqueId; // <-- ¡CAMBIO CLAVE!
+          uniqueId == other.uniqueId; 
 
-  // ¡CORREGIDO! El hashCode debe basarse en lo mismo que 'operator=='
+  // Igualdad basada en 'uniqueId'
   @override
-  int get hashCode => uniqueId.hashCode; // <-- ¡CAMBIO CLAVE!
+  int get hashCode => uniqueId.hashCode; 
 }

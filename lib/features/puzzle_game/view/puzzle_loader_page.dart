@@ -1,13 +1,9 @@
-// lib/features/puzzle_game/view/puzzle_loader_page.dart (CORREGIDO)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// Importa el NUEVO provider y la VISTA
 import 'package:kitsucode/features/puzzle_game/provider/puzzle_provider.dart';
 import 'package:kitsucode/features/puzzle_game/view/puzzle_view.dart';
 
-// Este es el "Loader" que tu equipo espera.
-// Sigue el patrón de 'QuizLoaderPage.dart'
+// --- 1. DEFINIMOS EL LOADER DE PUZZLE ---
 class PuzzleLoaderPage extends StatelessWidget {
   final Map<String, dynamic> challengeContent;
   final String retoId;
@@ -20,8 +16,7 @@ class PuzzleLoaderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. ANULAMOS (Override) el provider simple 'puzzleProvider'
-    //    y le pasamos el contenido del reto (el JSON).
+    // 1. ANULAMOS EL PROVIDER DE PUZZLE PARA INYECTAR NUESTRO NOTIFIER
     return ProviderScope(
       overrides: [
         puzzleProvider.overrideWith(
@@ -29,9 +24,8 @@ class PuzzleLoaderPage extends StatelessWidget {
           (ref) => PuzzleNotifier(challengeContent),
         ),
       ],
-      // 2. Mostramos tu PuzzleView
-      //    PuzzleView ahora leerá el provider que acabamos de anular.
-      child: const PuzzleView(), 
+      // 2. MOSTRAMOS LA VISTA DEL PUZZLE
+      child: const PuzzleView(),
     );
   }
 }

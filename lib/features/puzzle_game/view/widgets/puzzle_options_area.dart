@@ -20,12 +20,11 @@ class PuzzleOptionsArea extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         return Container(
           width: double.infinity,
-          // --- ¡QUITAMOS LA ALTURA FIJA! ---
-          // La altura ahora será automática
+          // La altura será automática
           constraints: const BoxConstraints(minHeight: 120), 
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            // ... (la decoración del "banco" sigue igual)
+            // --- ESTILO DINÁMICO BASADO EN EL DRAGGING ---
             color: candidateData.isNotEmpty 
               ? colorScheme.primaryContainer.withAlpha(128) 
               : colorScheme.surface,
@@ -44,7 +43,7 @@ class PuzzleOptionsArea extends StatelessWidget {
             ]
           ),
           
-          // --- ¡REEMPLAZAMOS 'SingleChildScrollView' POR 'Wrap'! ---
+          // --- REEMPLAZO DEL LISTVIEW POR WRAP ---
           child: Wrap(
             spacing: 12.0, // Espacio horizontal entre chips
             runSpacing: 12.0, // Espacio vertical entre líneas de chips
@@ -56,7 +55,7 @@ class PuzzleOptionsArea extends StatelessWidget {
               );
             }).toList(),
           ),
-          // --- FIN DEL REEMPLAZO ---
+          // fin del Wrap 
         );
       },
       onWillAcceptWithDetails: (details) => true,

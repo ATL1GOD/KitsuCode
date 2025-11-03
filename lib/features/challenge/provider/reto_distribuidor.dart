@@ -37,13 +37,12 @@ class RetoDistribuidorPage extends ConsumerWidget {
               challengeContent: challengeContent,
             );
 
-          // --- 2. ¡REEMPLAZA EL PLACEHOLDER! ---
-          case 'Puzzle':
-            return PuzzleLoaderPage( // <-- Este es tu nuevo loader
-              challengeContent: challengeContent,
-              retoId: retoId, // Se lo pasamos por si acaso
-            );
-          // --- FIN DE LA MODIFICACIÓN ---
+            case 'Puzzle':
+            case 'Bloques': 
+              return PuzzleLoaderPage(
+                challengeContent: challengeContent,
+                retoId: retoId,
+              );
 
           case 'Relacion':
             return ColumnsLoader(

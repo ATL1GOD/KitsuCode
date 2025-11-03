@@ -16,7 +16,7 @@ class PuzzleInstructionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface, 
         borderRadius: BorderRadius.circular(16),
-        // --- ¡"BRILLO" / "GLOW" TEMÁTICO AÑADIDO! ---
+        // --- BRILLO / GLOW TEMÁTICO 
         boxShadow: [
           BoxShadow(
             color: colorScheme.primary.withAlpha(60), // Sombra suave del color del lenguaje
@@ -24,7 +24,7 @@ class PuzzleInstructionCard extends StatelessWidget {
             spreadRadius: 2,
           ),
         ],
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN DEL BRILLO / GLOW TEMÁTICO
       ),
       child: Text(
         text,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 
-// --- 1. PuzzleChip (Con estilo "3D" - SIN CAMBIOS) ---
+// --- 1. PuzzleChip 
 class PuzzleChip extends StatelessWidget {
   final String text;
   final bool isFilled;
@@ -55,7 +55,7 @@ class PuzzleChip extends StatelessWidget {
   }
 }
 
-// --- 2. EmptyBlank (SIN CAMBIOS) ---
+// --- 2. EmptyBlank 
 class EmptyBlank extends StatelessWidget {
   final bool isHighlighted; 
   const EmptyBlank({super.key, this.isHighlighted = false});
@@ -89,7 +89,7 @@ class EmptyBlank extends StatelessWidget {
   }
 }
 
-// --- 3. DraggableOption (¡AQUÍ ESTÁ LA CORRECCIÓN!) ---
+// --- 3. DraggableOption 
 class DraggableOption extends StatelessWidget {
   final PuzzleOption option;
   final bool isFilled;
@@ -110,18 +110,17 @@ class DraggableOption extends StatelessWidget {
         isDragging: true, 
       ),
       
-      // --- ¡¡ESTA ES LA CORRECCIÓN!! ---
       // 'childWhenDragging' es lo que se queda atrás.
       childWhenDragging: isFilled 
         ? const EmptyBlank() // Si estaba en un hueco, deja un hueco.
         : Opacity( // Si estaba en el banco...
-            opacity: 0.0, // ...lo hacemos 100% invisible.
-            child: PuzzleChip( // ...pero le damos el mismo tamaño que el chip original.
+            opacity: 0.0, // invisible para evitar "saltos" visuales
+            child: PuzzleChip( // pero mantenemos el tamaño
               text: option.text,
               isFilled: isFilled,
             ),
           ),
-      // --- FIN DE LA CORRECCIÓN ---
+      // fin de 'childWhenDragging'
           
       child: PuzzleChip(
         text: option.text,
@@ -131,7 +130,7 @@ class DraggableOption extends StatelessWidget {
   }
 }
 
-// --- 4. DragTargetBlank (SIN CAMBIOS) ---
+// --- 4. DragTargetBlank 
 class DragTargetBlank extends StatelessWidget {
   final String blankId;
   final PuzzleOption? filledOption;
@@ -166,7 +165,7 @@ class DragTargetBlank extends StatelessWidget {
   }
 }
 
-// --- 5. PuzzleBottomBar (SIN CAMBIOS) ---
+// --- 5. PuzzleBottomBar
 class PuzzleBottomBar extends StatelessWidget {
   final bool isButtonEnabled;
   final VoidCallback onCheckPressed;

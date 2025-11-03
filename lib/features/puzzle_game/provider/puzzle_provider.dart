@@ -1,10 +1,7 @@
-// lib/features/puzzle_game/provider/puzzle_provider.dart (REESCRITO)
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 
-// --- NUEVO PROVIDER SIMPLE (Igual que QuizProvider) ---
-// Este es el provider que tu Vista (PuzzleView) observará.
+// --- DISTRIBUIDOR DE ESTADO PARA EL JUEGO DE PUZZLE
 final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>(
   (ref) {
     // Lanza un error. El Loader (PuzzleLoaderPage)
@@ -13,14 +10,14 @@ final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleS
   },
 );
 
-// --- ENUM (Sin cambios) ---
+// --- ENUM 
 enum PuzzleStatus {
   playing,
   correct,
   incorrect,
 }
 
-// --- PuzzleState (Sin cambios) ---
+// --- PuzzleState 
 class PuzzleState {
   final bool isLoading;
   final String? error;
@@ -57,20 +54,18 @@ class PuzzleState {
   }
 }
 
-// --- PuzzleNotifier (¡LÓGICA CORREGIDA!) ---
+// --- PuzzleNotifier
 class PuzzleNotifier extends StateNotifier<PuzzleState> {
-  // ¡YA NO NECESITA EL REPOSITORY!
   // Recibe el JSON (contenido) en el constructor.
   PuzzleNotifier(Map<String, dynamic> challengeContent) : super(PuzzleState()) {
-    // ¡LA LÓGICA DE CARGA AHORA OCURRE EN EL CONSTRUCTOR!
+    // Inicializa el juego con el contenido recibido.
     _initializePuzzle(challengeContent);
   }
 
-  // --- MÉTODO DE INICIALIZACIÓN (El antiguo 'loadPuzzle') ---
+  // --- MÉTODO DE INICIALIZACIÓN 
   void _initializePuzzle(Map<String, dynamic> challengeContent) {
     try {
       // 1. Parsea el JSON que recibimos
-      //    (Esto asume que tu 'puzzle_challenge_model.dart' está corregido con el 'uniqueId')
       final challenge = PuzzleChallengeModel.fromJson(challengeContent);
 
       // 2. Prepara los huecos vacíos
@@ -79,7 +74,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
           if (line is BlankLine) line.id: null
       };
 
-      // --- 3. LÓGICA "INTELIGENTE" (La que arregla el bug de "push") ---
+      // --- 3. LÓGICA PARA OPCIONES 
       final optionsMap = {
         for (var option in challenge.options) option.id : option
       };
@@ -89,8 +84,6 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
           final optionId = line.correctOptionId; 
           final baseOption = optionsMap[optionId]; 
           if (baseOption != null) {
-            // Creamos una NUEVA instancia.
-            // El constructor de PuzzleOption (con uniqueId) se encarga del resto.
             optionsParaJugar.add(
               PuzzleOption(id: baseOption.id, text: baseOption.text) 
             );
@@ -98,7 +91,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         }
       }
       for (var option in challenge.options) {
-        // Usamos el 'id' ("opt_A") para ver si ya está.
+        // Verificamos si la opción ya está en la lista para jugar.
         if (!optionsParaJugar.any((o) => o.id == option.id)) {
            // 'option' viene del .fromJson() y el constructor le dio un 'uniqueId'
            optionsParaJugar.add(
@@ -107,11 +100,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         }
       }
       optionsParaJugar.shuffle();
-      // --- FIN DE LA LÓGICA INTELIGENTE ---
+      // --- FIN DE LA LÓGICA PARA OPCIONES ---
 
       // 4. Establece el estado inicial del juego
       state = state.copyWith(
-        isLoading: false, // ¡Terminamos de cargar!
+        isLoading: false, 
         challenge: challenge,
         filledBlanks: initialFilledBlanks,
         availableOptions: optionsParaJugar,
@@ -123,11 +116,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
     }
   }
 
-  // --- El resto de tus métodos (onOptionDropped, checkSolution) ---
-  // --- NO NECESITAN CAMBIOS ---
-  // (Estos ya usan 'remove' y 'contains', que ahora funcionan
-  //  gracias al 'operator==' corregido en el Modelo)
-  
+  // --- MÉTODOS PARA INTERACTUAR CON EL JUEGO
   void onOptionDroppedOnBlank(String blankId, PuzzleOption droppedOption) {
     if (state.status == PuzzleStatus.correct) return;
     

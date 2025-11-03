@@ -36,20 +36,20 @@ class _AnimatedPuzzleBorderState extends State<AnimatedPuzzleBorder>
       child: Container(
         padding: const EdgeInsets.all(3.0), // Ancho del borde
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18), // Debe ser > que el del hijo
-          // Usamos un SweepGradient (gradiente de "radar")
+          borderRadius: BorderRadius.circular(18), // Radio del borde
+          // Usamos un SweepGradient para el efecto de borde animado
           gradient: SweepGradient(
             center: Alignment.center,
             colors: [
               colorScheme.primary, // Color del lenguaje
               colorScheme.secondary, // Color del lenguaje
-              colorScheme.primary.withAlpha(50), // Un poco más suave
+              colorScheme.primary.withAlpha(50), // Transparente en medio para efecto difuminado
               colorScheme.primary, // Vuelve al inicio
             ],
             stops: const [0.0, 0.4, 0.7, 1.0],
           ),
         ),
-        child: widget.child, // Aquí va la tarjeta de instrucción
+        child: widget.child, // El contenido dentro del borde de la tarjeta de instrucción
       ),
     );
   }

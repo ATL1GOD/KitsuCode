@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lottie/lottie.dart'; // Asegúrate de tener 'lottie' en tu pubspec.yaml
+import 'package:lottie/lottie.dart';
 
 class PuzzleFeedbackWidget extends StatelessWidget {
   final bool isCorrect;
@@ -22,10 +22,8 @@ class PuzzleFeedbackWidget extends StatelessWidget {
     
     final Color titleColor = isCorrect ? successColor : errorColor;
     
-    // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-    // Ahora 'lottieAsset' siempre usa 'fox_run.json'
+    // animación Lottie según si es correcto o no
     final String lottieAsset = 'assets/animations/fox_run.json';
-    // --- FIN DE LA CORRECCIÓN ---
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20).copyWith(
@@ -57,7 +55,7 @@ class PuzzleFeedbackWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          // Subtítulo (opcional)
+          // Subtítulo 
           Text(
             isCorrect
                 ? "¡Sigue así! Lo estás haciendo muy bien."

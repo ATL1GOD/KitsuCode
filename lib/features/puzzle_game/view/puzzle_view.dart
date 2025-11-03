@@ -1,23 +1,15 @@
-// lib/features/puzzle_game/view/puzzle_view.dart (CORREGIDO)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; 
 import 'package:go_router/go_router.dart';
-// Importamos el NUEVO provider
 import 'package:kitsucode/features/puzzle_game/provider/puzzle_provider.dart'; 
-
-// --- ¡IMPORTS CORREGIDOS! ---
-// Añadimos los imports a los widgets que estabas usando
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_code_area.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_instruction_card.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_options_area.dart';
-import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_widgets.dart'; // Para PuzzleBottomBar
+import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_widgets.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_feedback_widget.dart'; 
-// --- FIN IMPORTS CORREGIDOS ---
-
 import 'package:animate_do/animate_do.dart';
 
-// 1. ¡YA NO NECESITA 'retoId'!
+// --- 1. DEFINIMOS LA VISTA DEL PUZZLE ---
 class PuzzleView extends ConsumerWidget {
   const PuzzleView({super.key});
 
@@ -25,14 +17,11 @@ class PuzzleView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    // 2. ¡CORREGIDO! Observa el provider simple.
-    //    El Loader (PuzzleLoaderPage) ya se encargó de inicializarlo.
+    // 2. Leemos el estado y el notifier del provider
     final puzzleState = ref.watch(puzzleProvider);
     final puzzleNotifier = ref.read(puzzleProvider.notifier);
 
-    // 3. El resto de tu código
-    //    Manejo de 'isLoading' y 'error' (aunque el loader ya lo hace,
-    //    esto da seguridad por si el JSON estuviera mal)
+    // 3. Manejo de estados: carga, error, datos
     if (puzzleState.isLoading) {
       return Scaffold(
         appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
@@ -48,14 +37,14 @@ class PuzzleView extends ConsumerWidget {
       );
     }
 
-    // Si llegamos aquí, ¡tenemos datos!
+    // Si llegamos aquí   , tenemos datos válidos
     final challenge = puzzleState.challenge!;
     final bool isPuzzleComplete = !puzzleState.filledBlanks.containsValue(null);
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLow, 
       appBar: AppBar(
-        // ... (Tu AppBar con el botón de back - sin cambios) ...
+        // --- Lógica del AppBar 
         leadingWidth: 72,
         leading: Align(
           alignment: Alignment.centerLeft,
@@ -82,7 +71,7 @@ class PuzzleView extends ConsumerWidget {
             ),
           ),
         ),
-        title: const Text(''), // Título quitado como pediste
+        title: const Text(''), // Título vacío por ahora jaja
         centerTitle: true,
         backgroundColor: Colors.transparent, 
         elevation: 0, 
@@ -139,14 +128,14 @@ class PuzzleView extends ConsumerWidget {
         ],
       ),
       
-      // --- Lógica del Bottom Bar (¡CORREGIDA!) ---
+      // --- Lógica del Bottom Bar 
       bottomNavigationBar: PuzzleBottomBar(
         isButtonEnabled: isPuzzleComplete,
         onCheckPressed: () { 
           // 1. Llama al notifier
           puzzleNotifier.checkSolution();
           
-          // 2. ¡CORREGIDO! Lee el provider simple para obtener el estado actualizado
+          // 2.  Lee el provider simple para obtener el estado actualizado
           final esCorrecto = ref.read(puzzleProvider).status == PuzzleStatus.correct;
           
           // 3. Muestra el BottomSheet
@@ -158,7 +147,7 @@ class PuzzleView extends ConsumerWidget {
               return PuzzleFeedbackWidget(
                 isCorrect: esCorrecto,
                 onContinue: () {
-                  // Reemplaza 'print' por tu lógica de guardado si la tienes
+                  // 4. Acción al continuar aqui se implementa la navegación del guardado
                   // print("Intento guardado (simulado)");
                   context.pop(); // Cierra el pop-up
                   

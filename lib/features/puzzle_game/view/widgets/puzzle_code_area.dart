@@ -31,13 +31,13 @@ class PuzzleCodeArea extends StatelessWidget {
         return baseStyle; // Estilo normal (color onSurface)
     }
   }
-  // --- FIN DE LA FUNCIÓN HELPER ---
+  // fin de la función helper
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    // --- 2. DEFINIMOS EL ESTILO BASE ---
+    // --- 2. DEFINIMOS EL ESTILO BASE 
     final baseStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
           fontFamily: 'monospace',
           color: colorScheme.onSurface,
@@ -46,14 +46,13 @@ class PuzzleCodeArea extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      // (Padding quitado en el paso anterior, ¡perfecto!)
+      // --- ALTURA AUTOMÁTICA ---
       child: RichText(
         text: TextSpan(
           style: baseStyle, // Estilo base para todo
           children: lines.map((line) {
 
-            // --- 3. LÓGICA DE RENDERIZADO MODIFICADA ---
-            // Ahora leemos 'TokenLine' en lugar de 'CodeLine'
+            // --- 3. LÓGICA DE RENDERIZADO MODIFICADA 
             if (line is TokenLine) {
               return TextSpan(
                 text: line.text,
@@ -61,7 +60,7 @@ class PuzzleCodeArea extends StatelessWidget {
                 style: _getStyleForToken(line.highlight, baseStyle, colorScheme),
               );
             }
-            // --- FIN DE LA MODIFICACIÓN ---
+            // Lógica para BlankLine 
 
             if (line is BlankLine) {
               final blankId = line.id;

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/quiz_game/provider/reto_provider.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart';
+import 'package:kitsucode/features/columnas_game/view/columnas_loader.dart';
 
 class RetoDistribuidorPage extends ConsumerWidget {
   final String retoId;
@@ -35,9 +36,11 @@ class RetoDistribuidorPage extends ConsumerWidget {
             // TODO: Cuando crees PuzzleLoader, haz que acepte challengeContent
             return PlaceholderLoader(retoId: retoId, dinamica: "Puzzle");
 
-          case 'Columnas':
-            // TODO: Cuando crees ColumnsLoader, haz que acepte challengeContent
-            return PlaceholderLoader(retoId: retoId, dinamica: "Columnas");
+          case 'Relacion':
+            return ColumnsLoader(
+              challengeContent: challengeContent,
+              retoId: retoId,
+            );
 
           case 'Codigo':
             // TODO: Cuando crees CodeLoader, haz que acepte challengeContent

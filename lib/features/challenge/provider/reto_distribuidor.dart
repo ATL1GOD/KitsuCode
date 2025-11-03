@@ -1,13 +1,17 @@
-// [COMIENZO DEL ARCHIVO reto_distribuidor_page.dart]
+// lib/features/challenge/provider/reto_distribuidor_page.dart (CORREGIDO)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Importa tu provider y TODOS tus loaders
 import 'package:kitsucode/features/challenge/provider/reto_provider.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
-import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart';
+// import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart'; // Ya no se usa
 import 'package:kitsucode/features/columnas_game/view/columnas_loader.dart';
 import 'package:kitsucode/features/codigo_game/view/codigo_loader.dart';
+
+// --- 1. ¡IMPORTA TU NUEVO LOADER! ---
+import 'package:kitsucode/features/puzzle_game/view/puzzle_loader_page.dart';
 
 class RetoDistribuidorPage extends ConsumerWidget {
   final String retoId;
@@ -22,31 +26,29 @@ class RetoDistribuidorPage extends ConsumerWidget {
 
     return challengeDataAsync.when(
       data: (challengeData) {
-        // 1. Extrae los 2 datos del objeto ChallengeData
+        // 1. Extrae los datos
         final String tipo = challengeData.dinamicaNombre;
         final Map<String, dynamic> challengeContent = challengeData.contenido;
-        // final String titulo = ... // <-- CAMBIO: LÍNEA ELIMINADA
 
-        // 2. Pasa solo el contenido (y retoId donde se necesite)
+        // 2. Decide qué pantalla mostrar
         switch (tipo) {
           case 'Quiz':
             return QuizLoaderPage(
               challengeContent: challengeContent,
-              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
             );
 
+          // --- 2. ¡REEMPLAZA EL PLACEHOLDER! ---
           case 'Puzzle':
-            return PlaceholderLoader(
-              retoId: retoId,
-              dinamica: "Puzzle",
-              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
+            return PuzzleLoaderPage( // <-- Este es tu nuevo loader
+              challengeContent: challengeContent,
+              retoId: retoId, // Se lo pasamos por si acaso
             );
+          // --- FIN DE LA MODIFICACIÓN ---
 
           case 'Relacion':
             return ColumnsLoader(
               challengeContent: challengeContent,
               retoId: retoId,
-              // titulo: titulo, // <-- CAMBIO: LÍNEA ELIMINADA
             );
 
           case 'Codigo':
@@ -85,4 +87,3 @@ class RetoDistribuidorPage extends ConsumerWidget {
     );
   }
 }
-// [FIN DEL ARCHIVO reto_distribuidor_page.dart]

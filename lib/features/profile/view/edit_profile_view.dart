@@ -117,14 +117,12 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
     return profileAsync.when(
       data: (profile) {
         if (!_isInitialized) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              setState(() {
-                _initializeControllers(profile);
-              });
-            }
-          });
-        }
+  _initializeControllers(profile);
+
+  Future.delayed(const Duration(milliseconds: 80), () {
+    if (mounted) setState(() {});
+  });
+}
         _currentProfileData = profile;
         
         final tempProfileForColor = profile.copyWith(avatarUrl: _isInitialized ? _currentAvatar : profile.avatarUrl);
@@ -175,33 +173,38 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                 opacity: isKeyboardVisible ? 0.0 : 1.0,
                 duration: const Duration(milliseconds: 300),
                 child: ShaderMask(
-                  shaderCallback: (rect) {
-                    return LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.white, Colors.white.withOpacity(0.0)],
-                      stops: const [0.6, 1.0], // La animación será visible en el 60% superior y se desvanecerá en el 40% inferior
-                    ).createShader(rect);
-                  },
-                  blendMode: BlendMode.dstIn,
-                  child: Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 350, // Limita la altura de la animación
-                    child: ColorFiltered(
-                      colorFilter: ColorFilter.mode(
-                        colors.secondaryFixedDim.withOpacity(0.5), // Opacidad más baja
-                        BlendMode.srcIn,
-                      ),
-                      child: Lottie.asset(
-                        'assets/animations/spring.json',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+  shaderCallback: (rect) {
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Colors.white, Colors.white.withOpacity(0.0)],
+      stops: const [0.6, 1.0],
+    ).createShader(rect);
+  },
+  blendMode: BlendMode.dstIn,
+  child: Stack( // ✅ ahora sí puede haber Positioned
+    children: [
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 350,
+        child: ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            colors.secondaryFixedDim.withOpacity(0.5),
+            BlendMode.srcIn,
+          ),
+          child: Lottie.asset(
+            'assets/animations/spring.json',
+            fit: BoxFit.cover,
+            frameRate: FrameRate(40),
+          ),
+        ),
+      ),
+    ],
+  ),
+),              
+),
               // --- CONTENIDO PRINCIPAL ---
               SafeArea(
                 child: SingleChildScrollView(
@@ -242,7 +245,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                       ),
                       const SizedBox(height: 10),
                       FadeInDown(
-                        delay: const Duration(milliseconds: 200),
+  duration: Duration(milliseconds: 450),
+  delay: Duration(milliseconds: 80),
+  from: 30,
                         child: Stack(
                           clipBehavior: Clip.none,
                           alignment: Alignment.center,
@@ -308,7 +313,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                       ),
                       const SizedBox(height: 40),
                       FadeInUp(
-                        delay: const Duration(milliseconds: 300),
+  duration: Duration(milliseconds: 450),
+  delay: Duration(milliseconds: 120),
+  from: 20,
                         child: _GlassCard(
                           child: Padding(
                             padding: const EdgeInsets.all(24.0),

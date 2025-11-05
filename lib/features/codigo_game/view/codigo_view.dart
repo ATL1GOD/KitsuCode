@@ -21,8 +21,9 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
   late final PageController _pageController;
 
   // --- ¡CAMBIOS IMPORTANTES (DE NUEVO)! ---
-  List<TextEditingController> _controllers = [];
-  List<FocusNode> _focusNodes = []; // <-- AÑADIDO: Lista para los nodos de foco
+  final List<TextEditingController> _controllers = [];
+  final List<FocusNode> _focusNodes =
+      []; // <-- AÑADIDO: Lista para los nodos de foco
   int _currentPageIndex = 0;
   // --- FIN CAMBIOS ---
 

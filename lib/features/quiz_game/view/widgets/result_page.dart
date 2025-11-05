@@ -7,11 +7,11 @@ class QuizResultPage extends StatefulWidget {
   final int durationInSeconds;
 
   const QuizResultPage({
-    Key? key,
+    super.key,
     required this.marks,
     required this.totalQuestions,
     required this.durationInSeconds,
-  }) : super(key: key);
+  });
 
   @override
   _QuizResultPageState createState() => _QuizResultPageState();

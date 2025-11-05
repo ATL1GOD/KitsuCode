@@ -22,16 +22,25 @@ class RankingTile extends StatelessWidget {
 
     Color rankColor;
     switch (user.rank.toLowerCase()) {
-      case 'diamante': rankColor = Colors.blue.shade300; break;
-      case 'oro': rankColor = Colors.amber.shade600; break;
-      case 'plata': rankColor = Colors.grey.shade400; break;
-      default: rankColor = Colors.brown.shade400;
+      case 'diamante':
+        rankColor = Colors.blue.shade300;
+        break;
+      case 'oro':
+        rankColor = Colors.amber.shade600;
+        break;
+      case 'plata':
+        rankColor = Colors.grey.shade400;
+        break;
+      default:
+        rankColor = Colors.brown.shade400;
     }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       clipBehavior: Clip.antiAlias,
-      color: isCurrentUser ? colors.secondaryContainer.withOpacity(0.4) : colors.surfaceContainerHigh,
+      color: isCurrentUser
+          ? colors.secondaryContainer.withOpacity(0.4)
+          : colors.surfaceContainerHigh,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -52,7 +61,10 @@ class RankingTile extends StatelessWidget {
         },
         child: ListTile(
           // Ajuste de padding para mejor alineación
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 4,
+          ),
           leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -71,24 +83,41 @@ class RankingTile extends StatelessWidget {
               CircleAvatar(
                 radius: 22,
                 backgroundImage: AssetImage(user.avatarUrl),
-                backgroundColor: colors.surfaceVariant,
+                backgroundColor: colors.surfaceContainerHighest,
               ),
             ],
           ),
-          title: Text(user.profileName, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-          subtitle: Text('@${user.username}', style: textTheme.bodySmall?.copyWith(color: colors.primary)),
+          title: Text(
+            user.profileName,
+            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            '@${user.username}',
+            style: textTheme.bodySmall?.copyWith(color: colors.primary),
+          ),
           trailing: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('${user.totalScore} Pts', style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                '${user.totalScore} Pts',
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 2),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.shield_outlined, color: rankColor, size: 14),
                   const SizedBox(width: 4),
-                  Text(user.rank, style: textTheme.bodySmall?.copyWith(color: rankColor, fontWeight: FontWeight.bold)),
+                  Text(
+                    user.rank,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: rankColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ],

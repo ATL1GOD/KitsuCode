@@ -22,7 +22,7 @@ import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 // --- ¡NUEVO! IMPORTAR EL DISTRIBUIDOR DE RETOS ---
 // (La ruta puede variar según donde lo guardes)
 import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
-// ------------------------------------------------
+import 'package:kitsucode/features/desafio/view/desafio_view.dart';
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -153,12 +153,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             navigatorKey: _navigatorKeys['directory'],
             routes: [
               GoRoute(
-                path: '/directory',
-                builder: (context, state) => const Scaffold(
-                  body: Center(
-                    child: Text('Pantalla de Directorio (placeholder)'),
-                  ),
-                ),
+                path: '/desafio',
+                builder: (context, state) => const DesafiosView(),
               ),
             ],
           ),

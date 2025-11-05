@@ -20,7 +20,7 @@ class RankingView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(followRealtimeProvider);
-    ref.watch(rankingRealtimeProvider);
+    ref.watch(realtimeUpdateProvider);
     final authState = ref.watch(authStateProvider);
     final isLogged = authState.value?.session != null;
 
@@ -72,6 +72,8 @@ class _RankingContent extends ConsumerWidget {
     final rankingAsync = ref.watch(globalRankingProvider);
     final authUser = ref.watch(authStateProvider).value?.session?.user;
     final String? currentUserId = authUser?.id;
+    
+    
 
     return Scaffold(
       // Fondo principal con color de acento muy suave

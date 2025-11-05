@@ -1,24 +1,37 @@
+// lib/features/puzzle_game/provider/puzzle_provider.dart
+import 'dart:async'; // Para el Timer de reinicio
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 
-// --- DISTRIBUIDOR DE ESTADO PARA EL JUEGO DE PUZZLE
+// --- 1. IMPORTAR LOS PROVIDERS QUE NECESITAMOS ---
+import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+// --- ¡AÑADIR ESTA IMPORTACIÓN! ---
+import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+
+
+// --- DISTRIBUIDOR DE ESTADO
 final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>(
   (ref) {
-    // Lanza un error. El Loader (PuzzleLoaderPage)
-    // se encargará de anular (override) esto y crear el Notifier.
-    throw UnimplementedError('PuzzleProvider no fue inicializado por el Loader');
+    // Este error es correcto. Se anula en PuzzleLoaderPage.
+    throw UnimplementedError(
+      'PuzzleProvider debe ser anulado (overridden) por PuzzleLoaderPage '
+      'con el id_reto y el contenido del reto.'
+    );
   },
 );
 
-// --- ENUM 
+// --- ENUM (Sin cambios)
 enum PuzzleStatus {
   playing,
   correct,
   incorrect,
 }
 
-// --- PuzzleState 
+// --- PuzzleState (MODIFICADO)
 class PuzzleState {
+  final int challengeId; // El id_reto de Supabase
   final bool isLoading;
   final String? error;
   final PuzzleChallengeModel? challenge;
@@ -27,6 +40,7 @@ class PuzzleState {
   final PuzzleStatus status;
 
   PuzzleState({
+    this.challengeId = 0, // Valor por defecto
     this.isLoading = true,
     this.error,
     this.challenge,
@@ -35,7 +49,9 @@ class PuzzleState {
     this.status = PuzzleStatus.playing,
   });
 
+  // copyWith (MODIFICADO)
   PuzzleState copyWith({
+    int? challengeId, 
     bool? isLoading,
     String? error,
     PuzzleChallengeModel? challenge,
@@ -44,6 +60,7 @@ class PuzzleState {
     PuzzleStatus? status,
   }) {
     return PuzzleState(
+      challengeId: challengeId ?? this.challengeId, 
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       challenge: challenge ?? this.challenge,
@@ -54,27 +71,28 @@ class PuzzleState {
   }
 }
 
-// --- PuzzleNotifier
+// --- PuzzleNotifier (MODIFICADO)
 class PuzzleNotifier extends StateNotifier<PuzzleState> {
-  // Recibe el JSON (contenido) en el constructor.
-  PuzzleNotifier(Map<String, dynamic> challengeContent) : super(PuzzleState()) {
-    // Inicializa el juego con el contenido recibido.
+  // Guardamos 'ref' para poder llamar a otros providers
+  final Ref _ref;
+  
+  // El constructor ahora acepta el ID del reto y 'ref'
+  PuzzleNotifier(
+    Map<String, dynamic> challengeContent, 
+    int challengeId, // (ej: 2)
+    this._ref,
+  ) : super(PuzzleState(challengeId: challengeId)) { // Guarda el ID en el estado
     _initializePuzzle(challengeContent);
   }
 
-  // --- MÉTODO DE INICIALIZACIÓN 
+  // --- MÉTODO DE INICIALIZACIÓN (Sin cambios)
   void _initializePuzzle(Map<String, dynamic> challengeContent) {
     try {
-      // 1. Parsea el JSON que recibimos
       final challenge = PuzzleChallengeModel.fromJson(challengeContent);
-
-      // 2. Prepara los huecos vacíos
       final initialFilledBlanks = {
         for (var line in challenge.lines)
           if (line is BlankLine) line.id: null
       };
-
-      // --- 3. LÓGICA PARA OPCIONES 
       final optionsMap = {
         for (var option in challenge.options) option.id : option
       };
@@ -91,18 +109,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         }
       }
       for (var option in challenge.options) {
-        // Verificamos si la opción ya está en la lista para jugar.
         if (!optionsParaJugar.any((o) => o.id == option.id)) {
-           // 'option' viene del .fromJson() y el constructor le dio un 'uniqueId'
-           optionsParaJugar.add(
-             PuzzleOption(id: option.id, text: option.text)
-           );
+            optionsParaJugar.add(
+              PuzzleOption(id: option.id, text: option.text)
+            );
         }
       }
       optionsParaJugar.shuffle();
-      // --- FIN DE LA LÓGICA PARA OPCIONES ---
-
-      // 4. Establece el estado inicial del juego
       state = state.copyWith(
         isLoading: false, 
         challenge: challenge,
@@ -111,12 +124,11 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         status: PuzzleStatus.playing,
       );
     } catch (e) {
-      // Si el JSON está mal, capturamos el error
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  // --- MÉTODOS PARA INTERACTUAR CON EL JUEGO
+  // --- MÉTODOS PARA INTERACTUAR (Sin cambios)
   void onOptionDroppedOnBlank(String blankId, PuzzleOption droppedOption) {
     if (state.status == PuzzleStatus.correct) return;
     
@@ -182,17 +194,62 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
     );
   }
 
-  void checkSolution() {
-    if (state.challenge == null) return;
+  // --- ¡CAMBIO GRANDE! ---
+  void checkSolution() async { 
+    if (state.challenge == null || state.status != PuzzleStatus.playing) return;
+
+    const int tiempoQueTardo = 0; 
+
+    bool isCorrect = true;
     for (var line in state.challenge!.lines) {
       if (line is BlankLine) {
         final userOption = state.filledBlanks[line.id];
         if (userOption == null || userOption.id != line.correctOptionId) {
-          state = state.copyWith(status: PuzzleStatus.incorrect);
-          return;
+          isCorrect = false; 
+          break; 
         }
       }
     }
-    state = state.copyWith(status: PuzzleStatus.correct);
+
+    final challengeRepo = _ref.read(challengeRepositoryProvider);
+
+    if (isCorrect) {
+      // --- SI GANÓ ---
+      state = state.copyWith(status: PuzzleStatus.correct);
+
+      try {
+        await challengeRepo.submitChallengeAttempt(
+          retoId: state.challengeId, 
+          fueExitoso: true,
+          tiempoQueTardo: tiempoQueTardo, 
+        );
+
+        // 1. Refrescar los trofeos en el AppBar
+        _ref.read(appBarProvider.notifier).fetchStats();
+        
+        // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
+        // 2. Invalidar el provider del ranking para que se actualice
+        // (Usa 'globalRankingProvider', que es el nombre correcto)
+        _ref.invalidate(globalRankingProvider);
+
+      } catch (e) {
+        debugPrint("Error al enviar intento exitoso: $e");
+      }
+
+    } else {
+      // --- SI PERDIÓ ---
+      state = state.copyWith(status: PuzzleStatus.incorrect);
+
+      try {
+        await challengeRepo.submitChallengeAttempt(
+          retoId: state.challengeId, 
+          fueExitoso: false,
+          tiempoQueTardo: tiempoQueTardo, 
+        );
+        
+      } catch (e) {
+        debugPrint("Error al enviar intento fallido: $e");
+      }
+    }
   }
-} 
+}

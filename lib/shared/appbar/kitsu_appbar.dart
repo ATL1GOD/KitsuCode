@@ -36,8 +36,9 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(appBarRealtimeProvider);
     final stats = ref.watch(appBarProvider);
-
+    
     // Loader (sin cambios)
     if (stats.isLoading) {
       return Container(

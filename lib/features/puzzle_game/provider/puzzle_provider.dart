@@ -195,4 +195,4 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
     }
     state = state.copyWith(status: PuzzleStatus.correct);
   }
-}
+} 

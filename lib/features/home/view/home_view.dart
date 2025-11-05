@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
+import 'package:kitsucode/shared/appbar/kitsu_appbar.dart'; 
+// import 'dart:ui'; // <--- Eliminamos esta línea, ya no se usa (corrige warning)
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -15,19 +17,16 @@ class HomeView extends ConsumerStatefulWidget {
 
 class _HomeViewState extends ConsumerState<HomeView> {
   int iCurrentSection = 0;
-  final heightFirstBox = 56.0;
-  // final heightSection = 600.0; // Ya no se usa
+  
+  // --- Valores de Posición (Están correctos) ---
+  final double _changeThresholdPosition = 102.0; 
+  final heightFirstBox = 192.0; 
 
-  // Lista de posiciones de scroll (offsets) donde comienza el TÍTULO de cada sección.
   final List<double> _sectionOffsets = [];
   final scrollCtrl = ScrollController();
+  final double _aestheticOffset = 80.0; 
 
-  final double _changeThresholdPosition = 40.0; // Valor de 'top' en Positioned
-
-  // Nuevo offset de ajuste (e.g., 80.0 px) para que el cambio ocurra antes
-  // de que el título llegue al umbral de 40.0.
-  final double _aestheticOffset = 80.0;
-
+  // (Tu función initState - sin cambios)
   @override
   void initState() {
     super.initState();
@@ -38,88 +37,58 @@ class _HomeViewState extends ConsumerState<HomeView> {
     });
   }
 
+  // (Tu función _calculateSectionOffsets - sin cambios)
   void _calculateSectionOffsets() {
     final sectionsAsync = ref.read(homeViewModelProvider);
 
     sectionsAsync.whenData((sections) {
       if (sections.isEmpty) return;
-
-      // El offset de inicio del título de la primera sección.
-      // (heightFirstBox (56.0) + 24.0 (primer separador))
-      double currentOffset = heightFirstBox + 24.0;
-
+      double currentOffset = heightFirstBox + 24.0; 
       _sectionOffsets.clear();
-      // El TÍTULO de la primera sección empieza en 80.0
       _sectionOffsets.add(currentOffset);
-
       for (int i = 0; i < sections.length; i++) {
         final section = sections[i];
-
-        // --- CORRECCIÓN DEL CÁLCULO DE ALTURA ---
-
-        // 1. Altura del Row del título + SizedBox(24.0)
-        // (Usamos 60.0 como estimación de altura del Row del título + márgenes)
         const double sectionHeaderHeight = 60.0;
-
-        // 2. Altura del Stack de botones (cálculo IDÉNTICO al de map_home.dart)
         const double buttonHeight = 56.0 + 6.0; // 62.0
         final double stackHeight = section.levels.isEmpty
             ? 0.0
             : ((section.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
-
-        // 3. Altura total del widget Section (Header + Stack)
         double sectionWidgetHeight = sectionHeaderHeight + stackHeight;
-
-        // 4. Altura del bloque en el ListView (Widget Section + SizedBox(100.0) + Separador(24.0))
         double totalSectionBlockHeight = sectionWidgetHeight + 100.0 + 24.0;
-
-        // --- FIN CORRECCIÓN ---
-
         currentOffset += totalSectionBlockHeight;
-
-        // El offset de la siguiente sección comienza en este punto.
         _sectionOffsets.add(currentOffset);
       }
     });
   }
 
+  // (Tu función scrollListener - sin cambios)
   void scrollListener() {
     if (_sectionOffsets.isEmpty) return;
-
     final currentScroll = scrollCtrl.position.pixels;
-
-    // CORRECCIÓN CLAVE:
-    // 1. Consideramos la posición del indicador: currentScroll + _changeThresholdPosition (40.0)
-    // 2. Aplicamos el _aestheticOffset: Restamos 80.0 para que el cambio ocurra antes.
-    // El cambio ocurre cuando el scroll está 80.0 píxeles por encima del punto de inicio del título.
     final double titleDisplayPosition =
-        currentScroll + _changeThresholdPosition - _aestheticOffset;
-
+        currentScroll + _changeThresholdPosition - _aestheticOffset; 
     int newIndex = 0;
-
-    // Buscar el índice del título que ha pasado el umbral ajustado.
     for (int i = _sectionOffsets.length - 1; i >= 0; i--) {
-      // Si la posición de detección ajustada es mayor o igual al punto de inicio del título de la sección 'i'.
       if (titleDisplayPosition >= _sectionOffsets[i]) {
         newIndex = i;
         break;
       }
     }
-
     final sections = ref.read(homeViewModelProvider).value ?? [];
     newIndex = newIndex.clamp(0, sections.length - 1);
-
     if (newIndex != iCurrentSection) {
       setState(() => iCurrentSection = newIndex);
     }
   }
 
+  // (Tu función dispose - sin cambios)
   @override
   void dispose() {
     scrollCtrl.removeListener(scrollListener);
     scrollCtrl.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +109,15 @@ class _HomeViewState extends ConsumerState<HomeView> {
             return const Center(child: Text("No hay secciones disponibles."));
           }
 
+          // --- ORDEN DEL STACK ---
+          // 1. Fondo de imagen (camino.png)
+          // 2. ListView (círculos)
+          // 3. "ESCUDO" DE IMAGEN (para tapar el scroll)
+          // 4. AppBar (transparente)
+          // 5. Etapa (caja verde)
           return Stack(
             children: [
+              // 1. FONDO IMAGEN (La imagen de fondo principal)
               Container(
                 decoration: const BoxDecoration(
                   image: DecorationImage(
@@ -151,10 +127,15 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   ),
                 ),
               ),
+              
+              // 2. LISTVIEW (Se scrollea por detrás)
               ListView.separated(
                 controller: scrollCtrl,
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0), // <-- AÑADIDO
+                
+                // --- ARREGLO DE ERRORES ---
                 itemBuilder: (_, i) => i == 0
-                    ? SizedBox(height: heightFirstBox)
+                    ? SizedBox(height: heightFirstBox) // <-- 192.0
                     : Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -162,12 +143,48 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           const SizedBox(height: 100.0),
                         ],
                       ),
-                separatorBuilder: (_, i) => const SizedBox(height: 24.0),
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
-                itemCount: sections.length + 1,
+                separatorBuilder: (_, i) => const SizedBox(height: 24.0), // <-- AÑADIDO (corrige error)
+                itemCount: sections.length + 1, // <-- AÑADIDO (corrige error)
+                // --- FIN ARREGLO ---
               ),
+              
+              // --- 3. ¡LA SOLUCIÓN! ---
+              // Este es el "escudo". Es un fondo de IMAGEN que se pone
+              // encima del ListView pero debajo del AppBar.
               Positioned(
-                top: _changeThresholdPosition, // 40.0
+                top: 0,
+                left: 0,
+                right: 0,
+                // Su altura es la misma que la posición 'top' de la caja verde
+                height: _changeThresholdPosition, // <-- 102.0
+                child: Container(
+                  // Usamos la MISMA imagen que el fondo (Paso 1)
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/home/camino.png'),
+                      fit: BoxFit.cover,
+                      // Alineamos la imagen al 'top' para que 
+                      // coincida con el fondo principal
+                      alignment: Alignment.topCenter,
+                    ),
+                  ),
+                  child: ClipRRect(), // Opcional, pero bueno tenerlo
+                ),
+              ),
+              // --- FIN DE LA SOLUCIÓN ---
+
+              
+              // 4. APPBAR (Fijo y transparente)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: KitsuAppBar(), // <-- Tu AppBar (sigue siendo transparente)
+              ),
+              
+              // 5. ETAPA (Fijo)
+              Positioned(
+                top: _changeThresholdPosition, // <-- 102.0
                 left: 0,
                 right: 0,
                 child: CurrentSection(
@@ -185,6 +202,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 }
 
+
+// (Tu clase CurrentSection sin cambios)
 class CurrentSection extends StatelessWidget {
   final SectionData data;
 

@@ -27,18 +27,23 @@ final selectedLanguageProvider = StateProvider.autoDispose<int>((ref) {
 }); 
 
 // (El resto de tus filtros no cambian)
-final selectedDifficultyProvider = StateProvider.autoDispose<int>((ref) => 1); 
+//final selectedDifficultyProvider = StateProvider.autoDispose<int>((ref) => 1); 
 final allLanguagesProvider = Provider.autoDispose<Map<int, Map<String, String>>>((ref) => {
-      // OJO: Asegúrate que estos IDs coincidan con tu DB
-      1: {'name': 'Python', 'logo': 'images/logo_python.png'}, 
-      2: {'name': 'C', 'logo': 'images/logo_c.png'}, 
-      3: {'name': 'Java', 'logo': 'images/logo_java.png'},
+      // --- ¡CORREGIDO! ---
+      // Estos IDs AHORA coinciden con tu base de datos
+      1: {'name': 'C', 'logo': 'images/logo_c.png'},
+      2: {'name': 'Java', 'logo': 'images/logo_java.png'},
+      3: {'name': 'Python', 'logo': 'images/logo_python.png'},
 });
-final allDifficultiesProvider = Provider.autoDispose<Map<int, String>>((ref) => {
+
+
+// --- CAMBIO 2: RENOMBRA ESTE PROVIDER ---
+// "Difficulties" (Dificultades) es confuso. Cambia el nombre a "Filters" (Filtros).
+final allTimeFiltersProvider = Provider.autoDispose<Map<int, String>>((ref) => { // <-- Renombrado
       1: 'Histórico',
       2: 'Últimos 30 Días',
       3: 'Última Semana',
-});
+}); 
 final selectedTimeFilterProvider = StateProvider.autoDispose<int>((ref) => 1); 
 
 // (globalRankingProvider no cambia, ya funciona bien)

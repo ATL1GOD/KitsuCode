@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 
 class ProfileProgressSection extends ConsumerWidget {
   final String userId;
@@ -19,7 +20,7 @@ class ProfileProgressSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final statsState = ref.watch(userStatsProvider(userId));
+    final statsState = ref.watch(userStatsByIdProvider(userId));
 
     return _GlassCard(
       child: Padding(

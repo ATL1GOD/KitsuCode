@@ -13,7 +13,7 @@ class SupabaseService {
     // 1. Obtener el Reto Agrupador Activo (tipo_reto = 5, especial = true)
     final List<Map<String, dynamic>> retosEspeciales = await _client
         .from('reto')
-        .select('id_reto, fecha_inicio, fecha_final, recompensa_experiencia')
+        .select('id_reto, fecha_inicio, fecha_final, recompensa_trofeos')
         .eq('tipo_reto', 5)
         .eq('especial', true)
         .eq('activo', true)
@@ -30,7 +30,7 @@ class SupabaseService {
     // 2. Obtener los Retos Individuales que componen este Agrupador
     final List<Map<String, dynamic>> retosIndividuales = await _client
         .from('reto')
-        .select('id_reto, titulo, recompensa_experiencia')
+        .select('id_reto, titulo, recompensa_trofeos')
         .neq('tipo_reto', 5) // Excluir el tipo Agrupador
         .eq('especial', false) // Retos normales
         .eq('activo', true)

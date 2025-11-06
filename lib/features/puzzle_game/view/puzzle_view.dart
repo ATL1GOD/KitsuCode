@@ -198,9 +198,9 @@ class PuzzleView extends ConsumerWidget {
                     onContinue: () {
                       context.pop(); // Cierra el pop-up
                       
-                      if (esCorrecto) {
-                        context.go('/home'); 
-                      }
+                      //if (esCorrecto) {
+                        context.go('/home');
+                      //}
                     },
                   ),
                 );

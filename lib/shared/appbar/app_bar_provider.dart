@@ -82,7 +82,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
             "AppBarNotifier: No hay usuario. Forzando languageId: 1 (Invitado)");
         state = state.copyWith(
           isLoading: false,
-          languageId: 1, // Default a Python (ID 1)
+          languageId: 1, 
           languageName: 'Python',
           languageAssetPath: _getAssetForLanguage('Python'),
           lives: 0,

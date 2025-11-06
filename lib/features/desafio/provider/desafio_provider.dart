@@ -11,7 +11,7 @@ class DesafioEspecial {
   final String descripcion;
   final DateTime fechaInicio;
   final DateTime fechaFin;
-  final int recompensaExp;
+  final int recompensaTrofeo;
 
   DesafioEspecial({
     required this.idReto,
@@ -19,7 +19,7 @@ class DesafioEspecial {
     required this.descripcion,
     required this.fechaInicio,
     required this.fechaFin,
-    required this.recompensaExp,
+    required this.recompensaTrofeo,
   });
 
   // Factory para crear desde el JSON de Supabase
@@ -30,7 +30,7 @@ class DesafioEspecial {
       descripcion: map['descripcion'] ?? 'Sin descripción.',
       fechaInicio: DateTime.parse(map['fecha_inicio']),
       fechaFin: DateTime.parse(map['fecha_final']),
-      recompensaExp: map['recompensa_experiencia'] ?? 0,
+      recompensaTrofeo: map['recompensa_trofeos'] ?? 0,
     );
   }
 }
@@ -39,12 +39,12 @@ class DesafioEspecial {
 class RetoIndividual {
   final int idReto;
   final String titulo;
-  final int recompensaExp;
+  final int recompensaTrofeo;
 
   RetoIndividual({
     required this.idReto,
     required this.titulo,
-    required this.recompensaExp,
+    required this.recompensaTrofeo,
   });
 
   // Factory para crear desde el JSON de Supabase
@@ -52,7 +52,7 @@ class RetoIndividual {
     return RetoIndividual(
       idReto: map['id_reto'],
       titulo: map['titulo'],
-      recompensaExp: map['recompensa_experiencia'] ?? 0,
+      recompensaTrofeo: map['recompensa_trofeos'] ?? 0,
     );
   }
 }
@@ -89,7 +89,7 @@ final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
   final resultsEspeciales = await supabase
       .from('reto')
       .select(
-        'id_reto, titulo, descripcion, fecha_inicio, fecha_final, recompensa_experiencia',
+        'id_reto, titulo, descripcion, fecha_inicio, fecha_final, recompensa_trofeos',
       )
       .eq('tipo_reto', 5) // Asumiendo que 5 es el tipo "Agrupador/Evento"
       .eq('especial', true)
@@ -117,7 +117,7 @@ final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
   // Consulta 2.1: Retos Individuales que forman el Evento Mensual
   final resultsRetosIndividuales = await supabase
       .from('reto')
-      .select('id_reto, titulo, recompensa_experiencia')
+      .select('id_reto, titulo, recompensa_trofeos')
       .neq('tipo_reto', 5)
       .eq('especial', false)
       .eq('activo', true)

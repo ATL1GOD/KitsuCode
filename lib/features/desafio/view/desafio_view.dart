@@ -315,7 +315,7 @@ class MonthlyChallengeItem extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${desafio.recompensaExp} XP',
+          '${desafio.recompensaTrofeo} XP',
           style: const TextStyle(color: Colors.white70),
         ),
         trailing: isCompleted

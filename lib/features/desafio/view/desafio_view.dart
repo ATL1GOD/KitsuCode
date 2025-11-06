@@ -13,41 +13,35 @@ class DesafiosView extends ConsumerWidget {
     final desafiosAsync = ref.watch(desafiosProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Desafíos')),
+      appBar: AppBar(title: const Text('Desafíos Mensuales')),
       body: desafiosAsync.when(
-        data: (desafios) {
-          return ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              // --- Sección de Eventos Especiales EXPANDIBLES ---
-              if (desafios.especiales.isNotEmpty)
-                ...desafios.especiales.map(
-                  (evento) =>
-                      // Usamos la primera tarjeta de evento especial para agrupar los diarios
-                      ExpandableSpecialEventCard(
-                        evento: evento,
-                        // Pasamos los desafíos diarios como contenido expandible.
-                        // Adapta esta lista si tu provider ahora trae desafíos específicos relacionados.
-                        desafiosMensuales: desafios.diarios,
-                      ),
+        data: (data) {
+          // --- Sección del Reto Agrupador (Mensual) ---
+          if (data.agrupador != null) {
+            return ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                ExpandableSpecialEventCard(
+                  evento: data.agrupador!, // El Reto Agrupador
+                  desafiosMensuales:
+                      data.individuales, // Los retos individuales del mes
+                  completedRetoIds:
+                      data.completedRetoIds, // IDs completados para el progreso
                 ),
+              ],
+            );
+          }
 
-              const SizedBox(height: 30),
-
-              // --- Sección de Desafíos Diarios "Normales" ---
-              const Text(
-                'Desafíos Diarios',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          // Mensaje si no hay un reto mensual activo
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Text(
+                '🎉 No hay un evento especial mensual activo en este momento. ¡Vuelve pronto!',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
-              const SizedBox(height: 10),
-
-              if (desafios.diarios.isEmpty)
-                const Text('No hay desafíos diarios disponibles.')
-              else
-                ...desafios.diarios.map(
-                  (diario) => DesafioDiarioCard(diario: diario),
-                ),
-            ],
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -58,17 +52,19 @@ class DesafiosView extends ConsumerWidget {
 }
 
 // -----------------------------------------------------------------------------------
-// --- NUEVO: Widget Expandible para Eventos Especiales (Basado en tu imagen) ---
+// --- Widget Expandible para Eventos Especiales (Reto Agrupador) ---
 // -----------------------------------------------------------------------------------
 
 class ExpandableSpecialEventCard extends StatefulWidget {
   final DesafioEspecial evento;
-  final List<DesafioDiario> desafiosMensuales; // Contenido para la expansión
+  final List<RetoIndividual> desafiosMensuales; // Contenido para la expansión
+  final Set<int> completedRetoIds; // IDs de retos completados por el usuario
 
   const ExpandableSpecialEventCard({
     super.key,
     required this.evento,
     required this.desafiosMensuales,
+    required this.completedRetoIds,
   });
 
   @override
@@ -112,8 +108,15 @@ class _ExpandableSpecialEventCardState
 
   @override
   Widget build(BuildContext context) {
-    // Usamos el color de la primera imagen (un tono verde oscuro)
     final primaryColor = Colors.green.shade700;
+
+    // Lógica para calcular el progreso del evento
+    final totalChallenges = widget.desafiosMensuales.length;
+    final completedChallenges = widget.completedRetoIds.length;
+    final progress = totalChallenges > 0
+        ? completedChallenges / totalChallenges
+        : 0.0;
+    final progressPercentage = (progress * 100).toStringAsFixed(0);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16.0),
@@ -213,20 +216,20 @@ class _ExpandableSpecialEventCardState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Barra de progreso y texto (similar a la segunda imagen)
+                  // Barra de progreso y texto
                   const SizedBox(height: 10),
-                  const Text(
-                    'DESAFÍOS COMPLETADOS (0%)',
-                    style: TextStyle(
+                  Text(
+                    'DESAFÍOS COMPLETADOS ($completedChallenges/$totalChallenges - $progressPercentage%)',
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Placeholder de progreso (adaptar con datos reales)
+                  // Progreso
                   LinearProgressIndicator(
-                    value: 0.0,
+                    value: progress,
                     backgroundColor: Colors.white30,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       Colors.green.shade300,
@@ -236,7 +239,7 @@ class _ExpandableSpecialEventCardState
 
                   // Título de la lista de desafíos
                   const Text(
-                    'DESAFÍOS MENSUALES DISPONIBLES',
+                    'RETOS INDIVIDUALES DEL EVENTO',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -245,10 +248,10 @@ class _ExpandableSpecialEventCardState
                   ),
                   const SizedBox(height: 10),
 
-                  // Lista de Desafíos Mensuales (usando el contenido del listado diario)
+                  // Lista de Retos Mensuales
                   if (widget.desafiosMensuales.isEmpty)
                     const Text(
-                      'No hay desafíos para este evento.',
+                      'No hay retos definidos para este evento.',
                       style: TextStyle(color: Colors.white70),
                     )
                   else
@@ -256,6 +259,10 @@ class _ExpandableSpecialEventCardState
                       (desafio) => MonthlyChallengeItem(
                         desafio: desafio,
                         parentColor: primaryColor,
+                        // Verificamos si el reto está en el Set de IDs completados
+                        isCompleted: widget.completedRetoIds.contains(
+                          desafio.idReto,
+                        ),
                       ),
                     ),
                 ],
@@ -273,66 +280,56 @@ class _ExpandableSpecialEventCardState
 }
 
 // -----------------------------------------------------------------------------------
-// --- NUEVO: Item para cada Desafío Mensual (dentro del expandible) ---
+// --- Item para cada Desafío Mensual (dentro del expandible, con estado de completado) ---
 // -----------------------------------------------------------------------------------
 class MonthlyChallengeItem extends StatelessWidget {
-  final DesafioDiario desafio;
+  final RetoIndividual desafio; // Usar el nuevo modelo
   final Color parentColor;
+  final bool isCompleted; // Indica si el reto fue completado
+
   const MonthlyChallengeItem({
     super.key,
     required this.desafio,
     required this.parentColor,
+    this.isCompleted = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
-      color: Color.lerp(
-        parentColor,
-        Colors.black,
-        0.2,
-      ), // Tono ligeramente más oscuro
+      color: Color.lerp(parentColor, Colors.black, 0.2),
       child: ListTile(
-        leading: const Icon(Icons.code, color: Colors.white),
+        leading: Icon(
+          isCompleted ? Icons.check_circle : Icons.code, // Ícono de completado
+          color: isCompleted ? Colors.green.shade300 : Colors.white,
+        ),
         title: Text(
           desafio.titulo,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            decoration: isCompleted
+                ? TextDecoration.lineThrough
+                : null, // Tachado si está completo
+            decorationColor: Colors.white70,
+          ),
         ),
         subtitle: Text(
           '${desafio.recompensaExp} XP',
           style: const TextStyle(color: Colors.white70),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
-        onTap: () {
-          // Navegar a la dinámica del reto específico
-          context.go('/reto/${desafio.idReto}');
-        },
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------------
-// --- Tarjeta para Desafíos Diarios "Normales" (Mantenida) ---
-// -----------------------------------------------------------------------------------
-class DesafioDiarioCard extends StatelessWidget {
-  final DesafioDiario diario;
-  const DesafioDiarioCard({super.key, required this.diario});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      child: ListTile(
-        leading: const Icon(Icons.quiz, color: Colors.green),
-        title: Text(diario.titulo),
-        subtitle: Text('${diario.recompensaExp} XP'),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: () {
-          // Navegación al distribuidor con el ID
-          context.go('/reto/${diario.idReto}');
-        },
+        trailing: isCompleted
+            ? const Icon(
+                Icons.check,
+                color: Colors.greenAccent,
+              ) // Muestra un check final si está completo
+            : const Icon(Icons.arrow_forward_ios, color: Colors.white70),
+        onTap: isCompleted
+            ? null // Desactiva el tap si ya está completo
+            : () {
+                // Navegar a la dinámica del reto específico
+                context.go('/reto/${desafio.idReto}');
+              },
       ),
     );
   }

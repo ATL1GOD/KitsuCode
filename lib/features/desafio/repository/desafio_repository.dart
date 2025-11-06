@@ -5,38 +5,59 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
   // Obtener el ID del usuario autenticado (asumiendo que está disponible)
+  // Nota: Es más seguro obtener el ID del usuario dentro de la función si el token puede expirar.
   final String _userId = Supabase.instance.client.auth.currentUser!.id;
 
-  // Función clave para el desafío mensual
-  Future<Map<String, dynamic>?> getRetoMensualData({
-    required int tipoRetoId,
-  }) async {
-    // 1. Obtener el reto activo que es de tipo 'mensual'
-    // Se recomienda usar `rpc` o `functions` para lógica más compleja de "reto mensual"
-    final List<Map<String, dynamic>> retos = await _client
+  // Función clave para obtener todos los datos del Reto Mensual Agrupador
+  Future<Map<String, dynamic>> getRetoMensualData() async {
+    // 1. Obtener el Reto Agrupador Activo (tipo_reto = 5, especial = true)
+    final List<Map<String, dynamic>> retosEspeciales = await _client
         .from('reto')
-        .select()
-        .eq('tipo_reto', tipoRetoId) // Asumimos 2 es el tipo_reto mensual
+        .select('id_reto, fecha_inicio, fecha_final, recompensa_experiencia')
+        .eq('tipo_reto', 5)
+        .eq('especial', true)
         .eq('activo', true)
         .limit(1);
 
-    if (retos.isEmpty) return null;
+    if (retosEspeciales.isEmpty) {
+      return {'agrupador': null, 'individuales': [], 'completedIds': {}};
+    }
 
-    final Map<String, dynamic> retoData = retos.first;
-    final int idReto = retoData['id_reto'];
+    final Map<String, dynamic> agrupador = retosEspeciales.first;
+    final String fechaInicio = agrupador['fecha_inicio'];
+    final String fechaFinal = agrupador['fecha_final'];
 
-    // 2. Verificar si el usuario ya ha completado este reto
-    final List<Map<String, dynamic>> intentos = await _client
+    // 2. Obtener los Retos Individuales que componen este Agrupador
+    final List<Map<String, dynamic>> retosIndividuales = await _client
+        .from('reto')
+        .select('id_reto, titulo, recompensa_experiencia')
+        .neq('tipo_reto', 5) // Excluir el tipo Agrupador
+        .eq('especial', false) // Retos normales
+        .eq('activo', true)
+        .gte('fecha_inicio', fechaInicio)
+        .lte('fecha_final', fechaFinal);
+
+    final List<int> retosIndividualesIds = retosIndividuales
+        .map((r) => r['id_reto'] as int)
+        .toList();
+
+    // 3. Obtener el progreso del usuario para esos retos individuales
+    final List<Map<String, dynamic>> resultsCompleted = await _client
         .from('intento_reto')
-        .select()
+        .select('id_reto')
         .eq('id_usuario', _userId)
-        .eq('id_reto', idReto)
-        // Podrías añadir lógica de `resultado` si solo cuenta el intento exitoso
-        .limit(1);
+        .eq('resultado', 'COMPLETADO')
+        .inFilter('id_reto', retosIndividualesIds);
 
-    final bool completado = intentos.isNotEmpty;
+    final Set<int> completedRetoIds = resultsCompleted
+        .map((item) => item['id_reto'] as int)
+        .toSet();
 
-    return {'retoData': retoData, 'completado': completado};
+    return {
+      'agrupador': agrupador,
+      'individuales': retosIndividuales,
+      'completedIds': completedRetoIds,
+    };
   }
 
   // Otras funciones como getEstadisticas, etc.

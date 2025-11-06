@@ -1,9 +1,11 @@
 // lib/shared/appbar/app_bar_provider.dart
-import 'package:flutter/foundation.dart'; // <-- ¡IMPORTADO PARA debugPrint!
+import 'package:flutter/foundation.dart'; 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Asumiré que logo_python.png existe y es tu asset por defecto
+// --- (EL CÓDIGO ANTERIOR NO CAMBIA) ---
+// ... (AppBarState, AppBarNotifier, y appBarProvider siguen igual) ...
+
 const String _defaultAsset = 'assets/images/logo_python.png';
 
 // 1. EL MODELO DEL ESTADO (LOS DATOS)
@@ -18,16 +20,15 @@ class AppBarState {
   final bool isLoading;
 
   const AppBarState({
-    this.lives = 5, // <-- CAMBIO: Valor por defecto 5 (en lugar de 0)
+    this.lives = 5,
     this.trophies = 0,
     this.streak = 0,
-    this.languageName = '', // ¡Cambiado a '' para que el fallback funcione!
+    this.languageName = '',
     this.languageId = 0,
     this.languageAssetPath = _defaultAsset,
     this.isLoading = true,
   });
 
-  // Método "copyWith" (sin cambios)
   AppBarState copyWith({
     int? lives,
     int? trophies,
@@ -59,7 +60,6 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
     fetchStats();
   }
 
-  // Helper (corregido con .trim() y 'c')
   String _getAssetForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
@@ -74,38 +74,43 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
   }
 
   Future<void> fetchStats() async {
+    // --- ¡DEBUG! ---
+    debugPrint("--- AppBarNotifier: fetchStats() COMENZÓ ---");
+    
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) {
-        state = state.copyWith(isLoading: false);
+        // --- ¡DEBUG! ---
+        debugPrint("AppBarNotifier: No hay usuario. Forzando languageId: 1 (Invitado)");
+        state = state.copyWith(
+          isLoading: false,
+          languageId: 1, 
+          languageName: 'Python',
+          languageAssetPath: _getAssetForLanguage('Python'),
+          lives: 0,
+          streak: 0,
+          trophies: 0,
+        );
         return;
       }
 
-      // (Usamos .maybeSingle() para evitar errores si el usuario es nuevo)
       final responses = await Future.wait<dynamic>([
-        // 0: Trofeos (Devuelve Lista)
         _supabase
             .from('intento_reto')
             .select('experiencia_obtenida')
             .eq('id_usuario', user.id),
-            
-        // 1: Racha Y VIDAS (¡CAMBIO AQUÍ!)
         _supabase
             .from('estadistica_usuario')
-            .select('racha_dias, vidas') // <-- ¡AÑADIDO 'vidas'!
+            .select('racha_dias, vidas')
             .eq('id_usuario', user.id)
-            .maybeSingle(), 
-
-        // 2: Lenguaje ID (Devuelve Map?)
+            .maybeSingle(),
         _supabase
             .from('usuarios')
             .select('lenguaje_favorito')
             .eq('id', user.id)
-            .maybeSingle(), 
+            .maybeSingle(),
       ]);
 
-      // 🏆 Trofeos (experiencia total)
-      // (Corregido para castear 'responses[0]' a List)
       final xpResponseData = responses[0] as List;
       int totalTrofeos = 0;
       for (var row in xpResponseData) {
@@ -113,15 +118,15 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
           totalTrofeos += (row['experiencia_obtenida'] ?? 0) as int;
         }
       }
-
-      // 🔥 Racha y Vidas (¡CAMBIO AQUÍ!)
       final statsResponseData = responses[1] as Map<String, dynamic>?;
       final racha = statsResponseData?['racha_dias'] ?? 0;
-      final vidas = statsResponseData?['vidas'] ?? 5; // <-- ¡LEEMOS LAS VIDAS!
+      final vidas = statsResponseData?['vidas'] ?? 5;
 
-      // 🌐 Lenguaje ID
       final userData = responses[2] as Map<String, dynamic>?;
       final langId = (userData?['lenguaje_favorito'] ?? 1) as int; 
+      
+      // --- ¡DEBUG! ---
+      debugPrint("AppBarNotifier: 'lenguaje_favorito' leído de Supabase es: $langId");
 
       final langResponse = await _supabase
           .from('lenguaje')
@@ -132,28 +137,36 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
       final langName = (langResponse['nombre'] as String).trim();
       final langAsset = _getAssetForLanguage(langName);
 
+      // --- ¡DEBUG! ---
+      debugPrint("AppBarNotifier: PONIENDO ESTADO FINAL -> languageId: $langId, isLoading: false");
+
       state = state.copyWith(
-        lives: vidas, // <-- ¡VIDAS ACTUALIZADAS!
-        trophies: totalTrofeos, 
+        lives: vidas,
+        trophies: totalTrofeos,
         streak: racha,
         languageName: langName,
         languageId: langId,
         languageAssetPath: langAsset,
         isLoading: false,
       );
+
     } catch (e, stackTrace) {
+      // --- ¡DEBUG! ---
+      debugPrint("--- AppBarNotifier: ¡ERROR! CAYÓ EN CATCH. Forzando languageId: 1 ---");
       debugPrint('Error en AppBarNotifier: $e');
       debugPrint('Stacktrace: $stackTrace');
-      state =
-          state.copyWith(isLoading: false, languageAssetPath: _defaultAsset);
+      
+      state = state.copyWith(
+        isLoading: false,
+        languageAssetPath: _getAssetForLanguage('Python'),
+        languageId: 1,
+        languageName: 'Python',
+        lives: 0,
+        streak: 0,
+        trophies: 0,
+      );
     }
   }
-
-  // void decrementLives() {
-  //   if (state.lives > 0) {
-  //     state = state.copyWith(lives: state.lives - 1);
-  //   }
-  // }
 
   void updateLanguage(String newName, int newId) {
     final newAsset = _getAssetForLanguage(newName);
@@ -164,60 +177,83 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
   }
 }
 
-// 3. EL PROVIDER DEL NOTIFIER (Sin cambios)
+// 3. PROVIDER DEL NOTIFIER (Sin cambios)
 final appBarProvider = StateNotifierProvider<AppBarNotifier, AppBarState>((ref) {
   final supabase = Supabase.instance.client;
   return AppBarNotifier(supabase);
 });
 
 
-// --- 4. ¡EL PROVIDER DE REALTIME (CORREGIDO)! ---
+// --- 4. ¡EL PROVIDER DE REALTIME (CON PRUEBA DE DEPURACIÓN)! ---
 final appBarRealtimeProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return;
 
-  // 1. Canal para cambios en la racha (y Vidas)
+  // 1. Canal para racha/Vidas (Sin cambios)
   final statsChannel = supabase.channel('public:estadistica_usuario:appbar');
   statsChannel.onPostgresChanges(
     event: PostgresChangeEvent.update,
     schema: 'public',
     table: 'estadistica_usuario',
-    // --- ¡ARREGLADO! ---
     filter: PostgresChangeFilter(
       type: PostgresChangeFilterType.eq,
       column: 'id_usuario',
       value: userId,
     ),
     callback: (payload) {
-      // --- ¡ARREGLADO! ---
       debugPrint("CAMBIO EN ESTADISTICAS (RACHA/VIDAS) DETECTADO -> Refrescando AppBar");
       ref.read(appBarProvider.notifier).fetchStats();
     },
   ).subscribe();
 
-  // 2. Canal para cambios en los trofeos
+  // 2. Canal para trofeos (Sin cambios)
   final trofeosChannel = supabase.channel('public:intento_reto:appbar');
   trofeosChannel.onPostgresChanges(
-    event: PostgresChangeEvent.all, // INSERT, UPDATE, DELETE
+    event: PostgresChangeEvent.all,
     schema: 'public',
     table: 'intento_reto',
-    // --- ¡ARREGLADO! ---
     filter: PostgresChangeFilter(
       type: PostgresChangeFilterType.eq,
       column: 'id_usuario',
       value: userId,
     ),
     callback: (payload) {
-      // --- ¡ARREGLADO! ---
       debugPrint("CAMBIO EN INTENTOS (TROFEOS) DETECTADO -> Refrescando AppBar");
       ref.read(appBarProvider.notifier).fetchStats();
     },
   ).subscribe();
 
-  // Limpiar los canales cuando el provider sea desechado
+  // --- ¡CAMBIO GRANDE AQUÍ! ---
+  // 3. Canal para el lenguaje (tabla 'usuarios')
+  final userChannel = supabase.channel('public:usuarios:appbar');
+  userChannel.onPostgresChanges(
+    event: PostgresChangeEvent.update,
+    schema: 'public',
+    table: 'usuarios',
+    filter: PostgresChangeFilter(
+      type: PostgresChangeFilterType.eq,
+      column: 'id',
+      value: userId,
+    ),
+    callback: (payload) {
+      // --- ¡PRUEBA DE DEPURACIÓN! ---
+      // Hemos quitado la comprobación de 'oldLang != newLang'.
+      // Ahora CUALQUIER cambio en la fila 'usuarios' (como cambiar 
+      // 'nombre_perfil') debería disparar este log y un refresco.
+      
+      debugPrint("--- CAMBIO DETECTADO EN TABLA 'usuarios' ---");
+      debugPrint("Payload (new): ${payload.newRecord}");
+      debugPrint("Refrescando AppBar AHORA.");
+      
+      ref.read(appBarProvider.notifier).fetchStats();
+    },
+  ).subscribe();
+
+  // Limpiar canales
   ref.onDispose(() {
     supabase.removeChannel(statsChannel);
     supabase.removeChannel(trofeosChannel);
+    supabase.removeChannel(userChannel);
   });
 });

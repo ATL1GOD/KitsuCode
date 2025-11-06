@@ -1,4 +1,4 @@
-// home_view.dart
+// lib/features/home/view/home_view.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +6,9 @@ import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
 import 'package:kitsucode/shared/appbar/kitsu_appbar.dart'; 
-// import 'dart:ui'; // <--- Eliminamos esta línea, ya no se usa (corrige warning)
+// --- ¡CAMBIO 1! ---
+// Importamos el provider del AppBar para saber el lenguaje actual
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -18,7 +20,6 @@ class HomeView extends ConsumerStatefulWidget {
 class _HomeViewState extends ConsumerState<HomeView> {
   int iCurrentSection = 0;
   
-  // --- Valores de Posición (Están correctos) ---
   final double _changeThresholdPosition = 102.0; 
   final heightFirstBox = 192.0; 
 
@@ -89,10 +90,35 @@ class _HomeViewState extends ConsumerState<HomeView> {
     super.dispose();
   }
 
+  // --- ¡CAMBIO 2! ---
+  // Creamos un helper que devuelve el path del mapa correcto
+  // basado en el nombre del lenguaje.
+  String _getMapBackgroundForLanguage(String langName) {
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return 'assets/images/home/camino5.png'; // Tu mapa de Python
+      case 'java':
+        return 'assets/images/home/camino.png'; // Tu mapa de Java
+      case 'c':
+        return 'assets/images/home/camino4.png'; // Tu mapa de C
+      default:
+        // Fallback por si el nombre está vacío mientras carga
+        return 'assets/images/home/camino.png';
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     final sectionsAsync = ref.watch(homeViewModelProvider);
+
+    // --- ¡CAMBIO 3! ---
+    // Ahora TAMBIÉN observamos el appBarProvider.
+    // Cuando el 'languageName' cambie, este widget se reconstruirá.
+    final appBarState = ref.watch(appBarProvider);
+    
+    // Obtenemos el path del mapa dinámicamente
+    final mapAssetPath = _getMapBackgroundForLanguage(appBarState.languageName);
 
     return Scaffold(
       body: sectionsAsync.when(
@@ -106,36 +132,36 @@ class _HomeViewState extends ConsumerState<HomeView> {
           }
 
           if (sections.isEmpty) {
-            return const Center(child: Text("No hay secciones disponibles."));
+            // --- ¡CAMBIO 4! ---
+            // Un estado de carga mejorado mientras el appBarProvider
+            // le pasa el ID al homeViewModelProvider.
+            if (appBarState.isLoading) {
+               return const Center(child: CircularProgressIndicator());
+            }
+            // Si no está cargando y no hay secciones, es que no hay datos.
+            return const Center(child: Text("No hay secciones para este lenguaje."));
           }
-
-          // --- ORDEN DEL STACK ---
-          // 1. Fondo de imagen (camino.png)
-          // 2. ListView (círculos)
-          // 3. "ESCUDO" DE IMAGEN (para tapar el scroll)
-          // 4. AppBar (transparente)
-          // 5. Etapa (caja verde)
+          
           return Stack(
             children: [
-              // 1. FONDO IMAGEN (La imagen de fondo principal)
+              // 1. FONDO IMAGEN (¡AHORA ES DINÁMICO!)
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration( // <-- Quitamos 'const'
                   image: DecorationImage(
-                    image: AssetImage('assets/images/home/camino.png'),
+                    // --- ¡CAMBIO 5! ---
+                    image: AssetImage(mapAssetPath), // <-- Usamos la variable
                     fit: BoxFit.cover,
                     repeat: ImageRepeat.repeatY,
                   ),
                 ),
               ),
               
-              // 2. LISTVIEW (Se scrollea por detrás)
+              // 2. LISTVIEW (Sin cambios)
               ListView.separated(
                 controller: scrollCtrl,
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0), // <-- AÑADIDO
-                
-                // --- ARREGLO DE ERRORES ---
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
                 itemBuilder: (_, i) => i == 0
-                    ? SizedBox(height: heightFirstBox) // <-- 192.0
+                    ? SizedBox(height: heightFirstBox)
                     : Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -143,48 +169,40 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           const SizedBox(height: 100.0),
                         ],
                       ),
-                separatorBuilder: (_, i) => const SizedBox(height: 24.0), // <-- AÑADIDO (corrige error)
-                itemCount: sections.length + 1, // <-- AÑADIDO (corrige error)
-                // --- FIN ARREGLO ---
+                separatorBuilder: (_, i) => const SizedBox(height: 24.0),
+                itemCount: sections.length + 1,
               ),
               
-              // --- 3. ¡LA SOLUCIÓN! ---
-              // Este es el "escudo". Es un fondo de IMAGEN que se pone
-              // encima del ListView pero debajo del AppBar.
+              // 3. "ESCUDO" DE IMAGEN (¡AHORA ES DINÁMICO!)
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                // Su altura es la misma que la posición 'top' de la caja verde
-                height: _changeThresholdPosition, // <-- 102.0
+                height: _changeThresholdPosition,
                 child: Container(
-                  // Usamos la MISMA imagen que el fondo (Paso 1)
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration( // <-- Quitamos 'const'
                     image: DecorationImage(
-                      image: AssetImage('assets/images/home/camino.png'),
+                      // --- ¡CAMBIO 6! ---
+                      image: AssetImage(mapAssetPath), // <-- Usamos la variable
                       fit: BoxFit.cover,
-                      // Alineamos la imagen al 'top' para que 
-                      // coincida con el fondo principal
                       alignment: Alignment.topCenter,
                     ),
                   ),
-                  child: ClipRRect(), // Opcional, pero bueno tenerlo
+                  child: ClipRRect(),
                 ),
               ),
-              // --- FIN DE LA SOLUCIÓN ---
 
-              
-              // 4. APPBAR (Fijo y transparente)
+              // 4. APPBAR (Sin cambios)
               const Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: KitsuAppBar(), // <-- Tu AppBar (sigue siendo transparente)
+                child: KitsuAppBar(),
               ),
               
-              // 5. ETAPA (Fijo)
+              // 5. ETAPA (Sin cambios)
               Positioned(
-                top: _changeThresholdPosition, // <-- 102.0
+                top: _changeThresholdPosition,
                 left: 0,
                 right: 0,
                 child: CurrentSection(
@@ -251,7 +269,6 @@ class CurrentSection extends StatelessWidget {
                 left: BorderSide(color: data.colorOscuro, width: 2.0),
               ),
             ),
-            // Puedes añadir un icono aquí
           ),
         ],
       ),

@@ -150,10 +150,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
           // 3️⃣ DIRECTORIO
           StatefulShellBranch(
-            navigatorKey: _navigatorKeys['directory'],
+            navigatorKey: _navigatorKeys['desafiomensual'],
             routes: [
               GoRoute(
-                path: '/desafio',
+                path: '/desafios',
                 builder: (context, state) => const DesafiosView(),
               ),
             ],

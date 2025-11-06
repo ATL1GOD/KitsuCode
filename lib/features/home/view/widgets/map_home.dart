@@ -2,39 +2,59 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-// import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Ya no se necesita
 import 'package:go_router/go_router.dart'; // Importar GoRouter
 
-class Section extends StatelessWidget {
+// --- ¡NUEVAS IMPORTACIONES! ---
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+
+
+// --- ¡CAMBIO: A ConsumerWidget! ---
+class Section extends ConsumerWidget { 
   final SectionData data;
 
   const Section({super.key, required this.data});
 
-  // --- ¡FUNCIÓN DE NAVEGACIÓN SIMPLIFICADA! (MODIFICADA) ---
-  void _navegarAReto(BuildContext context, LevelData level) {
-    // 1. Si no hay retoId, es una lección (o no hacer nada)
+  // --- ¡FUNCIÓN DE NAVEGACIÓN MODIFICADA! ---
+  // (Ahora acepta 'WidgetRef ref')
+  void _navegarAReto(BuildContext context, WidgetRef ref, LevelData level) {
+    // 1. Si no hay retoId, es una lección (sin cambios)
     if (level.retoId == null) {
-      print(
+      debugPrint( // <-- Usamos debugPrint
         "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
       );
-      // Aquí podrías navegar a una pantalla de "lección" si quisieras
       // context.push('/leccion/${level.idNivel}');
       return;
     }
+    
+    // --- ¡NUEVA LÓGICA DE BLOQUEO DE VIDAS! ---
+    // 2. Leemos el estado actual del AppBar
+    final appBarState = ref.read(appBarProvider);
+    
+    // 3. Comprobamos las vidas
+    if (appBarState.lives <= 0) {
+      // Si no tiene vidas, mostramos un SnackBar y NO navegamos
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Oh no! Te has quedado sin vidas. Vuelve mañana.'),
+          backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return; // <-- Bloquea la navegación
+    }
+    // --- FIN DE LA LÓGICA DE BLOQUEO ---
 
-    // 2. Si tiene un retoId, ¡simplemente llama a la ruta general!
+    // 4. Si tiene vidas, navegamos (tu lógica original)
     final int retoId = level.retoId!;
-
-    print("Navegando al distribuidor de retos con ID: $retoId");
-
-    // ¡ESTA ES LA ÚNICA LÍNEA DE NAVEGACIÓN QUE NECESITAS!
-    // Ya no necesitas el 'dinamicaNombre' ni el 'switch' aquí.
+    debugPrint("Navegando al distribuidor de retos con ID: $retoId");
     context.push('/reto/$retoId');
   }
   // --- FIN NUEVA FUNCIÓN ---
 
   @override
-  Widget build(BuildContext context) {
+  // --- ¡CAMBIO: Añadido 'WidgetRef ref'! ---
+  Widget build(BuildContext context, WidgetRef ref) { 
     // --- CÁLCULO DE ALTURA DEL STACK (Sin cambios) ---
     const double buttonHeight = 62.0;
     final double stackHeight = data.levels.isEmpty
@@ -78,8 +98,8 @@ class Section extends StatelessWidget {
                 right: getRight(i),
                 child: ReliefSectionButton(
                   onPressed: () {
-                    // --- Llama a la nueva función simplificada ---
-                    _navegarAReto(context, level);
+                    // --- ¡CAMBIO: Pasamos el 'ref'! ---
+                    _navegarAReto(context, ref, level);
                   },
                   baseColor: data.color,
                   reliefColor: data.colorOscuro,

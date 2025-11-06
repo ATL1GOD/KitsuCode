@@ -1,10 +1,14 @@
-// home_view.dart
+// lib/features/home/view/home_view.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
+import 'package:kitsucode/shared/appbar/kitsu_appbar.dart'; 
+// --- ¡CAMBIO 1! ---
+// Importamos el provider del AppBar para saber el lenguaje actual
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -15,19 +19,15 @@ class HomeView extends ConsumerStatefulWidget {
 
 class _HomeViewState extends ConsumerState<HomeView> {
   int iCurrentSection = 0;
-  final heightFirstBox = 56.0;
-  // final heightSection = 600.0; // Ya no se usa
+  
+  final double _changeThresholdPosition = 102.0; 
+  final heightFirstBox = 192.0; 
 
-  // Lista de posiciones de scroll (offsets) donde comienza el TÍTULO de cada sección.
   final List<double> _sectionOffsets = [];
   final scrollCtrl = ScrollController();
+  final double _aestheticOffset = 80.0; 
 
-  final double _changeThresholdPosition = 40.0; // Valor de 'top' en Positioned
-
-  // Nuevo offset de ajuste (e.g., 80.0 px) para que el cambio ocurra antes
-  // de que el título llegue al umbral de 40.0.
-  final double _aestheticOffset = 80.0;
-
+  // (Tu función initState - sin cambios)
   @override
   void initState() {
     super.initState();
@@ -38,82 +38,51 @@ class _HomeViewState extends ConsumerState<HomeView> {
     });
   }
 
+  // (Tu función _calculateSectionOffsets - sin cambios)
   void _calculateSectionOffsets() {
     final sectionsAsync = ref.read(homeViewModelProvider);
 
     sectionsAsync.whenData((sections) {
       if (sections.isEmpty) return;
-
-      // El offset de inicio del título de la primera sección.
-      // (heightFirstBox (56.0) + 24.0 (primer separador))
-      double currentOffset = heightFirstBox + 24.0;
-
+      double currentOffset = heightFirstBox + 24.0; 
       _sectionOffsets.clear();
-      // El TÍTULO de la primera sección empieza en 80.0
       _sectionOffsets.add(currentOffset);
-
       for (int i = 0; i < sections.length; i++) {
         final section = sections[i];
-
-        // --- CORRECCIÓN DEL CÁLCULO DE ALTURA ---
-
-        // 1. Altura del Row del título + SizedBox(24.0)
-        // (Usamos 60.0 como estimación de altura del Row del título + márgenes)
         const double sectionHeaderHeight = 60.0;
-
-        // 2. Altura del Stack de botones (cálculo IDÉNTICO al de map_home.dart)
         const double buttonHeight = 56.0 + 6.0; // 62.0
         final double stackHeight = section.levels.isEmpty
             ? 0.0
             : ((section.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
-
-        // 3. Altura total del widget Section (Header + Stack)
         double sectionWidgetHeight = sectionHeaderHeight + stackHeight;
-
-        // 4. Altura del bloque en el ListView (Widget Section + SizedBox(100.0) + Separador(24.0))
         double totalSectionBlockHeight = sectionWidgetHeight + 100.0 + 24.0;
-
-        // --- FIN CORRECCIÓN ---
-
         currentOffset += totalSectionBlockHeight;
-
-        // El offset de la siguiente sección comienza en este punto.
         _sectionOffsets.add(currentOffset);
       }
     });
   }
 
+  // (Tu función scrollListener - sin cambios)
   void scrollListener() {
     if (_sectionOffsets.isEmpty) return;
-
     final currentScroll = scrollCtrl.position.pixels;
-
-    // CORRECCIÓN CLAVE:
-    // 1. Consideramos la posición del indicador: currentScroll + _changeThresholdPosition (40.0)
-    // 2. Aplicamos el _aestheticOffset: Restamos 80.0 para que el cambio ocurra antes.
-    // El cambio ocurre cuando el scroll está 80.0 píxeles por encima del punto de inicio del título.
     final double titleDisplayPosition =
-        currentScroll + _changeThresholdPosition - _aestheticOffset;
-
+        currentScroll + _changeThresholdPosition - _aestheticOffset; 
     int newIndex = 0;
-
-    // Buscar el índice del título que ha pasado el umbral ajustado.
     for (int i = _sectionOffsets.length - 1; i >= 0; i--) {
-      // Si la posición de detección ajustada es mayor o igual al punto de inicio del título de la sección 'i'.
       if (titleDisplayPosition >= _sectionOffsets[i]) {
         newIndex = i;
         break;
       }
     }
-
     final sections = ref.read(homeViewModelProvider).value ?? [];
     newIndex = newIndex.clamp(0, sections.length - 1);
-
     if (newIndex != iCurrentSection) {
       setState(() => iCurrentSection = newIndex);
     }
   }
 
+  // (Tu función dispose - sin cambios)
   @override
   void dispose() {
     scrollCtrl.removeListener(scrollListener);
@@ -121,9 +90,35 @@ class _HomeViewState extends ConsumerState<HomeView> {
     super.dispose();
   }
 
+  // --- ¡CAMBIO 2! ---
+  // Creamos un helper que devuelve el path del mapa correcto
+  // basado en el nombre del lenguaje.
+  String _getMapBackgroundForLanguage(String langName) {
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return 'assets/images/home/camino5.png'; // Tu mapa de Python
+      case 'java':
+        return 'assets/images/home/camino.png'; // Tu mapa de Java
+      case 'c':
+        return 'assets/images/home/camino4.png'; // Tu mapa de C
+      default:
+        // Fallback por si el nombre está vacío mientras carga
+        return 'assets/images/home/camino.png';
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final sectionsAsync = ref.watch(homeViewModelProvider);
+
+    // --- ¡CAMBIO 3! ---
+    // Ahora TAMBIÉN observamos el appBarProvider.
+    // Cuando el 'languageName' cambie, este widget se reconstruirá.
+    final appBarState = ref.watch(appBarProvider);
+    
+    // Obtenemos el path del mapa dinámicamente
+    final mapAssetPath = _getMapBackgroundForLanguage(appBarState.languageName);
 
     return Scaffold(
       body: sectionsAsync.when(
@@ -137,22 +132,34 @@ class _HomeViewState extends ConsumerState<HomeView> {
           }
 
           if (sections.isEmpty) {
-            return const Center(child: Text("No hay secciones disponibles."));
+            // --- ¡CAMBIO 4! ---
+            // Un estado de carga mejorado mientras el appBarProvider
+            // le pasa el ID al homeViewModelProvider.
+            if (appBarState.isLoading) {
+               return const Center(child: CircularProgressIndicator());
+            }
+            // Si no está cargando y no hay secciones, es que no hay datos.
+            return const Center(child: Text("No hay secciones para este lenguaje."));
           }
-
+          
           return Stack(
             children: [
+              // 1. FONDO IMAGEN (¡AHORA ES DINÁMICO!)
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration( // <-- Quitamos 'const'
                   image: DecorationImage(
-                    image: AssetImage('assets/images/home/camino.png'),
+                    // --- ¡CAMBIO 5! ---
+                    image: AssetImage(mapAssetPath), // <-- Usamos la variable
                     fit: BoxFit.cover,
                     repeat: ImageRepeat.repeatY,
                   ),
                 ),
               ),
+              
+              // 2. LISTVIEW (Sin cambios)
               ListView.separated(
                 controller: scrollCtrl,
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
                 itemBuilder: (_, i) => i == 0
                     ? SizedBox(height: heightFirstBox)
                     : Column(
@@ -163,11 +170,39 @@ class _HomeViewState extends ConsumerState<HomeView> {
                         ],
                       ),
                 separatorBuilder: (_, i) => const SizedBox(height: 24.0),
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
                 itemCount: sections.length + 1,
               ),
+              
+              // 3. "ESCUDO" DE IMAGEN (¡AHORA ES DINÁMICO!)
               Positioned(
-                top: _changeThresholdPosition, // 40.0
+                top: 0,
+                left: 0,
+                right: 0,
+                height: _changeThresholdPosition,
+                child: Container(
+                  decoration: BoxDecoration( // <-- Quitamos 'const'
+                    image: DecorationImage(
+                      // --- ¡CAMBIO 6! ---
+                      image: AssetImage(mapAssetPath), // <-- Usamos la variable
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
+                  ),
+                  child: ClipRRect(),
+                ),
+              ),
+
+              // 4. APPBAR (Sin cambios)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: KitsuAppBar(),
+              ),
+              
+              // 5. ETAPA (Sin cambios)
+              Positioned(
+                top: _changeThresholdPosition,
                 left: 0,
                 right: 0,
                 child: CurrentSection(
@@ -185,6 +220,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 }
 
+
+// (Tu clase CurrentSection sin cambios)
 class CurrentSection extends StatelessWidget {
   final SectionData data;
 
@@ -232,7 +269,6 @@ class CurrentSection extends StatelessWidget {
                 left: BorderSide(color: data.colorOscuro, width: 2.0),
               ),
             ),
-            // Puedes añadir un icono aquí
           ),
         ],
       ),

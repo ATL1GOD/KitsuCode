@@ -13,13 +13,15 @@ final sectionRepositoryProvider = Provider<SectionRepository>((ref) {
   return SectionRepository(client);
 });
 
-// 2. Clase del Repositorio
+// 2. Clase del Repositorio (MODIFICADA)
 class SectionRepository {
   final SupabaseClient _client;
 
   SectionRepository(this._client);
 
-  Future<List<SectionData>> getSections() async {
+  // --- ¡CAMBIO AQUÍ! ---
+  // Ahora aceptamos un parámetro 'languageId'
+  Future<List<SectionData>> getSections(int languageId) async {
     try {
       final response = await _client
           .from('secciones')
@@ -36,13 +38,16 @@ class SectionRepository {
             )
           )
           ''')
+          // --- ¡CAMBIO AQUÍ! ---
+          // Añadimos el filtro para el id_lenguaje
+          .eq('id_lenguaje', languageId) 
           .order('orden', ascending: true);
 
       final sections = response
           .map<SectionData>((json) => SectionData.fromJson(json))
           .toList();
 
-      print("Supabase: ${sections.length} secciones cargadas.");
+      print("Supabase: ${sections.length} secciones cargadas para el lenguaje $languageId.");
 
       return sections;
     } catch (e) {

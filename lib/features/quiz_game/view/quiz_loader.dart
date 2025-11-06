@@ -1,11 +1,9 @@
-// [COMIENZO DEL ARCHIVO quiz_loader.dart]
+// lib/features/quiz_game/view/quiz_loader.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:kitsucode/features/quiz_game/provider/reto_provider.dart'; // <-- YA NO SE USA
 import 'package:kitsucode/features/quiz_game/view/widgets/quiz_page.dart';
 
 // --- PASO 1: Mover la clase QuizData aquí ---
-// (Esto ya lo tenías, sin cambios)
 class QuizData {
   final Map<String, String> questions;
   final Map<String, Map<String, dynamic>> options;
@@ -22,27 +20,27 @@ class QuizData {
 
 class QuizLoaderPage extends ConsumerWidget {
   // --- ¡MODIFICADO! ---
-  // Ya no recibe 'retoId', recibe el JSON directamente.
+  // Ahora también recibe 'retoId'
   final Map<String, dynamic> challengeContent;
+  final String retoId; // <-- ¡AÑADIDO!
 
-  const QuizLoaderPage({super.key, required this.challengeContent});
+  const QuizLoaderPage({
+    super.key, 
+    required this.challengeContent,
+    required this.retoId, // <-- ¡AÑADIDO!
+  });
   // --- FIN MODIFICACIÓN ---
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // --- ¡MODIFICADO! ---
-    // Se elimina el ref.watch(challengeProvider) y el challengeDataAsync.when()
-    // Ahora trabajamos directamente con 'challengeContent'.
-    // --- FIN MODIFICACIÓN ---
-
-    // --- PASO 2: LÓGICA DE TRANSFORMACIÓN (Sin cambios) ---
+    
+    // --- LÓGICA DE TRANSFORMACIÓN ---
     final List<dynamic> preguntasList = challengeContent['preguntas'] ?? [];
 
     final Map<String, String> mapaPreguntas = {};
     final Map<String, Map<String, dynamic>> mapaOpciones = {};
     final Map<String, String> mapaRespuestas = {};
 
-    // (Tu lógica de 'for (var pregunta in preguntasList)' no cambia)
     for (var pregunta in preguntasList) {
       try {
         final key = pregunta['key'] as String;
@@ -50,10 +48,11 @@ class QuizLoaderPage extends ConsumerWidget {
         mapaRespuestas[key] = pregunta['respuesta'] as String;
         mapaOpciones[key] = Map<String, dynamic>.from(pregunta['opciones']);
       } catch (e) {
-        print("Error parseando pregunta: $e");
+        // Corregido para usar debugPrint
+        debugPrint("Error parseando pregunta: $e"); 
       }
     }
-    // --- FIN PASO 2 ---
+    // --- FIN LÓGICA ---
 
     if (mapaPreguntas.isEmpty) {
       return Scaffold(
@@ -70,8 +69,11 @@ class QuizLoaderPage extends ConsumerWidget {
       answers: mapaRespuestas,
     );
 
-    // Finalmente, devuelve la página del juego
-    return QuizPage(mydata: mydata);
+    // --- ¡CORREGIDO! ---
+    // Ahora le pasamos el retoId a QuizPage
+    return QuizPage(
+      mydata: mydata,
+      retoId: retoId, // <-- ¡AÑADIDO!
+    );
   }
 }
-// [FIN DEL ARCHIVO quiz_loader.dart]

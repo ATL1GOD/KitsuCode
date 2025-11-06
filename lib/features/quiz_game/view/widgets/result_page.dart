@@ -1,23 +1,39 @@
-import 'package:flutter/material.dart';
-import 'package:kitsucode/core/utils/app_colors.dart'; // Asegúrate que la ruta sea correcta
+// lib/features/quiz_game/view/widgets/result_page.dart
 
-class QuizResultPage extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // --- ¡CAMBIO 1! ---
+import 'package:kitsucode/core/utils/app_colors.dart'; 
+
+// --- ¡CAMBIO 2! (Importaciones para la puntuación) ---
+import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+// --- FIN CAMBIO 2 ---
+
+
+// --- ¡CAMBIO 3! (Convertido a ConsumerStatefulWidget) ---
+class QuizResultPage extends ConsumerStatefulWidget {
   final int marks;
   final int totalQuestions;
   final int durationInSeconds;
+  
+  // --- ¡CAMBIO 4! (Añadimos el retoId, ahora es String) ---
+  final String retoId; 
 
   const QuizResultPage({
-    Key? key,
+    super.key, // <-- Corregido
     required this.marks,
     required this.totalQuestions,
     required this.durationInSeconds,
-  }) : super(key: key);
+    required this.retoId, // <-- Requerido
+  });
 
   @override
-  _QuizResultPageState createState() => _QuizResultPageState();
+  // --- ¡CAMBIO 5! ---
+  ConsumerState<QuizResultPage> createState() => _QuizResultPageState();
 }
 
-class _QuizResultPageState extends State<QuizResultPage> {
+class _QuizResultPageState extends ConsumerState<QuizResultPage> {
   final List<String> images = [
     "assets/images/success.png",
     "assets/images/good.png",
@@ -31,7 +47,7 @@ class _QuizResultPageState extends State<QuizResultPage> {
   @override
   void initState() {
     super.initState();
-    // Lógica para determinar la imagen basada en el puntaje
+    
     final double scoreRatio = widget.marks / (widget.totalQuestions * 5);
     if (scoreRatio < 0.5) {
       image = images[2]; // bad
@@ -41,18 +57,55 @@ class _QuizResultPageState extends State<QuizResultPage> {
       image = images[0]; // success
     }
 
-    // Calcular porcentaje de aciertos
     percentage = (scoreRatio * 100).round();
 
-    // Formatear el tiempo
     final int minutes = widget.durationInSeconds ~/ 60;
     final int seconds = widget.durationInSeconds % 60;
     formattedTime =
         "${minutes.toString()}:${seconds.toString().padLeft(2, '0')}";
+        
+    // --- ¡CAMBIO 6! (Llamar al envío del intento) ---
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _submitAttempt();
+    });
   }
+
+  // --- ¡CAMBIO 7! (Función de envío CORREGIDA) ---
+  Future<void> _submitAttempt() async {
+    // Asumimos que si saca más del 50% es "completado"
+    final bool esCorrecto = (percentage > 50);
+
+    // Obtenemos el ID del reto como int
+    final int retoIdAsInt;
+    try {
+      retoIdAsInt = int.parse(widget.retoId);
+    } catch (e) {
+      debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
+      return; 
+    }
+
+    try {
+      final repository = ref.read(challengeRepositoryProvider);
+      await repository.submitChallengeAttempt(
+        retoId: retoIdAsInt,        // <-- CORREGIDO
+        fueExitoso: esCorrecto,     // <-- CORREGIDO
+        tiempoQueTardo: widget.durationInSeconds, // <-- CORREGIDO
+      );
+
+      // Refrescar la UI (AppBar y Ranking)
+      ref.read(appBarProvider.notifier).fetchStats();
+      ref.invalidate(globalRankingProvider);
+
+    } catch (e) {
+      debugPrint("Error al enviar intento de quiz: $e");
+    }
+  }
+  // --- FIN CAMBIO 7 ---
 
   @override
   Widget build(BuildContext context) {
+    // ... (El resto de tu código: build, _StatCard...
+    // ... no necesitan cambios) ...
     final brightness = MediaQuery.of(context).platformBrightness;
     final colorScheme = (brightness == Brightness.dark)
         ? pythonDarkColorScheme
@@ -78,12 +131,11 @@ class _QuizResultPageState extends State<QuizResultPage> {
                   '¡Completaste la práctica!',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                 ),
                 const SizedBox(height: 32),
-                // Fila de estadísticas
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -108,7 +160,6 @@ class _QuizResultPageState extends State<QuizResultPage> {
                   ],
                 ),
                 const Spacer(),
-                // Botón inferior
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -141,7 +192,6 @@ class _QuizResultPageState extends State<QuizResultPage> {
   }
 }
 
-// Widget reutilizable para las tarjetas de estadísticas
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;

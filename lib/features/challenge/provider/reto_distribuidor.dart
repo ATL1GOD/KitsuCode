@@ -35,6 +35,7 @@ class RetoDistribuidorPage extends ConsumerWidget {
           case 'Quiz':
             return QuizLoaderPage(
               challengeContent: challengeContent,
+              retoId: retoId.toString(),
             );
 
             case 'Puzzle':

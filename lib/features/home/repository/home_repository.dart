@@ -3,6 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 
+// 0. Clase contenedora para los datos
+class HomeMapData {
+  final List<SectionData> sections;
+  final Set<int> completedLevelIds;
+
+  HomeMapData({required this.sections, required this.completedLevelIds});
+}
+
 // Provider que expone el cliente de Supabase
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
@@ -14,24 +22,22 @@ final sectionRepositoryProvider = Provider<SectionRepository>((ref) {
   return SectionRepository(client);
 });
 
-// 2. Clase del Repositorio (MODIFICADA)
+// 2. Clase del Repositorio (¡¡MODIFICADA!!)
 class SectionRepository {
   final SupabaseClient _client;
-
   SectionRepository(this._client);
 
-  Future<List<SectionData>> getSections(int languageId) async {
+  // Esta función ahora devuelve AMBAS listas
+  Future<HomeMapData> getHomeMapData(int languageId) async {
     final currentUserId = _client.auth.currentUser?.id;
-
     if (currentUserId == null) {
-      // Si RLS está bien configurado, esto no es un problema,
-      // la subconsulta de progreso_usuario simplemente devolverá vacío.
-      print("Advertencia: No hay usuario autenticado.");
+      throw Exception("Usuario no autenticado");
     }
 
     try {
-      // --- ESTA ES LA CONSULTA CLAVE ---
-      final response = await _client
+      // --- CONSULTA 1: Trae la ESTRUCTURA del mapa ---
+      // (Quitamos 'progreso_usuario' de aquí)
+      final sectionsResponse = await _client
           .from('secciones')
           .select('''
           id_seccion,
@@ -46,24 +52,39 @@ class SectionRepository {
             id_reto, 
             reto:reto!niveles_id_reto_fkey (
               dinamicas ( nombre ) 
-            ),
-            progreso_usuario!left ( 
-              id_usuario
             )
           )
           ''')
           .eq('id_lenguaje', languageId)
-          // 1. Ordena las Secciones
-          .order('orden', ascending: true)
-          // 2. Ordena los Niveles anidados
-          .order('orden', referencedTable: 'niveles', ascending: true);
-      // --- FIN DE LA CONSULTA ---
+          .order('orden', ascending: true) // Ordena Secciones
+          .order(
+            'orden',
+            referencedTable: 'niveles',
+            ascending: true,
+          ); // Ordena Niveles
 
-      final sections = response
+      // Parsea las secciones
+      final sections = sectionsResponse
           .map<SectionData>((json) => SectionData.fromJson(json))
           .toList();
 
-      return sections;
+      // --- CONSULTA 2: Trae el PROGRESO del usuario ---
+      // (Una consulta simple y separada)
+      final progressResponse = await _client
+          .from('progreso_usuario')
+          .select('id_nivel') // Solo necesitamos los IDs
+          .eq('id_usuario', currentUserId);
+
+      // Convierte la respuesta en un Set (para búsquedas rápidas)
+      final completedLevelIds = progressResponse
+          .map<int>((json) => json['id_nivel'] as int)
+          .toSet();
+
+      // --- Devuelve ambos resultados ---
+      return HomeMapData(
+        sections: sections,
+        completedLevelIds: completedLevelIds,
+      );
     } catch (e) {
       print("Error en SectionRepository: $e");
       throw Exception('No se pudieron cargar las secciones: $e');

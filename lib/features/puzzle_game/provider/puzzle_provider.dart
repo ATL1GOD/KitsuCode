@@ -1,5 +1,4 @@
 // lib/features/puzzle_game/provider/puzzle_provider.dart
-import 'dart:async'; // Para el Timer de reinicio
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
@@ -10,24 +9,18 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 // --- ¡AÑADIR ESTA IMPORTACIÓN! ---
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 
-
 // --- DISTRIBUIDOR DE ESTADO
-final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>(
-  (ref) {
-    // Este error es correcto. Se anula en PuzzleLoaderPage.
-    throw UnimplementedError(
-      'PuzzleProvider debe ser anulado (overridden) por PuzzleLoaderPage '
-      'con el id_reto y el contenido del reto.'
-    );
-  },
-);
+final puzzleProvider =
+    StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>((ref) {
+      // Este error es correcto. Se anula en PuzzleLoaderPage.
+      throw UnimplementedError(
+        'PuzzleProvider debe ser anulado (overridden) por PuzzleLoaderPage '
+        'con el id_reto y el contenido del reto.',
+      );
+    });
 
 // --- ENUM (Sin cambios)
-enum PuzzleStatus {
-  playing,
-  correct,
-  incorrect,
-}
+enum PuzzleStatus { playing, correct, incorrect }
 
 // --- PuzzleState (MODIFICADO)
 class PuzzleState {
@@ -51,7 +44,7 @@ class PuzzleState {
 
   // copyWith (MODIFICADO)
   PuzzleState copyWith({
-    int? challengeId, 
+    int? challengeId,
     bool? isLoading,
     String? error,
     PuzzleChallengeModel? challenge,
@@ -60,7 +53,7 @@ class PuzzleState {
     PuzzleStatus? status,
   }) {
     return PuzzleState(
-      challengeId: challengeId ?? this.challengeId, 
+      challengeId: challengeId ?? this.challengeId,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       challenge: challenge ?? this.challenge,
@@ -75,13 +68,14 @@ class PuzzleState {
 class PuzzleNotifier extends StateNotifier<PuzzleState> {
   // Guardamos 'ref' para poder llamar a otros providers
   final Ref _ref;
-  
+
   // El constructor ahora acepta el ID del reto y 'ref'
   PuzzleNotifier(
-    Map<String, dynamic> challengeContent, 
+    Map<String, dynamic> challengeContent,
     int challengeId, // (ej: 2)
     this._ref,
-  ) : super(PuzzleState(challengeId: challengeId)) { // Guarda el ID en el estado
+  ) : super(PuzzleState(challengeId: challengeId)) {
+    // Guarda el ID en el estado
     _initializePuzzle(challengeContent);
   }
 
@@ -91,33 +85,31 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
       final challenge = PuzzleChallengeModel.fromJson(challengeContent);
       final initialFilledBlanks = {
         for (var line in challenge.lines)
-          if (line is BlankLine) line.id: null
+          if (line is BlankLine) line.id: null,
       };
       final optionsMap = {
-        for (var option in challenge.options) option.id : option
+        for (var option in challenge.options) option.id: option,
       };
       final List<PuzzleOption> optionsParaJugar = [];
       for (var line in challenge.lines) {
         if (line is BlankLine) {
-          final optionId = line.correctOptionId; 
-          final baseOption = optionsMap[optionId]; 
+          final optionId = line.correctOptionId;
+          final baseOption = optionsMap[optionId];
           if (baseOption != null) {
             optionsParaJugar.add(
-              PuzzleOption(id: baseOption.id, text: baseOption.text) 
+              PuzzleOption(id: baseOption.id, text: baseOption.text),
             );
           }
         }
       }
       for (var option in challenge.options) {
         if (!optionsParaJugar.any((o) => o.id == option.id)) {
-            optionsParaJugar.add(
-              PuzzleOption(id: option.id, text: option.text)
-            );
+          optionsParaJugar.add(PuzzleOption(id: option.id, text: option.text));
         }
       }
       optionsParaJugar.shuffle();
       state = state.copyWith(
-        isLoading: false, 
+        isLoading: false,
         challenge: challenge,
         filledBlanks: initialFilledBlanks,
         availableOptions: optionsParaJugar,
@@ -131,18 +123,18 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   // --- MÉTODOS PARA INTERACTUAR (Sin cambios)
   void onOptionDroppedOnBlank(String blankId, PuzzleOption droppedOption) {
     if (state.status == PuzzleStatus.correct) return;
-    
-    PuzzleStatus newStatus = (state.status == PuzzleStatus.incorrect) 
-      ? PuzzleStatus.playing 
-      : state.status;
+
+    PuzzleStatus newStatus = (state.status == PuzzleStatus.incorrect)
+        ? PuzzleStatus.playing
+        : state.status;
     var newFilledBlanks = Map<String, PuzzleOption?>.from(state.filledBlanks);
     var newAvailableOptions = List<PuzzleOption>.from(state.availableOptions);
 
-    newAvailableOptions.remove(droppedOption); 
-    
+    newAvailableOptions.remove(droppedOption);
+
     String? sourceBlankId;
     for (final entry in newFilledBlanks.entries) {
-      if (entry.value == droppedOption) { 
+      if (entry.value == droppedOption) {
         sourceBlankId = entry.key;
         break;
       }
@@ -150,27 +142,28 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
     if (sourceBlankId != null) {
       newFilledBlanks[sourceBlankId] = null;
     }
-    
+
     final PuzzleOption? optionInTarget = newFilledBlanks[blankId];
-    if (optionInTarget != null && !newAvailableOptions.contains(optionInTarget)) {
+    if (optionInTarget != null &&
+        !newAvailableOptions.contains(optionInTarget)) {
       newAvailableOptions.add(optionInTarget);
     }
-    
+
     newFilledBlanks[blankId] = droppedOption;
-    
+
     state = state.copyWith(
       filledBlanks: newFilledBlanks,
-      availableOptions: newAvailableOptions, 
+      availableOptions: newAvailableOptions,
       status: newStatus,
     );
   }
 
   void onOptionDroppedOnBank(PuzzleOption droppedOption) {
     if (state.status == PuzzleStatus.correct) return;
-    
-    PuzzleStatus newStatus = (state.status == PuzzleStatus.incorrect) 
-      ? PuzzleStatus.playing 
-      : state.status;
+
+    PuzzleStatus newStatus = (state.status == PuzzleStatus.incorrect)
+        ? PuzzleStatus.playing
+        : state.status;
     var newFilledBlanks = Map<String, PuzzleOption?>.from(state.filledBlanks);
     var newAvailableOptions = List<PuzzleOption>.from(state.availableOptions);
 
@@ -195,18 +188,18 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   }
 
   // --- ¡CAMBIO GRANDE! ---
-  void checkSolution() async { 
+  void checkSolution() async {
     if (state.challenge == null || state.status != PuzzleStatus.playing) return;
 
-    const int tiempoQueTardo = 0; 
+    const int tiempoQueTardo = 0;
 
     bool isCorrect = true;
     for (var line in state.challenge!.lines) {
       if (line is BlankLine) {
         final userOption = state.filledBlanks[line.id];
         if (userOption == null || userOption.id != line.correctOptionId) {
-          isCorrect = false; 
-          break; 
+          isCorrect = false;
+          break;
         }
       }
     }
@@ -219,34 +212,31 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
 
       try {
         await challengeRepo.submitChallengeAttempt(
-          retoId: state.challengeId, 
+          retoId: state.challengeId,
           fueExitoso: true,
-          tiempoQueTardo: tiempoQueTardo, 
+          tiempoQueTardo: tiempoQueTardo,
         );
 
         // 1. Refrescar los trofeos en el AppBar
         _ref.read(appBarProvider.notifier).fetchStats();
-        
+
         // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
         // 2. Invalidar el provider del ranking para que se actualice
         // (Usa 'globalRankingProvider', que es el nombre correcto)
         _ref.invalidate(globalRankingProvider);
-
       } catch (e) {
         debugPrint("Error al enviar intento exitoso: $e");
       }
-
     } else {
       // --- SI PERDIÓ ---
       state = state.copyWith(status: PuzzleStatus.incorrect);
 
       try {
         await challengeRepo.submitChallengeAttempt(
-          retoId: state.challengeId, 
+          retoId: state.challengeId,
           fueExitoso: false,
-          tiempoQueTardo: tiempoQueTardo, 
+          tiempoQueTardo: tiempoQueTardo,
         );
-        
       } catch (e) {
         debugPrint("Error al enviar intento fallido: $e");
       }

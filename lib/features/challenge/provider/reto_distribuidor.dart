@@ -38,12 +38,12 @@ class RetoDistribuidorPage extends ConsumerWidget {
               retoId: retoId.toString(),
             );
 
-            case 'Puzzle':
-            case 'Bloques': 
-              return PuzzleLoaderPage(
-                challengeContent: challengeContent,
-                retoId: retoId,
-              );
+          // case 'Puzzle':
+          case 'Bloques':
+            return PuzzleLoaderPage(
+              challengeContent: challengeContent,
+              retoId: retoId,
+            );
 
           case 'Relacion':
             return ColumnsLoader(

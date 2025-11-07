@@ -15,11 +15,11 @@ class QuizPage extends StatefulWidget {
   final String retoId;
 
   const QuizPage({
-    super.key, 
+    super.key,
     required this.mydata,
     required this.retoId, // <-- Requerido
   });
-  
+
   @override
   // ¡Corregido el error de tipo privado!
   State<QuizPage> createState() => _QuizPageState();
@@ -111,7 +111,7 @@ class _QuizPageState extends State<QuizPage> {
         } else {
           if (context.mounted) {
             int duration = (30 * totalQuestions) - timer;
-            if (duration < 0) duration = 0; 
+            if (duration < 0) duration = 0;
 
             // --- ¡CAMBIO 2! (Pasamos el retoId a la página de resultados) ---
             Navigator.of(context).pushReplacement(
@@ -135,11 +135,12 @@ class _QuizPageState extends State<QuizPage> {
     _startTimer();
   }
 
+  // En quiz_page.dart, dentro de _QuizPageState
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
-    if (k.isNotEmpty &&
-        widget.mydata.answers[questionKey] ==
-            widget.mydata.options[questionKey]![k]) {
+
+    // ¡CORREGIDO! Compara el key seleccionado (k) con el key correcto almacenado
+    if (k.isNotEmpty && k == widget.mydata.answers[questionKey]) {
       marks = marks + 5;
     }
 
@@ -150,10 +151,10 @@ class _QuizPageState extends State<QuizPage> {
       });
     }
   }
-  
+
   // ... (El resto de tu código: _choiceButton, build, _buildDuolingoQuestionArea...
   // ... no necesitan cambios) ...
-  
+
   Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     bool isSelected = selectedAnswer == k;
@@ -163,31 +164,32 @@ class _QuizPageState extends State<QuizPage> {
     Color textColor = pythonColorScheme.onSurface;
 
     if (disableAnswer) {
-      String correctAnswerKey = '';
-      widget.mydata.options[questionKey]!.forEach((key, value) {
-        if (value == widget.mydata.answers[questionKey]) {
-          correctAnswerKey = key;
-        }
-      });
+      final String correctOptionKey = widget.mydata.answers[questionKey] ?? '';
 
-      if (k == correctAnswerKey) {
+      // --- LÓGICA CORREGIDA ---
+      // 1. Mostrar VERDE: Solo si la opción actual (k) es la correcta Y el usuario la seleccionó (isSelected).
+      if (k == correctOptionKey && isSelected) {
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
-      } else if (isSelected && k != correctAnswerKey) {
+      }
+      // 2. Mostrar ROJO: Si el usuario la seleccionó (isSelected) y NO es la correcta.
+      else if (isSelected && k != correctOptionKey) {
         buttonColor = Colors.red.withAlpha(51);
         borderColor = Colors.red;
         textColor = Colors.red;
-      } else {
+      }
+      // 3. Mostrar Gris: Las demás opciones no seleccionadas (incluida la correcta no seleccionada).
+      else {
         borderColor = Colors.grey.shade400.withAlpha(128);
         textColor = Colors.grey.shade400;
       }
+      // --- FIN LÓGICA CORREGIDA ---
     } else if (isSelected) {
       buttonColor = pythonColorScheme.primaryContainer.withAlpha(77);
       borderColor = pythonColorScheme.primary;
       textColor = pythonColorScheme.primary;
     }
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: OutlinedButton(
@@ -350,7 +352,8 @@ class _QuizPageState extends State<QuizPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildDuolingoQuestionArea(
+                    _buildQuestionCard(
+                      // <-- ¡NUEVA FUNCIÓN!
                       widget.mydata.questions[questionKey] ?? "Cargando...",
                       pythonColorScheme,
                     ),
@@ -391,10 +394,10 @@ class _QuizPageState extends State<QuizPage> {
                     backgroundColor: disableAnswer
                         ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
                         : (selectedAnswer != null
-                            ? pythonColorScheme
-                                .primary // Si hay respuesta, primario
-                            : Colors
-                                .green), // Color por defecto si no está deshabilitado
+                              ? pythonColorScheme
+                                    .primary // Si hay respuesta, primario
+                              : Colors
+                                    .green), // Color por defecto si no está deshabilitado
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -429,46 +432,35 @@ class _QuizPageState extends State<QuizPage> {
   }
 }
 
-Widget _buildDuolingoQuestionArea(
-  String questionText,
-  ColorScheme colorScheme,
-) {
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: [
-      Image.asset(
-        'assets/images/fox_character.png',
-        width: 100,
-        height: 120,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 100,
-            height: 120,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.error),
-          );
-        },
-      ),
-      const SizedBox(width: 8),
-      Flexible(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(color: colorScheme.outline, width: 2),
-            borderRadius: BorderRadius.circular(15),
-            color: colorScheme.surfaceContainer,
-          ),
-          child: Text(
-            questionText,
-            style: TextStyle(
-              fontSize: 20.0,
-              fontFamily: "Quando",
-              color: colorScheme.onSurface,
-            ),
-          ),
+// --- NUEVA FUNCIÓN DE LA TARJETA DE PREGUNTA ---
+Widget _buildQuestionCard(String text, ColorScheme colorScheme) {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+    decoration: BoxDecoration(
+      color: colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      // --- BRILLO / GLOW TEMÁTICO ---
+      boxShadow: [
+        BoxShadow(
+          color: colorScheme.primary.withAlpha(
+            80,
+          ), // Color primario con opacidad
+          blurRadius: 15,
+          spreadRadius: 3,
         ),
+      ],
+      // --- FIN DEL BRILLO / GLOW TEMÁTICO ---
+    ),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 20.0,
+        fontFamily: "Quando",
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.bold,
       ),
-    ],
+    ),
   );
 }

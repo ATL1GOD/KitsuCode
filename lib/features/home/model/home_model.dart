@@ -1,3 +1,4 @@
+// [COMIENZO DEL ARCHIVO home_model.dart]
 import 'package:flutter/material.dart';
 
 // --- Helpers de Color (Sin cambios) ---
@@ -87,6 +88,11 @@ class SectionData {
   final int id; // Mapeado a id_seccion
   final List<LevelData> levels; // Lista de niveles anidados
 
+  // --- NUEVOS CAMPOS ---
+  final bool isCompleted;
+  final bool isLocked;
+  // --- FIN NUEVOS CAMPOS ---
+
   const SectionData({
     required this.color,
     required this.colorOscuro,
@@ -94,6 +100,8 @@ class SectionData {
     required this.titulo,
     required this.id,
     required this.levels,
+    this.isCompleted = false, // Inicializado
+    this.isLocked = true, // Inicializado
   });
 
   factory SectionData.fromJson(Map<String, dynamic> json) {
@@ -110,18 +118,18 @@ class SectionData {
     // 1. Ordenar los niveles
     levels.sort((a, b) => a.nivel.compareTo(b.nivel));
 
-    // 2. Aplicar lógica de bloqueo secuencial (Duolingo)
+    // 2. Aplicar lógica de bloqueo secuencial INTERNO a la sección
     final List<LevelData> finalLevels = [];
     bool isPreviousCompleted = true; // Asumimos que podemos empezar
 
     for (int i = 0; i < levels.length; i++) {
       LevelData current = levels[i];
 
-      // El nivel actual está bloqueado si el nivel anterior NO está completo.
-      // Solo el primer nivel (orden 1) puede estar desbloqueado si isPreviousCompleted es falso.
+      // Bloqueado si el nivel anterior NO está completo (excepto el primero)
+      // La lógica de bloqueo EXTERNA se aplicará en applySequentialSectionLock
       bool isLocked = !isPreviousCompleted && i != 0;
 
-      // Si es el primer nivel (i=0), NUNCA está bloqueado inicialmente.
+      // Si es el primer nivel (i=0), NUNCA está bloqueado inicialmente por lógica INTERNA
       if (i == 0) {
         isLocked = false;
       }
@@ -129,10 +137,14 @@ class SectionData {
       finalLevels.add(current.copyWith(isLocked: isLocked));
 
       // Actualizamos el estado para la próxima iteración.
-      // El siguiente nivel solo puede desbloquearse si este nivel actual está completado.
       isPreviousCompleted = current.isCompleted;
     }
-    // --- FIN LÓGICA DE BLOQUEO ---
+    // --- FIN LÓGICA DE BLOQUEO INTERNO ---
+
+    // Determinar si TODA la sección está completada.
+    final bool isSectionCompleted = finalLevels.every(
+      (level) => level.isCompleted,
+    );
 
     return SectionData(
       id: json['id_seccion'] as int,
@@ -140,8 +152,79 @@ class SectionData {
       titulo: json['titulo'] as String,
       color: baseColor,
       colorOscuro: _colorFromHex(json['coloroscuro']),
-      levels:
-          finalLevels, // <-- Usamos la lista final con la lógica de bloqueo aplicada
+      levels: finalLevels,
+      isCompleted: isSectionCompleted, // <--- Guardamos el estado de la sección
+      isLocked:
+          true, // <--- Bloqueada por defecto, se ajustará en applySequentialSectionLock.
     );
   }
+
+  // Función para crear la copia desbloqueada/bloqueada en el frontend
+  SectionData copyWith({bool? isLocked, List<LevelData>? levels}) {
+    return SectionData(
+      color: color,
+      colorOscuro: colorOscuro,
+      etapa: etapa,
+      titulo: titulo,
+      id: id,
+      levels: levels ?? this.levels,
+      isCompleted: isCompleted,
+      isLocked: isLocked ?? this.isLocked,
+    );
+  }
+
+  // --- NUEVO MÉTODO ESTÁTICO: LÓGICA DE BLOQUEO ENTRE SECCIONES ---
+  static List<SectionData> applySequentialSectionLock(
+    List<SectionData> sections,
+  ) {
+    // 1. Aseguramos que las secciones estén ordenadas por etapa/orden
+    sections.sort((a, b) => a.etapa.compareTo(b.etapa)); //
+
+    final List<SectionData> finalSections = [];
+    bool isPreviousSectionCompleted = true; // El mapa se desbloquea al inicio
+
+    for (int i = 0; i < sections.length; i++) {
+      SectionData currentSection = sections[i];
+
+      // 2. Lógica de Bloqueo de la Sección:
+      // Está bloqueada si la anterior NO está completa. Solo la primera (i=0) empieza desbloqueada.
+      bool isSectionLocked = !isPreviousSectionCompleted && i != 0;
+
+      // Si es la primera sección, NUNCA está bloqueada al inicio.
+      if (i == 0) {
+        isSectionLocked = false;
+      }
+
+      // 3. Bloqueo de Niveles DENTRO de la Sección:
+      final List<LevelData>
+      newLevels = currentSection.levels.asMap().entries.map((entry) {
+        final level = entry.value;
+
+        // Si la SECCIÓN está bloqueada, el PRIMER nivel de la sección debe estar bloqueado.
+        if (entry.key == 0 && isSectionLocked) {
+          return level.copyWith(isLocked: true);
+        }
+
+        // Si la sección está bloqueada, cualquier nivel está bloqueado.
+        // Si la sección no está bloqueada, usamos el estado de bloqueo interno (level.isLocked).
+        final bool shouldLockLevel = isSectionLocked || level.isLocked;
+
+        return level.copyWith(isLocked: shouldLockLevel);
+      }).toList();
+
+      finalSections.add(
+        currentSection.copyWith(
+          isLocked: isSectionLocked,
+          levels:
+              newLevels, // Usamos la lista de niveles con bloqueo actualizado
+        ),
+      );
+
+      // 4. Actualizamos el estado para la próxima iteración.
+      isPreviousSectionCompleted = currentSection.isCompleted;
+    }
+
+    return finalSections;
+  }
 }
+// [FIN DEL ARCHIVO home_model.dart]

@@ -105,7 +105,7 @@ class _AuthBackgroundState extends State<AuthBackground>
                   children: [
                     if (!isSmallScreen) ...[
                       Image.asset(
-                        'images/auth/fox_login.png', // Asegúrate de que esta ruta sea correcta
+                        'assets/images/auth/fox_login.png', // Asegúrate de que esta ruta sea correcta
                         height: 280,
                       ),
                       const SizedBox(height: 24),

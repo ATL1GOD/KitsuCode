@@ -48,7 +48,7 @@ class LevelData {
       idNivel: (json['id_nivel'] as int?) ?? 0,
       nivel: (json['orden'] as int?) ?? 0, // Usar 'orden' de la tabla niveles
       retoId: json['id_reto'] as int?,
-      iconAsset: (json['icon_asset'] as String?) ?? 'images/home/estrella.svg',
+      iconAsset: (json['icon_asset'] as String?) ?? 'assets/images/home/estrella.svg',
       dinamicaNombre: nombreDinamica, // <-- Asignar el valor
     );
   }

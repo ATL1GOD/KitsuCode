@@ -11,17 +11,11 @@ import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 
 class QuizPage extends StatefulWidget {
   final QuizData mydata;
-  // --- ¡CAMBIO 1! (Añadimos el retoId) ---
   final String retoId;
 
-  const QuizPage({
-    super.key,
-    required this.mydata,
-    required this.retoId, // <-- Requerido
-  });
+  const QuizPage({super.key, required this.mydata, required this.retoId});
 
   @override
-  // ¡Corregido el error de tipo privado!
   State<QuizPage> createState() => _QuizPageState();
 }
 
@@ -38,6 +32,7 @@ class _QuizPageState extends State<QuizPage> {
   String? selectedAnswer;
 
   bool _cancelTimer = false;
+  bool? _wasCorrect;
 
   @override
   void initState() {
@@ -110,50 +105,46 @@ class _QuizPageState extends State<QuizPage> {
           j++;
         } else {
           if (context.mounted) {
-            int duration = (30 * totalQuestions) - timer;
-            if (duration < 0) duration = 0;
+            int duration = (30 * totalQuestions) - (timer < 0 ? 0 : timer);
 
-            // --- ¡CAMBIO 2! (Pasamos el retoId a la página de resultados) ---
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => QuizResultPage(
                   marks: marks,
                   totalQuestions: totalQuestions,
                   durationInSeconds: duration,
-                  retoId: widget.retoId, // <-- ¡AÑADIDO!
+                  retoId: widget.retoId,
                 ),
               ),
             );
-            // --- FIN CAMBIO 2 ---
           }
           return;
         }
         selectedAnswer = null;
         disableAnswer = false;
+        _wasCorrect = null;
       });
     }
     _startTimer();
   }
 
-  // En quiz_page.dart, dentro de _QuizPageState
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
+    bool correct = false;
 
-    // ¡CORREGIDO! Compara el key seleccionado (k) con el key correcto almacenado
     if (k.isNotEmpty && k == widget.mydata.answers[questionKey]) {
       marks = marks + 5;
+      correct = true;
     }
 
     if (mounted) {
       setState(() {
         _cancelTimer = true;
         disableAnswer = true;
+        _wasCorrect = correct;
       });
     }
   }
-
-  // ... (El resto de tu código: _choiceButton, build, _buildDuolingoQuestionArea...
-  // ... no necesitan cambios) ...
 
   Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
@@ -166,9 +157,9 @@ class _QuizPageState extends State<QuizPage> {
     if (disableAnswer) {
       final String correctOptionKey = widget.mydata.answers[questionKey] ?? '';
 
-      // --- LÓGICA CORREGIDA ---
-      // 1. Mostrar VERDE: Solo si la opción actual (k) es la correcta Y el usuario la seleccionó (isSelected).
-      if (k == correctOptionKey && isSelected) {
+      // --- ¡CAMBIO 2! Lógica para ocultar la respuesta correcta si falló ---
+      // 1. Mostrar VERDE: Solo si la opción actual (k) es la correcta Y el usuario la seleccionó (o si el tiempo acabó y no seleccionó nada).
+      if (k == correctOptionKey && (isSelected || selectedAnswer == null)) {
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
@@ -179,32 +170,37 @@ class _QuizPageState extends State<QuizPage> {
         borderColor = Colors.red;
         textColor = Colors.red;
       }
-      // 3. Mostrar Gris: Las demás opciones no seleccionadas (incluida la correcta no seleccionada).
+      // 3. Demás opciones (incluyendo la respuesta correcta si el usuario falló, y las incorrectas no seleccionadas)
       else {
-        borderColor = Colors.grey.shade400.withAlpha(128);
-        textColor = Colors.grey.shade400;
+        borderColor = pythonColorScheme.outline;
+        textColor = pythonColorScheme.onSurface;
+        buttonColor = pythonColorScheme.surfaceContainer;
       }
-      // --- FIN LÓGICA CORREGIDA ---
+      // --- FIN CAMBIO 2 ---
     } else if (isSelected) {
       buttonColor = pythonColorScheme.primaryContainer.withAlpha(77);
       borderColor = pythonColorScheme.primary;
       textColor = pythonColorScheme.primary;
     }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           foregroundColor: textColor,
           backgroundColor: buttonColor,
-          minimumSize: const Size(double.infinity, 50),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          minimumSize: const Size(double.infinity, 60),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ), // Ajuste de padding horizontal
           side: BorderSide(color: borderColor, width: 2.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
         ),
         onPressed: disableAnswer
-            ? null // Deshabilitar si ya se comprobó
+            ? null
             : () {
                 setState(() {
                   selectedAnswer = k;
@@ -212,11 +208,18 @@ class _QuizPageState extends State<QuizPage> {
               },
         child: Text(
           widget.mydata.options[questionKey]![k] ?? "",
+          // --- ¡CAMBIO 1! Permitir autoajuste y saltos de línea ---
+          textAlign: TextAlign.start,
+          maxLines: 5, // Permitir más líneas si es necesario
+          overflow:
+              TextOverflow.ellipsis, // Mostrar puntos suspensivos si no cabe
           style: const TextStyle(
             fontFamily: "Alike",
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
+            height: 1.3, // Mejorar el espaciado entre líneas para legibilidad
           ),
+          // --- FIN CAMBIO 1 ---
         ),
       ),
     );
@@ -274,6 +277,7 @@ class _QuizPageState extends State<QuizPage> {
             elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.close, color: pythonColorScheme.onSurface),
+              // --- ¡CAMBIO 3! Lógica reparada para el botón 'X' ---
               onPressed: () {
                 showDialog(
                   context: context,
@@ -283,12 +287,13 @@ class _QuizPageState extends State<QuizPage> {
                     actions: <Widget>[
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          Navigator.of(context).pop(); // Cierra el AlertDialog
                         },
                         child: const Text('Cancelar'),
                       ),
                       TextButton(
                         onPressed: () {
+                          // Cierra el AlertDialog y luego sale de la QuizPage
                           Navigator.of(context).pop();
                           Navigator.of(context).pop();
                         },
@@ -298,6 +303,7 @@ class _QuizPageState extends State<QuizPage> {
                   ),
                 );
               },
+              // --- FIN CAMBIO 3 ---
             ),
             title: Row(
               children: [
@@ -306,21 +312,28 @@ class _QuizPageState extends State<QuizPage> {
                     borderRadius: const BorderRadius.all(Radius.circular(10)),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Colors.grey.shade300,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.green,
+                      backgroundColor: pythonColorScheme.surfaceContainerHigh,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        pythonColorScheme.primary,
                       ),
                       minHeight: 12,
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  _showTimer,
-                  style: TextStyle(
-                    color: pythonColorScheme.onSurface,
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: pythonColorScheme.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    _showTimer,
+                    style: TextStyle(
+                      color: pythonColorScheme.onPrimaryContainer,
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -335,12 +348,11 @@ class _QuizPageState extends State<QuizPage> {
                       MediaQuery.of(context).size.height -
                       AppBar().preferredSize.height -
                       MediaQuery.of(context).padding.top -
-                      100, // Ajusta este valor si es necesario
+                      100,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment:
-                      MainAxisAlignment.start, // Se cambia a start
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
                     const SizedBox(height: 10),
                     Text(
@@ -353,13 +365,10 @@ class _QuizPageState extends State<QuizPage> {
                     ),
                     const SizedBox(height: 20),
                     _buildQuestionCard(
-                      // <-- ¡NUEVA FUNCIÓN!
                       widget.mydata.questions[questionKey] ?? "Cargando...",
                       pythonColorScheme,
                     ),
-                    const SizedBox(
-                      height: 30,
-                    ), // Espacio después de la pregunta
+                    const SizedBox(height: 30),
                     // Opciones de respuesta
                     AbsorbPointer(
                       absorbing: disableAnswer,
@@ -373,14 +382,12 @@ class _QuizPageState extends State<QuizPage> {
                         ],
                       ),
                     ),
-                    // Espacio para empujar el contenido hacia arriba y dejar espacio al botón fijo
                     const SizedBox(height: 100),
                   ],
                 ),
               ),
             ),
           ),
-          // Botón inferior fijo
           bottomNavigationBar: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -389,37 +396,44 @@ class _QuizPageState extends State<QuizPage> {
               ),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: disableAnswer
-                        ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: disableAnswer
+                        ? (_wasCorrect == true
+                              ? Colors.green.shade600
+                              : pythonColorScheme.error)
                         : (selectedAnswer != null
-                              ? pythonColorScheme
-                                    .primary // Si hay respuesta, primario
-                              : Colors
-                                    .green), // Color por defecto si no está deshabilitado
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    disabledBackgroundColor: Colors.grey.shade400,
+                              ? pythonColorScheme.primary
+                              : pythonColorScheme.surfaceContainerHighest),
                   ),
-                  onPressed: (selectedAnswer == null && !disableAnswer)
-                      ? null
-                      : () {
-                          if (disableAnswer) {
-                            _nextQuestion();
-                          } else {
-                            // Se llama _checkAnswer con el ColorScheme correcto
-                            _checkAnswer(selectedAnswer!, pythonColorScheme);
-                          }
-                        },
-                  child: Text(
-                    disableAnswer ? "CONTINUAR" : "COMPROBAR",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      disabledBackgroundColor: Colors.transparent,
+                    ),
+                    onPressed: (selectedAnswer == null && !disableAnswer)
+                        ? null
+                        : () {
+                            if (disableAnswer) {
+                              _nextQuestion();
+                            } else {
+                              _checkAnswer(selectedAnswer!, pythonColorScheme);
+                            }
+                          },
+                    child: Text(
+                      disableAnswer ? "CONTINUAR" : "COMPROBAR",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -430,37 +444,33 @@ class _QuizPageState extends State<QuizPage> {
       ),
     );
   }
-}
 
-// --- NUEVA FUNCIÓN DE LA TARJETA DE PREGUNTA ---
-Widget _buildQuestionCard(String text, ColorScheme colorScheme) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      // --- BRILLO / GLOW TEMÁTICO ---
-      boxShadow: [
-        BoxShadow(
-          color: colorScheme.primary.withAlpha(
-            80,
-          ), // Color primario con opacidad
-          blurRadius: 15,
-          spreadRadius: 3,
-        ),
-      ],
-      // --- FIN DEL BRILLO / GLOW TEMÁTICO ---
-    ),
-    child: Text(
-      text,
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 20.0,
-        fontFamily: "Quando",
-        color: colorScheme.onSurface,
-        fontWeight: FontWeight.bold,
+  Widget _buildQuestionCard(String text, ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-    ),
-  );
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 22.0,
+          fontFamily: "Quando",
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 }

@@ -156,10 +156,9 @@ class _QuizPageState extends State<QuizPage> {
 
     if (disableAnswer) {
       final String correctOptionKey = widget.mydata.answers[questionKey] ?? '';
-
       // --- ¡CAMBIO 2! Lógica para ocultar la respuesta correcta si falló ---
       // 1. Mostrar VERDE: Solo si la opción actual (k) es la correcta Y el usuario la seleccionó (o si el tiempo acabó y no seleccionó nada).
-      if (k == correctOptionKey && (isSelected || selectedAnswer == null)) {
+      if (k == correctOptionKey && selectedAnswer != null && isSelected) {
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;

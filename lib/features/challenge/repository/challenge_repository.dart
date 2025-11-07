@@ -12,8 +12,8 @@ class ChallengeRepository {
   final SupabaseClient _supabase;
   ChallengeRepository(this._supabase);
 
-  // Función que tu app llama al terminar un reto
-  Future<void> submitChallengeAttempt({
+  // --- MODIFICADO: Ahora devuelve Future<int> ---
+  Future<int> submitChallengeAttempt({
     required int retoId,
     required bool fueExitoso,
     required int tiempoQueTardo, // en segundos
@@ -25,14 +25,23 @@ class ChallengeRepository {
     }
 
     try {
-      await _supabase.from('intento_reto').insert({
+      // --- MODIFICADO: Usamos .select() para recuperar el dato ---
+      final response = await _supabase.from('intento_reto').insert({
         'id_usuario': user.id,
         'id_reto': retoId,
-        'resultado': fueExitoso ? 'completado' : 'fallido', // ¡Importante!
+        'resultado': fueExitoso ? 'completado' : 'fallido',
         'tiempo_empleado': tiempoQueTardo,
-        // No enviamos 'experiencia_obtenida',
-        // ¡El trigger de Supabase lo calculará solo!
-      });
+        // ¡El trigger de Supabase calculará 'experiencia_obtenida'!
+      }).select('experiencia_obtenida'); // <-- PEDIMOS EL DATO DE VUELTA
+      // --- FIN MODIFICADO ---
+
+      if (response.isEmpty) {
+        throw Exception("No se pudo obtener la experiencia del intento.");
+      }
+      
+      // Devolvemos el valor
+      final experiencia = response.first['experiencia_obtenida'] as int?;
+      return experiencia ?? 0; // Devolvemos 0 si es nulo
 
     } catch (e) {
       // Manejar el error

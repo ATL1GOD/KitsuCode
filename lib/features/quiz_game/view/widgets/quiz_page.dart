@@ -7,25 +7,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/result_page.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
+import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Importa QuizData
 
 class QuizPage extends StatefulWidget {
   final QuizData mydata;
-  // --- ¡CAMBIO 1! (Añadimos el retoId) ---
   final String retoId;
 
   const QuizPage({
     super.key, 
     required this.mydata,
-    required this.retoId, // <-- Requerido
+    required this.retoId,
   });
   
   @override
-  // ¡Corregido el error de tipo privado!
   State<QuizPage> createState() => _QuizPageState();
 }
 
 class _QuizPageState extends State<QuizPage> {
+  // ... (Tus variables de estado: marks, i, timer, etc. no cambian) ...
   int marks = 0;
   int i = 0;
   bool disableAnswer = false;
@@ -34,13 +33,12 @@ class _QuizPageState extends State<QuizPage> {
   String _showTimer = "30";
   late List<int> _randomArray;
   int totalQuestions = 0;
-
   String? selectedAnswer;
-
   bool _cancelTimer = false;
 
   @override
   void initState() {
+    // ... (Tu initState no cambia) ...
     super.initState();
     _startTimer();
     _genRandomArray();
@@ -51,11 +49,13 @@ class _QuizPageState extends State<QuizPage> {
 
   @override
   void dispose() {
+    // ... (Tu dispose no cambia) ...
     _cancelTimer = true;
     super.dispose();
   }
 
   void _genRandomArray() {
+    // ... (Tu función _genRandomArray no cambia) ...
     if (widget.mydata.questions.isNotEmpty) {
       totalQuestions = widget.mydata.totalQuestions;
       var rand = Random();
@@ -71,7 +71,8 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-  void _startTimer() async {
+  void _startTimer() {
+    // ... (Tu función _startTimer no cambia) ...
     const onesec = Duration(seconds: 1);
     Timer.periodic(onesec, (Timer t) {
       if (!mounted) {
@@ -113,14 +114,15 @@ class _QuizPageState extends State<QuizPage> {
             int duration = (30 * totalQuestions) - timer;
             if (duration < 0) duration = 0; 
 
-            // --- ¡CAMBIO 2! (Pasamos el retoId a la página de resultados) ---
+            // --- ¡CAMBIO 2! (Pasamos el retoId y los RECURSOS) ---
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => QuizResultPage(
                   marks: marks,
                   totalQuestions: totalQuestions,
                   durationInSeconds: duration,
-                  retoId: widget.retoId, // <-- ¡AÑADIDO!
+                  retoId: widget.retoId,
+                  recursos: widget.mydata.recursos, // <-- ¡AÑADIDO!
                 ),
               ),
             );
@@ -136,6 +138,7 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
+    // ... (Tu función _checkAnswer no cambia) ...
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     if (k.isNotEmpty &&
         widget.mydata.answers[questionKey] ==
@@ -150,7 +153,6 @@ class _QuizPageState extends State<QuizPage> {
       });
     }
   }
-  
   // ... (El resto de tu código: _choiceButton, build, _buildDuolingoQuestionArea...
   // ... no necesitan cambios) ...
   

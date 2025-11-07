@@ -28,10 +28,18 @@ class RetoDistribuidorPage extends ConsumerWidget {
       data: (challengeData) {
         // 1. Extrae los datos
         final String tipo = challengeData.dinamicaNombre;
+        
+        // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
+        // 2. Preparamos el contenido
         final Map<String, dynamic> challengeContent = challengeData.contenido;
+        
+        // 3. Inyectamos los recursos en el mapa de contenido
+        // (Tus modelos de puzzle, codigo, etc., esperan la llave "recursos")
+        challengeContent['recursos'] = challengeData.recursos;
+        // --- FIN DE LA MAGIA ---
 
-        // 2. Decide qué pantalla mostrar
-        switch (tipo) {
+        // 4. Decide qué pantalla mostrar
+        switch (tipo) { 
           case 'Quiz':
             return QuizLoaderPage(
               challengeContent: challengeContent,
@@ -42,7 +50,7 @@ class RetoDistribuidorPage extends ConsumerWidget {
             case 'Bloques': 
               return PuzzleLoaderPage(
                 challengeContent: challengeContent,
-                retoId: retoId,
+                retoId: retoId, 
               );
 
           case 'Relacion':

@@ -1,35 +1,39 @@
 // lib/features/quiz_game/view/widgets/result_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // --- ¡CAMBIO 1! ---
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/utils/app_colors.dart'; 
 
-// --- ¡CAMBIO 2! (Importaciones para la puntuación) ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
-// --- FIN CAMBIO 2 ---
+
+import 'package:go_router/go_router.dart';
+import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
+import 'package:kitsucode/core/utils/app_themes.dart';
+
+// --- NUEVO: Import para el modelo de recursos ---
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 
 
-// --- ¡CAMBIO 3! (Convertido a ConsumerStatefulWidget) ---
 class QuizResultPage extends ConsumerStatefulWidget {
   final int marks;
   final int totalQuestions;
   final int durationInSeconds;
-  
-  // --- ¡CAMBIO 4! (Añadimos el retoId, ahora es String) ---
   final String retoId; 
+  // --- NUEVO ---
+  final List<RecursoModel> recursos;
 
   const QuizResultPage({
-    super.key, // <-- Corregido
+    super.key,
     required this.marks,
     required this.totalQuestions,
     required this.durationInSeconds,
-    required this.retoId, // <-- Requerido
+    required this.retoId,
+    required this.recursos, // <-- AÑADIDO
   });
 
   @override
-  // --- ¡CAMBIO 5! ---
   ConsumerState<QuizResultPage> createState() => _QuizResultPageState();
 }
 
@@ -43,6 +47,9 @@ class _QuizResultPageState extends ConsumerState<QuizResultPage> {
   late String image;
   late int percentage;
   late String formattedTime;
+  
+  // --- NUEVO ---
+  bool _hasSubmitted = false; // Para evitar doble envío
 
   @override
   void initState() {
@@ -64,48 +71,119 @@ class _QuizResultPageState extends ConsumerState<QuizResultPage> {
     formattedTime =
         "${minutes.toString()}:${seconds.toString().padLeft(2, '0')}";
         
-    // --- ¡CAMBIO 6! (Llamar al envío del intento) ---
+    // --- MODIFICADO: YA NO enviamos el intento desde aquí ---
+    /*
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _submitAttempt();
     });
+    */
   }
 
-  // --- ¡CAMBIO 7! (Función de envío CORREGIDA) ---
+  // --- MODIFICADO: Esta función ya no es necesaria aquí ---
+  /*
   Future<void> _submitAttempt() async {
-    // Asumimos que si saca más del 50% es "completado"
+    // ... (toda la función eliminada)
+  }
+  */
+
+  // --- (Tu función _getLanguageTheme no cambia) ---
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    
+    // Asumiendo que tienes AppThemes.
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    }
+  }
+
+  // --- ¡¡AQUÍ ESTÁ LA MAGIA Y LA CORRECCIÓN DEL BUG!! ---
+  void _showFeedbackModal() {
+    // No mostrar el modal de nuevo si ya se envió
+    if (_hasSubmitted) return; 
+    
     final bool esCorrecto = (percentage > 50);
 
-    // Obtenemos el ID del reto como int
-    final int retoIdAsInt;
-    try {
-      retoIdAsInt = int.parse(widget.retoId);
-    } catch (e) {
-      debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
-      return; 
-    }
+    final appBarState = ref.read(appBarProvider);
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      Theme.of(context).brightness,
+    );
 
-    try {
-      final repository = ref.read(challengeRepositoryProvider);
-      await repository.submitChallengeAttempt(
-        retoId: retoIdAsInt,        // <-- CORREGIDO
-        fueExitoso: esCorrecto,     // <-- CORREGIDO
-        tiempoQueTardo: widget.durationInSeconds, // <-- CORREGIDO
-      );
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) { // 'ctx' es el contexto del BottomSheet
+        return Theme(
+          data: challengeTheme,
+          child: ChallengeFeedbackModal(
+            isCorrect: esCorrecto,
+            // --- ¡¡¡ESTA ES LA CORRECCIÓN DEFINITIVA!!! ---
+            onContinue: () async {
+              
+              // NAVEGACIÓN 1: Cierra el modal (usando el contexto del modal 'ctx')
+              Navigator.of(ctx).pop(); 
+              
+              if (_hasSubmitted) return;
+              _hasSubmitted = true; // Marcamos como enviado
 
-      // Refrescar la UI (AppBar y Ranking)
-      ref.read(appBarProvider.notifier).fetchStats();
-      ref.invalidate(globalRankingProvider);
+              final repository = ref.read(challengeRepositoryProvider);
+              final int retoIdAsInt = int.parse(widget.retoId);
 
-    } catch (e) {
-      debugPrint("Error al enviar intento de quiz: $e");
-    }
+              if (esCorrecto) {
+                // 1. Enviar intento y obtener trofeos (await)
+                final int trofeos = await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: true,
+                  tiempoQueTardo: widget.durationInSeconds, 
+                );
+                
+                // 2. Refrescar stats y ranking
+                ref.read(appBarProvider.notifier).fetchStats();
+                ref.invalidate(globalRankingProvider);
+                
+                // 3. NAVEGACIÓN 2 (Push a la nueva vista)
+                // (usando el 'context' de la página)
+                if (!context.mounted) return;
+                context.push('/challenge_success', extra: trofeos);
+              
+              } else {
+                // 1. Enviar intento fallido (await)
+                 await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: false,
+                  tiempoQueTardo: widget.durationInSeconds,
+                );
+
+                // 2. Refrescar stats (vidas)
+                ref.read(appBarProvider.notifier).fetchStats();
+
+                // 3. Obtener recursos del widget
+                final List<RecursoModel> recursos = widget.recursos;
+                
+                // 4. NAVEGACIÓN 2 (Push a la nueva vista)
+                if (!context.mounted) return;
+                context.push('/challenge_failure', extra: recursos);
+              }
+            },
+            // --- FIN MODIFICACIÓN ---
+          ),
+        );
+      },
+    );
   }
-  // --- FIN CAMBIO 7 ---
+  // --- FIN NUEVO ---
 
   @override
   Widget build(BuildContext context) {
-    // ... (El resto de tu código: build, _StatCard...
-    // ... no necesitan cambios) ...
+    // ... tu lógica de 'brightness' y 'colorScheme' ...
     final brightness = MediaQuery.of(context).platformBrightness;
     final colorScheme = (brightness == Brightness.dark)
         ? pythonDarkColorScheme
@@ -171,9 +249,11 @@ class _QuizResultPageState extends ConsumerState<QuizResultPage> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                     ),
+                    // --- MODIFICADO: Lógica de onPressed ---
                     onPressed: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      _showFeedbackModal();
                     },
+                    // --- FIN MODIFICADO ---
                     child: const Text(
                       'CONTINUAR',
                       style: TextStyle(
@@ -193,6 +273,7 @@ class _QuizResultPageState extends ConsumerState<QuizResultPage> {
 }
 
 class _StatCard extends StatelessWidget {
+  // ... (Tu widget _StatCard no cambia) ...
   final String label;
   final String value;
   final IconData icon;

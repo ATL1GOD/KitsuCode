@@ -2,38 +2,42 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-import 'package:go_router/go_router.dart'; // Importar GoRouter
-
-// --- ¡NUEVAS IMPORTACIONES! ---
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
-
-// --- ¡CAMBIO: A ConsumerWidget! ---
-class Section extends ConsumerWidget { 
+class Section extends ConsumerWidget {
   final SectionData data;
 
   const Section({super.key, required this.data});
 
-  // --- ¡FUNCIÓN DE NAVEGACIÓN MODIFICADA! ---
-  // (Ahora acepta 'WidgetRef ref')
   void _navegarAReto(BuildContext context, WidgetRef ref, LevelData level) {
+    // --- LÓGICA DE BLOQUEO DE NIVEL ---
+    if (level.isLocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Nivel bloqueado! Completa el reto anterior primero.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return; // Bloquea la navegación
+    }
+    // --- FIN LÓGICA DE BLOQUEO DE NIVEL ---
+
     // 1. Si no hay retoId, es una lección (sin cambios)
     if (level.retoId == null) {
-      debugPrint( // <-- Usamos debugPrint
+      debugPrint(
         "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
       );
       // context.push('/leccion/${level.idNivel}');
       return;
     }
-    
-    // --- ¡NUEVA LÓGICA DE BLOQUEO DE VIDAS! ---
-    // 2. Leemos el estado actual del AppBar
+
+    // 2. Lógica de bloqueo de vidas (sin cambios)
     final appBarState = ref.read(appBarProvider);
-    
-    // 3. Comprobamos las vidas
+
     if (appBarState.lives <= 0) {
-      // Si no tiene vidas, mostramos un SnackBar y NO navegamos
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('¡Oh no! Te has quedado sin vidas. Vuelve mañana.'),
@@ -41,32 +45,27 @@ class Section extends ConsumerWidget {
           duration: Duration(seconds: 2),
         ),
       );
-      return; // <-- Bloquea la navegación
+      return; // Bloquea la navegación
     }
-    // --- FIN DE LA LÓGICA DE BLOQUEO ---
+    // --- FIN DE LA LÓGICA DE BLOQUEO DE VIDAS ---
 
-    // 4. Si tiene vidas, navegamos (tu lógica original)
+    // 3. Si tiene vidas Y está desbloqueado, navegamos
     final int retoId = level.retoId!;
     debugPrint("Navegando al distribuidor de retos con ID: $retoId");
     context.push('/reto/$retoId');
   }
-  // --- FIN NUEVA FUNCIÓN ---
 
   @override
-  // --- ¡CAMBIO: Añadido 'WidgetRef ref'! ---
-  Widget build(BuildContext context, WidgetRef ref) { 
-    // --- CÁLCULO DE ALTURA DEL STACK (Sin cambios) ---
+  Widget build(BuildContext context, WidgetRef ref) {
     const double buttonHeight = 62.0;
     final double stackHeight = data.levels.isEmpty
         ? 0.0
         : ((data.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
-    // --- FIN CÁLCULO DE ALTURA ---
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
-          // ... (Widget del título de la sección, sin cambios) ...
           children: [
             const Expanded(child: Divider(color: Color(0xFF2D3D41))),
             const SizedBox(width: 16),
@@ -84,12 +83,12 @@ class Section extends ConsumerWidget {
         ),
         const SizedBox(height: 24.0),
 
-        // --- STACK DE BOTONES (Sin cambios) ---
+        // --- STACK DE BOTONES ---
         SizedBox(
           height: stackHeight,
           child: Stack(
             children: data.levels.asMap().entries.map((entry) {
-              int i = entry.key; // El índice (0, 1, 2...)
+              int i = entry.key;
               LevelData level = entry.value;
 
               return Positioned(
@@ -98,7 +97,7 @@ class Section extends ConsumerWidget {
                 right: getRight(i),
                 child: ReliefSectionButton(
                   onPressed: () {
-                    // --- ¡CAMBIO: Pasamos el 'ref'! ---
+                    // Llamamos a la función con el ref
                     _navegarAReto(context, ref, level);
                   },
                   baseColor: data.color,
@@ -106,6 +105,10 @@ class Section extends ConsumerWidget {
                   svgAsset: level.iconAsset,
                   size: 56.0,
                   reliefThickness: 6.0,
+                  // --- Usamos el estado de bloqueo del modelo ---
+                  isLocked: level.isLocked,
+                  lockColor: Colors.grey.shade600,
+                  // --- Fin del estado de bloqueo ---
                 ),
               );
             }).toList(),

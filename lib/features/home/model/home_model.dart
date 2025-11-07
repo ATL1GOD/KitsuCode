@@ -15,46 +15,70 @@ Color _colorFromHex(String hexColor) {
 }
 // --- Fin Helpers ---
 
-// MODELO DE NIVEL: Actualizado con dinamicaNombre
+// MODELO DE NIVEL: Actualizado con isCompleted y isLocked
 class LevelData {
   final int idNivel; // Viene de niveles.id_nivel
   final int nivel; // Viene de niveles.orden
   final int? retoId; // Viene de niveles.id_reto
   final String iconAsset; // Viene de niveles.icon_asset
-
-  // --- NUEVO CAMPO ---
   final String? dinamicaNombre;
-  // --- FIN NUEVO CAMPO ---
+
+  // --- NUEVOS CAMPOS ---
+  final bool isCompleted;
+  final bool isLocked;
+  // --- FIN NUEVOS CAMPOS ---
 
   const LevelData({
     required this.idNivel,
     required this.nivel,
     this.retoId,
     required this.iconAsset,
-    this.dinamicaNombre, // <-- Añadir al constructor
+    this.dinamicaNombre,
+    this.isCompleted = false,
+    this.isLocked = true,
   });
 
   factory LevelData.fromJson(Map<String, dynamic> json) {
-    // --- LÓGICA MEJORADA ---
     String? nombreDinamica;
     if (json['reto'] != null &&
         json['reto'] is Map &&
         json['reto']['dinamicas'] != null) {
       nombreDinamica = json['reto']['dinamicas']['nombre'] as String?;
     }
-    // --- FIN LÓGICA MEJORADA ---
+
+    // El campo 'progreso_usuario' es una lista de resultados de la subconsulta de Supabase.
+    // Si la lista NO está vacía, significa que el registro de progreso existe.
+    final List<dynamic>? progresoUsuario = json['progreso_usuario'];
+    final bool nivelCompletado =
+        progresoUsuario != null && progresoUsuario.isNotEmpty;
 
     return LevelData(
       idNivel: (json['id_nivel'] as int?) ?? 0,
       nivel: (json['orden'] as int?) ?? 0, // Usar 'orden' de la tabla niveles
       retoId: json['id_reto'] as int?,
       iconAsset: (json['icon_asset'] as String?) ?? 'images/home/estrella.svg',
-      dinamicaNombre: nombreDinamica, // <-- Asignar el valor
+      dinamicaNombre: nombreDinamica,
+      isCompleted: nivelCompletado, // <--- Determinado por la consulta
+      isLocked:
+          !nivelCompletado, // <--- Bloqueado por defecto, ajustado en SectionData
+    );
+  }
+
+  // Función para crear la copia desbloqueada/bloqueada en el frontend
+  LevelData copyWith({bool? isLocked}) {
+    return LevelData(
+      idNivel: idNivel,
+      nivel: nivel,
+      retoId: retoId,
+      iconAsset: iconAsset,
+      dinamicaNombre: dinamicaNombre,
+      isCompleted: isCompleted,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 }
 
-// MODELO DE SECCIÓN: Actualizado para 'niveles'
+// MODELO DE SECCIÓN: Implementa la lógica de bloqueo secuencial
 class SectionData {
   final Color color;
   final Color colorOscuro;
@@ -75,11 +99,7 @@ class SectionData {
   factory SectionData.fromJson(Map<String, dynamic> json) {
     final baseColor = _colorFromHex(json['color']);
 
-    // Mapear los niveles anidados (que vienen como 'niveles')
-    // --- CORRECCIÓN CLAVE ---
-    final List<dynamic>? levelsJson =
-        json['niveles']; // <-- NO 'seccion_niveles'
-    // --- FIN CORRECCIÓN ---
+    final List<dynamic>? levelsJson = json['niveles'];
 
     final List<LevelData> levels = levelsJson != null
         ? levelsJson
@@ -87,18 +107,41 @@ class SectionData {
               .toList()
         : [];
 
-    // Ordenar los niveles (sin cambios)
+    // 1. Ordenar los niveles
     levels.sort((a, b) => a.nivel.compareTo(b.nivel));
+
+    // 2. Aplicar lógica de bloqueo secuencial (Duolingo)
+    final List<LevelData> finalLevels = [];
+    bool isPreviousCompleted = true; // Asumimos que podemos empezar
+
+    for (int i = 0; i < levels.length; i++) {
+      LevelData current = levels[i];
+
+      // El nivel actual está bloqueado si el nivel anterior NO está completo.
+      // Solo el primer nivel (orden 1) puede estar desbloqueado si isPreviousCompleted es falso.
+      bool isLocked = !isPreviousCompleted && i != 0;
+
+      // Si es el primer nivel (i=0), NUNCA está bloqueado inicialmente.
+      if (i == 0) {
+        isLocked = false;
+      }
+
+      finalLevels.add(current.copyWith(isLocked: isLocked));
+
+      // Actualizamos el estado para la próxima iteración.
+      // El siguiente nivel solo puede desbloquearse si este nivel actual está completado.
+      isPreviousCompleted = current.isCompleted;
+    }
+    // --- FIN LÓGICA DE BLOQUEO ---
 
     return SectionData(
       id: json['id_seccion'] as int,
-      // Usar 'orden' de la tabla 'secciones' como 'etapa'
       etapa: (json['orden'] as int?) ?? 0,
       titulo: json['titulo'] as String,
       color: baseColor,
-      // Usar 'coloroscuro' que viene de la DB
       colorOscuro: _colorFromHex(json['coloroscuro']),
-      levels: levels,
+      levels:
+          finalLevels, // <-- Usamos la lista final con la lógica de bloqueo aplicada
     );
   }
 }

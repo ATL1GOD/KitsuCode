@@ -19,9 +19,17 @@ class SectionRepository {
 
   SectionRepository(this._client);
 
-  // --- ¡CAMBIO AQUÍ! ---
-  // Ahora aceptamos un parámetro 'languageId'
   Future<List<SectionData>> getSections(int languageId) async {
+    // Obtenemos el ID del usuario autenticado para la subconsulta de RLS.
+    final currentUserId = _client.auth.currentUser?.id;
+
+    if (currentUserId == null) {
+      // Si no hay usuario, cargamos solo la estructura sin progreso.
+      // O lanzamos un error si la aplicación requiere autenticación.
+      print("Advertencia: No hay usuario autenticado.");
+      // Continuamos la consulta, pero RLS podría bloquear todo.
+    }
+
     try {
       final response = await _client
           .from('secciones')
@@ -35,19 +43,22 @@ class SectionRepository {
               id_reto,
               tipo_reto,
               dinamicas ( nombre ) 
+            ),
+            progreso_usuario!left ( 
+              id_usuario
             )
           )
           ''')
-          // --- ¡CAMBIO AQUÍ! ---
-          // Añadimos el filtro para el id_lenguaje
-          .eq('id_lenguaje', languageId) 
+          .eq('id_lenguaje', languageId)
           .order('orden', ascending: true);
 
       final sections = response
           .map<SectionData>((json) => SectionData.fromJson(json))
           .toList();
 
-      print("Supabase: ${sections.length} secciones cargadas para el lenguaje $languageId.");
+      print(
+        "Supabase: ${sections.length} secciones cargadas para el lenguaje $languageId.",
+      );
 
       return sections;
     } catch (e) {

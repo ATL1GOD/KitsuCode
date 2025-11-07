@@ -21,9 +21,7 @@ class PuzzleLoaderPage extends StatelessWidget {
     return ProviderScope(
       overrides: [
         puzzleProvider.overrideWith(
-          // --- ¡CAMBIO AQUÍ! ---
-          // Ahora le pasamos el contenido, el ID del reto (convertido a int),
-          // y el 'ref' para que el notifier pueda llamar a otros providers.
+          // --- (Tu lógica de override está perfecta) ---
           (ref) => PuzzleNotifier(
             challengeContent,
             int.parse(retoId), // Convierte "2" a 2
@@ -32,7 +30,11 @@ class PuzzleLoaderPage extends StatelessWidget {
         ),
       ],
       // 2. MOSTRAMOS LA VISTA DEL PUZZLE
-      child: const PuzzleView(),
+      // --- ¡CAMBIO AQUÍ! ---
+      // Quitamos 'const' para permitir que el widget
+      // se reconstruya cuando el tema (lenguaje) cambie.
+      child: PuzzleView(),
+      // --- FIN CAMBIO ---
     );
   }
 }

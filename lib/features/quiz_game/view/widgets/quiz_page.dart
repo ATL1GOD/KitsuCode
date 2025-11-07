@@ -1,3 +1,5 @@
+// lib/features/quiz_game/view/widgets/quiz_page.dart
+
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -5,15 +7,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/result_page.dart';
 import 'package:kitsucode/core/utils/app_colors.dart';
-// import 'package:kitsucode/features/quiz_game/provider/quiz_provider.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
 
 class QuizPage extends StatefulWidget {
   final QuizData mydata;
+  // --- ¡CAMBIO 1! (Añadimos el retoId) ---
+  final String retoId;
 
-  const QuizPage({super.key, required this.mydata});
+  const QuizPage({
+    super.key, 
+    required this.mydata,
+    required this.retoId, // <-- Requerido
+  });
+  
   @override
-  _QuizPageState createState() => _QuizPageState();
+  // ¡Corregido el error de tipo privado!
+  State<QuizPage> createState() => _QuizPageState();
 }
 
 class _QuizPageState extends State<QuizPage> {
@@ -76,8 +85,6 @@ class _QuizPageState extends State<QuizPage> {
 
         if (timer < 1) {
           t.cancel();
-          // Llama a _checkAnswer con una cadena vacía para indicar tiempo agotado
-          // y pasamos el ColorScheme temporalmente
           final brightness = MediaQuery.of(context).platformBrightness;
           final pythonColorScheme = (brightness == Brightness.dark)
               ? pythonDarkColorScheme
@@ -103,19 +110,21 @@ class _QuizPageState extends State<QuizPage> {
           j++;
         } else {
           if (context.mounted) {
-            // Se calcula el tiempo total usado al finalizar
             int duration = (30 * totalQuestions) - timer;
-            if (duration < 0) duration = 0; // Evita valores negativos
+            if (duration < 0) duration = 0; 
 
+            // --- ¡CAMBIO 2! (Pasamos el retoId a la página de resultados) ---
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => QuizResultPage(
                   marks: marks,
                   totalQuestions: totalQuestions,
                   durationInSeconds: duration,
+                  retoId: widget.retoId, // <-- ¡AÑADIDO!
                 ),
               ),
             );
+            // --- FIN CAMBIO 2 ---
           }
           return;
         }
@@ -126,10 +135,8 @@ class _QuizPageState extends State<QuizPage> {
     _startTimer();
   }
 
-  // Se corrige la firma para recibir ColorScheme
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
-    // Solo aumentamos puntos si se selecciona una respuesta (k.isNotEmpty) y es correcta
     if (k.isNotEmpty &&
         widget.mydata.answers[questionKey] ==
             widget.mydata.options[questionKey]![k]) {
@@ -143,7 +150,10 @@ class _QuizPageState extends State<QuizPage> {
       });
     }
   }
-
+  
+  // ... (El resto de tu código: _choiceButton, build, _buildDuolingoQuestionArea...
+  // ... no necesitan cambios) ...
+  
   Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     bool isSelected = selectedAnswer == k;
@@ -381,10 +391,10 @@ class _QuizPageState extends State<QuizPage> {
                     backgroundColor: disableAnswer
                         ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
                         : (selectedAnswer != null
-                              ? pythonColorScheme
-                                    .primary // Si hay respuesta, primario
-                              : Colors
-                                    .green), // Color por defecto si no está deshabilitado
+                            ? pythonColorScheme
+                                .primary // Si hay respuesta, primario
+                            : Colors
+                                .green), // Color por defecto si no está deshabilitado
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

@@ -97,19 +97,24 @@ class ProfileRepository {
 
   Future<UserStatsModel> fetchUserStatsById(String userId) async {
     try {
-      final response = await _supabase
-          .from('estadistica_usuario')
-          .select()
-          .eq('id_usuario', userId)
-          .maybeSingle();
+      // Cambiamos el .select() directo por una llamada a la RPC
+      final response = await _supabase.rpc(
+        'get_user_stats', // <-- Llamamos a la nueva RPC
+        params: {'p_user_id': userId},
+      );
 
+      // Si la RPC no encuentra nada, puede devolver null
       if (response == null) {
         return UserStatsModel.empty();
       }
-
+      
+      // El JSON ya tiene los COALESCE(..., 0), así que es seguro.
       return UserStatsModel.fromJson(response);
+
     } catch (e) {
-      throw Exception('Error al cargar las estadísticas: $e');
+      // Manejo de error si la RPC falla
+      print('Error en fetchUserStatsById (RPC): $e');
+      return UserStatsModel.empty();
     }
   }
   

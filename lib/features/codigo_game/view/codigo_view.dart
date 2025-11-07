@@ -1,9 +1,16 @@
 // lib/features/codigo_game/view/codigo_view.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // --- ¡CAMBIO 1! ---
 import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
 
-class CodigoChallengeView extends StatefulWidget {
+// --- ¡CAMBIO 2! (Importaciones para la puntuación) ---
+import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+// --- FIN CAMBIO 2 ---
+
+// --- ¡CAMBIO 3! (Convertido a ConsumerStatefulWidget) ---
+class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
   final String retoId;
 
@@ -14,40 +21,39 @@ class CodigoChallengeView extends StatefulWidget {
   });
 
   @override
-  State<CodigoChallengeView> createState() => _CodigoChallengeViewState();
+  // --- ¡CAMBIO 4! ---
+  ConsumerState<CodigoChallengeView> createState() =>
+      _CodigoChallengeViewState();
 }
 
-class _CodigoChallengeViewState extends State<CodigoChallengeView> {
+// --- ¡CAMBIO 5! (Convertido a ConsumerState) ---
+class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   late final PageController _pageController;
 
-  // --- ¡CAMBIOS IMPORTANTES (DE NUEVO)! ---
+  // ¡CAMBIO! Marcados como 'final' para corregir el 'lint'
   final List<TextEditingController> _controllers = [];
-  final List<FocusNode> _focusNodes =
-      []; // <-- AÑADIDO: Lista para los nodos de foco
+  final List<FocusNode> _focusNodes = [];
   int _currentPageIndex = 0;
-  // --- FIN CAMBIOS ---
 
   bool _mostrandoFeedback = false;
   bool _esRespuestaCorrecta = false;
+
+  bool _hasSubmitted = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _setupControllersAndFocusNodesForPage(
-      0,
-    ); // <-- Nombre de función actualizado
+    _setupControllersAndFocusNodesForPage(0);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _clearControllersAndFocusNodes(); // <-- Nueva función helper de limpieza
+    _clearControllersAndFocusNodes();
     super.dispose();
   }
 
-  // --- ¡NUEVA FUNCIÓN HELPER! ---
-  // Limpia y "disposea" todos los controllers y focus nodes
   void _clearControllersAndFocusNodes() {
     for (var controller in _controllers) {
       controller.dispose();
@@ -58,12 +64,9 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
     _controllers.clear();
     _focusNodes.clear();
   }
-  // --- FIN NUEVA FUNCIÓN ---
 
-  // --- ¡FUNCIÓN MODIFICADA! ---
-  // Ahora configura ambas listas
   void _setupControllersAndFocusNodesForPage(int pageIndex) {
-    _clearControllersAndFocusNodes(); // Limpiamos los anteriores
+    _clearControllersAndFocusNodes();
 
     if (pageIndex >= widget.challenge.preguntas.length) return;
     final pregunta = widget.challenge.preguntas[pageIndex];
@@ -71,9 +74,7 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
     for (var fragmento in pregunta.fragmentos) {
       if (fragmento.tipo == 'input') {
         _controllers.add(TextEditingController());
-        _focusNodes.add(
-          FocusNode(),
-        ); // <-- AÑADIDO: Crea un FocusNode por cada input
+        _focusNodes.add(FocusNode());
       }
     }
 
@@ -81,38 +82,59 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
       _currentPageIndex = pageIndex;
     });
 
-    // --- AÑADIDO ---
-    // Da el foco al primer campo de texto automáticamente
     if (_focusNodes.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNodes.first.requestFocus();
+        if (mounted) {
+          _focusNodes.first.requestFocus();
+        }
       });
     }
   }
 
-  // --- ¡FUNCIÓN MODIFICADA! ---
-  void _verificarRespuesta() {
-    final preguntaActual = widget.challenge.preguntas[_currentPageIndex];
+  // --- ¡CORREGIDO! (Usando los parámetros correctos) ---
+  Future<void> _submitAttempt(bool esCorrecto) async {
+    if (_hasSubmitted) return;
+    _hasSubmitted = true;
 
+    final int retoIdAsInt;
+    try {
+      retoIdAsInt = int.parse(widget.retoId);
+    } catch (e) {
+      debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
+      return;
+    }
+
+    try {
+      final repository = ref.read(challengeRepositoryProvider);
+      await repository.submitChallengeAttempt(
+        retoId: retoIdAsInt,
+        fueExitoso: esCorrecto,
+        tiempoQueTardo: 0,
+      );
+
+      ref.read(appBarProvider.notifier).fetchStats();
+      ref.invalidate(globalRankingProvider);
+    } catch (e) {
+      debugPrint("Error al enviar intento de código: $e");
+    }
+  }
+
+  Future<void> _verificarRespuesta() async {
+    // ... (lógica de verificación) ...
+    final preguntaActual = widget.challenge.preguntas[_currentPageIndex];
     final fragmentosInput = preguntaActual.fragmentos
         .where((f) => f.tipo == 'input')
         .toList();
-
     bool todasCorrectas = true;
-
     for (int i = 0; i < fragmentosInput.length; i++) {
-      // --- ¡LÓGICA MEJORADA! ---
-      // Se quita .toLowerCase() para que sea case-sensitive
-      // Se mantiene .trim() para ignorar espacios al inicio/final
       final respuestaUsuario = _controllers[i].text.trim();
       final respuestaCorrecta = fragmentosInput[i].valor.trim();
-      // --- FIN MEJORA ---
-
       if (respuestaUsuario != respuestaCorrecta) {
         todasCorrectas = false;
         break;
       }
     }
+    // ... (fin lógica)
 
     setState(() {
       _esRespuestaCorrecta = todasCorrectas;
@@ -125,16 +147,20 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
         _siguientePregunta();
       });
     } else {
+      // --- LÓGICA DE FALLO ---
+      await _submitAttempt(false);
+
       Future.delayed(const Duration(milliseconds: 1500), () {
-        if (!mounted) return;
-        setState(() {
-          _mostrandoFeedback = false;
-        });
+        // --- ¡ARREGLO DE CRASH! ---
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+        // --- FIN ARREGLO ---
       });
     }
   }
 
-  void _siguientePregunta() {
+  Future<void> _siguientePregunta() async {
     if (_currentPageIndex < widget.challenge.preguntas.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -144,21 +170,24 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
         _mostrandoFeedback = false;
       });
     } else {
-      Navigator.of(context).pop();
+      // --- LÓGICA DE ÉXITO ---
+      await _submitAttempt(true);
+
+      // --- ¡ARREGLO DE CRASH! ---
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      // --- FIN ARREGLO ---
     }
-    // NOTA: Los controllers y focus nodes se actualizan
-    // gracias al 'onPageChanged' del PageView.
   }
 
-  // --- ¡FUNCIÓN MODIFICADA! ---
-  // Ahora construye los spans y asigna los focus nodes y el auto-avance
+  // ... (El resto de tu código: _buildCodeSpans, build, _buildFeedbackContainer...)
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
     TextStyle inputStyle,
   ) {
     final List<InlineSpan> spans = [];
-    // Obtenemos las respuestas correctas por adelantado
     final respuestasCorrectas = pregunta.fragmentos
         .where((f) => f.tipo == 'input')
         .map((f) => f.valor.trim())
@@ -171,7 +200,7 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
         spans.add(TextSpan(text: fragmento.valor, style: codeStyle));
       } else if (fragmento.tipo == 'input') {
         if (controllerIndex < _controllers.length) {
-          final int currentIndex = controllerIndex; // Captura el índice actual
+          final int currentIndex = controllerIndex;
 
           spans.add(
             WidgetSpan(
@@ -180,9 +209,7 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
               child: IntrinsicWidth(
                 child: TextField(
                   controller: _controllers[currentIndex],
-                  focusNode:
-                      _focusNodes[currentIndex], // <-- AÑADIDO: Asigna el FocusNode
-                  // autofocus se maneja en _setupControllers...
+                  focusNode: _focusNodes[currentIndex],
                   style: inputStyle,
                   decoration: const InputDecoration(
                     isDense: true,
@@ -192,21 +219,15 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
                       borderSide: BorderSide(color: Colors.cyanAccent),
                     ),
                   ),
-                  // --- ¡NUEVA LÓGICA DE AUTO-AVANCE! ---
                   onChanged: (value) {
-                    // Compara con la respuesta correcta (case-sensitive)
                     if (value.trim() == respuestasCorrectas[currentIndex]) {
-                      // Si es correcta, mira si hay un siguiente campo
                       if (currentIndex + 1 < _focusNodes.length) {
-                        // Si hay, mueve el foco a él
                         _focusNodes[currentIndex + 1].requestFocus();
                       } else {
-                        // Si es el último campo, quita el foco (cierra el teclado)
                         _focusNodes[currentIndex].unfocus();
                       }
                     }
                   },
-                  // --- FIN LÓGICA AUTO-AVANCE ---
                   onSubmitted: (_) => _verificarRespuesta(),
                 ),
               ),
@@ -218,7 +239,6 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
     }
     return spans;
   }
-  // --- FIN MODIFICACIÓN ---
 
   @override
   Widget build(BuildContext context) {
@@ -246,12 +266,9 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: widget.challenge.preguntas.length,
               onPageChanged: (newIndex) {
-                // --- ¡MODIFICADO! ---
-                // Llama a la nueva función
                 _setupControllersAndFocusNodesForPage(newIndex);
               },
               itemBuilder: (context, index) {
-                // Asegurarse de que el índice coincida con el estado
                 if (index != _currentPageIndex) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -290,15 +307,13 @@ class _CodigoChallengeViewState extends State<CodigoChallengeView> {
               },
             ),
           ),
-
-          _buildFeedbackContainer(), // (Sin cambios)
+          _buildFeedbackContainer(),
         ],
       ),
     );
   }
 
   Widget _buildFeedbackContainer() {
-    // ... (Esta función no necesita cambios)
     if (!_mostrandoFeedback) {
       return Padding(
         padding: const EdgeInsets.all(16.0),

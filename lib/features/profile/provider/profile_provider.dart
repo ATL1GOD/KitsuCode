@@ -21,15 +21,22 @@ final userProfileByIdProvider = StreamProvider.family<UserProfileModel, String>(
 });
 
 // Provider para las estadísticas
-final userStatsProvider = FutureProvider.family<UserStatsModel, String>((ref, userId) {
-  final profileRepository = ref.watch(profileRepositoryProvider);
-  return profileRepository.fetchUserStatsById(userId);
+final userStatsProvider = FutureProvider.autoDispose.family<UserStatsModel, String>((ref, userId) {
+    final repository = ref.watch(profileRepositoryProvider);
+    // ¡ESTA LÍNEA ESTÁ INCORRECTA!
+    return repository.fetchUserStats(); 
 });
 
 // Provider para los logros
 final userAchievementsProvider = FutureProvider.family<List<UserAchievementModel>, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.fetchUserAchievementsById(userId);
+});
+
+final userStatsByIdProvider = FutureProvider.autoDispose.family<UserStatsModel, String>((ref, userId) {
+  final repository = ref.watch(profileRepositoryProvider);
+  // ¡Esta es la llamada correcta!
+  return repository.fetchUserStatsById(userId);
 });
 
 // Provider de Realtime para seguimiento (sin cambios)
@@ -105,7 +112,7 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
       debugPrint("CAMBIO EN ESTADISTICAS (STATS) DETECTADO -> Invalidando providers de perfil");
       // --- ¡ARREGLADO! ---
       // Invalidamos el provider de datos, no el controlador
-      ref.invalidate(userStatsProvider(userId));
+      ref.invalidate(userStatsByIdProvider(userId));
     },
   ).subscribe();
 

@@ -1,10 +1,15 @@
+// lib/features/columnas_game/view/columnas_view.dart
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
 
-// (Asumiendo que tienes un provider para 'bottom_bar_provider' o similar)
-// import 'package:kitsucode/shared/providers/bottom_bar_provider.dart';
+// --- ¡CAMBIO 1! (Importaciones para la puntuación) ---
+import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+// --- FIN CAMBIO 1 ---
 
 class ColumnsChallengeView extends ConsumerStatefulWidget {
   final ColumnsChallenge challenge;
@@ -22,39 +27,27 @@ class ColumnsChallengeView extends ConsumerStatefulWidget {
 }
 
 class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
-  // Lista de todas las "burbujas"
   List<ChallengeItem> _items = [];
-
-  // El item que el usuario ha seleccionado
   ChallengeItem? _selectedItem;
-
-  // Los IDs de los pares que ya han sido resueltos
   final Set<int> _solvedPairIds = {};
-
-  // Para el feedback de error
   bool _isIncorrect = false;
   ChallengeItem? _incorrectItem1;
   ChallengeItem? _incorrectItem2;
 
+  bool _hasSubmitted = false;
+
   @override
   void initState() {
     super.initState();
-    // (Opcional: Ocultar la barra de navegación al entrar)
-    // Future.microtask(() {
-    //   ref.read(bottomBarVisibilityProvider.notifier).hide();
-    // });
-
-    // Prepara los items para la UI
     _setupItems();
   }
 
-  // --- ¡FUNCIÓN MODIFICADA! ---
   void _setupItems() {
+    // ... (Tu función _setupItems no cambia) ...
     final List<ChallengeItem> leftColumn = [];
     final List<ChallengeItem> rightColumn = [];
     final random = Random();
 
-    // 1. Asignar cada par a una columna opuesta
     for (var pair in widget.challenge.pares) {
       final terminoItem = ChallengeItem(
         pairId: pair.id,
@@ -67,7 +60,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         type: ItemType.definicion,
       );
 
-      // Aleatoriamente decide qué item va a la izquierda y cuál a la derecha
       if (random.nextBool()) {
         leftColumn.add(terminoItem);
         rightColumn.add(definicionItem);
@@ -76,88 +68,106 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         rightColumn.add(terminoItem);
       }
     }
-
-    // 2. Barajar cada columna de forma independiente
-    // Esto asegura que el orden vertical sea aleatorio, pero
-    // mantiene la regla de que los pares están en columnas opuestas.
     leftColumn.shuffle(random);
     rightColumn.shuffle(random);
-
-    // 3. Intercalar las listas para el GridView
-    // El GridView leerá: [L0, R0, L1, R1, L2, R2, ...]
     _items = [];
     for (int i = 0; i < leftColumn.length; i++) {
       _items.add(leftColumn[i]);
       _items.add(rightColumn[i]);
     }
   }
-  // --- FIN DE LA FUNCIÓN MODIFICADA ---
+
+  // --- ¡CORREGIDO! (Usando los parámetros correctos) ---
+  Future<void> _submitAttempt(bool esCorrecto) async {
+    if (_hasSubmitted) return;
+    _hasSubmitted = true;
+    
+    final int retoIdAsInt;
+    try {
+      retoIdAsInt = int.parse(widget.retoId);
+    } catch (e) {
+      debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
+      return; 
+    }
+
+    try {
+      final repository = ref.read(challengeRepositoryProvider);
+      await repository.submitChallengeAttempt(
+        retoId: retoIdAsInt,
+        fueExitoso: esCorrecto,
+        tiempoQueTardo: 0,
+      );
+
+      ref.read(appBarProvider.notifier).fetchStats();
+      ref.invalidate(globalRankingProvider);
+
+    } catch (e) {
+      debugPrint("Error al enviar intento de columnas: $e");
+    }
+  }
 
   void _onItemTapped(ChallengeItem tappedItem) {
-    // No hacer nada si ya está resuelto o si estamos en animación de error
     if (_solvedPairIds.contains(tappedItem.pairId) || _isIncorrect) {
       return;
     }
 
     setState(() {
       if (_selectedItem == null) {
-        // --- Primer item seleccionado ---
         _selectedItem = tappedItem;
-        _incorrectItem1 =
-            null; // Limpiar errores anteriores si selecciona de nuevo
+        _incorrectItem1 = null; 
         _incorrectItem2 = null;
       } else {
-        // --- Segundo item seleccionado (comparar) ---
-
         bool isCorrectPair =
             _selectedItem!.pairId == tappedItem.pairId &&
             _selectedItem!.type != tappedItem.type;
 
         if (isCorrectPair) {
-          // --- ¡Correcto! ---
           _solvedPairIds.add(tappedItem.pairId);
-          _selectedItem = null; // Limpiar selección
+          _selectedItem = null; 
 
-          // Comprobar si ganó
           if (_solvedPairIds.length == widget.challenge.pares.length) {
-            // Pequeño delay para que el usuario vea el par correcto antes del modal
             Future.delayed(const Duration(milliseconds: 300), () {
-              _showWinDialog();
+              _showWinDialogAndSubmit(); // <-- Llamada a la función de éxito
             });
           }
         } else if (_selectedItem == tappedItem) {
-          // --- Deseleccionar ---
           _selectedItem = null;
         } else {
-          // --- ¡Incorrecto! ---
-          // Guardamos los dos items incorrectos
           _incorrectItem1 = _selectedItem;
           _incorrectItem2 = tappedItem;
-          _selectedItem = null; // Limpiamos la selección
-          _triggerIncorrectAnimation(); // Llamamos a la animación
+          _selectedItem = null; 
+          _triggerIncorrectAnimation(); // <-- Llamada a la función de fallo
         }
       }
     });
   }
 
-  void _triggerIncorrectAnimation() {
+  // --- ¡CAMBIO CRÍTICO! (Modificado para ser async y checar 'mounted') ---
+  Future<void> _triggerIncorrectAnimation() async {
     setState(() {
       _isIncorrect = true;
     });
 
-    // Feedback visual rojo
+    // ¡Enviamos el intento fallido!
+    await _submitAttempt(false); // <--- Llama con 'false'
+
     Future.delayed(const Duration(milliseconds: 700), () {
-      setState(() {
-        _isIncorrect = false;
-        _incorrectItem1 = null; // Limpiar items incorrectos
-        _incorrectItem2 = null;
-      });
+      // --- ¡ARREGLO DE CRASH! ---
+      // Solo haz pop si el widget todavía está en pantalla.
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      // --- FIN ARREGLO ---
     });
   }
 
-  void _showWinDialog() {
-    // TODO: Implementar lógica de victoria
-    // (Navegar a la pantalla de resultados, llamar a un provider, etc.)
+  // --- ¡CAMBIO! (Modificado para ser async y checar 'mounted') ---
+  Future<void> _showWinDialogAndSubmit() async {
+    // 1. Enviar el intento "completado"
+    await _submitAttempt(true); // <--- Llama con 'true'
+
+    // 2. Mostrar el diálogo de victoria
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -167,10 +177,15 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         actions: [
           TextButton(
             onPressed: () {
-              // (Opcional: Mostrar la barra de navegación al salir)
-              // ref.read(bottomBarVisibilityProvider.notifier).show();
-              Navigator.of(context).pop(); // Cierra el dialogo
-              Navigator.of(context).pop(); // Regresa de la pantalla del reto
+              // --- ¡ARREGLO DE CRASH! ---
+              // Hacemos pop 2 veces de forma segura
+              if (Navigator.of(context).canPop()) {
+                 Navigator.of(context).pop(); // Cierra el dialogo
+              }
+              if (Navigator.of(context).canPop()) {
+                 Navigator.of(context).pop(); // Regresa de la pantalla del reto
+              }
+              // --- FIN ARREGLO ---
             },
             child: const Text('Continuar'),
           ),
@@ -179,19 +194,19 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
+
+  // ... (El resto de tu código: build, _buildItemChip, _buildCheckButton...)
+  // ... (Pega el resto de tu archivo 'columnas_view.dart' aquí sin cambios) ...
   @override
   Widget build(BuildContext context) {
-    // Calculamos el progreso
     double progress = _solvedPairIds.length / widget.challenge.pares.length;
     bool isComplete = progress == 1.0;
 
     return Scaffold(
-      backgroundColor: Colors.white, // Fondo blanco como en la imagen
-      // AppBar simulada en el body para control total
+      backgroundColor: Colors.white, 
       body: SafeArea(
         child: Column(
           children: [
-            // --- Barra de progreso y Salir ---
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -227,35 +242,32 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 ],
               ),
             ),
-
-            // --- Título ---
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Selecciona los pares', // Título de la imagen
+                  'Selecciona los pares', 
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF3C3C3C), // Color oscuro, no blanco
+                    color: Color(0xFF3C3C3C), 
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 55),
-            // --- Grid de Botones ---
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: GridView.builder(
-                  key: const ValueKey('grid_view'), // Key para estabilidad
+                  key: const ValueKey('grid_view'), 
                   itemCount: _items.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // Dos columnas fijas
-                    childAspectRatio: 2.8, // Ancho / Alto del botón
-                    crossAxisSpacing: 12.0, // Espacio horizontal
-                    mainAxisSpacing: 30.0, // Espacio vertical
+                    crossAxisCount: 2, 
+                    childAspectRatio: 2.8, 
+                    crossAxisSpacing: 12.0, 
+                    mainAxisSpacing: 30.0, 
                   ),
                   itemBuilder: (context, index) {
                     return _buildItemChip(_items[index]);
@@ -263,8 +275,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 ),
               ),
             ),
-
-            // --- Botón de Comprobar ---
             _buildCheckButton(isComplete),
           ],
         ),
@@ -272,15 +282,12 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
-  // El widget para cada "burbuja" (ahora como botón de Duolingo)
   Widget _buildItemChip(ChallengeItem item) {
     final bool isSolved = _solvedPairIds.contains(item.pairId);
     final bool isSelected = _selectedItem == item;
-    // Esta es la nueva lógica: solo es incorrecto si está en la lista de incorrectos
     final bool isMarkedIncorrect =
         _isIncorrect && (_incorrectItem1 == item || _incorrectItem2 == item);
 
-    // --- Define los estilos según el estado (Estilo Duolingo Blanco) ---
     Color backgroundColor = Colors.white;
     Color borderColor = Colors.grey.shade300;
     Color textColor = const Color(0xFF585858);
@@ -304,26 +311,25 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       elevation = 4.0;
     }
 
-    // Botones resueltos se "desactivan"
     VoidCallback? onTap = isSolved ? null : () => _onItemTapped(item);
 
     return Material(
       elevation: elevation,
-      color: backgroundColor, // El color de fondo va en el Material
+      color: backgroundColor, 
       borderRadius: BorderRadius.circular(12.0),
       shadowColor: Colors.grey.shade50,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Container(
-          width: double.infinity, // Ocupa el espacio del Grid
+          width: double.infinity, 
           height: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12.0),
             border: Border.all(
               color: borderColor,
               width: 2.5,
-            ), // Borde más grueso
+            ), 
           ),
           child: Center(
             child: Padding(
@@ -346,7 +352,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
-  // Widget para el botón inferior "COMPROBAR"
   Widget _buildCheckButton(bool isComplete) {
     return Container(
       width: double.infinity,
@@ -354,11 +359,9 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       child: ElevatedButton(
         onPressed: isComplete
             ? () {
-                // Aquí puedes llamar a _showWinDialog() o
-                // a tu provider de resultados
-                _showWinDialog();
+                _showWinDialogAndSubmit();
               }
-            : null, // Se activa solo al completar
+            : null, 
         style: ElevatedButton.styleFrom(
           backgroundColor: isComplete ? Colors.green : Colors.grey.shade300,
           disabledBackgroundColor: Colors.grey.shade300,

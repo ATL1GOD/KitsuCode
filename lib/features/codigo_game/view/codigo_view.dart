@@ -8,6 +8,7 @@ import 'package:kitsucode/features/challenge/repository/challenge_repository.dar
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 // --- FIN CAMBIO 2 ---
+import 'package:kitsucode/features/home/provider/home_provider.dart';
 
 // --- ¡CAMBIO 3! (Convertido a ConsumerStatefulWidget) ---
 class CodigoChallengeView extends ConsumerStatefulWidget {
@@ -162,16 +163,18 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
   Future<void> _siguientePregunta() async {
     if (_currentPageIndex < widget.challenge.preguntas.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // ... (lógica para ir a la siguiente página)
       setState(() {
         _mostrandoFeedback = false;
       });
     } else {
       // --- LÓGICA DE ÉXITO ---
       await _submitAttempt(true);
+
+      // --- ¡¡LÍNEA CLAVE AÑADIDA!! ---
+      // Invalida el provider del mapa para forzar un recálculo
+      ref.invalidate(homeViewModelProvider);
+      // --- FIN LÍNEA AÑADIDA ---
 
       // --- ¡ARREGLO DE CRASH! ---
       if (mounted) {

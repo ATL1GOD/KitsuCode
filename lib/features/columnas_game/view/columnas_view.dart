@@ -10,6 +10,7 @@ import 'package:kitsucode/features/challenge/repository/challenge_repository.dar
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 // --- FIN CAMBIO 1 ---
+import 'package:kitsucode/features/home/provider/home_provider.dart';
 
 class ColumnsChallengeView extends ConsumerStatefulWidget {
   final ColumnsChallenge challenge;
@@ -81,13 +82,13 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   Future<void> _submitAttempt(bool esCorrecto) async {
     if (_hasSubmitted) return;
     _hasSubmitted = true;
-    
+
     final int retoIdAsInt;
     try {
       retoIdAsInt = int.parse(widget.retoId);
     } catch (e) {
       debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
-      return; 
+      return;
     }
 
     try {
@@ -100,7 +101,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
       ref.read(appBarProvider.notifier).fetchStats();
       ref.invalidate(globalRankingProvider);
-
     } catch (e) {
       debugPrint("Error al enviar intento de columnas: $e");
     }
@@ -114,7 +114,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     setState(() {
       if (_selectedItem == null) {
         _selectedItem = tappedItem;
-        _incorrectItem1 = null; 
+        _incorrectItem1 = null;
         _incorrectItem2 = null;
       } else {
         bool isCorrectPair =
@@ -123,7 +123,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
         if (isCorrectPair) {
           _solvedPairIds.add(tappedItem.pairId);
-          _selectedItem = null; 
+          _selectedItem = null;
 
           if (_solvedPairIds.length == widget.challenge.pares.length) {
             Future.delayed(const Duration(milliseconds: 300), () {
@@ -135,7 +135,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         } else {
           _incorrectItem1 = _selectedItem;
           _incorrectItem2 = tappedItem;
-          _selectedItem = null; 
+          _selectedItem = null;
           _triggerIncorrectAnimation(); // <-- Llamada a la función de fallo
         }
       }
@@ -177,13 +177,18 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         actions: [
           TextButton(
             onPressed: () {
+              // --- ¡¡LÍNEAS CLAVE AÑADIDAS!! ---
+              // 1. Invalida el provider del mapa
+              ref.invalidate(homeViewModelProvider);
+              // --- FIN LÍNEAS AÑADIDAS ---
+
               // --- ¡ARREGLO DE CRASH! ---
-              // Hacemos pop 2 veces de forma segura
+              // 2. Hacemos pop 2 veces de forma segura
               if (Navigator.of(context).canPop()) {
-                 Navigator.of(context).pop(); // Cierra el dialogo
+                Navigator.of(context).pop(); // Cierra el dialogo
               }
               if (Navigator.of(context).canPop()) {
-                 Navigator.of(context).pop(); // Regresa de la pantalla del reto
+                Navigator.of(context).pop(); // Regresa de la pantalla del reto
               }
               // --- FIN ARREGLO ---
             },
@@ -194,7 +199,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
-
   // ... (El resto de tu código: build, _buildItemChip, _buildCheckButton...)
   // ... (Pega el resto de tu archivo 'columnas_view.dart' aquí sin cambios) ...
   @override
@@ -203,7 +207,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     bool isComplete = progress == 1.0;
 
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -247,11 +251,11 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Selecciona los pares', 
+                  'Selecciona los pares',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF3C3C3C), 
+                    color: Color(0xFF3C3C3C),
                   ),
                 ),
               ),
@@ -261,13 +265,13 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: GridView.builder(
-                  key: const ValueKey('grid_view'), 
+                  key: const ValueKey('grid_view'),
                   itemCount: _items.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, 
-                    childAspectRatio: 2.8, 
-                    crossAxisSpacing: 12.0, 
-                    mainAxisSpacing: 30.0, 
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.8,
+                    crossAxisSpacing: 12.0,
+                    mainAxisSpacing: 30.0,
                   ),
                   itemBuilder: (context, index) {
                     return _buildItemChip(_items[index]);
@@ -315,21 +319,18 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
     return Material(
       elevation: elevation,
-      color: backgroundColor, 
+      color: backgroundColor,
       borderRadius: BorderRadius.circular(12.0),
       shadowColor: Colors.grey.shade50,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Container(
-          width: double.infinity, 
+          width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(
-              color: borderColor,
-              width: 2.5,
-            ), 
+            border: Border.all(color: borderColor, width: 2.5),
           ),
           child: Center(
             child: Padding(
@@ -361,7 +362,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
             ? () {
                 _showWinDialogAndSubmit();
               }
-            : null, 
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: isComplete ? Colors.green : Colors.grey.shade300,
           disabledBackgroundColor: Colors.grey.shade300,

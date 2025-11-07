@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
-import 'package:kitsucode/shared/appbar/kitsu_appbar.dart'; 
+import 'package:kitsucode/shared/appbar/kitsu_appbar.dart';
 // --- ¡CAMBIO 1! ---
 // Importamos el provider del AppBar para saber el lenguaje actual
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -19,13 +19,18 @@ class HomeView extends ConsumerStatefulWidget {
 
 class _HomeViewState extends ConsumerState<HomeView> {
   int iCurrentSection = 0;
-  
-  final double _changeThresholdPosition = 102.0; 
-  final heightFirstBox = 192.0; 
+
+  final double _changeThresholdPosition = 102.0;
+  final heightFirstBox = 192.0;
 
   final List<double> _sectionOffsets = [];
   final scrollCtrl = ScrollController();
-  final double _aestheticOffset = 80.0; 
+  // final double _aestheticOffset = 80.0;
+
+  // 🔑 CAMBIO CLAVE: Margen de anticipación (e.g., 50.0 pixeles)
+  // El título de la sección cambiará 50px antes de que el nivel
+  // alcance la posición de detección.
+  final double _anticipationMargin = 0.1;
 
   // (Tu función initState - sin cambios)
   @override
@@ -44,7 +49,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
     sectionsAsync.whenData((sections) {
       if (sections.isEmpty) return;
-      double currentOffset = heightFirstBox + 24.0; 
+      double currentOffset = heightFirstBox + 24.0;
       _sectionOffsets.clear();
       _sectionOffsets.add(currentOffset);
       for (int i = 0; i < sections.length; i++) {
@@ -62,12 +67,19 @@ class _HomeViewState extends ConsumerState<HomeView> {
     });
   }
 
-  // (Tu función scrollListener - sin cambios)
+  // 🔑 FUNCIÓN CON EL AJUSTE DEL UMBRAL
   void scrollListener() {
     if (_sectionOffsets.isEmpty) return;
     final currentScroll = scrollCtrl.position.pixels;
+
+    // El umbral se calcula usando el desplazamiento actual,
+    // la posición fija de la barra (_changeThresholdPosition),
+    // y RESTANDO el margen de anticipación.
+    // Esto hace que 'titleDisplayPosition' sea un valor menor,
+    // forzando que el índice cambie ANTES.
     final double titleDisplayPosition =
-        currentScroll + _changeThresholdPosition - _aestheticOffset; 
+        currentScroll + _changeThresholdPosition - _anticipationMargin;
+
     int newIndex = 0;
     for (int i = _sectionOffsets.length - 1; i >= 0; i--) {
       if (titleDisplayPosition >= _sectionOffsets[i]) {
@@ -90,9 +102,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
     super.dispose();
   }
 
-  // --- ¡CAMBIO 2! ---
-  // Creamos un helper que devuelve el path del mapa correcto
-  // basado en el nombre del lenguaje.
+  // (Tu función _getMapBackgroundForLanguage - sin cambios)
   String _getMapBackgroundForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
@@ -107,7 +117,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final sectionsAsync = ref.watch(homeViewModelProvider);
@@ -116,7 +125,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
     // Ahora TAMBIÉN observamos el appBarProvider.
     // Cuando el 'languageName' cambie, este widget se reconstruirá.
     final appBarState = ref.watch(appBarProvider);
-    
+
     // Obtenemos el path del mapa dinámicamente
     final mapAssetPath = _getMapBackgroundForLanguage(appBarState.languageName);
 
@@ -136,17 +145,20 @@ class _HomeViewState extends ConsumerState<HomeView> {
             // Un estado de carga mejorado mientras el appBarProvider
             // le pasa el ID al homeViewModelProvider.
             if (appBarState.isLoading) {
-               return const Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
             // Si no está cargando y no hay secciones, es que no hay datos.
-            return const Center(child: Text("No hay secciones para este lenguaje."));
+            return const Center(
+              child: Text("No hay secciones para este lenguaje."),
+            );
           }
-          
+
           return Stack(
             children: [
               // 1. FONDO IMAGEN (¡AHORA ES DINÁMICO!)
               Container(
-                decoration: BoxDecoration( // <-- Quitamos 'const'
+                decoration: BoxDecoration(
+                  // <-- Quitamos 'const'
                   image: DecorationImage(
                     // --- ¡CAMBIO 5! ---
                     image: AssetImage(mapAssetPath), // <-- Usamos la variable
@@ -155,7 +167,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   ),
                 ),
               ),
-              
+
               // 2. LISTVIEW (Sin cambios)
               ListView.separated(
                 controller: scrollCtrl,
@@ -172,7 +184,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 separatorBuilder: (_, i) => const SizedBox(height: 24.0),
                 itemCount: sections.length + 1,
               ),
-              
+
               // 3. "ESCUDO" DE IMAGEN (¡AHORA ES DINÁMICO!)
               Positioned(
                 top: 0,
@@ -180,7 +192,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 right: 0,
                 height: _changeThresholdPosition,
                 child: Container(
-                  decoration: BoxDecoration( // <-- Quitamos 'const'
+                  decoration: BoxDecoration(
+                    // <-- Quitamos 'const'
                     image: DecorationImage(
                       // --- ¡CAMBIO 6! ---
                       image: AssetImage(mapAssetPath), // <-- Usamos la variable
@@ -193,13 +206,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
               ),
 
               // 4. APPBAR (Sin cambios)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: KitsuAppBar(),
-              ),
-              
+              const Positioned(top: 0, left: 0, right: 0, child: KitsuAppBar()),
+
               // 5. ETAPA (Sin cambios)
               Positioned(
                 top: _changeThresholdPosition,
@@ -219,7 +227,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
     );
   }
 }
-
 
 // (Tu clase CurrentSection sin cambios)
 class CurrentSection extends StatelessWidget {

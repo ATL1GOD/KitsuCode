@@ -9,6 +9,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart'; 
 import 'package:kitsucode/features/profile/view/widgets/achievement_card.dart';
+import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
@@ -180,13 +181,7 @@ class _AchievementsGrid extends StatelessWidget {
 
         // --- SECCIÓN 1: LOGROS OBTENIDOS ---
         if (obtainedAchievements.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              'Logros Obtenidos ($obtainedCount)',
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface),
-            ),
-          ),
+          // ... (Este GridView déjalo como está, funciona bien)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -201,7 +196,7 @@ class _AchievementsGrid extends StatelessWidget {
               final achievement = obtainedAchievements[index];
               return FadeInUp(
                 delay: Duration(milliseconds: 50 * index),
-                child: AchievementCard(
+                child: AchievementCard( // <-- Este está bien (Opacity 1.0)
                   achievement: achievement,
                   colors: colors,
                   isCompactView: false,
@@ -221,6 +216,8 @@ class _AchievementsGrid extends StatelessWidget {
               style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface),
             ),
           ),
+          
+          // ======== 💡 ¡EL HACK BUENO, AHORA SÍ! 💡 ========
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -233,16 +230,41 @@ class _AchievementsGrid extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               final achievement = unobtainedAchievements[index];
+
               return FadeInUp(
                 delay: Duration(milliseconds: 50 * index),
-                child: AchievementCard(
-                  achievement: achievement,
-                  colors: colors,
-                  isCompactView: false, 
-                ),
-              );
-            },
+
+                // 1. Envolvemos todo en un GestureDetector LIMPIO
+        child: GestureDetector(
+          
+          // ======== 👇 ¡LA LÍNEA QUE ARREGLA LA ZONA DE CLIC! 👇 ========
+          // Esto hace que el GestureDetector capture el clic
+          // aunque su hijo (IgnorePointer) lo esté ignorando.
+          behavior: HitTestBehavior.opaque,
+          // ======== 👆 ¡LA LÍNEA ES CLAVE AQUÍ! 👆 ========
+
+          onTap: () {
+            // ¡ESTE CONTEXTO SÍ ESTÁ LIMPIO!
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              barrierColor: Colors.black.withOpacity(0.6), 
+              builder: (ctx) => AchievementModal(achievement: achievement),
+            );
+          },
+          
+          // 2. Apagamos TODOS los clics de la tarjeta "envenenada"
+          child: IgnorePointer(
+            child: AchievementCard(
+              achievement: achievement,
+              colors: colors,
+              isCompactView: false, 
+            ),
           ),
+        ),
+      );
+    },
+  ),
         ],
       ],
     );

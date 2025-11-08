@@ -76,16 +76,19 @@ class _TimeFilterTabs extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final selectedDifficulty = ref.watch(selectedDifficultyProvider);
-    final allDifficulties = ref.watch(allDifficultiesProvider);
+
+    // --- CAMBIO 1: USA LOS PROVIDERS CORRECTOS ---
+    final selectedTime = ref.watch(selectedTimeFilterProvider); // <-- Cambiado
+    final allTimeFilters = ref.watch(allTimeFiltersProvider); // <-- Cambiado
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: allDifficulties.entries.map((entry) {
-        final isSelected = selectedDifficulty == entry.key;
+      children: allTimeFilters.entries.map((entry) { // <-- Cambiado
+        final isSelected = selectedTime == entry.key; // <-- Cambiado
         return GestureDetector(
           onTap: () {
-            ref.read(selectedDifficultyProvider.notifier).state = entry.key;
+            // --- CAMBIO 2: ACTUALIZA EL PROVIDER CORRECTO ---
+            ref.read(selectedTimeFilterProvider.notifier).state = entry.key; // <-- Cambiado
           },
           child: Column(
             children: [

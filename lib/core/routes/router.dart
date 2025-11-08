@@ -1,3 +1,4 @@
+// [COMIENZO DEL ARCHIVO router.dart]
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 // Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
-import 'package:kitsucode/shared/navbar/navigation_scaffold.dart'; // Asegúrate de tener este archivo
+import 'package:kitsucode/shared/navbar/navigation_scaffold.dart';
 
 // --- TUS VISTAS REALES ---
 import 'package:kitsucode/features/home/view/home_view.dart';
@@ -17,9 +18,17 @@ import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
-// ------------------------------------------------
 
-// Claves para mantener el estado de la navegación en cada pestaña.
+// --- ¡NUEVO! IMPORTAR EL DISTRIBUIDOR DE RETOS ---
+// (La ruta puede variar según donde lo guardes)
+import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
+import 'package:kitsucode/features/desafio/view/desafio_view.dart';
+
+import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+
+// Claves (sin cambios)
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
   'ranking': GlobalKey<NavigatorState>(debugLabel: 'rankingNav'),
@@ -35,6 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(ref),
     redirect: (BuildContext context, GoRouterState state) {
+      // ... Tu lógica de redirección (sin cambios) ...
       return authState.when(
         data: (data) {
           final isAuthenticated = data.session != null;
@@ -50,22 +60,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             );
           }
 
-          // Desde el splash, decidimos a dónde ir
           if (isSplashing) {
             return isAuthenticated ? '/home' : authRoute;
           }
-
-          // Si el usuario está autenticado y trata de ir a login/register, llévalo a home
           if (isAuthenticated && isGoingToAuthRoute) {
             return '/home';
           }
-
-          // Si el usuario NO está autenticado y trata de ir a una ruta protegida, llévalo a login
           if (!isAuthenticated && !isGoingToAuthRoute) {
             return authRoute;
           }
-
-          // En cualquier otro caso, no hagas nada.
           return null;
         },
         loading: () => null,
@@ -78,17 +81,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       );
     },
     routes: [
-      // --- Splash screen ---
+      // --- Splash screen (sin cambios) ---
       GoRoute(
         path: '/splash',
         builder: (context, state) =>
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
 
-      // --- Ruta pública de autenticación ---
+      // --- Ruta pública de autenticación (sin cambios) ---
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       // --- Rutas internas (ya autenticado) ---
+
+      // --- ¡RUTA ÚNICA DE RETOS! (MODIFICADO) ---
+      GoRoute(
+        path: '/reto/:retoId', // <-- RUTA GENERAL
+        builder: (context, state) {
+          final retoId = state.pathParameters['retoId']!;
+          // Apunta a tu nuevo distribuidor
+          return RetoDistribuidorPage(retoId: retoId);
+        },
+      ),
+
+      // --- (Se borran las rutas /quiz-loader, /puzzle-loader, etc.) ---
+      // --- Fin de rutas de retos ---
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
@@ -96,6 +112,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
+          // ... (sin cambios)
           final currentAvatar =
               state.extra as String? ?? 'assets/images/login_zorro.png';
           return EditAvatarView(currentAvatar: currentAvatar);
@@ -106,12 +123,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AllStatsView(),
       ),
 
-      // --- NAVBAR PRINCIPAL ---
+      // --- RUTA PARA FEEDBACK DE ÉXITO ---
+GoRoute(
+  path: '/challenge_success',
+  name: 'challenge_success',
+  builder: (context, state) {
+    // Extraemos los trofeos del argumento 'extra'
+    final int trofeos = (state.extra is int) ? state.extra as int : 0;
+    return ChallengeSuccessView(trofeosObtenidos: trofeos);
+  },
+),
+
+// --- RUTA PARA FEEDBACK DE FRACASO ---
+GoRoute(
+  path: '/challenge_failure',
+  name: 'challenge_failure',
+  builder: (context, state) {
+    // Extraemos la lista de recursos del argumento 'extra'
+    final List<RecursoModel> recursos = (state.extra is List<RecursoModel>) 
+        ? state.extra as List<RecursoModel>
+        : <RecursoModel>[]; // Lista vacía como fallback
+
+    return ChallengeFailureView(recursos: recursos);
+  },
+),
+
+      // --- NAVBAR PRINCIPAL (sin cambios) ---
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
+          // ... (Tus 4 branches de navbar: home, ranking, directory, profile sin cambios) ...
           // 1️⃣ HOME
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['home'],
@@ -134,17 +177,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // 3️⃣ DIRECTORIO (puedes usar para otra sección futura)
+          // 3️⃣ DIRECTORIO
           StatefulShellBranch(
-            navigatorKey: _navigatorKeys['directory'],
+            navigatorKey: _navigatorKeys['desafiomensual'],
             routes: [
               GoRoute(
-                path: '/directory',
-                builder: (context, state) => const Scaffold(
-                  body: Center(
-                    child: Text('Pantalla de Directorio (placeholder)'),
-                  ),
-                ),
+                path: '/desafios',
+                builder: (context, state) => const DesafiosView(),
               ),
             ],
           ),
@@ -172,6 +211,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+// (Sin cambios)
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     notifyListeners();
@@ -180,3 +220,4 @@ class GoRouterRefreshStream extends ChangeNotifier {
     });
   }
 }
+// [FIN DEL ARCHIVO router.dart]

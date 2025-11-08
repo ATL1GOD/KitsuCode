@@ -5,21 +5,46 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kitsucode/features/quiz_game/view/widgets/result_page.dart';
+// import 'package:kitsucode/features/quiz_game/view/widgets/result_page.dart'; // <-- ELIMINADO
 import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
+import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Importa QuizData
 
-class QuizPage extends StatefulWidget {
+// --- ¡NUEVOS IMPORTS! (Copiados de result_page.dart) ---
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
+import 'package:kitsucode/core/utils/app_themes.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+// --- FIN NUEVOS IMPORTS ---
+
+
+// --- ¡Convertido a ConsumerStatefulWidget! ---
+class QuizPage extends ConsumerStatefulWidget {
   final QuizData mydata;
   final String retoId;
 
+<<<<<<< HEAD
   const QuizPage({super.key, required this.mydata, required this.retoId});
 
   @override
   State<QuizPage> createState() => _QuizPageState();
+=======
+  const QuizPage({
+    super.key, 
+    required this.mydata,
+    required this.retoId,
+  });
+  
+  @override
+  ConsumerState<QuizPage> createState() => _QuizPageState();
+>>>>>>> puzzle_game
 }
 
-class _QuizPageState extends State<QuizPage> {
+// --- ¡Convertido a ConsumerState! ---
+class _QuizPageState extends ConsumerState<QuizPage> { 
   int marks = 0;
   int i = 0;
   bool disableAnswer = false;
@@ -28,11 +53,13 @@ class _QuizPageState extends State<QuizPage> {
   String _showTimer = "30";
   late List<int> _randomArray;
   int totalQuestions = 0;
-
   String? selectedAnswer;
-
   bool _cancelTimer = false;
+<<<<<<< HEAD
   bool? _wasCorrect;
+=======
+  bool _hasSubmitted = false; 
+>>>>>>> puzzle_game
 
   @override
   void initState() {
@@ -66,7 +93,7 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-  void _startTimer() async {
+  void _startTimer() {
     const onesec = Duration(seconds: 1);
     Timer.periodic(onesec, (Timer t) {
       if (!mounted) {
@@ -107,6 +134,7 @@ class _QuizPageState extends State<QuizPage> {
           if (context.mounted) {
             int duration = (30 * totalQuestions) - (timer < 0 ? 0 : timer);
 
+<<<<<<< HEAD
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => QuizResultPage(
@@ -116,6 +144,15 @@ class _QuizPageState extends State<QuizPage> {
                   retoId: widget.retoId,
                 ),
               ),
+=======
+            final double scoreRatio = marks / (totalQuestions * 5);
+            final int percentage = (scoreRatio * 100).round();
+
+            _showFeedbackModal(
+              percentage: percentage,
+              durationInSeconds: duration,
+              recursos: widget.mydata.recursos,
+>>>>>>> puzzle_game
             );
           }
           return;
@@ -128,11 +165,18 @@ class _QuizPageState extends State<QuizPage> {
     _startTimer();
   }
 
+  // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN DEL BUG DE PUNTUACIÓN!!! ---
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
+<<<<<<< HEAD
     bool correct = false;
 
     if (k.isNotEmpty && k == widget.mydata.answers[questionKey]) {
+=======
+    
+    // Compara la 'letra' seleccionada (k) con la 'letra' de la respuesta (answers[questionKey])
+    if (k.isNotEmpty && widget.mydata.answers[questionKey] == k) {
+>>>>>>> puzzle_game
       marks = marks + 5;
       correct = true;
     }
@@ -145,7 +189,99 @@ class _QuizPageState extends State<QuizPage> {
       });
     }
   }
+<<<<<<< HEAD
 
+=======
+  // --- FIN DE LA CORRECCIÓN ---
+
+
+  // --- Lógica del modal (movida de result_page) ---
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    }
+  }
+
+  void _showFeedbackModal({
+    required int percentage,
+    required int durationInSeconds,
+    required List<RecursoModel> recursos,
+  }) {
+    if (_hasSubmitted) return; 
+    
+    final bool esCorrecto = (percentage > 50);
+
+    final appBarState = ref.read(appBarProvider);
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      Theme.of(context).brightness,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useRootNavigator: true, 
+      builder: (ctx) { 
+        return Theme(
+          data: challengeTheme,
+          child: ChallengeFeedbackModal(
+            isCorrect: esCorrecto,
+            onContinue: () async {
+              
+              Navigator.of(ctx).pop(); 
+              
+              if (_hasSubmitted) return;
+              _hasSubmitted = true; 
+
+              final repository = ref.read(challengeRepositoryProvider);
+              final int retoIdAsInt = int.parse(widget.retoId);
+
+              if (esCorrecto) {
+                final int trofeos = await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: true,
+                  tiempoQueTardo: durationInSeconds, 
+                );
+                
+                ref.read(appBarProvider.notifier).fetchStats();
+                ref.invalidate(globalRankingProvider);
+                
+                if (!context.mounted) return;
+                context.pushReplacement('/challenge_success', extra: trofeos);
+              
+              } else {
+                 await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: false,
+                  tiempoQueTardo: durationInSeconds,
+                );
+
+                ref.read(appBarProvider.notifier).fetchStats();
+                
+                if (!context.mounted) return;
+                context.pushReplacement('/challenge_failure', extra: recursos);
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+  
+  // ... (El resto de tu código: _choiceButton, build, _buildDuolingoQuestionArea...
+  // ... no necesitan cambios y van aquí) ...
+  
+>>>>>>> puzzle_game
   Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     bool isSelected = selectedAnswer == k;
@@ -155,10 +291,23 @@ class _QuizPageState extends State<QuizPage> {
     Color textColor = pythonColorScheme.onSurface;
 
     if (disableAnswer) {
+<<<<<<< HEAD
       final String correctOptionKey = widget.mydata.answers[questionKey] ?? '';
       // --- ¡CAMBIO 2! Lógica para ocultar la respuesta correcta si falló ---
       // 1. Mostrar VERDE: Solo si la opción actual (k) es la correcta Y el usuario la seleccionó (o si el tiempo acabó y no seleccionó nada).
       if (k == correctOptionKey && selectedAnswer != null && isSelected) {
+=======
+      String correctAnswerKey = '';
+      // ¡OJO! Aquí estaba la respuesta correcta
+      final String respuestaCorrectaLetra = widget.mydata.answers[questionKey]!;
+      
+      // Buscamos la 'key' ('a', 'b', 'c', 'd') que coincide con la letra de la respuesta
+      // (En tu JSON, la 'respuesta' YA ES la 'key', así que esto es directo)
+      correctAnswerKey = respuestaCorrectaLetra;
+
+
+      if (k == correctAnswerKey) {
+>>>>>>> puzzle_game
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
@@ -294,7 +443,7 @@ class _QuizPageState extends State<QuizPage> {
                         onPressed: () {
                           // Cierra el AlertDialog y luego sale de la QuizPage
                           Navigator.of(context).pop();
-                          Navigator.of(context).pop();
+                          context.pop(); 
                         },
                         child: const Text('Salir'),
                       ),
@@ -395,6 +544,7 @@ class _QuizPageState extends State<QuizPage> {
               ),
               child: SizedBox(
                 width: double.infinity,
+<<<<<<< HEAD
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   decoration: BoxDecoration(
@@ -403,6 +553,13 @@ class _QuizPageState extends State<QuizPage> {
                         ? (_wasCorrect == true
                               ? Colors.green.shade600
                               : pythonColorScheme.error)
+=======
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: disableAnswer
+                        // AHORA ESTO FUNCIONARÁ
+                        ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
+>>>>>>> puzzle_game
                         : (selectedAnswer != null
                               ? pythonColorScheme.primary
                               : pythonColorScheme.surfaceContainerHighest),

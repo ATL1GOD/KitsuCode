@@ -1,5 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/material.dart'; 
+import 'package:flutter/material.dart';
+// --- NUEVO: Importación para el modelo de recursos ---
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 
 PuzzleChallengeModel puzzleChallengeModelFromJson(String str) =>
     PuzzleChallengeModel.fromJson(json.decode(str));
@@ -8,18 +10,28 @@ class PuzzleChallengeModel {
   final String instruction;
   final List<PuzzleLine> lines;
   final List<PuzzleOption> options;
+  // --- NUEVO ---
+  final List<RecursoModel> recursos;
 
   PuzzleChallengeModel({
     required this.instruction,
     required this.lines,
     required this.options,
+    required this.recursos, // <-- AÑADIDO
   });
 
   factory PuzzleChallengeModel.fromJson(Map<String, dynamic> json) {
     if (json['instruction'] == null || json['lines'] == null || json['options'] == null) {
       throw Exception("El JSON del puzzle no tiene el formato esperado (falta 'instruction', 'lines' u 'options')");
     }
-    
+
+    // --- NUEVA LÓGICA DE RECURSOS ---
+    final List<dynamic> recursosJson = json['recursos'] as List<dynamic>? ?? [];
+    final List<RecursoModel> recursosList = recursosJson
+        .map((r) => RecursoModel.fromJson(r as Map<String, dynamic>))
+        .toList();
+    // --- FIN NUEVA LÓGICA ---
+
     return PuzzleChallengeModel(
       instruction: json['instruction'] as String,
       lines: (json['lines'] as List)
@@ -28,11 +40,12 @@ class PuzzleChallengeModel {
       options: (json['options'] as List)
           .map((optionJson) => PuzzleOption.fromJson(optionJson))
           .toList(),
+      recursos: recursosList, // <-- AÑADIDO
     );
   }
 }
 
-// --- CLASES DE LÍNEAS 
+// --- CLASES DE LÍNEAS (Sin cambios) ---
 abstract class PuzzleLine {
   final String type;
   PuzzleLine(this.type);
@@ -53,12 +66,12 @@ abstract class PuzzleLine {
 
 class TokenLine extends PuzzleLine {
   final String text;
-  final String highlight; 
+  final String highlight;
 
   TokenLine({
-    required this.text, 
+    required this.text,
     required this.highlight,
-  }) : super('token'); 
+  }) : super('token');
 
   factory TokenLine.fromJson(Map<String, dynamic> json, String highlightType) {
     return TokenLine(
@@ -69,9 +82,9 @@ class TokenLine extends PuzzleLine {
 }
 
 class BlankLine extends PuzzleLine {
-  final String id; 
+  final String id;
   final String correctOptionId;
-  
+
   BlankLine({required this.id, required this.correctOptionId}) : super('blank');
 
   factory BlankLine.fromJson(Map<String, dynamic> json) {
@@ -82,18 +95,18 @@ class BlankLine extends PuzzleLine {
   }
 }
 
-// --- CLASE PuzzleOption 
+// --- CLASE PuzzleOption (Sin cambios) ---
 class PuzzleOption {
   final String id; // El ID semántico (ej: "opt_A")
   final String text;
-  
+
   // campo único para cada instancia de PuzzleOption
-  final String uniqueId; 
+  final String uniqueId;
 
   PuzzleOption({
-    required this.id, 
+    required this.id,
     required this.text,
-    String? uniqueId, 
+    String? uniqueId,
   }) : uniqueId = uniqueId ?? UniqueKey().toString(); // Asigna un ID de instancia único
 
   factory PuzzleOption.fromJson(Map<String, dynamic> json) {
@@ -110,9 +123,9 @@ class PuzzleOption {
       identical(this, other) ||
       other is PuzzleOption &&
           runtimeType == other.runtimeType &&
-          uniqueId == other.uniqueId; 
+          uniqueId == other.uniqueId;
 
   // Igualdad basada en 'uniqueId'
   @override
-  int get hashCode => uniqueId.hashCode; 
+  int get hashCode => uniqueId.hashCode;
 }

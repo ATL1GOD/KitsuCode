@@ -21,20 +21,17 @@ class PuzzleLoaderPage extends StatelessWidget {
     return ProviderScope(
       overrides: [
         puzzleProvider.overrideWith(
-          // --- (Tu lógica de override está perfecta) ---
+          // --- MODIFICADO: El constructor ya no necesita 'ref' ---
           (ref) => PuzzleNotifier(
             challengeContent,
             int.parse(retoId), // Convierte "2" a 2
-            ref,
+            // ref, // <-- Eliminado
           ),
         ),
       ],
       // 2. MOSTRAMOS LA VISTA DEL PUZZLE
-      // --- ¡CAMBIO AQUÍ! ---
-      // Quitamos 'const' para permitir que el widget
-      // se reconstruya cuando el tema (lenguaje) cambie.
-      child: PuzzleView(),
-      // --- FIN CAMBIO ---
+      // (Quitamos 'const' de tu archivo original)
+      child: const PuzzleView(),
     );
   }
 }

@@ -5,12 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
 
-// --- ¡CAMBIO 1! (Importaciones para la puntuación) ---
+// --- Importaciones para la puntuación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
-// --- FIN CAMBIO 1 ---
-import 'package:kitsucode/features/home/provider/home_provider.dart';
+
+// --- NUEVO: Importaciones para el modal y el router ---
+import 'package:go_router/go_router.dart';
+import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
+import 'package:kitsucode/core/utils/app_themes.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
+    show RecursoModel;
+// --- FIN NUEVO ---
 
 class ColumnsChallengeView extends ConsumerStatefulWidget {
   final ColumnsChallenge challenge;
@@ -78,33 +84,33 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     }
   }
 
-  // --- ¡CORREGIDO! (Usando los parámetros correctos) ---
-  Future<void> _submitAttempt(bool esCorrecto) async {
-    if (_hasSubmitted) return;
-    _hasSubmitted = true;
+  // Future<void> _submitAttempt(bool esCorrecto) async {
+  //   if (_hasSubmitted) return;
+  //   _hasSubmitted = true;
 
-    final int retoIdAsInt;
-    try {
-      retoIdAsInt = int.parse(widget.retoId);
-    } catch (e) {
-      debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
-      return;
-    }
+  //   final int retoIdAsInt;
+  //   try {
+  //     retoIdAsInt = int.parse(widget.retoId);
+  //   } catch (e) {
+  //     debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
+  //     return;
+  //   }
 
-    try {
-      final repository = ref.read(challengeRepositoryProvider);
-      await repository.submitChallengeAttempt(
-        retoId: retoIdAsInt,
-        fueExitoso: esCorrecto,
-        tiempoQueTardo: 0,
-      );
+  //   try {
+  //     final repository = ref.read(challengeRepositoryProvider);
+  //     await repository.submitChallengeAttempt(
+  //       retoId: retoIdAsInt,
+  //       fueExitoso: esCorrecto,
+  //       tiempoQueTardo: 0,
+  //     );
 
-      ref.read(appBarProvider.notifier).fetchStats();
-      ref.invalidate(globalRankingProvider);
-    } catch (e) {
-      debugPrint("Error al enviar intento de columnas: $e");
-    }
-  }
+  //     ref.read(appBarProvider.notifier).fetchStats();
+  //     ref.invalidate(globalRankingProvider);
+
+  //   } catch (e) {
+  //     debugPrint("Error al enviar intento de columnas: $e");
+  //   }
+  // }
 
   void _onItemTapped(ChallengeItem tappedItem) {
     if (_solvedPairIds.contains(tappedItem.pairId) || _isIncorrect) {
@@ -142,67 +148,121 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     });
   }
 
-  // --- ¡CAMBIO CRÍTICO! (Modificado para ser async y checar 'mounted') ---
+  // --- MODIFICADO: Lógica de fallo ---
   Future<void> _triggerIncorrectAnimation() async {
     setState(() {
       _isIncorrect = true;
     });
 
-    // ¡Enviamos el intento fallido!
-    await _submitAttempt(false); // <--- Llama con 'false'
-
-    Future.delayed(const Duration(milliseconds: 700), () {
-      // --- ¡ARREGLO DE CRASH! ---
-      // Solo haz pop si el widget todavía está en pantalla.
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-      // --- FIN ARREGLO ---
-    });
+    // --- MODIFICADO: Solo mostramos el modal ---
+    if (mounted) {
+      _showFeedbackModal(false);
+    }
   }
+  // --- FIN MODIFICADO ---
 
-  // --- ¡CAMBIO! (Modificado para ser async y checar 'mounted') ---
+  // --- MODIFICADO: Lógica de éxito ---
   Future<void> _showWinDialogAndSubmit() async {
-    // 1. Enviar el intento "completado"
-    await _submitAttempt(true); // <--- Llama con 'true'
+    // --- MODIFICADO: Solo mostramos el modal ---
+    if (mounted) {
+      _showFeedbackModal(true);
+    }
+  }
+  // --- FIN MODIFICADO ---
 
-    // 2. Mostrar el diálogo de victoria
-    if (!mounted) return;
-    showDialog(
+  // --- NUEVO: Función helper de Tema (Copiada de puzzle_view) ---
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
+    // Asumiendo que tienes AppThemes.
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    }
+  }
+  // --- FIN NUEVO ---
+
+  // --- NUEVO: Función para mostrar el modal genérico ---
+  // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
+  void _showFeedbackModal(bool esCorrecto) {
+    if (_hasSubmitted) return;
+
+    final appBarState = ref.read(appBarProvider);
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      Theme.of(context).brightness,
+    );
+
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('¡Felicidades!'),
-        content: const Text('Has completado todos los pares.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // --- ¡¡LÍNEAS CLAVE AÑADIDAS!! ---
-              // 1. Invalida el provider del mapa
-              ref.invalidate(homeViewModelProvider);
-              // --- FIN LÍNEAS AÑADIDAS ---
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Theme(
+          data: challengeTheme,
+          child: ChallengeFeedbackModal(
+            isCorrect: esCorrecto,
+            // --- MODIFICADO: Lógica de onContinue ---
+            onContinue: () async {
+              context.pop(); // Cierra el modal
 
-              // --- ¡ARREGLO DE CRASH! ---
-              // 2. Hacemos pop 2 veces de forma segura
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop(); // Cierra el dialogo
+              if (_hasSubmitted) return;
+              _hasSubmitted = true;
+
+              final repository = ref.read(challengeRepositoryProvider);
+              final int retoIdAsInt = int.parse(widget.retoId);
+
+              if (esCorrecto) {
+                // 1. Enviar intento
+                await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: true,
+                  tiempoQueTardo: 0,
+                );
+
+                // 2. Refrescar stats y ranking
+                ref.read(appBarProvider.notifier).fetchStats();
+                ref.invalidate(globalRankingProvider);
+
+                // 3. Navegar (assuming default trophy value or get it from elsewhere)
+                if (!context.mounted) return;
+                context.push('/challenge_success', extra: 0);
+              } else {
+                // 1. Enviar intento fallido
+                await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: false,
+                  tiempoQueTardo: 0,
+                );
+
+                // 2. Refrescar stats (vidas)
+                ref.read(appBarProvider.notifier).fetchStats();
+
+                // 3. Obtener recursos del widget
+                final List<RecursoModel> recursos = widget.challenge.recursos;
+
+                // 4. Navegar
+                if (!context.mounted) return;
+                context.push('/challenge_failure', extra: recursos);
               }
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop(); // Regresa de la pantalla del reto
-              }
-              // --- FIN ARREGLO ---
             },
-            child: const Text('Continuar'),
+            // --- FIN MODIFICACIÓN ---
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+  // --- FIN NUEVO ---
 
-  // ... (El resto de tu código: build, _buildItemChip, _buildCheckButton...)
-  // ... (Pega el resto de tu archivo 'columnas_view.dart' aquí sin cambios) ...
   @override
   Widget build(BuildContext context) {
+    // ... (Tu función build no cambia) ...
     double progress = _solvedPairIds.length / widget.challenge.pares.length;
     bool isComplete = progress == 1.0;
 
@@ -287,6 +347,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   }
 
   Widget _buildItemChip(ChallengeItem item) {
+    // ... (Tu función _buildItemChip no cambia) ...
     final bool isSolved = _solvedPairIds.contains(item.pairId);
     final bool isSelected = _selectedItem == item;
     final bool isMarkedIncorrect =
@@ -354,6 +415,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   }
 
   Widget _buildCheckButton(bool isComplete) {
+    // ... (Tu función _buildCheckButton no cambia) ...
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16.0),

@@ -24,6 +24,10 @@ import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 import 'package:kitsucode/features/desafio/view/desafio_view.dart';
 
+import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+
 // Claves (sin cambios)
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
@@ -118,6 +122,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/all-stats',
         builder: (context, state) => const AllStatsView(),
       ),
+
+      // --- RUTA PARA FEEDBACK DE ÉXITO ---
+GoRoute(
+  path: '/challenge_success',
+  name: 'challenge_success',
+  builder: (context, state) {
+    // Extraemos los trofeos del argumento 'extra'
+    final int trofeos = (state.extra is int) ? state.extra as int : 0;
+    return ChallengeSuccessView(trofeosObtenidos: trofeos);
+  },
+),
+
+// --- RUTA PARA FEEDBACK DE FRACASO ---
+GoRoute(
+  path: '/challenge_failure',
+  name: 'challenge_failure',
+  builder: (context, state) {
+    // Extraemos la lista de recursos del argumento 'extra'
+    final List<RecursoModel> recursos = (state.extra is List<RecursoModel>) 
+        ? state.extra as List<RecursoModel>
+        : <RecursoModel>[]; // Lista vacía como fallback
+
+    return ChallengeFailureView(recursos: recursos);
+  },
+),
 
       // --- NAVBAR PRINCIPAL (sin cambios) ---
       StatefulShellRoute.indexedStack(

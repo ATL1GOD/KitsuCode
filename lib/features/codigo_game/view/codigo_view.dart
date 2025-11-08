@@ -1,16 +1,23 @@
 // lib/features/codigo_game/view/codigo_view.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // --- ¡CAMBIO 1! ---
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
 
-// --- ¡CAMBIO 2! (Importaciones para la puntuación) ---
+// --- Importaciones para la puntuación y navegación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 // --- FIN CAMBIO 2 ---
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 
-// --- ¡CAMBIO 3! (Convertido a ConsumerStatefulWidget) ---
+// --- NUEVO: Importaciones para el modal y el router ---
+import 'package:go_router/go_router.dart';
+import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
+import 'package:kitsucode/core/utils/app_themes.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
+    show RecursoModel;
+// --- FIN NUEVO ---
+
 class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
   final String retoId;
@@ -27,19 +34,20 @@ class CodigoChallengeView extends ConsumerStatefulWidget {
       _CodigoChallengeViewState();
 }
 
-// --- ¡CAMBIO 5! (Convertido a ConsumerState) ---
 class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   late final PageController _pageController;
 
-  // ¡CAMBIO! Marcados como 'final' para corregir el 'lint'
   final List<TextEditingController> _controllers = [];
   final List<FocusNode> _focusNodes = [];
   int _currentPageIndex = 0;
 
-  bool _mostrandoFeedback = false;
-  bool _esRespuestaCorrecta = false;
+  // --- MODIFICADO: Ya no necesitamos estos estados ---
+  // bool _mostrandoFeedback = false;
+  // bool _esRespuestaCorrecta = false;
+  // --- FIN MODIFICADO ---
 
   bool _hasSubmitted = false;
+  bool _currentAnswerWasCorrect = false; // Para saber qué modal mostrar
 
   @override
   void initState() {
@@ -92,33 +100,33 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     }
   }
 
-  // --- ¡CORREGIDO! (Usando los parámetros correctos) ---
-  Future<void> _submitAttempt(bool esCorrecto) async {
-    if (_hasSubmitted) return;
-    _hasSubmitted = true;
+  //  Future<void> _submitAttempt(bool esCorrecto) async {
+  //     if (_hasSubmitted) return;
+  //     _hasSubmitted = true;
 
-    final int retoIdAsInt;
-    try {
-      retoIdAsInt = int.parse(widget.retoId);
-    } catch (e) {
-      debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
-      return;
-    }
+  //     final int retoIdAsInt;
+  //     try {
+  //       retoIdAsInt = int.parse(widget.retoId);
+  //     } catch (e) {
+  //       debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
+  //       return;
+  //     }
 
-    try {
-      final repository = ref.read(challengeRepositoryProvider);
-      await repository.submitChallengeAttempt(
-        retoId: retoIdAsInt,
-        fueExitoso: esCorrecto,
-        tiempoQueTardo: 0,
-      );
+  //     try {
+  //       final repository = ref.read(challengeRepositoryProvider);
+  //       await repository.submitChallengeAttempt(
+  //         retoId: retoIdAsInt,
+  //         fueExitoso: esCorrecto,
+  //         tiempoQueTardo: 0,
+  //       );
 
-      ref.read(appBarProvider.notifier).fetchStats();
-      ref.invalidate(globalRankingProvider);
-    } catch (e) {
-      debugPrint("Error al enviar intento de código: $e");
-    }
-  }
+  //       ref.read(appBarProvider.notifier).fetchStats();
+  //       ref.invalidate(globalRankingProvider);
+
+  //     } catch (e) {
+  //       debugPrint("Error al enviar intento de código: $e");
+  //     }
+  //   }
 
   Future<void> _verificarRespuesta() async {
     // ... (lógica de verificación) ...
@@ -137,59 +145,130 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     }
     // ... (fin lógica)
 
-    setState(() {
-      _esRespuestaCorrecta = todasCorrectas;
-      _mostrandoFeedback = true;
-    });
+    // --- MODIFICADO: Lógica de feedback ---
+    _currentAnswerWasCorrect = todasCorrectas;
 
     if (todasCorrectas) {
-      Future.delayed(const Duration(milliseconds: 1200), () {
-        if (!mounted) return;
-        _siguientePregunta();
-      });
+      _siguientePregunta();
     } else {
-      // --- LÓGICA DE FALLO ---
-      await _submitAttempt(false);
-
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        // --- ¡ARREGLO DE CRASH! ---
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-        // --- FIN ARREGLO ---
-      });
+      // --- MODIFICADO: Solo mostramos el modal de fallo ---
+      if (mounted) {
+        _showFeedbackModal(false);
+      }
     }
   }
 
   Future<void> _siguientePregunta() async {
     if (_currentPageIndex < widget.challenge.preguntas.length - 1) {
-      // ... (lógica para ir a la siguiente página)
-      setState(() {
-        _mostrandoFeedback = false;
-      });
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
-      // --- LÓGICA DE ÉXITO ---
-      await _submitAttempt(true);
-
-      // --- ¡¡LÍNEA CLAVE AÑADIDA!! ---
-      // Invalida el provider del mapa para forzar un recálculo
-      ref.invalidate(homeViewModelProvider);
-      // --- FIN LÍNEA AÑADIDA ---
-
-      // --- ¡ARREGLO DE CRASH! ---
+      // --- MODIFICADO: Solo mostramos el modal de éxito ---
       if (mounted) {
-        Navigator.of(context).pop();
+        _showFeedbackModal(true);
       }
-      // --- FIN ARREGLO ---
     }
   }
 
-  // ... (El resto de tu código: _buildCodeSpans, build, _buildFeedbackContainer...)
+  // --- NUEVO: Función helper de Tema (Copiada de puzzle_view) ---
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
+    // Asumiendo que tienes AppThemes.
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    }
+  }
+  // --- FIN NUEVO ---
+
+  // --- NUEVO: Función para mostrar el modal genérico ---
+  // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
+  void _showFeedbackModal(bool esCorrecto) {
+    // Evita múltiples envíos si el usuario es muy rápido
+    if (_hasSubmitted) return;
+
+    final appBarState = ref.read(appBarProvider);
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      Theme.of(context).brightness,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Theme(
+          data: challengeTheme,
+          child: ChallengeFeedbackModal(
+            isCorrect: esCorrecto,
+            // --- MODIFICADO: Lógica de onContinue ---
+            onContinue: () async {
+              context.pop(); // Cierra el modal
+
+              if (_hasSubmitted) return;
+              _hasSubmitted = true; // Marcamos como enviado
+
+              final repository = ref.read(challengeRepositoryProvider);
+              final int retoIdAsInt = int.parse(widget.retoId);
+
+              if (esCorrecto) {
+                // 1. Enviar intento
+                await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: true,
+                  tiempoQueTardo: 0,
+                );
+
+                // 2. Refrescar stats y ranking
+                ref.read(appBarProvider.notifier).fetchStats();
+                ref.invalidate(globalRankingProvider);
+
+                // 3. Navegar (assuming default trofeos value)
+                if (!context.mounted) return;
+                context.push('/challenge_success', extra: 0);
+              } else {
+                // 1. Enviar intento fallido
+                await repository.submitChallengeAttempt(
+                  retoId: retoIdAsInt,
+                  fueExitoso: false,
+                  tiempoQueTardo: 0,
+                );
+
+                // 2. Refrescar stats (vidas)
+                ref.read(appBarProvider.notifier).fetchStats();
+
+                // 3. Obtener recursos del widget (ya cargados en el modelo)
+                final List<RecursoModel> recursos = widget.challenge.recursos;
+
+                // 4. Navegar
+                if (!context.mounted) return;
+                context.push('/challenge_failure', extra: recursos);
+              }
+            },
+            // --- FIN MODIFICACIÓN ---
+          ),
+        );
+      },
+    );
+  }
+  // --- FIN NUEVO ---
+
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
     TextStyle inputStyle,
   ) {
+    // ... (Tu función _buildCodeSpans no cambia) ...
     final List<InlineSpan> spans = [];
     final respuestasCorrectas = pregunta.fragmentos
         .where((f) => f.tipo == 'input')
@@ -310,50 +389,35 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
               },
             ),
           ),
-          _buildFeedbackContainer(),
+          // --- MODIFICADO: Reemplazamos el feedback container por un botón ---
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _verificarRespuesta,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child: const Text(
+                  'VERIFICAR',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+          // --- FIN MODIFICADO ---
         ],
       ),
     );
   }
 
-  Widget _buildFeedbackContainer() {
-    if (!_mostrandoFeedback) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _verificarRespuesta,
-            child: const Text('Verificar'),
-          ),
-        ),
-      );
-    }
-    final color = _esRespuestaCorrecta
-        ? Colors.green.shade700
-        : Colors.red.shade700;
-    final texto = _esRespuestaCorrecta ? "¡Correcto!" : "Inténtalo de nuevo";
-    final icono = _esRespuestaCorrecta ? Icons.check_circle : Icons.cancel;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: double.infinity,
-      color: color,
-      padding: const EdgeInsets.all(24.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icono, color: Colors.white, size: 28),
-          const SizedBox(width: 16),
-          Text(
-            texto,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // --- MODIFICADO: Esta función ya no es necesaria ---
+  // Widget _buildFeedbackContainer() { ... }
+  // --- FIN MODIFICADO ---
 }

@@ -1,8 +1,16 @@
+// --- NUEVO: Importación para el modelo de recursos ---
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+
 // Representa el reto completo parseado desde el JSON
 class ColumnsChallenge {
   final List<ColumnPair> pares;
+  // --- NUEVO ---
+  final List<RecursoModel> recursos;
 
-  ColumnsChallenge({required, required this.pares});
+  ColumnsChallenge({
+    required this.pares,
+    required this.recursos, // <-- AÑADIDO
+  });
 
   factory ColumnsChallenge.fromJson(Map<String, dynamic> json) {
     var paresList = json['pares'] as List;
@@ -10,12 +18,23 @@ class ColumnsChallenge {
         .map((i) => ColumnPair.fromJson(i as Map<String, dynamic>))
         .toList();
 
-    return ColumnsChallenge(pares: pares);
+    // --- NUEVA LÓGICA DE RECURSOS ---
+    final List<dynamic> recursosJson = json['recursos'] as List<dynamic>? ?? [];
+    final List<RecursoModel> recursosList = recursosJson
+        .map((r) => RecursoModel.fromJson(r as Map<String, dynamic>))
+        .toList();
+    // --- FIN NUEVA LÓGICA ---
+
+    return ColumnsChallenge(
+      pares: pares,
+      recursos: recursosList, // <-- AÑADIDO
+    );
   }
 }
 
 // Representa un solo par del JSON
 class ColumnPair {
+// ... (El resto de tu archivo 'columnas_model.dart' no cambia) ...
   final int id;
   final String termino;
   final String definicion;

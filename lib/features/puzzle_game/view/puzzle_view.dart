@@ -7,14 +7,20 @@ import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_code_area.dar
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_instruction_card.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_options_area.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_widgets.dart';
-import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_feedback_widget.dart'; 
+// AÑADIR ESTA LÍNEA
+import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
 import 'package:animate_do/animate_do.dart';
 
 // --- ¡CAMBIO 1! (Importaciones para el Tema y el Lenguaje) ---
-// Estas importaciones arreglarán el error 'undefined_method'
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 // --- FIN CAMBIO 1 ---
+
+// --- NUEVO: Importaciones para el repositorio, modelo y ranking ---
+import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+// --- FIN NUEVO ---
 
 
 // --- 1. DEFINIMOS LA VISTA DEL PUZZLE ---
@@ -22,7 +28,6 @@ class PuzzleView extends ConsumerWidget {
   const PuzzleView({super.key});
 
   // --- ¡CAMBIO 2! (Función Helper para obtener el Tema) ---
-  // Esta función SÍ usa tu clase AppThemes
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     
@@ -44,27 +49,21 @@ class PuzzleView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     
     // --- ¡CAMBIO 3! (Obtener el tema del lenguaje actual) ---
-    // 1. Observamos el estado del AppBar para saber el lenguaje
     final appBarState = ref.watch(appBarProvider);
 
-    // 2. Obtenemos el tema (ThemeData) usando nuestra nueva función helper
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName, 
       Theme.of(context).brightness, // Mantenemos el modo claro/oscuro
     );
     
-    // 3. Usamos el 'colorScheme' del TEMA DEL LENGUAJE
     final colorScheme = challengeTheme.colorScheme;
     // --- FIN CAMBIO 3 ---
     
-    // 2. Leemos el estado y el notifier del provider
     final puzzleState = ref.watch(puzzleProvider);
     final puzzleNotifier = ref.read(puzzleProvider.notifier);
 
-    // 3. Manejo de estados: carga, error, datos
+    // --- ¡CAMBIO 4! (MANEJO DE ESTADOS ¡AHORA FUNCIONA!) ---
     if (puzzleState.isLoading) {
-      // --- ¡CAMBIO 4! (Envolver en el Tema) ---
-      // También envolvemos los estados de 'loading' y 'error'
       return Theme(
         data: challengeTheme,
         child: Scaffold(
@@ -86,7 +85,6 @@ class PuzzleView extends ConsumerWidget {
     }
     // --- FIN CAMBIO 4 ---
 
-    // Si llegamos aquí, tenemos datos válidos
     final challenge = puzzleState.challenge!;
     final bool isPuzzleComplete = !puzzleState.filledBlanks.containsValue(null);
 
@@ -179,10 +177,11 @@ class PuzzleView extends ConsumerWidget {
           ],
         ),
         
+        // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
         bottomNavigationBar: PuzzleBottomBar(
           isButtonEnabled: isPuzzleComplete,
           onCheckPressed: () { 
-            puzzleNotifier.checkSolution();
+            puzzleNotifier.checkSolution(); // Esto solo actualiza el estado
             final esCorrecto = ref.read(puzzleProvider).status == PuzzleStatus.correct;
             
             showModalBottomSheet(
@@ -193,15 +192,52 @@ class PuzzleView extends ConsumerWidget {
                 // --- ¡CAMBIO 6! (Envolvemos el Feedback en el Tema) ---
                 return Theme(
                   data: challengeTheme,
-                  child: PuzzleFeedbackWidget(
+                  child: ChallengeFeedbackModal(
                     isCorrect: esCorrecto,
-                    onContinue: () {
+                    // --- MODIFICADO: Lógica de onContinue ---
+                    onContinue: () async {
                       context.pop(); // Cierra el pop-up
                       
-                      //if (esCorrecto) {
-                        context.go('/home');
-                      //}
+                      final repository = ref.read(challengeRepositoryProvider);
+                      // Leemos el estado actual que tiene el ID y los recursos
+                      final currentState = ref.read(puzzleProvider); 
+                      
+                      if (esCorrecto) {
+                        // 1. Enviar intento y obtener trofeos
+                        final int trofeos = await repository.submitChallengeAttempt(
+                          retoId: currentState.challengeId,
+                          fueExitoso: true,
+                          tiempoQueTardo: 0, // TODO: Implementar timer
+                        );
+                        
+                        // 2. Refrescar los stats del AppBar y Ranking
+                        ref.read(appBarProvider.notifier).fetchStats();
+                        ref.invalidate(globalRankingProvider);
+
+                        // 3. Navegar a la vista de éxito
+                        if (!context.mounted) return;
+                        context.push('/challenge_success', extra: trofeos);
+                      
+                      } else {
+                        // 1. Enviar intento fallido (y obtener 0 trofeos)
+                         await repository.submitChallengeAttempt(
+                          retoId: currentState.challengeId,
+                          fueExitoso: false,
+                          tiempoQueTardo: 0,
+                        );
+                        
+                        // 2. Refrescar los stats del AppBar (vidas, racha)
+                        ref.read(appBarProvider.notifier).fetchStats();
+
+                        // 3. Obtener recursos del estado
+                        final List<RecursoModel> recursos = currentState.recursos;
+                        
+                        // 4. Navegar a la vista de fracaso
+                        if (!context.mounted) return;
+                        context.push('/challenge_failure', extra: recursos);
+                      }
                     },
+                    // --- FIN MODIFICACIÓN ---
                   ),
                 );
                 // --- FIN CAMBIO 6 ---

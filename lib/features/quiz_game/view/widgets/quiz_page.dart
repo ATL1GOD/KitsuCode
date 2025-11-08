@@ -140,21 +140,26 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     _startTimer();
   }
 
-  // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN DEL BUG DE PUNTUACIÓN!!! ---
+  // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN DE LÓGICA!!! ---
   void _checkAnswer(String k, ColorScheme pythonColorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
+
+    // --- ¡CAMBIO IMPORTANTE! ---
+    // Resetea 'correct' a false al inicio de cada comprobación.
+    // Esto asegura que _wasCorrect se actualice correctamente a 'false' si la respuesta es incorrectA.
+    correct = false;
 
     // Compara la 'letra' seleccionada (k) con la 'letra' de la respuesta (answers[questionKey])
     if (k.isNotEmpty && widget.mydata.answers[questionKey] == k) {
       marks = marks + 5;
-      correct = true;
+      correct = true; // <-- Solo se pone 'true' si acierta
     }
 
     if (mounted) {
       setState(() {
         _cancelTimer = true;
         disableAnswer = true;
-        _wasCorrect = correct;
+        _wasCorrect = correct; // <-- Ahora 'correct' será 'false' si falló
       });
     }
   }
@@ -241,11 +246,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     );
   }
 
-  // ... (El resto de tu código: _choiceButton, build, _buildDuolingoQuestionArea...
-  // ... no necesitan cambios y van aquí) ...
-
+  // --- ¡WIDGET _choiceButton CORREGIDO! ---
   Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
-    String questionKey = widget.mydata.questions.keys.elementAt(i);
     bool isSelected = selectedAnswer == k;
 
     Color buttonColor = pythonColorScheme.surfaceContainer;
@@ -253,32 +255,33 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     Color textColor = pythonColorScheme.onSurface;
 
     if (disableAnswer) {
-      String correctAnswerKey = '';
-      // ¡OJO! Aquí estaba la respuesta correcta
-      final String respuestaCorrectaLetra = widget.mydata.answers[questionKey]!;
+      // --- ¡LÓGICA COMPLETAMENTE MODIFICADA PARA TU REQUISITO! ---
 
-      // Buscamos la 'key' ('a', 'b', 'c', 'd') que coincide con la letra de la respuesta
-      // (En tu JSON, la 'respuesta' YA ES la 'key', así que esto es directo)
-      correctAnswerKey = respuestaCorrectaLetra;
+      // _wasCorrect fue establecido por _checkAnswer
+      // _wasCorrect es 'true' si acertó, 'false' si falló o se acabó el tiempo.
 
-      if (k == correctAnswerKey) {
+      // Caso 1: El usuario seleccionó ESTE botón (isSelected) Y fue la respuesta CORRECTA
+      if (isSelected && _wasCorrect == true) {
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
       }
-      // 2. Mostrar ROJO: Si el usuario la seleccionó (isSelected) y NO es la correcta.
-      else if (isSelected && k != correctAnswerKey) {
+      // Caso 2: El usuario seleccionó ESTE botón (isSelected) Y fue la respuesta INCORRECTA
+      // (o si se acabó el tiempo y este estaba seleccionado)
+      else if (isSelected && _wasCorrect == false) {
         buttonColor = Colors.red.withAlpha(51);
         borderColor = Colors.red;
         textColor = Colors.red;
       }
-      // 3. Demás opciones (incluyendo la respuesta correcta si el usuario falló, y las incorrectas no seleccionadas)
+      // Caso 3: Todos los demás botones (no seleccionados, o si se acabó el tiempo y no se seleccionó nada).
+      // Estos permanecen en su estado neutral.
+      // ¡Esto evita que la respuesta correcta se muestre en verde si el usuario falló!
       else {
         borderColor = pythonColorScheme.outline;
         textColor = pythonColorScheme.onSurface;
         buttonColor = pythonColorScheme.surfaceContainer;
       }
-      // --- FIN CAMBIO 2 ---
+      // --- FIN DE LA MODIFICACIÓN ---
     } else if (isSelected) {
       buttonColor = pythonColorScheme.primaryContainer.withAlpha(77);
       borderColor = pythonColorScheme.primary;
@@ -309,7 +312,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 });
               },
         child: Text(
-          widget.mydata.options[questionKey]![k] ?? "",
+          widget.mydata.options[widget.mydata.questions.keys.elementAt(
+                i,
+              )]![k] ??
+              "",
           // --- ¡CAMBIO 1! Permitir autoajuste y saltos de línea ---
           textAlign: TextAlign.start,
           maxLines: 5, // Permitir más líneas si es necesario
@@ -326,6 +332,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       ),
     );
   }
+  // --- FIN DE LA CORRECCIÓN DE _choiceButton ---
 
   @override
   Widget build(BuildContext context) {
@@ -502,7 +509,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: disableAnswer
                         // AHORA ESTO FUNCIONARÁ
-                        ? (marks > (j - 1) * 5 ? Colors.green : Colors.red)
+                        ? (_wasCorrect == true ? Colors.green : Colors.red)
                         : (selectedAnswer != null
                               ? pythonColorScheme.primary
                               : pythonColorScheme.surfaceContainerHighest),
@@ -546,7 +553,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withAlpha(26),
             blurRadius: 10,
             spreadRadius: 0,
             offset: const Offset(0, 4),

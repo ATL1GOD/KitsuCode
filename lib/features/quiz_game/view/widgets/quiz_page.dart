@@ -45,6 +45,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   String? selectedAnswer;
   bool _cancelTimer = false;
   bool _hasSubmitted = false;
+  bool? _wasCorrect;
+  bool correct = false;
 
   @override
   void initState() {
@@ -265,7 +267,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         textColor = Colors.green;
       }
       // 2. Mostrar ROJO: Si el usuario la seleccionó (isSelected) y NO es la correcta.
-      else if (isSelected && k != correctOptionKey) {
+      else if (isSelected && k != correctAnswerKey) {
         buttonColor = Colors.red.withAlpha(51);
         borderColor = Colors.red;
         textColor = Colors.red;
@@ -504,33 +506,26 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                         : (selectedAnswer != null
                               ? pythonColorScheme.primary
                               : pythonColorScheme.surfaceContainerHighest),
-                  ),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      disabledBackgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    onPressed: (selectedAnswer == null && !disableAnswer)
-                        ? null
-                        : () {
-                            if (disableAnswer) {
-                              _nextQuestion();
-                            } else {
-                              _checkAnswer(selectedAnswer!, pythonColorScheme);
-                            }
-                          },
-                    child: Text(
-                      disableAnswer ? "CONTINUAR" : "COMPROBAR",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  onPressed: (selectedAnswer == null && !disableAnswer)
+                      ? null
+                      : () {
+                          if (disableAnswer) {
+                            _nextQuestion();
+                          } else {
+                            _checkAnswer(selectedAnswer!, pythonColorScheme);
+                          }
+                        },
+                  child: Text(
+                    disableAnswer ? "CONTINUAR" : "COMPROBAR",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),

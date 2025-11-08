@@ -13,7 +13,7 @@ import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
-import 'package:shimmer/shimmer.dart'; // Asegura la importación
+import 'package:shimmer/shimmer.dart';
 
 
 class AllAchievementsView extends ConsumerWidget {
@@ -44,7 +44,7 @@ class AllAchievementsView extends ConsumerWidget {
 
           return Stack(
             children: [
-              // --- FONDO (Similar a AllStatsView) ---
+              // --- FONDO ---
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -76,7 +76,7 @@ class AllAchievementsView extends ConsumerWidget {
               SafeArea(
                 child: Column(
                   children: [
-                    // --- BARRA SUPERIOR (HEADER) ---
+                    // --- BARRA SUPERIOR ---
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Row(
@@ -106,7 +106,7 @@ class AllAchievementsView extends ConsumerWidget {
                       ),
                     ),
 
-                    // --- CONTENIDO PRINCIPAL (LISTA DE LOGROS) ---
+                    // --- CONTENIDO PRINCIPAL ---
                     Expanded(
                       child: achievementsState.when(
                         loading: () => const _AchievementsLoadingShimmer(),
@@ -131,7 +131,7 @@ class AllAchievementsView extends ConsumerWidget {
   }
 }
 
-// --- WIDGET PARA LA CUADRÍCULA DE LOGROS OBTENIDOS/PENDIENTES ---
+// --- WIDGET PARA LA CUADRÍCULA DE LOGROS ---
 class _AchievementsGrid extends StatelessWidget {
   final List<UserAchievementModel> achievements;
   final ColorScheme colors;
@@ -181,7 +181,6 @@ class _AchievementsGrid extends StatelessWidget {
 
         // --- SECCIÓN 1: LOGROS OBTENIDOS ---
         if (obtainedAchievements.isNotEmpty) ...[
-          // ... (Este GridView déjalo como está, funciona bien)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -196,10 +195,11 @@ class _AchievementsGrid extends StatelessWidget {
               final achievement = obtainedAchievements[index];
               return FadeInUp(
                 delay: Duration(milliseconds: 50 * index),
-                child: AchievementCard( // <-- Este está bien (Opacity 1.0)
+                child: AchievementCard(
                   achievement: achievement,
                   colors: colors,
                   isCompactView: false,
+                  isClickable: true, // ✅ Los desbloqueados SÍ son clickeables
                 ),
               );
             },
@@ -207,17 +207,20 @@ class _AchievementsGrid extends StatelessWidget {
           const SizedBox(height: 40),
         ],
 
-        // --- SECCIÓN 2: DESAFÍOS PENDIENTES (NO OBTENIDOS) ---
+        // --- SECCIÓN 2: DESAFÍOS PENDIENTES ---
         if (unobtainedAchievements.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text(
               'Desafíos Pendientes (${unobtainedAchievements.length})',
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface),
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold, 
+                color: colors.onSurface
+              ),
             ),
           ),
           
-          // ======== 💡 ¡EL HACK BUENO, AHORA SÍ! 💡 ========
+          // ✅ SOLUCIÓN CORRECTA: Sin GestureDetector ni IgnorePointer
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -233,45 +236,26 @@ class _AchievementsGrid extends StatelessWidget {
 
               return FadeInUp(
                 delay: Duration(milliseconds: 50 * index),
-
-                // 1. Envolvemos todo en un GestureDetector LIMPIO
-        child: GestureDetector(
-          
-          // ======== 👇 ¡LA LÍNEA QUE ARREGLA LA ZONA DE CLIC! 👇 ========
-          // Esto hace que el GestureDetector capture el clic
-          // aunque su hijo (IgnorePointer) lo esté ignorando.
-          behavior: HitTestBehavior.opaque,
-          // ======== 👆 ¡LA LÍNEA ES CLAVE AQUÍ! 👆 ========
-
-          onTap: () {
-            // ¡ESTE CONTEXTO SÍ ESTÁ LIMPIO!
-            showDialog(
-              context: context,
-              barrierDismissible: true,
-              barrierColor: Colors.black.withOpacity(0.6), 
-              builder: (ctx) => AchievementModal(achievement: achievement),
-            );
-          },
-          
-          // 2. Apagamos TODOS los clics de la tarjeta "envenenada"
-          child: IgnorePointer(
-            child: AchievementCard(
-              achievement: achievement,
-              colors: colors,
-              isCompactView: false, 
-            ),
+                // child: InkWell(
+                //   onTap: () => AchievementModal.show(context, achievement),
+                //   borderRadius: BorderRadius.circular(12),
+                  child: AchievementCard(
+                    achievement: achievement,
+                    colors: colors,
+                    isCompactView: false,
+                    isClickable: true, // ✅ Desactiva el clic en la tarjeta
+                  ),
+                // ),
+              );
+            },
           ),
-        ),
-      );
-    },
-  ),
         ],
       ],
     );
   }
 }
 
-// --- WIDGET DE SHIMMER DE CARGA (Soluciona el error de clase no definida) ---
+// --- SHIMMER DE CARGA ---
 class _AchievementsLoadingShimmer extends StatelessWidget {
   const _AchievementsLoadingShimmer();
 
@@ -288,13 +272,26 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
             const SizedBox(height: 60),
             Column(
               children: [
-                Container(width: 180, height: 30, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                Container(
+                  width: 180, 
+                  height: 30, 
+                  decoration: BoxDecoration(
+                    color: Colors.white, 
+                    borderRadius: BorderRadius.circular(8)
+                  )
+                ),
                 const SizedBox(height: 15),
-                Container(width: 250, height: 25, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                Container(
+                  width: 250, 
+                  height: 25, 
+                  decoration: BoxDecoration(
+                    color: Colors.white, 
+                    borderRadius: BorderRadius.circular(8)
+                  )
+                ),
               ],
             ),
             const SizedBox(height: 30),
-            // Cuadrícula de shimmer
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -308,7 +305,10 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
               itemBuilder: (context, index) {
                 return Container(
                   height: 160,
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                    color: Colors.white, 
+                    borderRadius: BorderRadius.circular(12)
+                  ),
                 );
               },
             ),

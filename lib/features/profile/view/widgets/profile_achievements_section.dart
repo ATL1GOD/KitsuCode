@@ -108,12 +108,13 @@ class ProfileAchievementsSection extends ConsumerWidget {
 
                         return GestureDetector(
                           onTap: () {
-                            showDialog(
-                              context: context,
-                              barrierColor: Colors.black54,
-                              builder: (context) =>
-                                  AchievementModal(achievement: achievement), // ✅ Modal correcto
-                            );
+                            // showDialog(
+                            //   context: context,
+                            //   barrierColor: Colors.black54,
+                            //   builder: (context) =>
+                            //       AchievementModal(achievement: achievement), // ✅ Modal correcto
+                            // );
+                            AchievementModal.show(context, achievement);
                           },
                           child: Padding(
                             padding: const EdgeInsets.only(right: 10.0),

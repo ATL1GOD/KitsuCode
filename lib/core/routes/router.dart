@@ -25,6 +25,7 @@ import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 // ------------------------------------------------
 
 import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
+import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 
@@ -118,10 +119,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return EditAvatarView(currentAvatar: currentAvatar);
         },
       ),
+      GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
       GoRoute(
-        path: '/all-stats',
-        builder: (context, state) => const AllStatsView(),
-      ),
+  path: '/profile/:userId/achievements',
+  builder: (context, state) {
+    final userId = state.pathParameters['userId']!;
+    return AllAchievementsView(userId: userId);
+  },
+),
 
       // --- RUTA PARA FEEDBACK DE ÉXITO ---
 GoRoute(

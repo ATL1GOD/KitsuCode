@@ -32,6 +32,7 @@ class ProfileView extends ConsumerWidget {
     final isCurrentUserProfile = targetUserId == currentAuthUserId;
     ref.watch(profileRealtimeProvider);
 
+    ref.watch(achievementRealtimeProvider);
     if (targetUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
     }

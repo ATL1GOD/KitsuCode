@@ -1,22 +1,18 @@
+// lib/features/profile/view/widgets/profile_achievements_section.dart
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/profile/model/user_profile_model.dart'; 
-import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:shimmer/shimmer.dart'; 
+import 'package:shimmer/shimmer.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:go_router/go_router.dart';
 
-String _getAchievementIconPath(String achievementName) {
-  switch (achievementName.toLowerCase()) {
-    case 'primer reto':
-      return 'assets/images/logro_1.png';
-    case 'racha de 5 días':
-      return 'assets/images/logro_racha.png';
-    case 'experto en java':
-      return 'assets/images/logro_java.png';
-    default:
-      return 'assets/images/logro_default.png';
-  }
-}
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
+
+import 'achievement_card.dart';
+import 'achievement_modal.dart';
 
 class ProfileAchievementsSection extends ConsumerWidget {
   final String userId;
@@ -36,24 +32,20 @@ class ProfileAchievementsSection extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
-    // Widget para el título, reutilizable para los 3 estados del provider
-    Widget titleWidget(List<dynamic> achievements) {
+    Widget titleWidget(bool showButton) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.emoji_events_outlined, 
-                color: colors.secondary,
-              ),
-              const SizedBox(width: 8), // Espacio
+              Icon(Icons.emoji_events_outlined, color: colors.secondary),
+              const SizedBox(width: 8),
               Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
-          if (achievements.isNotEmpty)
+          if (showButton)
             TextButton(
-              onPressed: () {},
+              onPressed: () => context.push('/profile/$userId/achievements'),
               child: Text('Ver todo', style: TextStyle(color: colors.secondary, fontWeight: FontWeight.bold)),
             ),
         ],
@@ -69,26 +61,29 @@ class ProfileAchievementsSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               achievementsState.when(
-                loading: () => titleWidget([]), 
-                error: (e, s) => titleWidget([]), 
-                data: (achievements) => titleWidget(achievements), 
+                loading: () => titleWidget(false),
+                error: (e, s) => titleWidget(false),
+                data: (achievements) {
+                  // Mostrar el botón siempre que haya logros (obtenidos o no)
+                  return titleWidget(achievements.isNotEmpty);
+                },
               ),
+
               const SizedBox(height: 15),
+
               achievementsState.when(
                 loading: () => const _AchievementsLoadingShimmer(),
                 error: (error, stack) => const Center(child: Text('No se pudieron cargar los logros')),
                 data: (achievements) {
-                  if (achievements.isEmpty) {
+                  final obtained = achievements.where((a) => a.obtenido).toList();
+
+                  if (obtained.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset(
-                            'assets/images/zorro_oops.png',
-                            width: 60,
-                            height: 60,
-                          ),
+                          Image.asset('assets/images/zorro_oops.png', width: 60, height: 60),
                           const SizedBox(width: 20),
                           Expanded(
                             child: Text(
@@ -102,24 +97,33 @@ class ProfileAchievementsSection extends ConsumerWidget {
                       ),
                     );
                   }
+
                   return SizedBox(
-                    height: 80,
+                    height: 120,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: achievements.length,
+                      itemCount: obtained.length,
                       itemBuilder: (context, index) {
-                        final achievement = achievements[index];
-                        final imagePath = _getAchievementIconPath(achievement.nombre);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 10.0),
-                          child: Tooltip(
-                            message: '${achievement.nombre}\n${achievement.descripcion}',
-                            child: CircleAvatar(
-                              radius: 40,
-                              backgroundColor: colors.primaryContainer.withAlpha(178), // Opacidad corregida para mejor visibilidad
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Image.asset(imagePath),
+                        final achievement = obtained[index];
+
+                        return GestureDetector(
+                          onTap: () {
+                            // showDialog(
+                            //   context: context,
+                            //   barrierColor: Colors.black54,
+                            //   builder: (context) =>
+                            //       AchievementModal(achievement: achievement), // ✅ Modal correcto
+                            // );
+                            AchievementModal.show(context, achievement);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 10.0),
+                            child: SizedBox(
+                              width: 90,
+                              child: AchievementCard(
+                                achievement: achievement,
+                                colors: colors,
+                                isCompactView: true,
                               ),
                             ),
                           ),
@@ -143,17 +147,17 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(102), // Opacidad corregida para mejor visibilidad
+              color: colors.surfaceContainerLow.withOpacity(0.4),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withAlpha(128)) // Opacidad corregida para mejor visibilidad
             ),
             child: child,
           ),
@@ -176,9 +180,16 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: 4,
-          itemBuilder: (context, index) => const Padding(
-            padding: EdgeInsets.only(right: 10.0),
-            child: CircleAvatar(radius: 40, backgroundColor: Colors.white),
+          itemBuilder: (context, index) => Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
         ),
       ),

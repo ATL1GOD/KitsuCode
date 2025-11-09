@@ -15,7 +15,7 @@ class RankingErrorWidget extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     
     // Identificar el tipo de error para TA_2 o TA_3
-    // E_05: Error de Servidor | E_06: Error de Conexión (implícito si no es E_05)
+    // E_05: Error de Servidor | E_06: Error de Conexión 
     final isServerError = error.toString().contains('E_05'); 
     
     return Center(

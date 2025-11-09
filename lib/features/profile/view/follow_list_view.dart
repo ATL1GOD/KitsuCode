@@ -102,6 +102,7 @@ class FollowListView extends ConsumerWidget {
                               itemBuilder: (_, i) => FadeInDown(
                                 duration: Duration(milliseconds: 300 + (i * 80)),
                                 child: _FollowUserTile(
+                                  key: ValueKey(users[i].userId), // 🔥 KEY único para cada tile
                                   user: users[i],
                                   dynamicColor: dynamicColor,
                                   currentListArgs: args,
@@ -137,7 +138,7 @@ class FollowListView extends ConsumerWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: colors.outlineVariant.withOpacity(.4)),
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: colors.onSurface),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
             ),
           ),
           Expanded(
@@ -161,6 +162,7 @@ class _FollowUserTile extends ConsumerStatefulWidget {
   final FollowListArgs currentListArgs;
 
   const _FollowUserTile({
+    super.key, // 🔥 Agregamos super.key
     required this.user,
     required this.dynamicColor,
     required this.currentListArgs,

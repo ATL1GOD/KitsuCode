@@ -7,6 +7,11 @@ import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:kitsucode/features/profile/repository/mock_profile_repository.dart'; 
+import 'dart:convert'; // Para decodificar el JSON
+import 'package:flutter/material.dart'; // Para el BuildContext
+import 'package:overlay_support/overlay_support.dart'; // Para mostrar la notificación
+import 'package:kitsucode/shared/widgets/achievement_toast.dart'; // El widget que creamos
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Provider para el repositorio de perfil
@@ -22,12 +27,12 @@ final userProfileByIdProvider = StreamProvider.family<UserProfileModel, String>(
   return profileRepository.watchUserProfileById(userId);
 });
 
-// Provider para las estadísticas
-final userStatsProvider = FutureProvider.autoDispose.family<UserStatsModel, String>((ref, userId) {
-    final repository = ref.watch(profileRepositoryProvider);
-    // ¡ESTA LÍNEA ESTÁ INCORRECTA!
-    return repository.fetchUserStats(); 
-});
+// // Provider para las estadísticas
+// final userStatsProvider = FutureProvider.autoDispose.family<UserStatsModel, String>((ref, userId) {
+//     final repository = ref.watch(profileRepositoryProvider);
+//     // ¡ESTA LÍNEA ESTÁ INCORRECTA!
+//     return repository.fetchUserStats(); 
+// });
 
 // Provider para los logros
 final userAchievementsProvider = FutureProvider.family<List<UserAchievementModel>, String>((ref, userId) {
@@ -156,6 +161,66 @@ final achievementRealtimeProvider = Provider.autoDispose((ref) {
   ).subscribe(); // <-- ¡No olvides suscribirte!
 
   // 4. Limpiamos el canal cuando el provider ya no se use
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
+
+  return channel;
+});
+
+// ✅✅✅ VERSIÓN CORREGIDA DEL NOTIFIER PROVIDER ✅✅✅
+final newAchievementNotifierProvider = Provider.autoDispose((ref) {
+  final supabase = Supabase.instance.client;
+
+  // ✅ ¡LA CORRECCIÓN ESTÁ AQUÍ! ✅
+  // 1. Vemos el 'authStateProvider' (que es un StreamProvider)
+  final authState = ref.watch(authStateProvider);
+  
+  // 2. Accedemos a su valor actual (value), luego a la sesión, al usuario y al ID.
+  final currentUserId = authState.value?.session?.user?.id; 
+
+  // 3. Si no hay ID de usuario (no está logueado), no hacemos nada.
+  if (currentUserId == null) return null;
+
+  final channel = supabase.channel('public:usuario_logro_toast');
+
+  channel.onPostgresChanges(
+    event: PostgresChangeEvent.insert,
+    schema: 'public',
+    table: 'usuario_logro',
+    callback: (payload) async {
+      try {
+        final newRecord = payload.newRecord;
+        if (newRecord.isEmpty) return;
+
+        // Verificamos si el logro es PARA MÍ (el usuario actual)
+        if (newRecord['id_usuario'] == currentUserId) {
+          
+          // ¡Es para mí! Obtenemos los detalles del logro
+          final logroId = newRecord['id_logro'] as int;
+          
+          final details = await ref.read(profileRepositoryProvider).fetchLogroDetails(logroId);
+
+          final nombreLogro = details['nombre'] ?? 'Logro Desbloqueado';
+          final iconUrl = details['icono'] ?? 'assets/images/zorro_oops.png';
+
+          // ¡Mostramos la notificación!
+          showSimpleNotification(
+            AchievementToast(
+              nombreLogro: nombreLogro,
+              iconUrl: iconUrl,
+            ),
+            background: Colors.transparent,
+            elevation: 0,
+            duration: const Duration(seconds: 4),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error al mostrar notificación de logro: $e');
+      }
+    },
+  ).subscribe();
+
   ref.onDispose(() {
     supabase.removeChannel(channel);
   });

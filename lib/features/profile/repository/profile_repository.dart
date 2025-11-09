@@ -1,4 +1,6 @@
-import 'dart:async'; 
+// lib/features/profile/repository/profile_repository.dart
+
+import 'dart:async';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
@@ -31,7 +33,6 @@ class ProfileRepository {
 
 
   // Consulta si el usuario actual sigue a otro usuario
-
   Future<bool> isFollowing(String followedUserId) async {
     final currentUser = _supabase.auth.currentUser;
     if (currentUser == null) return false;
@@ -97,22 +98,19 @@ class ProfileRepository {
 
   Future<UserStatsModel> fetchUserStatsById(String userId) async {
     try {
-      // Cambiamos el .select() directo por una llamada a la RPC
       final response = await _supabase.rpc(
-        'get_user_stats', // <-- Llamamos a la nueva RPC
+        'get_user_stats', 
         params: {'p_user_id': userId},
       );
 
-      // Si la RPC no encuentra nada, puede devolver null
       if (response == null) {
         return UserStatsModel.empty();
       }
       
-      // El JSON ya tiene los COALESCE(..., 0), así que es seguro.
       return UserStatsModel.fromJson(response);
 
     } catch (e) {
-      // Manejo de error si la RPC falla
+      // ignore: avoid_print
       print('Error en fetchUserStatsById (RPC): $e');
       return UserStatsModel.empty();
     }
@@ -120,20 +118,11 @@ class ProfileRepository {
   
   Future<List<UserAchievementModel>> fetchUserAchievementsById(String userId) async {
     try {
-      // ESTA ES LA LÓGICA ANTIGUA QUE VAMOS A CAMBIAR:
-      // final data = await supabaseClient
-      //     .from('logro')
-      //     .select('*, usuario_logro!inner(id_usuario)')
-      //     .eq('usuario_logro.id_usuario', userId);
-      
-      // ✅✅✅ ESTA ES LA LÓGICA NUEVA:
-      // Llamamos a la función RPC que creamos en Supabase
       final data = await _supabase.rpc(
         'get_achievements_for_user',
         params: {'p_user_id': userId},
       );
 
-      // La RPC devuelve una lista, la convertimos
       final list = data as List;
       return list.map((json) => UserAchievementModel.fromJson(json)).toList();
 
@@ -159,4 +148,23 @@ class ProfileRepository {
     }
     return fetchUserAchievementsById(user.id);
   }
-}
+
+  // ✅✅✅ ¡MÉTODO MOVIDO AQUÍ DENTRO! ✅✅✅
+  // Busca los detalles de un logro específico por su ID
+  Future<Map<String, dynamic>> fetchLogroDetails(int logroId) async {
+    try {
+      // ✅ Y AHORA USA '_supabase' (la variable de la clase)
+      final data = await _supabase
+          .from('logro')
+          .select('nombre, icono')
+          .eq('id_logro', logroId)
+          .single(); // .single() asegura que obtenemos solo uno
+
+      return data as Map<String, dynamic>;
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error fetching logro details: $e');
+      throw Exception('Error al cargar detalles del logro');
+    }
+  }
+} 

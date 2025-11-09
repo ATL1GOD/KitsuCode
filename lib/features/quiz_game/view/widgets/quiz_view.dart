@@ -15,7 +15,6 @@ import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.da
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
-import 'package:giffy_dialog/giffy_dialog.dart';
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 
 class QuizPage extends ConsumerStatefulWidget {

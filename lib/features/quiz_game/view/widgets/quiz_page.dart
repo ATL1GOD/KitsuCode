@@ -267,6 +267,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         style: OutlinedButton.styleFrom(
           foregroundColor: textColor,
           backgroundColor: buttonColor,
+          side: BorderSide(color: borderColor),
           minimumSize: const Size(double.infinity, 60),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),

@@ -265,116 +265,147 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     // ... (Tu función build no cambia) ...
     double progress = _solvedPairIds.length / widget.challenge.pares.length;
     bool isComplete = progress == 1.0;
+    // --- INICIO DE LA MODIFICACIÓN ---
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey, size: 30),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        backgroundColor: Colors.grey.shade300,
-                        color: Colors.green,
-                        minHeight: 15,
+    // 1. Obtenemos el estado del AppBar
+    final appBarState = ref.watch(appBarProvider);
+
+    // 2. Usamos la función helper (que ya existe en este archivo)
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      Theme.of(context).brightness,
+    );
+
+    // 3. Extraemos el esquema de color
+    final colorScheme = challengeTheme.colorScheme;
+
+    // --- FIN DE LA MODIFICACIÓN ---
+    return Theme(
+      // <-- Envolver aquí
+      data: challengeTheme,
+      child: Scaffold(
+        backgroundColor: colorScheme.surface, // <-- Usar color de tema
+        //...
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 30,
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
+                          color: colorScheme.primary,
+                          minHeight: 15,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.flash_on, color: Colors.pink, size: 20),
-                  const Text(
-                    ' ∞',
+                    const SizedBox(width: 16),
+                    Icon(Icons.flash_on, color: colorScheme.error, size: 20),
+                    Text(
+                      ' ∞',
+                      style: TextStyle(
+                        color: colorScheme.error,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Selecciona los pares',
                     style: TextStyle(
-                      color: Colors.pink,
-                      fontSize: 16,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Selecciona los pares',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3C3C3C),
+              const SizedBox(height: 55),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: GridView.builder(
+                    key: const ValueKey('grid_view'),
+                    itemCount: _items.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.8,
+                          crossAxisSpacing: 12.0,
+                          mainAxisSpacing: 30.0,
+                        ),
+                    itemBuilder: (context, index) {
+                      return _buildItemChip(_items[index], colorScheme);
+                    },
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 55),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: GridView.builder(
-                  key: const ValueKey('grid_view'),
-                  itemCount: _items.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 2.8,
-                    crossAxisSpacing: 12.0,
-                    mainAxisSpacing: 30.0,
-                  ),
-                  itemBuilder: (context, index) {
-                    return _buildItemChip(_items[index]);
-                  },
-                ),
-              ),
-            ),
-            _buildCheckButton(isComplete),
-          ],
+              _buildCheckButton(isComplete, colorScheme),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildItemChip(ChallengeItem item) {
+  Widget _buildItemChip(ChallengeItem item, ColorScheme colorScheme) {
     // ... (Tu función _buildItemChip no cambia) ...
     final bool isSolved = _solvedPairIds.contains(item.pairId);
     final bool isSelected = _selectedItem == item;
     final bool isMarkedIncorrect =
         _isIncorrect && (_incorrectItem1 == item || _incorrectItem2 == item);
 
-    Color backgroundColor = Colors.white;
-    Color borderColor = Colors.grey.shade300;
-    Color textColor = const Color(0xFF585858);
+    // ... dentro de _buildItemChip ...
+    Color backgroundColor = colorScheme.surfaceContainer; // <-- Default
+    Color borderColor = colorScheme.outline; // <-- Default
+    Color textColor = colorScheme.onSurfaceVariant; // <-- Default
     double elevation = 2.0;
     FontWeight fontWeight = FontWeight.bold;
 
     if (isSolved) {
-      backgroundColor = Colors.green.shade50;
+      // Verde (éxito)
+      backgroundColor = Colors.green.withAlpha(
+        51,
+      ); // Puedes mantener estos o crear unos
       borderColor = Colors.green;
-      textColor = Colors.green.shade700;
+      textColor = Colors.green;
       elevation = 0.0;
     } else if (isMarkedIncorrect) {
-      backgroundColor = Colors.red.shade50;
+      // Rojo (error)
+      backgroundColor = Colors.red.withAlpha(51); // Puedes mantener estos
       borderColor = Colors.red;
-      textColor = Colors.red.shade700;
+      textColor = Colors.red;
       elevation = 2.0;
     } else if (isSelected) {
-      backgroundColor = Colors.blue.shade50;
-      borderColor = Colors.blue;
-      textColor = Colors.blue.shade700;
+      // Primario (seleccionado)
+      backgroundColor = colorScheme.primaryContainer.withAlpha(77);
+      borderColor = colorScheme.primary;
+      textColor = colorScheme.primary;
       elevation = 4.0;
     }
+    // ... el resto del widget ...
 
     VoidCallback? onTap = isSolved ? null : () => _onItemTapped(item);
 
@@ -414,7 +445,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
-  Widget _buildCheckButton(bool isComplete) {
+  Widget _buildCheckButton(bool isComplete, ColorScheme colorScheme) {
     // ... (Tu función _buildCheckButton no cambia) ...
     return Container(
       width: double.infinity,
@@ -426,8 +457,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               }
             : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isComplete ? Colors.green : Colors.grey.shade300,
-          disabledBackgroundColor: Colors.grey.shade300,
+          backgroundColor: isComplete
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
+          disabledBackgroundColor: colorScheme.surfaceContainerHighest,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
@@ -439,7 +472,9 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isComplete ? Colors.white : Colors.grey.shade500,
+            color: isComplete
+                ? colorScheme.onPrimary
+                : colorScheme.onSurfaceVariant,
           ),
         ),
       ),

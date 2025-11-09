@@ -293,12 +293,14 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   controller: _controllers[currentIndex],
                   focusNode: _focusNodes[currentIndex],
                   style: inputStyle,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 4.0),
-                    border: OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    border: const OutlineInputBorder(),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.cyanAccent),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
                     ),
                   ),
                   onChanged: (value) {
@@ -324,95 +326,116 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
   @override
   Widget build(BuildContext context) {
-    const codeStyle = TextStyle(
+    // --- INICIO DE LA MODIFICACIÓN ---
+
+    // 1. Obtenemos el estado del AppBar
+    final appBarState = ref.watch(appBarProvider);
+
+    // 2. Usamos la función helper (que ya existe en este archivo)
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      Theme.of(context).brightness,
+    );
+
+    // 3. Extraemos el esquema de color
+    final colorScheme = challengeTheme.colorScheme;
+
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    final codeStyle = TextStyle(
       fontFamily: 'monospace',
       fontSize: 16,
-      color: Colors.white,
+      color:
+          colorScheme.onSurface, // (o onInverseSurface si el fondo es oscuro)
       height: 1.5,
     );
-    const inputStyle = TextStyle(
+    final inputStyle = TextStyle(
       fontFamily: 'monospace',
       fontSize: 16,
-      color: Colors.cyanAccent,
+      color: colorScheme.secondary, // (El color "cyan" suele ser el secundario)
       fontWeight: FontWeight.bold,
       height: 1.5,
     );
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Completa el Código')),
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.challenge.preguntas.length,
-              onPageChanged: (newIndex) {
-                _setupControllersAndFocusNodesForPage(newIndex);
-              },
-              itemBuilder: (context, index) {
-                if (index != _currentPageIndex) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final pregunta = widget.challenge.preguntas[index];
+    return Theme(
+      // <-- Envolver aquí
+      data: challengeTheme,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Completa el Código')),
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: widget.challenge.preguntas.length,
+                onPageChanged: (newIndex) {
+                  _setupControllersAndFocusNodesForPage(newIndex);
+                },
+                itemBuilder: (context, index) {
+                  if (index != _currentPageIndex) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final pregunta = widget.challenge.preguntas[index];
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        pregunta.instruccion,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 24),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E1E),
-                          borderRadius: BorderRadius.circular(8.0),
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pregunta.instruccion,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        child: RichText(
-                          text: TextSpan(
-                            children: _buildCodeSpans(
-                              pregunta,
-                              codeStyle,
-                              inputStyle,
+                        const SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: RichText(
+                            text: TextSpan(
+                              children: _buildCodeSpans(
+                                pregunta,
+                                codeStyle,
+                                inputStyle,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          // --- MODIFICADO: Reemplazamos el feedback container por un botón ---
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _verificarRespuesta,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+            // --- MODIFICADO: Reemplazamos el feedback container por un botón ---
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _verificarRespuesta,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'VERIFICAR',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: const Text(
+                    'VERIFICAR',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
-          ),
-          // --- FIN MODIFICADO ---
-        ],
+            // --- FIN MODIFICADO ---
+          ],
+        ),
       ),
     );
   }

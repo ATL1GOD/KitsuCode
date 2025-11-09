@@ -95,10 +95,23 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         if (timer < 1) {
           t.cancel();
           final brightness = MediaQuery.of(context).platformBrightness;
-          final pythonColorScheme = (brightness == Brightness.dark)
-              ? pythonDarkColorScheme
-              : pythonLightColorScheme;
-          _checkAnswer("", pythonColorScheme);
+          // --- INICIO DE LA CORRECCIÓN ---
+
+          // 1. Obtenemos el estado del AppBar (para saber el lenguaje)
+          //    Usamos .watch para que reaccione si cambia
+          final appBarState = ref.watch(appBarProvider);
+
+          // 2. Usamos TU PROPIA función helper para obtener el tema correcto
+          final challengeTheme = _getLanguageTheme(
+            appBarState.languageName,
+            brightness,
+          );
+
+          // 3. Extraemos el esquema de color
+          final colorScheme = challengeTheme.colorScheme;
+
+          // --- FIN DE LA CORRECCIÓN ---
+          _checkAnswer("", colorScheme);
         } else if (_cancelTimer == true) {
           t.cancel();
         } else {
@@ -141,7 +154,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
 
   // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN DE LÓGICA!!! ---
-  void _checkAnswer(String k, ColorScheme pythonColorScheme) {
+  void _checkAnswer(String k, ColorScheme colorScheme) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
 
     // --- ¡CAMBIO IMPORTANTE! ---
@@ -247,12 +260,12 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
 
   // --- ¡WIDGET _choiceButton CORREGIDO! ---
-  Widget _choiceButton(String k, ColorScheme pythonColorScheme) {
+  Widget _choiceButton(String k, ColorScheme colorScheme) {
     bool isSelected = selectedAnswer == k;
 
-    Color buttonColor = pythonColorScheme.surfaceContainer;
-    Color borderColor = pythonColorScheme.outline;
-    Color textColor = pythonColorScheme.onSurface;
+    Color buttonColor = colorScheme.surfaceContainer;
+    Color borderColor = colorScheme.outline;
+    Color textColor = colorScheme.onSurface;
 
     if (disableAnswer) {
       // --- ¡LÓGICA COMPLETAMENTE MODIFICADA PARA TU REQUISITO! ---
@@ -277,15 +290,15 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       // Estos permanecen en su estado neutral.
       // ¡Esto evita que la respuesta correcta se muestre en verde si el usuario falló!
       else {
-        borderColor = pythonColorScheme.outline;
-        textColor = pythonColorScheme.onSurface;
-        buttonColor = pythonColorScheme.surfaceContainer;
+        borderColor = colorScheme.outline;
+        textColor = colorScheme.onSurface;
+        buttonColor = colorScheme.surfaceContainer;
       }
       // --- FIN DE LA MODIFICACIÓN ---
     } else if (isSelected) {
-      buttonColor = pythonColorScheme.primaryContainer.withAlpha(77);
-      borderColor = pythonColorScheme.primary;
-      textColor = pythonColorScheme.primary;
+      buttonColor = colorScheme.primaryContainer.withAlpha(77);
+      borderColor = colorScheme.primary;
+      textColor = colorScheme.primary;
     }
 
     return Padding(
@@ -342,13 +355,26 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     ]);
 
     final brightness = MediaQuery.of(context).platformBrightness;
-    final pythonColorScheme = (brightness == Brightness.dark)
-        ? pythonDarkColorScheme
-        : pythonLightColorScheme;
+    // --- INICIO DE LA CORRECCIÓN ---
+
+    // 1. Obtenemos el estado del AppBar (para saber el lenguaje)
+    //    Usamos .watch para que reaccione si cambia
+    final appBarState = ref.watch(appBarProvider);
+
+    // 2. Usamos TU PROPIA función helper para obtener el tema correcto
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      brightness,
+    );
+
+    // 3. Extraemos el esquema de color
+    final colorScheme = challengeTheme.colorScheme;
+
+    // --- FIN DE LA CORRECCIÓN ---
 
     if (_randomArray.isEmpty) {
       return Scaffold(
-        backgroundColor: pythonColorScheme.surface,
+        backgroundColor: colorScheme.surface,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -357,10 +383,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     double progress = j / totalQuestions;
 
     return Theme(
-      data: ThemeData.from(
-        colorScheme: pythonColorScheme,
-        useMaterial3: true,
-      ).copyWith(scaffoldBackgroundColor: pythonColorScheme.surface),
+      data: challengeTheme,
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (bool didPop, dynamic _) {
@@ -382,10 +405,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         },
         child: Scaffold(
           appBar: AppBar(
-            backgroundColor: pythonColorScheme.surface,
+            backgroundColor: colorScheme.surface,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.close, color: pythonColorScheme.onSurface),
+              icon: Icon(Icons.close, color: colorScheme.onSurface),
               // --- ¡CAMBIO 3! Lógica reparada para el botón 'X' ---
               onPressed: () {
                 showDialog(
@@ -421,9 +444,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     borderRadius: const BorderRadius.all(Radius.circular(10)),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: pythonColorScheme.surfaceContainerHigh,
+                      backgroundColor: colorScheme.surfaceContainerHigh,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        pythonColorScheme.primary,
+                        colorScheme.primary,
                       ),
                       minHeight: 12,
                     ),
@@ -433,13 +456,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: pythonColorScheme.primaryContainer,
+                    color: colorScheme.primaryContainer,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     _showTimer,
                     style: TextStyle(
-                      color: pythonColorScheme.onPrimaryContainer,
+                      color: colorScheme.onPrimaryContainer,
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                     ),
@@ -469,13 +492,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: pythonColorScheme.onSurface,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 20),
                     _buildQuestionCard(
                       widget.mydata.questions[questionKey] ?? "Cargando...",
-                      pythonColorScheme,
+                      colorScheme,
                     ),
                     const SizedBox(height: 30),
                     // Opciones de respuesta
@@ -484,10 +507,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          _choiceButton('a', pythonColorScheme),
-                          _choiceButton('b', pythonColorScheme),
-                          _choiceButton('c', pythonColorScheme),
-                          _choiceButton('d', pythonColorScheme),
+                          _choiceButton('a', colorScheme),
+                          _choiceButton('b', colorScheme),
+                          _choiceButton('c', colorScheme),
+                          _choiceButton('d', colorScheme),
                         ],
                       ),
                     ),
@@ -511,8 +534,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                         // AHORA ESTO FUNCIONARÁ
                         ? (_wasCorrect == true ? Colors.green : Colors.red)
                         : (selectedAnswer != null
-                              ? pythonColorScheme.primary
-                              : pythonColorScheme.surfaceContainerHighest),
+                              ? colorScheme.primary
+                              : colorScheme.surfaceContainerHighest),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -525,7 +548,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                           if (disableAnswer) {
                             _nextQuestion();
                           } else {
-                            _checkAnswer(selectedAnswer!, pythonColorScheme);
+                            _checkAnswer(selectedAnswer!, colorScheme);
                           }
                         },
                   child: Text(

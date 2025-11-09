@@ -1,7 +1,7 @@
 // lib/features/quiz_game/view/quiz_loader.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/quiz_game/view/widgets/quiz_page.dart';
+import 'package:kitsucode/features/quiz_game/view/widgets/quiz_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
 

@@ -2,13 +2,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
 import 'package:kitsucode/shared/appbar/kitsu_appbar.dart';
+
 // --- ¡CAMBIO 1! ---
 // Importamos el provider del AppBar para saber el lenguaje actual
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -31,12 +34,13 @@ class _HomeViewState extends ConsumerState<HomeView> {
   // El título de la sección cambiará 50px antes de que el nivel
   // alcance la posición de detección.
   final double _anticipationMargin = 0.1;
+  final double _aestheticOffset = 80.0;
 
-  // (Tu función initState - sin cambios)
   @override
   void initState() {
     super.initState();
     scrollCtrl.addListener(scrollListener);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateSectionOffsets();
       scrollListener();
@@ -94,7 +98,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
     }
   }
 
-  // (Tu función dispose - sin cambios)
   @override
   void dispose() {
     scrollCtrl.removeListener(scrollListener);
@@ -119,12 +122,47 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
   @override
   Widget build(BuildContext context) {
+    // Verificar si debemos refrescar las estadísticas
+    final shouldRefresh = ref.watch(shouldRefreshStatsProvider);
+    
+    if (shouldRefresh) {
+      // IMPORTANTE: Modificar el provider DESPUÉS de que termine el build
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // CRÍTICO: Verificar que REALMENTE estamos en el Home
+        // GoRouter con ShellRoute mantiene el HomeView vivo incluso en otras rutas
+        final currentRoute = GoRouterState.of(context).uri.toString();
+        
+        if (currentRoute != '/home') {
+          return;
+        }
+        
+        // Restaurar valores antiguos primero (si existen) para garantizar animación
+        final oldValues = ref.read(oldStatsValuesProvider);
+        
+        if (oldValues != null && oldValues.length == 3) {
+          ref.read(appBarProvider.notifier).updateStatsDirectly(
+            lives: oldValues[0],
+            trophies: oldValues[1],
+            streak: oldValues[2],
+          );
+          // NO limpiamos oldValues aquí - los necesitamos para cuando regresemos del feedback
+        } else {
+          // Si no hay valores guardados, hacemos fetch normal
+          await Future.delayed(const Duration(milliseconds: 50));
+          if (!mounted) return;
+          await ref.read(appBarProvider.notifier).fetchStats();
+          ref.read(shouldRefreshStatsProvider.notifier).state = false;
+        }
+      });
+    }
+    
     final sectionsAsync = ref.watch(homeViewModelProvider);
 
     // --- ¡CAMBIO 3! ---
-    // Ahora TAMBIÉN observamos el appBarProvider.
-    // Cuando el 'languageName' cambie, este widget se reconstruirá.
-    final appBarState = ref.watch(appBarProvider);
+    // Leemos el appBarProvider SOLO para obtener el languageName
+    // Usamos .read en lugar de .watch para evitar rebuilds innecesarios
+    // cuando cambien vidas/trofeos/racha (solo queremos rebuilds si cambia el lenguaje)
+    final appBarState = ref.read(appBarProvider);
 
     // Obtenemos el path del mapa dinámicamente
     final mapAssetPath = _getMapBackgroundForLanguage(appBarState.languageName);
@@ -141,10 +179,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
           }
 
           if (sections.isEmpty) {
-            // --- ¡CAMBIO 4! ---
-            // Un estado de carga mejorado mientras el appBarProvider
-            // le pasa el ID al homeViewModelProvider.
-            if (appBarState.isLoading) {
+            // Estado vacío - verificamos si aún está cargando el lenguaje
+            final isAppBarLoading = ref.read(appBarProvider).isLoading;
+            if (isAppBarLoading) {
               return const Center(child: CircularProgressIndicator());
             }
             // Si no está cargando y no hay secciones, es que no hay datos.

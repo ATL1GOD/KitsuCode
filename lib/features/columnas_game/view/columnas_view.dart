@@ -8,6 +8,7 @@ import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
 // --- Importaciones para la puntuación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 
 // --- NUEVO: Importaciones para el modal y el router ---
@@ -219,6 +220,17 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               if (_hasSubmitted) return;
               _hasSubmitted = true;
 
+              // 0. GUARDAR valores actuales ANTES de submitChallengeAttempt
+              final currentStats = ref.read(appBarProvider);
+              ref.read(oldStatsValuesProvider.notifier).state = [
+                currentStats.lives,
+                currentStats.trophies,
+                currentStats.streak,
+              ];
+              
+              // Marcar flag para que Realtime NO actualice mientras estamos en feedback
+              markForStatsRefresh(ref);
+
               final repository = ref.read(challengeRepositoryProvider);
               final int retoIdAsInt = int.parse(widget.retoId);
 
@@ -230,8 +242,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                   tiempoQueTardo: 0,
                 );
 
-                // 2. Refrescar stats y ranking
-                ref.read(appBarProvider.notifier).fetchStats();
+                // 2. Refrescar ranking (NO refrescamos stats aquí - se hará al regresar al Home)
                 ref.invalidate(globalRankingProvider);
 
                 // 3. Navegar (assuming default trophy value or get it from elsewhere)
@@ -245,13 +256,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                   tiempoQueTardo: 0,
                 );
 
-                // 2. Refrescar stats (vidas)
-                ref.read(appBarProvider.notifier).fetchStats();
-
-                // 3. Obtener recursos del widget
+                // 2. Obtener recursos del widget (NO refrescamos stats aquí - se hará al regresar al Home)
                 final List<RecursoModel> recursos = widget.challenge.recursos;
 
-                // 4. Navegar
+                // 3. Navegar
                 if (!context.mounted) return;
                 context.push('/challenge_failure', extra: recursos);
               }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 // ¡¡Importa la nueva clase HomeMapData!!
 import 'package:kitsucode/features/home/repository/home_repository.dart';
+
+// Importamos el provider del languageId SOLAMENTE.
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
 // 1. El Provider (ViewModel)
@@ -14,11 +16,33 @@ final homeViewModelProvider =
 class HomeViewModel extends AsyncNotifier<List<SectionData>> {
   @override
   Future<List<SectionData>> build() async {
+    // --- ¡DEBUG! ---
+    debugPrint("--- HomeViewModel: build() SE EJECUTÓ ---");
+
+    // 1. Observamos SOLO el languageId (no todo el appBarState)
+    //    Esto evita rebuilds cuando cambian vidas/trofeos/racha
+    final languageId = ref.watch(currentLanguageIdProvider);
+
+    // --- ¡DEBUG! ---
+    debugPrint("HomeViewModel: 'languageId' observado -> $languageId");
+
+    // 2. Si el ID es 0, retornamos una lista vacía
+    if (languageId == 0) {
+      
+      // --- ¡DEBUG! ---
+      debugPrint("HomeViewModel: languageId es 0. Retornando mapa vacío [].");
+      
     final appBarState = ref.watch(appBarProvider);
     if (appBarState.isLoading || appBarState.languageId == 0) {
       return [];
     }
     return _fetchSections(appBarState.languageId);
+
+    // --- ¡DEBUG! ---
+    debugPrint("HomeViewModel: Llamando a _fetchSections con ID: $languageId");
+
+    // 3. Una vez que tenemos el ID del lenguaje, cargamos las secciones.
+    return _fetchSections(languageId);
   }
 
   // --- ¡¡MÉTODO CLAVE MODIFICADO!! ---
@@ -81,7 +105,7 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
   // (Tu función de refresh)
   Future<void> refreshSections() async {
     state = const AsyncValue.loading();
-    final languageId = ref.read(appBarProvider).languageId;
+    final languageId = ref.read(currentLanguageIdProvider);
     if (languageId == 0) {
       state = await AsyncValue.guard(() => Future.value([]));
       return;

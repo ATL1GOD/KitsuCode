@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Para abrir los enlaces
 
 // --- Modelo Temporal de Recursos ---
@@ -166,8 +167,16 @@ class ChallengeFailureView extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  onPressed: () {
-                    // Acción final: Regresar al home
+                  onPressed: () async {
+                    // Los valores viejos ya están guardados en oldStatsValuesProvider
+                    // Ahora hacemos fetchStats para obtener los nuevos valores
+                    await ref.read(appBarProvider.notifier).fetchStats();
+                    
+                    // Limpiar valores guardados y resetear flag
+                    ref.read(oldStatsValuesProvider.notifier).state = null;
+                    ref.read(shouldRefreshStatsProvider.notifier).state = false;
+                    
+                    if (!context.mounted) return;
                     context.go('/home');
                   },
                   child: const Text(

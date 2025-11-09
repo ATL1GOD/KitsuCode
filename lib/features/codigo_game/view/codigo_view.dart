@@ -6,6 +6,7 @@ import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
 // --- Importaciones para la puntuación y navegación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 // --- FIN CAMBIO 2 ---
 import 'package:kitsucode/features/home/provider/home_provider.dart';
@@ -219,6 +220,18 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
               if (_hasSubmitted) return;
               _hasSubmitted = true; // Marcamos como enviado
 
+              // 0. GUARDAR valores actuales ANTES de submitChallengeAttempt
+              //    porque ese método dispara los listeners de Realtime
+              final currentStats = ref.read(appBarProvider);
+              ref.read(oldStatsValuesProvider.notifier).state = [
+                currentStats.lives,
+                currentStats.trophies,
+                currentStats.streak,
+              ];
+              
+              // Marcar flag para que Realtime NO actualice mientras estamos en feedback
+              markForStatsRefresh(ref);
+
               final repository = ref.read(challengeRepositoryProvider);
               final int retoIdAsInt = int.parse(widget.retoId);
 
@@ -229,9 +242,8 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   fueExitoso: true,
                   tiempoQueTardo: 0,
                 );
-
-                // 2. Refrescar stats y ranking
-                ref.read(appBarProvider.notifier).fetchStats();
+                
+                // 2. Refrescar ranking (NO refrescamos stats aquí - se hará al regresar al Home)
                 ref.invalidate(globalRankingProvider);
 
                 // 3. Navegar (assuming default trofeos value)
@@ -245,13 +257,12 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   tiempoQueTardo: 0,
                 );
 
-                // 2. Refrescar stats (vidas)
-                ref.read(appBarProvider.notifier).fetchStats();
-
-                // 3. Obtener recursos del widget (ya cargados en el modelo)
+                // 2. Obtener recursos del widget (NO refrescamos stats aquí - se hará al regresar al Home)
                 final List<RecursoModel> recursos = widget.challenge.recursos;
 
                 // 4. Navegar
+                
+                // 3. Navegar
                 if (!context.mounted) return;
                 context.push('/challenge_failure', extra: recursos);
               }

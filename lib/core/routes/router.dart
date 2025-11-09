@@ -28,6 +28,8 @@ import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 import 'package:kitsucode/features/profile/view/follow_list_view.dart';
+import 'package:kitsucode/main.dart'; // importar el observer
+
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -235,6 +237,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
+    observers: [routeObserver],
   );
 });
 

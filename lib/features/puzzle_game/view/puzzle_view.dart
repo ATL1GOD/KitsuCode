@@ -14,6 +14,7 @@ import 'package:animate_do/animate_do.dart';
 // --- ¡CAMBIO 1! (Importaciones para el Tema y el Lenguaje) ---
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 // --- FIN CAMBIO 1 ---
 
 // --- NUEVO: Importaciones para el repositorio, modelo y ranking ---
@@ -212,6 +213,17 @@ class PuzzleView extends ConsumerWidget {
                     // --- MODIFICADO: Lógica de onContinue ---
                     onContinue: () async {
                       context.pop(); // Cierra el pop-up
+                      
+                      // 0. GUARDAR valores actuales ANTES de submitChallengeAttempt
+                      final currentStats = ref.read(appBarProvider);
+                      ref.read(oldStatsValuesProvider.notifier).state = [
+                        currentStats.lives,
+                        currentStats.trophies,
+                        currentStats.streak,
+                      ];
+                      
+                      // Marcar flag para que Realtime NO actualice mientras estamos en feedback
+                      markForStatsRefresh(ref);
 
                       final repository = ref.read(challengeRepositoryProvider);
                       // Leemos el estado actual que tiene el ID y los recursos
@@ -225,8 +237,7 @@ class PuzzleView extends ConsumerWidget {
                           tiempoQueTardo: 0, // TODO: Implementar timer
                         );
 
-                        // 2. Refrescar los stats del AppBar y Ranking
-                        ref.read(appBarProvider.notifier).fetchStats();
+                        // 2. Refrescar Ranking (NO refrescamos stats aquí - se hará al regresar al Home)
                         ref.invalidate(globalRankingProvider);
 
                         // 3. Navegar a la vista de éxito (usando un valor por defecto para trofeos)
@@ -243,14 +254,11 @@ class PuzzleView extends ConsumerWidget {
                           tiempoQueTardo: 0,
                         );
 
-                        // 2. Refrescar los stats del AppBar (vidas, racha)
-                        ref.read(appBarProvider.notifier).fetchStats();
-
-                        // 3. Obtener recursos del estado
+                        // 2. Obtener recursos del estado (NO refrescamos stats aquí - se hará al regresar al Home)
                         final List<RecursoModel> recursos =
                             currentState.recursos;
 
-                        // 4. Navegar a la vista de fracaso
+                        // 3. Navegar a la vista de fracaso
                         if (!context.mounted) return;
                         context.push('/challenge_failure', extra: recursos);
                       }

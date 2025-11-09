@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 
 const String _defaultAsset = 'assets/images/logo_python.png';
 
@@ -210,12 +211,33 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
     //    correctos para el *nuevo* lenguaje.
     await fetchStats();
   }
+
+  // Método para actualizar stats directamente sin hacer fetch
+  // Útil para restaurar valores antiguos antes de hacer un fetch y animar
+  void updateStatsDirectly({
+    required int lives,
+    required int trophies,
+    required int streak,
+  }) {
+    state = state.copyWith(
+      lives: lives,
+      trophies: trophies,
+      streak: streak,
+    );
+  }
 }
 
 // 3. PROVIDER DEL NOTIFIER (Sin cambios)
 final appBarProvider = StateNotifierProvider<AppBarNotifier, AppBarState>((ref) {
   final supabase = Supabase.instance.client;
   return AppBarNotifier(supabase);
+});
+
+// 3.5 PROVIDER SEPARADO SOLO PARA EL LANGUAGE ID
+// Este provider SOLO cambia cuando cambia el lenguaje, no cuando cambian stats
+// Esto evita rebuilds innecesarios del HomeView
+final currentLanguageIdProvider = Provider<int>((ref) {
+  return ref.watch(appBarProvider.select((state) => state.languageId));
 });
 
 // --- 4. PROVIDER DE REALTIME (Sin cambios) ---
@@ -230,6 +252,7 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
   if (userId == null) return;
 
   // 1. Canal para racha/Vidas
+  // Actualiza en tiempo real SI no estás en un reto/feedback
   final statsChannel = supabase.channel('public:estadistica_usuario:appbar');
   statsChannel.onPostgresChanges(
     event: PostgresChangeEvent.update,
@@ -241,13 +264,18 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
       value: userId,
     ),
     callback: (payload) {
-      debugPrint(
-          "CAMBIO EN ESTADISTICAS (RACHA/VIDAS) DETECTADO -> Refrescando AppBar");
-      ref.read(appBarProvider.notifier).fetchStats();
+      // Verificamos si el flag de refresh está activo
+      // Si está activo, significa que estamos en un reto y debemos esperar
+      final shouldWaitForReturn = ref.read(shouldRefreshStatsProvider);
+      
+      if (!shouldWaitForReturn) {
+        ref.read(appBarProvider.notifier).fetchStats();
+      }
     },
   ).subscribe();
 
   // 2. Canal para trofeos
+  // Actualiza en tiempo real SI no estás en un reto/feedback
   final trofeosChannel = supabase.channel('public:intento_reto:appbar');
   trofeosChannel.onPostgresChanges(
     event: PostgresChangeEvent.all,
@@ -259,9 +287,12 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
       value: userId,
     ),
     callback: (payload) {
-      debugPrint(
-          "CAMBIO EN INTENTOS (TROFEOS) DETECTADO -> Refrescando AppBar");
-      ref.read(appBarProvider.notifier).fetchStats();
+      // Verificamos si el flag de refresh está activo
+      final shouldWaitForReturn = ref.read(shouldRefreshStatsProvider);
+      
+      if (!shouldWaitForReturn) {
+        ref.read(appBarProvider.notifier).fetchStats();
+      }
     },
   ).subscribe();
 

@@ -6,6 +6,7 @@ class UserAchievementModel {
   final String descripcion;
   final String iconUrl; 
   final bool obtenido;
+  final String raridad; // <-- ¡NUEVO CAMPO!
 
   UserAchievementModel({
     required this.id,
@@ -13,19 +14,17 @@ class UserAchievementModel {
     required this.descripcion,
     required this.iconUrl,
     required this.obtenido,
+    required this.raridad, // <-- ¡NUEVO EN CONSTRUCTOR!
   });
   
   factory UserAchievementModel.fromJson(Map<String, dynamic> json) {
-    // La función RPC nos da los nombres de columna en minúsculas
     return UserAchievementModel(
       id: json['id'], 
       nombre: json['nombre'] ?? 'Logro',
       descripcion: json['descripcion'] ?? 'Sin descripción',
-      // 'iconurl' es el alias 'AS iconUrl' que definimos en la función RPC
-      // Supabase lo convierte a minúsculas.
       iconUrl: json['iconurl'] ?? 'assets/images/zorro_oops.png', 
-      // 'obtenido' es el booleano que la RPC calcula por nosotros
       obtenido: json['obtenido'] ?? false,
+      raridad: json['raridad'] ?? 'Común', // <-- ¡NUEVO PARSEO!
     );
   }
 }

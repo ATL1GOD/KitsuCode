@@ -188,6 +188,10 @@ class PuzzleView extends ConsumerWidget {
               context: context,
               backgroundColor: Colors.transparent,
               isScrollControlled: true,
+              // ✅ 1. DESHABILITA EL TAP AFUERA
+              isDismissible: false,
+              // ✅ 2. DESHABILITA ARRASTRAR PARA CERRAR
+              enableDrag: false,
               builder: (ctx) {
                 // --- ¡CAMBIO 6! (Envolvemos el Feedback en el Tema) ---
                 return Theme(

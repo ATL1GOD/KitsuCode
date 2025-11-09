@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; 
 
 class AchievementModal extends StatelessWidget {
   final UserAchievementModel achievement;
@@ -46,29 +47,14 @@ class _ModalContent extends StatelessWidget {
 
   const _ModalContent({required this.achievement});
 
-  Color _getBorderColor(int id, ColorScheme colors) {
-    switch (id % 3) {
-      case 0: return colors.secondary;
-      case 1: return colors.primary;
-      case 2: return const Color(0xFF00FF00);
-      default: return colors.outline;
-    }
-  }
 
-  String _getRarityText(int id) {
-    switch (id % 3) {
-      case 0: return 'ÉPICO';
-      case 1: return 'COMÚN';
-      case 2: return 'LEGENDARIO';
-      default: return 'DESCONOCIDO';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final borderColor = _getBorderColor(achievement.id, colors);
-    final rarityText = _getRarityText(achievement.id);
+    final String raridad = achievement.raridad; // Obtenemos la rareza real
+    final Color borderColor = getRarityColor(raridad); // Color según rareza
+    final String rarityText = getRarityText(raridad); // Texto según rareza
     final isUnlocked = achievement.obtenido;
     final lockedColor = colors.onSurfaceVariant.withOpacity(0.5);
 

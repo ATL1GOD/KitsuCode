@@ -156,7 +156,7 @@ class ProfileRepository {
       // ✅ Y AHORA USA '_supabase' (la variable de la clase)
       final data = await _supabase
           .from('logro')
-          .select('nombre, icono')
+          .select('nombre, icono, raridad')
           .eq('id_logro', logroId)
           .single(); // .single() asegura que obtenemos solo uno
 

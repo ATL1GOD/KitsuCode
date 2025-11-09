@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 
 class ChallengeFeedbackModal extends StatelessWidget {
@@ -25,7 +24,9 @@ class ChallengeFeedbackModal extends StatelessWidget {
     // animación Lottie según si es correcto o no
     final String lottieAsset = 'assets/animations/fox_run.json';
 
-    return Container(
+    return PopScope(
+      canPop: false, // Bloquea el gesto de retroceso
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20).copyWith(
         bottom: MediaQuery.of(context).padding.bottom + 20, // SafeArea
       ),
@@ -86,6 +87,7 @@ class ChallengeFeedbackModal extends StatelessWidget {
             ),
           )
         ],
+      ),
       ),
     );
   }

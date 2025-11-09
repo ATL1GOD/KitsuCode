@@ -1,44 +1,59 @@
 import 'package:flutter/material.dart';
-
-// Este es solo el WIDGET de la UI.
-// El paquete 'overlay_support' se encargará de animarlo para que 
-// aparezca y desaparezca.
+import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; // ¡Ya tenemos este helper!
 
 class AchievementToast extends StatelessWidget {
   final String nombreLogro;
   final String iconUrl;
+  final String raridad; 
 
   const AchievementToast({
     super.key,
     required this.nombreLogro,
     required this.iconUrl,
+    required this.raridad,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final Color rarityColor = getRarityColor(raridad); // Nuestro helper de colores
+    final bool isDarkMode = colors.brightness == Brightness.dark;
 
-    // Usamos SafeArea para que la notificación no se encime
-    // con la barra de estado/notch del teléfono.
     return SafeArea(
       child: Material(
         color: Colors.transparent,
         child: Container(
-          // Márgenes para que no ocupe toda la pantalla
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            // Un color oscuro de tu tema (¡puedes cambiarlo!)
-            color: colors.surfaceVariant, 
+            // ✅ 1. FONDO CON GRADIENTE KITSU (diferente para light y dark)
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDarkMode
+                  ? [
+                      // Dark mode: mantiene el gradiente 
+                      colors.surfaceContainerHighest, // Gris oscuro
+                      colors.surfaceContainerLowest,  // Negro
+                    ]
+                  : [
+                      // Light mode: balance entre sutil y notorio
+                      colors.surfaceBright,           // Blanco brillante (#FDFDFD)
+                      colors.surfaceContainerHigh,    // Gris suave (#EDEDED)
+                    ],
+            ),
             borderRadius: BorderRadius.circular(16),
+            // 2. BORDE (se queda igual)
             border: Border.all(
-              color: colors.primary.withOpacity(0.5), // Borde con tu color primario
+              color: rarityColor.withOpacity(0.5),
               width: 1,
             ),
+            // ✅ 3. ¡EL AURA! (BoxShadow mejorado)
             boxShadow: [
               BoxShadow(
-                color: colors.primary.withOpacity(0.2), // Sombra suave
-                blurRadius: 10,
+                color: rarityColor.withOpacity(0.4), // Aura más intensa
+                blurRadius: 15.0, // Más difuminada
+                spreadRadius: 2.0,  // Un poco más grande
               )
             ],
           ),
@@ -52,13 +67,12 @@ class AchievementToast extends StatelessWidget {
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
-                  // Un placeholder por si la imagen tarda o falla en cargar
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       width: 50,
                       height: 50,
                       color: colors.onSurface.withOpacity(0.1),
-                      child: Icon(Icons.shield, color: colors.primary),
+                      child: Icon(Icons.shield, color: rarityColor), // Icono de error con color de rareza
                     );
                   },
                 ),
@@ -75,7 +89,7 @@ class AchievementToast extends StatelessWidget {
                       "¡Logro Desbloqueado!",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: colors.primary, // Color Kitsu
+                        color: rarityColor, // Color Kitsu (de la rareza)
                         fontSize: 16,
                       ),
                     ),

@@ -42,7 +42,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   // --- FIN MODIFICADO ---
   
   bool _hasSubmitted = false;
-  bool _currentAnswerWasCorrect = false; // Para saber qué modal mostrar
 
   @override
   void initState() {
@@ -141,8 +140,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     // ... (fin lógica)
 
     // --- MODIFICADO: Lógica de feedback ---
-    _currentAnswerWasCorrect = todasCorrectas;
-
     if (todasCorrectas) {
       _siguientePregunta();
     } else {
@@ -201,6 +198,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      // ✅ 1. DESHABILITA EL TAP AFUERA
+      isDismissible: false,
+      // ✅ 2. DESHABILITA ARRASTRAR PARA CERRAR
+      enableDrag: false,
       builder: (ctx) {
         return Theme(
           data: challengeTheme,

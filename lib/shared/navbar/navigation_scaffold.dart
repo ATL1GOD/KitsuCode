@@ -19,7 +19,7 @@ class ScaffoldWithNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(newAchievementNotifierProvider);
+    ref.watch(achievementNotifierProvider); // Mantener actualizado el estado de logros
     return Scaffold(
       // --- Permitir que el body se dibuje detrás de la NavBar ---
       extendBody: true,

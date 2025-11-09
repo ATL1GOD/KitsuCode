@@ -13,6 +13,7 @@ import 'package:overlay_support/overlay_support.dart'; // Para mostrar la notifi
 import 'package:kitsucode/shared/widgets/achievement_toast.dart'; // El widget que creamos
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:collection';
 
 // Provider para el repositorio de perfil
 final profileRepositoryProvider = Provider((ref) {
@@ -168,62 +169,117 @@ final achievementRealtimeProvider = Provider.autoDispose((ref) {
   return channel;
 });
 
-// ✅✅✅ VERSIÓN CORREGIDA DEL NOTIFIER PROVIDER ✅✅✅
-final newAchievementNotifierProvider = Provider.autoDispose((ref) {
-  final supabase = Supabase.instance.client;
+// --- PASO 1: Un modelo simple para los datos de la notificación ---
+class AchievementNotificationData {
+  final String nombreLogro;
+  final String iconUrl;
+  final String raridad;
 
-  // ✅ ¡LA CORRECCIÓN ESTÁ AQUÍ! ✅
-  // 1. Vemos el 'authStateProvider' (que es un StreamProvider)
-  final authState = ref.watch(authStateProvider);
-  
-  // 2. Accedemos a su valor actual (value), luego a la sesión, al usuario y al ID.
-  final currentUserId = authState.value?.session?.user?.id; 
-
-  // 3. Si no hay ID de usuario (no está logueado), no hacemos nada.
-  if (currentUserId == null) return null;
-
-  final channel = supabase.channel('public:usuario_logro_toast');
-
-  channel.onPostgresChanges(
-    event: PostgresChangeEvent.insert,
-    schema: 'public',
-    table: 'usuario_logro',
-    callback: (payload) async {
-      try {
-        final newRecord = payload.newRecord;
-        if (newRecord.isEmpty) return;
-
-        // Verificamos si el logro es PARA MÍ (el usuario actual)
-        if (newRecord['id_usuario'] == currentUserId) {
-          
-          // ¡Es para mí! Obtenemos los detalles del logro
-          final logroId = newRecord['id_logro'] as int;
-          
-          final details = await ref.read(profileRepositoryProvider).fetchLogroDetails(logroId);
-
-          final nombreLogro = details['nombre'] ?? 'Logro Desbloqueado';
-          final iconUrl = details['icono'] ?? 'assets/images/zorro_oops.png';
-
-          // ¡Mostramos la notificación!
-          showSimpleNotification(
-            AchievementToast(
-              nombreLogro: nombreLogro,
-              iconUrl: iconUrl,
-            ),
-            background: Colors.transparent,
-            elevation: 0,
-            duration: const Duration(seconds: 4),
-          );
-        }
-      } catch (e) {
-        debugPrint('Error al mostrar notificación de logro: $e');
-      }
-    },
-  ).subscribe();
-
-  ref.onDispose(() {
-    supabase.removeChannel(channel);
+  AchievementNotificationData({
+    required this.nombreLogro,
+    required this.iconUrl,
+    required this.raridad,
   });
+}
 
-  return channel;
+// --- PASO 2: El StateNotifier que maneja la fila de espera ---
+class AchievementNotifier extends StateNotifier<bool> {
+  final Ref _ref;
+  // La fila de espera para logros pendientes
+  final Queue<AchievementNotificationData> _queue = Queue();
+  // Un "seguro" para saber si ya estamos mostrando una notificación
+  bool _isDisplaying = false;
+
+  AchievementNotifier(this._ref) : super(false) {
+    _initListener(); // Inicia la escucha al crearse
+  }
+
+  // El "Oído" que escucha Supabase
+  void _initListener() {
+    final supabase = Supabase.instance.client; // Supabase client 
+
+    final authState = _ref.read(authStateProvider);
+    final currentUserId = authState.value?.session?.user?.id;
+    if (currentUserId == null) return;
+
+    final channel = supabase.channel('public:usuario_logro_toast_v2');
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'usuario_logro',
+      callback: (payload) async {
+        try {
+          final newRecord = payload.newRecord;
+          if (newRecord.isEmpty) return;
+
+          if (newRecord['id_usuario'] == currentUserId) {
+            // ¡Logro ganado!
+            final logroId = newRecord['id_logro'] as int;
+            final details = await _ref.read(profileRepositoryProvider).fetchLogroDetails(logroId);
+
+            final notificationData = AchievementNotificationData(
+              nombreLogro: details['nombre'] ?? 'Logro Desbloqueado',
+              iconUrl: details['icono'] ?? 'assets/images/zorro_oops.png',
+              raridad: details['raridad'] ?? 'Común',
+            );
+
+            // ¡En lugar de mostrarla, la añadimos a la fila!
+            _addToQueue(notificationData);
+          }
+        } catch (e) {
+          debugPrint('Error al recibir notificación de logro: $e');
+        }
+      },
+    ).subscribe();
+
+    state = true; // Marcamos que el listener está activo
+    _ref.onDispose(() {
+      supabase.removeChannel(channel);
+    });
+  }
+
+  // Método público para añadir un logro a la fila
+  void _addToQueue(AchievementNotificationData data) {
+    _queue.add(data);
+    _processQueue(); // Intenta procesar la fila
+  }
+
+  // El "Cerebro" que procesa la fila uno por uno
+  Future<void> _processQueue() async {
+    // Si la fila está vacía, o si ya estamos mostrando un logro, no hacemos nada.
+    if (_queue.isEmpty || _isDisplaying) {
+      return;
+    }
+
+    // ¡Hay un logro y no estamos ocupados!
+    _isDisplaying = true; // Ponemos el "seguro"
+
+    // 1. Sacamos el logro de la fila
+    final notificationData = _queue.removeFirst();
+
+    // 2. Mostramos la notificación
+    showSimpleNotification(
+      AchievementToast(
+        nombreLogro: notificationData.nombreLogro,
+        iconUrl: notificationData.iconUrl,
+        raridad: notificationData.raridad,
+      ),
+      background: Colors.transparent,
+      elevation: 0,
+      duration: const Duration(seconds: 4),
+    );
+
+    // 3. Esperamos a que la notificación termine (4s) + 1s de animación de salida
+    await Future.delayed(const Duration(seconds: 5));
+
+    _isDisplaying = false; // Quitamos el "seguro"
+    
+    // 4. Volvemos a llamar a la función por si hay más logros en la fila
+    _processQueue();
+  }
+}
+
+// --- PASO 3: El Provider que crea y mantiene vivo nuestro Notifier ---
+final achievementNotifierProvider = StateNotifierProvider<AchievementNotifier, bool>((ref) {
+  return AchievementNotifier(ref);
 });

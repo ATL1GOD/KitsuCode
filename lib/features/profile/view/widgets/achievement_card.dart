@@ -1,8 +1,10 @@
 // lib/features/profile/view/widgets/achievement_card.dart
 
 import 'package:flutter/material.dart';
-import 'package:kitsucode/features/profile/model/user_achievement_model.dart'; 
+import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart';
+// ✅ 1. ¡IMPORTA EL HELPER QUE CREAMOS!
+import 'package:kitsucode/features/profile/utils/achievement_helpers.dart';
 
 class AchievementCard extends StatelessWidget {
   final UserAchievementModel achievement;
@@ -17,21 +19,17 @@ class AchievementCard extends StatelessWidget {
     required this.colors,
     this.isCompactView = false,
     this.isClickable = true, // Por defecto es clickeable
-  });
+  }); 
 
-  Color _getBorderColor(int achievementId, ColorScheme colors) {
-    switch (achievementId % 3) {
-      case 0: return colors.secondary;
-      case 1: return colors.primary;
-      case 2: return const Color(0xFF00FF00);
-      default: return colors.outline;
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
     final isUnlocked = achievement.obtenido;
-    final effectColor = _getBorderColor(achievement.id, colors);
+    
+    // ✅ 2. ¡CORREGIDO! LLAMAMOS AL HELPER SIN EL PARÁMETRO 'colors'
+    final effectColor = getRarityColor(achievement.raridad); 
+    
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 360;
 
@@ -111,9 +109,8 @@ class AchievementCard extends StatelessWidget {
       ),
     );
 
-    // ✅ SOLO agregar el tap si:
-    // 1. isClickable es true (para permitir control externo)
-    // 2. Y el logro está desbloqueado
+    // ✅ Tu lógica de click es correcta:
+    // Permite abrir el modal (que mostrará el estado bloqueado/desbloqueado)
     if (isClickable) {
       return GestureDetector(
         onTap: () => AchievementModal.show(context, achievement),
@@ -121,7 +118,7 @@ class AchievementCard extends StatelessWidget {
       );
     }
 
-    // Si no es clickeable o está bloqueado, solo retorna el contenido
+    // Si no es clickeable, solo retorna el contenido
     return cardContent;
   }
 }

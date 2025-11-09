@@ -16,6 +16,7 @@ import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
 import 'package:giffy_dialog/giffy_dialog.dart';
+import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 
 class QuizPage extends ConsumerStatefulWidget {
   final QuizData mydata;
@@ -339,7 +340,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         canPop: false,
         onPopInvokedWithResult: (bool didPop, dynamic _) {
           if (didPop) return;
-          _showExitDialog();
+          showExitDialog(context);
         },
         child: Scaffold(
           appBar: _buildAppBar(colorScheme, progress),
@@ -350,77 +351,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     );
   }
 
-  /// Muestra un diálogo de confirmación para salir del reto.
-  void _showExitDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return GiffyDialog.image(
-          Image.asset(
-            "images/challenge/alerta1.png",
-            // "assets/images/challenge/alerta1.png",
-            height: 280,
-            fit: BoxFit.cover,
-            // fit: BoxFit.contain,
-          ),
-          title: const Text(
-            '¿Quieres salir del reto?',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            'Tu progreso en este reto se perderá.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 19),
-          ),
-          actions: [
-            // --- BOTÓN CANCELAR (PERSONALIZADO) ---
-            TextButton(
-              style: TextButton.styleFrom(
-                // Cambia el color del texto
-                foregroundColor: Colors.grey[700],
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              onPressed: () => Navigator.pop(context), // Cierra el diálogo
-              child: const Text('CANCELAR'),
-            ),
-            const SizedBox(width: 98),
-            // --- BOTÓN SALIR (PERSONALIZADO) ---
-            TextButton(
-              style: TextButton.styleFrom(
-                // Añade un color de fondo
-                backgroundColor: Colors.red,
-                // Cambia el color del texto a blanco
-                foregroundColor: Colors.white,
-                // Añade bordes redondeados
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              onPressed: () {
-                // Cierra el diálogo y LUEGO sale de la QuizPage
-                Navigator.pop(context);
-                context.pop();
-              },
-              child: const Text('SALIR'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   /// Widget que construye el AppBar de la página.
   PreferredSizeWidget _buildAppBar(ColorScheme colorScheme, double progress) {
     return AppBar(
@@ -428,7 +358,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       elevation: 0,
       leading: IconButton(
         icon: Icon(Icons.close, color: colorScheme.onSurface),
-        onPressed: _showExitDialog, // Lógica de 'X' reparada
+        onPressed: () => showExitDialog(context), // Lógica de 'X' reparada
       ),
       title: Row(
         children: [

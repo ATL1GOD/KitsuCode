@@ -5,6 +5,7 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
+import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 
 class ProfileProgressSection extends ConsumerWidget {
   final String userId;
@@ -111,17 +112,39 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Obtenemos el tema y el brillo
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    // 2. Definimos los colores adaptativos
+    final Color cardColor;
+    final Color borderColor;
+
+    if (isDarkMode) {
+      // --- MODO OSCURO ---
+      // Glass effect más sutil con gris oscuro
+      cardColor = colors.surfaceContainerHighest.withOpacity(0.6); 
+      borderColor = colors.outline.withOpacity(0.3);
+    } else {
+      // --- MODO CLARO ---
+      // Glass effect más transparente para ver las partículas
+      cardColor = Colors.white.withOpacity(0.2); 
+      borderColor = colors.outline.withOpacity(0.2);
+    }
+
+    // 3. Construimos el widget
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Mantenemos el blur
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(102),
+              color: cardColor,     // <-- Color adaptativo
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withAlpha(128))
+              border: Border.all(color: borderColor) // <-- Borde adaptativo
             ),
             child: child,
           ),

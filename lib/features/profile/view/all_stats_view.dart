@@ -34,7 +34,7 @@ class AllStatsView extends ConsumerWidget {
       return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
     }
 
-    final statsState = ref.watch(userStatsProvider(currentUserId));
+    final statsState = ref.watch(userStatsByIdProvider(currentUserId));
     final profileState = ref.watch(userProfileByIdProvider(currentUserId));
 
     return Scaffold(

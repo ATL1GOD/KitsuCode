@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/shared/navbar/navbar.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 
 // Provider que guarda el índice actual de la barra de navegación
 final navIndexProvider = StateProvider<int>((ref) => 0);
@@ -18,6 +19,7 @@ class ScaffoldWithNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(achievementNotifierProvider); // Mantener actualizado el estado de logros
     return Scaffold(
       // --- Permitir que el body se dibuje detrás de la NavBar ---
       extendBody: true,

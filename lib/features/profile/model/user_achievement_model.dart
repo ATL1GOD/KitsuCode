@@ -1,22 +1,30 @@
+// lib/features/profile/model/user_achievement_model.dart
+
 class UserAchievementModel {
   final int id;
   final String nombre;
   final String descripcion;
-  // Creo podriamos añadir un campo para el icono 
-  // final String iconUrl; 
+  final String iconUrl; 
+  final bool obtenido;
+  final String raridad; // <-- ¡NUEVO CAMPO!
 
   UserAchievementModel({
     required this.id,
     required this.nombre,
     required this.descripcion,
+    required this.iconUrl,
+    required this.obtenido,
+    required this.raridad, // <-- ¡NUEVO EN CONSTRUCTOR!
   });
   
   factory UserAchievementModel.fromJson(Map<String, dynamic> json) {
-    // La consulta unirá las tablas, así que los datos vendrán juntos
     return UserAchievementModel(
-      id: json['id_logro'],
+      id: json['id'], 
       nombre: json['nombre'] ?? 'Logro',
       descripcion: json['descripcion'] ?? 'Sin descripción',
+      iconUrl: json['iconurl'] ?? 'assets/images/zorro_oops.png', 
+      obtenido: json['obtenido'] ?? false,
+      raridad: json['raridad'] ?? 'Común', // <-- ¡NUEVO PARSEO!
     );
   }
 }

@@ -28,6 +28,7 @@ dependencies:
   shimmer: ^3.0.0
   simple_animations: ^5.2.0
   supabase_flutter: ^2.9.1
+  overlay_support: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -41,6 +42,7 @@ flutter:
     - assets/images/
     - assets/images/navbar/
     - assets/images/home/
+    - assets/images/logros/
     - assets/images/auth/
     #- assets/icons/
     #- assets/fonts/

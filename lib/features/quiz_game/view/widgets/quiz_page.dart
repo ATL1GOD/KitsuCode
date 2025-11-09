@@ -189,6 +189,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useRootNavigator: true,
+      // ✅ 1. DESHABILITA EL TAP AFUERA
+      isDismissible: false,
+      // ✅ 2. DESHABILITA ARRASTRAR PARA CERRAR
+      enableDrag: false,
       builder: (ctx) {
         return Theme(
           data: challengeTheme,

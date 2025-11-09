@@ -1,4 +1,6 @@
-import 'dart:async'; 
+// lib/features/profile/repository/profile_repository.dart
+
+import 'dart:async';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
@@ -31,7 +33,6 @@ class ProfileRepository {
 
 
   // Consulta si el usuario actual sigue a otro usuario
-
   Future<bool> isFollowing(String followedUserId) async {
     final currentUser = _supabase.auth.currentUser;
     if (currentUser == null) return false;
@@ -97,22 +98,19 @@ class ProfileRepository {
 
   Future<UserStatsModel> fetchUserStatsById(String userId) async {
     try {
-      // Cambiamos el .select() directo por una llamada a la RPC
       final response = await _supabase.rpc(
-        'get_user_stats', // <-- Llamamos a la nueva RPC
+        'get_user_stats', 
         params: {'p_user_id': userId},
       );
 
-      // Si la RPC no encuentra nada, puede devolver null
       if (response == null) {
         return UserStatsModel.empty();
       }
       
-      // El JSON ya tiene los COALESCE(..., 0), así que es seguro.
       return UserStatsModel.fromJson(response);
 
     } catch (e) {
-      // Manejo de error si la RPC falla
+      // ignore: avoid_print
       print('Error en fetchUserStatsById (RPC): $e');
       return UserStatsModel.empty();
     }
@@ -120,18 +118,18 @@ class ProfileRepository {
   
   Future<List<UserAchievementModel>> fetchUserAchievementsById(String userId) async {
     try {
-      final response = await _supabase
-          .from('logro')
-          .select('*, usuario_logro!inner(*)')
-          .eq('usuario_logro.id_usuario', userId);
+      final data = await _supabase.rpc(
+        'get_achievements_for_user',
+        params: {'p_user_id': userId},
+      );
 
-      final achievements = (response as List)
-          .map((json) => UserAchievementModel.fromJson(json))
-          .toList();
+      final list = data as List;
+      return list.map((json) => UserAchievementModel.fromJson(json)).toList();
 
-      return achievements;
     } catch (e) {
-      throw Exception('Error al cargar los logros: $e');
+      // ignore: avoid_print
+      print('Error fetching achievements: $e');
+      throw Exception('Error al cargar los logros');
     }
   }
 
@@ -150,108 +148,23 @@ class ProfileRepository {
     }
     return fetchUserAchievementsById(user.id);
   }
-}
 
-// import 'package:kitsucode/features/profile/model/user_profile_model.dart';
-// import 'package:kitsucode/features/profile/model/user_stats_model.dart';
-// import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
+  // ✅✅✅ ¡MÉTODO MOVIDO AQUÍ DENTRO! ✅✅✅
+  // Busca los detalles de un logro específico por su ID
+  Future<Map<String, dynamic>> fetchLogroDetails(int logroId) async {
+    try {
+      // ✅ Y AHORA USA '_supabase' (la variable de la clase)
+      final data = await _supabase
+          .from('logro')
+          .select('nombre, icono, raridad')
+          .eq('id_logro', logroId)
+          .single(); // .single() asegura que obtenemos solo uno
 
-// class ProfileRepository {
-//   final SupabaseClient _supabase;
-
-//   ProfileRepository(this._supabase);
-
-//   Future<UserProfileModel> fetchUserProfile() async {
-//     final user = _supabase.auth.currentUser;
-//     if (user == null) {
-//       throw Exception('No hay un usuario autenticado.');
-//     }
-
-//     try {
-//       final response = await _supabase.rpc(
-//         'get_user_profile_with_stats',
-//         params: {'user_id': user.id},
-//       );
-
-//       print('DEBUG: Data cruda de Supabase (Contadores): $response');
-
-//       return UserProfileModel.fromJson(response);
-//     } catch (e) {
-//       throw Exception('Error al cargar el perfil del usuario: $e');
-//     }
-//   }
-  
-//   // Actualiza el perfil del usuario en la base de datos
-//   // recibe el id del usuario, un nuevo nombre y un nuevo avatar (ambos opc
-//   Future<void> updateUserProfile({required String userId, String? newName, String? newAvatar}) async {
-//     try {
-//       final updates = <String, dynamic>{};
-//       if (newName != null) {
-//         updates['nombre_perfil'] = newName;
-//       }
-//       if (newAvatar != null) {
-//         updates['avatar_url'] = newAvatar;
-//       }
-
-//       if (updates.isNotEmpty) {
-//         await _supabase
-//             .from('usuarios')
-//             .update(updates)
-//             .eq('id', userId);
-//       }
-//     } catch (e) {
-//       throw Exception('Error al actualizar el perfil: $e');
-//     }
-//   }
-
-//   Future<UserStatsModel> fetchUserStats() async {
-//     final user = _supabase.auth.currentUser;
-//     if (user == null) {
-//       throw Exception('No hay un usuario autenticado.');
-//     }
-
-//     try {
-//       final response = await _supabase
-//           .from('estadistica_usuario')
-//           .select()
-//           .eq('id_usuario', user.id)
-//           .maybeSingle(); // Usamos maybeSingle por si el usuario aún no tiene estadísticas
-
-//       if (response == null) {
-//         // Si no hay datos, regresamos un modelo vacío
-//         return UserStatsModel.empty();
-//       }
-
-//       return UserStatsModel.fromJson(response);
-//     } catch (e) {
-//       throw Exception('Error al cargar las estadísticas: $e');
-//     }
-//   }
-
-
-//   // Consulta los logros del usuario actual
-//   Future<List<UserAchievementModel>> fetchUserAchievements() async {
-//     final user = _supabase.auth.currentUser;
-//     if (user == null) {
-//       throw Exception('No hay un usuario autenticado.');
-//     }
-
-//     try {
-//       // Hacemos la consulta a la tabla de logros uniendo con la tabla intermedia 
-//       final response = await _supabase
-//           .from('logro')
-//           .select('*, usuario_logro!inner(*)')
-//           .eq('usuario_logro.id_usuario', user.id);
-
-//       // Convertimos la respuesta en una lista de nuestros modelos
-//       final achievements = (response as List)
-//           .map((json) => UserAchievementModel.fromJson(json))
-//           .toList();
-
-//       return achievements;
-//     } catch (e) {
-//       throw Exception('Error al cargar los logros: $e');
-//     }
-//   }
-// }
+      return data as Map<String, dynamic>;
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error fetching logro details: $e');
+      throw Exception('Error al cargar detalles del logro');
+    }
+  }
+} 

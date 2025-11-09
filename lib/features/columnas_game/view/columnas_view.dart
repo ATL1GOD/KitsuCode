@@ -203,6 +203,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      // ✅ 1. DESHABILITA EL TAP AFUERA
+      isDismissible: false,
+      // ✅ 2. DESHABILITA ARRASTRAR PARA CERRAR
+      enableDrag: false,
       builder: (ctx) {
         return Theme(
           data: challengeTheme,

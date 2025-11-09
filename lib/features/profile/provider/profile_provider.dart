@@ -80,8 +80,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 // Provider para el repositorio de perfil
 final profileRepositoryProvider = Provider((ref) {
   final supabaseClient = Supabase.instance.client;
-  //return ProfileRepository(supabaseClient);
-  return MockProfileRepository(); 
+  return ProfileRepository(supabaseClient);
+  //return MockProfileRepository(); 
 });
 
 // Provider para obtener el perfil de un usuario por su ID

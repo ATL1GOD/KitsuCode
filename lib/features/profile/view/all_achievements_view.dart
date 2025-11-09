@@ -212,7 +212,7 @@ class _AchievementsGrid extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Text(
-              'Desafíos Pendientes (${unobtainedAchievements.length})',
+              'Logros pendientes (${unobtainedAchievements.length})',
               style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold, 
                 color: colors.onSurface

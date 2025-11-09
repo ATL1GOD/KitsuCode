@@ -32,72 +32,82 @@ class AchievementCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUnlocked = achievement.obtenido;
     final effectColor = _getBorderColor(achievement.id, colors);
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 360;
 
-    final double opacity = isUnlocked ? 1.0 : 0.4;
+    // ✅ Usar colores del tema en lugar de hardcoded grises
     final double borderWidth = isUnlocked ? 3 : 1;
-    final borderColor = isUnlocked ? effectColor : colors.outlineVariant;
+    final borderColor = isUnlocked ? effectColor : colors.outline;
+    final lockedBackgroundColor = colors.surfaceContainerHigh;
+    final lockedTextColor = colors.onSurfaceVariant.withOpacity(0.7);
 
-    Widget cardContent = Opacity(
-      opacity: opacity,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: borderColor,
-            width: borderWidth,
-          ),
-          color: colors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: effectColor.withOpacity(0.3),
-              blurRadius: 3,
-              spreadRadius: 0,
-            ),
-          ],
+    Widget cardContent = Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: borderColor,
+          width: borderWidth,
         ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(4.0),
+        // ✅ Usar colores del tema
+        color: isUnlocked ? colors.surface : lockedBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            // ✅ Sombra según estado usando colores del tema
+            color: isUnlocked ? effectColor.withOpacity(0.3) : colors.shadow.withOpacity(0.15),
+            blurRadius: 3,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
               child: ColorFiltered(
                 colorFilter: isUnlocked
                     ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
-                    : const ColorFilter.mode(Colors.grey, BlendMode.saturation), 
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    achievement.iconUrl,
-                    fit: BoxFit.cover,
-                  ),
+                    : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+                child: Image.asset(
+                  achievement.iconUrl,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 4.0),
-                decoration: BoxDecoration(
-                  color: colors.surface.withOpacity(0.8),
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
-                ),
-                child: Text(
-                  achievement.nombre,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
-                    color: colors.onSurface,
-                  ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                vertical: isSmallScreen ? 4.0 : 6.0,
+                horizontal: 4.0,
+              ),
+              decoration: BoxDecoration(
+                // ✅ Usar colores del tema
+                color: isUnlocked 
+                    ? colors.surface.withOpacity(0.8)
+                    : lockedBackgroundColor.withOpacity(0.9),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+              ),
+              child: Text(
+                achievement.nombre,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isSmallScreen ? 9 : 10,
+                  // ✅ Texto con color del tema
+                  color: isUnlocked ? colors.onSurface : lockedTextColor,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
 
@@ -105,14 +115,11 @@ class AchievementCard extends StatelessWidget {
     // 1. isClickable es true (para permitir control externo)
     // 2. Y el logro está desbloqueado
     if (isClickable) {
-      return Material( // ✅ 1. AÑADE ESTE WIDGET
-        type: MaterialType.transparency, // ✅ 2. DILE QUE ES TRANSPARENTE
-        child: GestureDetector( // 3. Mantenemos el GestureDetector
-          onTap: () => AchievementModal.show(context, achievement),
-          child: cardContent,
-        ),
+      return GestureDetector(
+        onTap: () => AchievementModal.show(context, achievement),
+        child: cardContent,
       );
- }
+    }
 
     // Si no es clickeable o está bloqueado, solo retorna el contenido
     return cardContent;

@@ -5,11 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:kitsucode/features/quiz_game/view/widgets/result_page.dart'; // <-- ELIMINADO
-import 'package:kitsucode/core/utils/app_colors.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Importa QuizData
-
-// --- ¡NUEVOS IMPORTS! (Copiados de result_page.dart) ---
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -19,9 +15,7 @@ import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.da
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
-// --- FIN NUEVOS IMPORTS ---
 
-// --- ¡Convertido a ConsumerStatefulWidget! ---
 class QuizPage extends ConsumerStatefulWidget {
   final QuizData mydata;
   final String retoId;
@@ -32,7 +26,6 @@ class QuizPage extends ConsumerStatefulWidget {
   ConsumerState<QuizPage> createState() => _QuizPageState();
 }
 
-// --- ¡Convertido a ConsumerState! ---
 class _QuizPageState extends ConsumerState<QuizPage> {
   int marks = 0;
   int i = 0;
@@ -94,24 +87,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
         if (timer < 1) {
           t.cancel();
-          final brightness = MediaQuery.of(context).platformBrightness;
-          // --- INICIO DE LA CORRECCIÓN ---
-
-          // 1. Obtenemos el estado del AppBar (para saber el lenguaje)
-          //    Usamos .watch para que reaccione si cambia
-          final appBarState = ref.watch(appBarProvider);
-
-          // 2. Usamos TU PROPIA función helper para obtener el tema correcto
-          final challengeTheme = _getLanguageTheme(
-            appBarState.languageName,
-            brightness,
-          );
-
-          // 3. Extraemos el esquema de color
-          final colorScheme = challengeTheme.colorScheme;
-
-          // --- FIN DE LA CORRECCIÓN ---
-          _checkAnswer("", colorScheme);
+          // --- REFACTOR: 'colorScheme' ya no es necesario aquí ---
+          // Simplemente llama a _checkAnswer.
+          _checkAnswer("");
         } else if (_cancelTimer == true) {
           t.cancel();
         } else {
@@ -153,30 +131,27 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     _startTimer();
   }
 
-  // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN DE LÓGICA!!! ---
-  void _checkAnswer(String k, ColorScheme colorScheme) {
+  // --- REFACTOR: ¡Parámetro 'colorScheme' eliminado! ---
+  // No se estaba usando dentro de la función, así que lo eliminé
+  // para simplificar el código y las llamadas a esta función.
+  void _checkAnswer(String k) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
 
-    // --- ¡CAMBIO IMPORTANTE! ---
-    // Resetea 'correct' a false al inicio de cada comprobación.
-    // Esto asegura que _wasCorrect se actualice correctamente a 'false' si la respuesta es incorrectA.
-    correct = false;
+    correct = false; // Reset a false
 
-    // Compara la 'letra' seleccionada (k) con la 'letra' de la respuesta (answers[questionKey])
     if (k.isNotEmpty && widget.mydata.answers[questionKey] == k) {
       marks = marks + 5;
-      correct = true; // <-- Solo se pone 'true' si acierta
+      correct = true;
     }
 
     if (mounted) {
       setState(() {
         _cancelTimer = true;
         disableAnswer = true;
-        _wasCorrect = correct; // <-- Ahora 'correct' será 'false' si falló
+        _wasCorrect = correct;
       });
     }
   }
-  // --- FIN DE LA CORRECCIÓN ---
 
   // --- Lógica del modal (movida de result_page) ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
@@ -259,7 +234,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     );
   }
 
-  // --- ¡WIDGET _choiceButton CORREGIDO! ---
   Widget _choiceButton(String k, ColorScheme colorScheme) {
     bool isSelected = selectedAnswer == k;
 
@@ -268,33 +242,19 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     Color textColor = colorScheme.onSurface;
 
     if (disableAnswer) {
-      // --- ¡LÓGICA COMPLETAMENTE MODIFICADA PARA TU REQUISITO! ---
-
-      // _wasCorrect fue establecido por _checkAnswer
-      // _wasCorrect es 'true' si acertó, 'false' si falló o se acabó el tiempo.
-
-      // Caso 1: El usuario seleccionó ESTE botón (isSelected) Y fue la respuesta CORRECTA
       if (isSelected && _wasCorrect == true) {
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
-      }
-      // Caso 2: El usuario seleccionó ESTE botón (isSelected) Y fue la respuesta INCORRECTA
-      // (o si se acabó el tiempo y este estaba seleccionado)
-      else if (isSelected && _wasCorrect == false) {
+      } else if (isSelected && _wasCorrect == false) {
         buttonColor = Colors.red.withAlpha(51);
         borderColor = Colors.red;
         textColor = Colors.red;
-      }
-      // Caso 3: Todos los demás botones (no seleccionados, o si se acabó el tiempo y no se seleccionó nada).
-      // Estos permanecen en su estado neutral.
-      // ¡Esto evita que la respuesta correcta se muestre en verde si el usuario falló!
-      else {
+      } else {
         borderColor = colorScheme.outline;
         textColor = colorScheme.onSurface;
         buttonColor = colorScheme.surfaceContainer;
       }
-      // --- FIN DE LA MODIFICACIÓN ---
     } else if (isSelected) {
       buttonColor = colorScheme.primaryContainer.withAlpha(77);
       borderColor = colorScheme.primary;
@@ -308,14 +268,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
           foregroundColor: textColor,
           backgroundColor: buttonColor,
           minimumSize: const Size(double.infinity, 60),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ), // Ajuste de padding horizontal
-          side: BorderSide(color: borderColor, width: 2.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         onPressed: disableAnswer
             ? null
@@ -329,23 +282,23 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 i,
               )]![k] ??
               "",
-          // --- ¡CAMBIO 1! Permitir autoajuste y saltos de línea ---
           textAlign: TextAlign.start,
-          maxLines: 5, // Permitir más líneas si es necesario
-          overflow:
-              TextOverflow.ellipsis, // Mostrar puntos suspensivos si no cabe
+          maxLines: 5,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontFamily: "Alike",
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
-            height: 1.3, // Mejorar el espaciado entre líneas para legibilidad
+            height: 1.3,
           ),
-          // --- FIN CAMBIO 1 ---
         ),
       ),
     );
   }
-  // --- FIN DE LA CORRECCIÓN DE _choiceButton ---
+
+  // --- REFACTOR (PASO 1): Extraer Widgets del 'build' ---
+  // El método 'build' se vuelve mucho más limpio al
+  // mover la construcción de UI compleja a métodos privados.
 
   @override
   Widget build(BuildContext context) {
@@ -355,22 +308,12 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     ]);
 
     final brightness = MediaQuery.of(context).platformBrightness;
-    // --- INICIO DE LA CORRECCIÓN ---
-
-    // 1. Obtenemos el estado del AppBar (para saber el lenguaje)
-    //    Usamos .watch para que reaccione si cambia
     final appBarState = ref.watch(appBarProvider);
-
-    // 2. Usamos TU PROPIA función helper para obtener el tema correcto
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
       brightness,
     );
-
-    // 3. Extraemos el esquema de color
     final colorScheme = challengeTheme.colorScheme;
-
-    // --- FIN DE LA CORRECCIÓN ---
 
     if (_randomArray.isEmpty) {
       return Scaffold(
@@ -382,191 +325,149 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     double progress = j / totalQuestions;
 
+    // --- REFACTOR (PASO 2): 'build' método limpio ---
+    // Ahora el método 'build' solo se encarga de ensamblar las piezas.
     return Theme(
       data: challengeTheme,
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (bool didPop, dynamic _) {
           if (didPop) return;
-
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Kitsucode"),
-              content: const Text("No puedes retroceder en medio de un reto."),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Ok'),
-                ),
-              ],
-            ),
-          );
+          _showExitDialog();
         },
         child: Scaffold(
-          appBar: AppBar(
-            backgroundColor: colorScheme.surface,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.close, color: colorScheme.onSurface),
-              // --- ¡CAMBIO 3! Lógica reparada para el botón 'X' ---
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text("¿Salir del reto?"),
-                    content: const Text("Tu progreso se perderá."),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Cierra el AlertDialog
-                        },
-                        child: const Text('Cancelar'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          // Cierra el AlertDialog y luego sale de la QuizPage
-                          Navigator.of(context).pop();
-                          context.pop();
-                        },
-                        child: const Text('Salir'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              // --- FIN CAMBIO 3 ---
-            ),
-            title: Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: colorScheme.surfaceContainerHigh,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
-                      ),
-                      minHeight: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    _showTimer,
-                    style: TextStyle(
-                      color: colorScheme.onPrimaryContainer,
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+          appBar: _buildAppBar(colorScheme, progress),
+          body: _buildQuizBody(colorScheme, questionKey),
+          bottomNavigationBar: _buildBottomBar(colorScheme),
+        ),
+      ),
+    );
+  }
+
+  /// Muestra un diálogo de confirmación para salir del reto.
+  void _showExitDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("¿Salir del reto?"),
+        content: const Text("Tu progreso se perderá."),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Cierra el AlertDialog
+            },
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Cierra el AlertDialog y luego sale de la QuizPage
+              Navigator.of(context).pop();
+              context.pop();
+            },
+            child: const Text('Salir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Widget que construye el AppBar de la página.
+  PreferredSizeWidget _buildAppBar(ColorScheme colorScheme, double progress) {
+    return AppBar(
+      backgroundColor: colorScheme.surface,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.close, color: colorScheme.onSurface),
+        onPressed: _showExitDialog, // Lógica de 'X' reparada
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: colorScheme.surfaceContainerHigh,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                minHeight: 12,
+              ),
             ),
           ),
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      MediaQuery.of(context).size.height -
-                      AppBar().preferredSize.height -
-                      MediaQuery.of(context).padding.top -
-                      100,
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              _showTimer,
+              style: TextStyle(
+                color: colorScheme.onPrimaryContainer,
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Widget que construye el cuerpo principal del quiz (pregunta y opciones).
+  Widget _buildQuizBody(ColorScheme colorScheme, String questionKey) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight:
+                MediaQuery.of(context).size.height -
+                AppBar().preferredSize.height -
+                MediaQuery.of(context).padding.top -
+                100,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              const SizedBox(height: 10),
+              Text(
+                "Selecciona la traducción correcta",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
+              ),
+              const SizedBox(height: 20),
+              _buildQuestionCard(
+                widget.mydata.questions[questionKey] ?? "Cargando...",
+                colorScheme,
+              ),
+              const SizedBox(height: 30),
+              // Opciones de respuesta
+              AbsorbPointer(
+                absorbing: disableAnswer,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    const SizedBox(height: 10),
-                    Text(
-                      "Selecciona la traducción correcta",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildQuestionCard(
-                      widget.mydata.questions[questionKey] ?? "Cargando...",
-                      colorScheme,
-                    ),
-                    const SizedBox(height: 30),
-                    // Opciones de respuesta
-                    AbsorbPointer(
-                      absorbing: disableAnswer,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          _choiceButton('a', colorScheme),
-                          _choiceButton('b', colorScheme),
-                          _choiceButton('c', colorScheme),
-                          _choiceButton('d', colorScheme),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 100),
+                    _choiceButton('a', colorScheme),
+                    _choiceButton('b', colorScheme),
+                    _choiceButton('c', colorScheme),
+                    _choiceButton('d', colorScheme),
                   ],
                 ),
               ),
-            ),
-          ),
-          bottomNavigationBar: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: disableAnswer
-                        // AHORA ESTO FUNCIONARÁ
-                        ? (_wasCorrect == true ? Colors.green : Colors.red)
-                        : (selectedAnswer != null
-                              ? colorScheme.primary
-                              : colorScheme.surfaceContainerHighest),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  onPressed: (selectedAnswer == null && !disableAnswer)
-                      ? null
-                      : () {
-                          if (disableAnswer) {
-                            _nextQuestion();
-                          } else {
-                            _checkAnswer(selectedAnswer!, colorScheme);
-                          }
-                        },
-                  child: Text(
-                    disableAnswer ? "CONTINUAR" : "COMPROBAR",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+              const SizedBox(height: 100), // Espacio para el BottomBar
+            ],
           ),
         ),
       ),
     );
   }
 
+  /// Widget que construye la tarjeta de la pregunta.
   Widget _buildQuestionCard(String text, ColorScheme colorScheme) {
     return Container(
       width: double.infinity,
@@ -591,6 +492,46 @@ class _QuizPageState extends ConsumerState<QuizPage> {
           fontFamily: "Quando",
           color: colorScheme.onSurface,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  /// Widget que construye la barra de navegación inferior (botón de Comprobar/Continuar).
+  Widget _buildBottomBar(ColorScheme colorScheme) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: disableAnswer
+                  ? (_wasCorrect == true ? Colors.green : Colors.red)
+                  : (selectedAnswer != null
+                        ? colorScheme.primary
+                        : colorScheme.surfaceContainerHighest),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+            onPressed: (selectedAnswer == null && !disableAnswer)
+                ? null
+                : () {
+                    if (disableAnswer) {
+                      _nextQuestion();
+                    } else {
+                      // --- REFACTOR: Llamada simplificada ---
+                      _checkAnswer(selectedAnswer!);
+                    }
+                  },
+            child: Text(
+              disableAnswer ? "CONTINUAR" : "COMPROBAR",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
       ),
     );

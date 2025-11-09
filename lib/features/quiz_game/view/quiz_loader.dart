@@ -2,41 +2,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/quiz_page.dart';
-// --- NUEVO: Importación para el modelo de recursos ---
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
 
-// --- PASO 1: Mover la clase QuizData aquí (¡MODIFICADA!) ---
+// --- REFACTOR (PASO 1): Usar un 'factory constructor' ---
+// Esto encapsula la lógica de "cómo crear un QuizData desde JSON"
+// dentro de la propia clase QuizData, en lugar de hacerlo en el Widget.
 class QuizData {
   final Map<String, String> questions;
   final Map<String, Map<String, dynamic>> options;
   final Map<String, String> answers;
   final int totalQuestions;
-  // --- NUEVO ---
   final List<RecursoModel> recursos;
 
   QuizData({
     required this.questions,
     required this.options,
     required this.answers,
-    required this.recursos, // <-- AÑADIDO
+    required this.recursos,
   }) : totalQuestions = questions.length;
-}
-// --- FIN PASO 1 ---
 
-class QuizLoaderPage extends ConsumerWidget {
-  final Map<String, dynamic> challengeContent;
-  final String retoId;
-
-  const QuizLoaderPage({
-    super.key,
-    required this.challengeContent,
-    required this.retoId,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // --- LÓGICA DE TRANSFORMACIÓN ---
+  // --- ¡NUEVO CONSTRUCTOR! ---
+  factory QuizData.fromChallengeContent(Map<String, dynamic> challengeContent) {
     final List<dynamic> preguntasList = challengeContent['preguntas'] ?? [];
 
     final Map<String, String> mapaPreguntas = {};
@@ -53,18 +40,52 @@ class QuizLoaderPage extends ConsumerWidget {
         debugPrint("Error parseando pregunta: $e");
       }
     }
-    // --- FIN LÓGICA ---
 
-    // --- NUEVA LÓGICA DE RECURSOS ---
-    // (Lee los recursos que inyectamos desde 'reto_distribuidor.dart')
     final List<dynamic> recursosJson =
         challengeContent['recursos'] as List<dynamic>? ?? [];
     final List<RecursoModel> recursosList = recursosJson
         .map((r) => RecursoModel.fromJson(r as Map<String, dynamic>))
         .toList();
-    // --- FIN NUEVA LÓGICA ---
 
-    if (mapaPreguntas.isEmpty) {
+    return QuizData(
+      questions: mapaPreguntas,
+      options: mapaOpciones,
+      answers: mapaRespuestas,
+      recursos: recursosList,
+    );
+  }
+}
+
+class QuizLoaderPage extends ConsumerWidget {
+  final Map<String, dynamic> challengeContent;
+  final String retoId;
+
+  const QuizLoaderPage({
+    super.key,
+    required this.challengeContent,
+    required this.retoId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // --- REFACTOR (PASO 2): Lógica de build simplificada ---
+    // Toda la lógica de parseo ahora vive en el 'factory constructor'.
+    // El widget 'build' ahora solo se preocupa de construir.
+    final QuizData mydata;
+    try {
+      mydata = QuizData.fromChallengeContent(challengeContent);
+    } catch (e) {
+      debugPrint("Error creando QuizData: $e");
+      // Si falla la creación, mostramos la pantalla de error genérica.
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: const Center(child: Text('Error al cargar el reto.')),
+      );
+    }
+
+    // El 'factory constructor' se encargó de las listas vacías,
+    // así que solo necesitamos comprobar el resultado.
+    if (mydata.totalQuestions == 0) {
       return Scaffold(
         appBar: AppBar(title: const Text('Error')),
         body: const Center(
@@ -73,13 +94,7 @@ class QuizLoaderPage extends ConsumerWidget {
       );
     }
 
-    final mydata = QuizData(
-      questions: mapaPreguntas,
-      options: mapaOpciones,
-      answers: mapaRespuestas,
-      recursos: recursosList, // <-- AÑADIDO
-    );
-
+    // Si todo está bien, pasamos el objeto 'mydata' ya construido.
     return QuizPage(mydata: mydata, retoId: retoId);
   }
 }

@@ -42,6 +42,7 @@ flutter:
     - assets/images/navbar/
     - assets/images/home/
     - assets/images/logros/
+    - assets/images/auth/
     #- assets/icons/
     #- assets/fonts/
     - assets/.env

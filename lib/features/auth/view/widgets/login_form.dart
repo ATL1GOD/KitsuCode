@@ -113,7 +113,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             child: SocialAuthButton(
               text: 'Continuar con Google',
               iconPath:
-                  'images/auth/google_logo.png', // Asegúrate que esta ruta sea correcta
+                  'assets/images/auth/google_logo.png', // Asegúrate que esta ruta sea correcta
               isLoading: loginState.isLoading,
               onPressed: _googleSignIn,
             ),

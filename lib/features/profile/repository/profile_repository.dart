@@ -5,6 +5,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:kitsucode/features/profile/model/follow_list_model.dart';
 
 class ProfileRepository {
   final SupabaseClient _supabase;
@@ -28,6 +29,31 @@ class ProfileRepository {
       final updatedProfile = await fetchUserProfileById(userId);
       // ...y lo emitimos.
       yield updatedProfile;
+    }
+  }
+
+  //  MÉTODO PARA OBTENER LA LISTA DE SEGUIDORES/SIGUIENDO
+  /// Llama a la función RPC get_follow_list(p_user_id, p_type).
+  /// El tipo puede ser 'following' o 'followers'.
+  Future<List<FollowListModel>> getFollowList({
+    required String userId,
+    required String type,
+  }) async {
+    try {
+      final data = await _supabase.rpc(
+        'get_follow_list', // La función RPC definida en el backend
+        params: {
+          'p_user_id': userId,
+          'p_type': type,
+        },
+      );
+
+      final list = data as List;
+      return list.map((json) => FollowListModel.fromJson(json)).toList();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error al cargar la lista de seguimiento ($type): $e');
+      throw Exception('Error al cargar la lista de seguimiento.');
     }
   }
 

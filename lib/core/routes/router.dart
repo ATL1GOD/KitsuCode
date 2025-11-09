@@ -19,8 +19,7 @@ import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
-// --- ¡NUEVO! IMPORTAR EL DISTRIBUIDOR DE RETOS ---
-// (La ruta puede variar según donde lo guardes)
+// --- IMPORTAR EL DISTRIBUIDOR DE RETOS ---
 import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 import 'package:kitsucode/features/desafio/view/desafio_view.dart';
 
@@ -28,6 +27,7 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_success_vie
 import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+import 'package:kitsucode/features/profile/view/follow_list_view.dart';
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -82,30 +82,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       );
     },
     routes: [
-      // --- Splash screen (sin cambios) ---
+      // --- Rutas de Nivel Superior (sin cambios) ---
       GoRoute(
         path: '/splash',
         builder: (context, state) =>
             const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
 
-      // --- Ruta pública de autenticación (sin cambios) ---
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
-      // --- Rutas internas (ya autenticado) ---
-
-      // --- ¡RUTA ÚNICA DE RETOS! (MODIFICADO) ---
       GoRoute(
-        path: '/reto/:retoId', // <-- RUTA GENERAL
+        path: '/reto/:retoId', // RUTA GENERAL
         builder: (context, state) {
           final retoId = state.pathParameters['retoId']!;
-          // Apunta a tu nuevo distribuidor
           return RetoDistribuidorPage(retoId: retoId);
         },
       ),
-
-      // --- (Se borran las rutas /quiz-loader, /puzzle-loader, etc.) ---
-      // --- Fin de rutas de retos ---
+      
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
@@ -113,45 +106,74 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
-          // ... (sin cambios)
           final currentAvatar =
               state.extra as String? ?? 'assets/images/login_zorro.png';
           return EditAvatarView(currentAvatar: currentAvatar);
         },
       ),
+      
       GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
+
+      // --- RUTA PARA FEEDBACK DE ÉXITO (sin cambios) ---
       GoRoute(
-  path: '/profile/:userId/achievements',
-  builder: (context, state) {
-    final userId = state.pathParameters['userId']!;
-    return AllAchievementsView(userId: userId);
-  },
-),
+        path: '/challenge_success',
+        name: 'challenge_success',
+        builder: (context, state) {
+          final int trofeos = (state.extra is int) ? state.extra as int : 0;
+          return ChallengeSuccessView(trofeosObtenidos: trofeos);
+        },
+      ),
 
-      // --- RUTA PARA FEEDBACK DE ÉXITO ---
-GoRoute(
-  path: '/challenge_success',
-  name: 'challenge_success',
-  builder: (context, state) {
-    // Extraemos los trofeos del argumento 'extra'
-    final int trofeos = (state.extra is int) ? state.extra as int : 0;
-    return ChallengeSuccessView(trofeosObtenidos: trofeos);
-  },
-),
+      // --- RUTA PARA FEEDBACK DE FRACASO (sin cambios) ---
+      GoRoute(
+        path: '/challenge_failure',
+        name: 'challenge_failure',
+        builder: (context, state) {
+          final List<RecursoModel> recursos = (state.extra is List<RecursoModel>) 
+              ? state.extra as List<RecursoModel>
+              : <RecursoModel>[]; 
+          return ChallengeFailureView(recursos: recursos);
+        },
+      ),
+      
+      // ✅ RUTA CONSOLIDADA PARA PERFILES EXTERNOS Y DETALLES
+      // Esta ruta manejará tanto /profile/:userId como todas sus sub-rutas detalladas.
+      GoRoute(
+        path: '/profile/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          // Por defecto, muestra la vista de perfil de otro usuario
+          return ProfileView(userId: userId); 
+        },
+        routes: [
+          // ✅ RUTA ANIDADA 1: /profile/:userId/achievements
+          GoRoute(
+            path: 'achievements',
+            builder: (context, state) {
+              final userId = state.pathParameters['userId']!;
+              return AllAchievementsView(userId: userId);
+            },
+          ),
+          
+          // ✅ RUTA ANIDADA 2: /profile/:userId/follow/:type
+          GoRoute(
+            path: 'follow/:type', // 'following' o 'followers'
+            builder: (context, state) {
+              final userId = state.pathParameters['userId']!;
+              final type = state.pathParameters['type']!;
 
-// --- RUTA PARA FEEDBACK DE FRACASO ---
-GoRoute(
-  path: '/challenge_failure',
-  name: 'challenge_failure',
-  builder: (context, state) {
-    // Extraemos la lista de recursos del argumento 'extra'
-    final List<RecursoModel> recursos = (state.extra is List<RecursoModel>) 
-        ? state.extra as List<RecursoModel>
-        : <RecursoModel>[]; // Lista vacía como fallback
+              if (type != 'following' && type != 'followers') {
+                return const Scaffold(body: Center(child: Text("Error: Tipo de lista inválido")));
+              }
 
-    return ChallengeFailureView(recursos: recursos);
-  },
-),
+              return FollowListView(
+                userId: userId,
+                type: type,
+              );
+            },
+          ),
+        ],
+      ),
 
       // --- NAVBAR PRINCIPAL (sin cambios) ---
       StatefulShellRoute.indexedStack(

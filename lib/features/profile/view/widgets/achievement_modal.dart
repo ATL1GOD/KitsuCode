@@ -1,15 +1,33 @@
+// lib/features/profile/view/widgets/achievement_modal.dart
+
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; 
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
 class AchievementModal extends StatelessWidget {
+  // Estos campos son necesarios para que el constructor de la clase
+  // sea válido, aunque no los usemos directamente
   final UserAchievementModel achievement;
+  final UserProfileModel profile;
+  final bool isCurrentUser;
 
-  const AchievementModal({super.key, required this.achievement});
+  const AchievementModal({
+    super.key, 
+    required this.achievement,
+    // Añadimos por si acaso, aunque 'show' es el método principal
+    required this.profile,
+    required this.isCurrentUser,
+  });
 
-  static Future<void> show(BuildContext context, UserAchievementModel achievement) async {
-    // ✅ Capturamos el tema ANTES de abrir el modal
+  // ✅ 1. MÉTODO 'show' ACTUALIZADO
+  static Future<void> show(
+    BuildContext context, 
+    UserAchievementModel achievement, {
+    required UserProfileModel profile,
+    required bool isCurrentUser,
+  }) async {
     final theme = Theme.of(context);
     
     await Navigator.of(context).push(
@@ -17,16 +35,23 @@ class AchievementModal extends StatelessWidget {
         opaque: false,
         barrierDismissible: true,
         pageBuilder: (context, animation, secondaryAnimation) {
-          // ✅✅✅ CLAVE: Envolvemos en Theme para forzar el tema correcto
           return Theme(
-            data: theme, // Usamos el tema capturado
+            data: theme, 
             child: FadeTransition(
               opacity: animation,
               child: ScaleTransition(
                 scale: Tween<double>(begin: 0.8, end: 1.0).animate(
                   CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
                 ),
-                child: _ModalContent(achievement: achievement),
+                // ✅ 2. PASAMOS LOS DATOS A _ModalContent
+                child: Scaffold(
+                  backgroundColor: Colors.transparent, // Fondo transparente
+                  body: _ModalContent(
+                    achievement: achievement,
+                    profile: profile,
+                    isCurrentUser: isCurrentUser,
+                  ),
+                ),
               ),
             ),
           );
@@ -37,28 +62,40 @@ class AchievementModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ModalContent(achievement: achievement);
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: _ModalContent(
+        achievement: achievement, 
+        profile: profile, 
+        isCurrentUser: isCurrentUser
+      ),
+    );
   }
 }
 
-// ✅ Separamos el contenido en su propio widget
+// ✅ 3. CLASE _ModalContent ACTUALIZADA
 class _ModalContent extends StatelessWidget {
   final UserAchievementModel achievement;
+  final UserProfileModel profile;
+  final bool isCurrentUser;
 
-  const _ModalContent({required this.achievement});
-
+  const _ModalContent({
+    required this.achievement,
+    required this.profile,
+    required this.isCurrentUser,
+  });
 
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final String raridad = achievement.raridad; // Obtenemos la rareza real
-    final Color borderColor = getRarityColor(raridad); // Color según rareza
-    final String rarityText = getRarityText(raridad); // Texto según rareza
+    final String raridad = achievement.raridad; 
+    final Color borderColor = getRarityColor(raridad); 
+    final String rarityText = getRarityText(raridad); 
     final isUnlocked = achievement.obtenido;
     final lockedColor = colors.onSurfaceVariant.withOpacity(0.5);
 
-    // ✅ Imagen con filtro gris aplicado DENTRO del ClipRRect
+    // --- Lógica de Imagen, Animación y Aura (SIN CAMBIOS) ---
     Widget img = ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
       child: ColorFiltered(
@@ -74,7 +111,6 @@ class _ModalContent extends StatelessWidget {
       ),
     );
 
-    // ✅ SIEMPRE mostramos animaciones (sin importar si está desbloqueado)
     final animatedImg = img
         .animate()
         .scale(
@@ -96,8 +132,7 @@ class _ModalContent extends StatelessWidget {
           duration: 250.ms,
           curve: Curves.easeOut,
         );
-
-    // ✅ Aura con color según estado (gris si está bloqueado)
+        
     final aura = isUnlocked
         ? Icon(Icons.auto_awesome, size: 120, color: borderColor.withOpacity(0.35))
             .animate(onPlay: (c) => c.repeat(reverse: true))
@@ -107,7 +142,7 @@ class _ModalContent extends StatelessWidget {
               end: const Offset(1.2, 1.2),
               duration: 800.ms,
             )
-        : Icon(Icons.auto_awesome, size: 120, color: Colors.grey.shade600.withOpacity(0.5)) // ✅ Más visible en gris
+        : Icon(Icons.auto_awesome, size: 120, color: Colors.grey.shade600.withOpacity(0.5))
             .animate(onPlay: (c) => c.repeat(reverse: true))
             .fadeIn(duration: 600.ms)
             .scale(
@@ -115,12 +150,26 @@ class _ModalContent extends StatelessWidget {
               end: const Offset(1.2, 1.2),
               duration: 800.ms,
             );
+    // --- Fin Lógica sin cambios ---
 
-    // ✅✅✅ SOLUCIÓN: Container negro semitransparente + GestureDetector
+
+    // ✅ 4. LÓGICA DE TEXTO PERSONALIZADA
+    final String descriptionTitle;
+    if (isUnlocked) {
+      descriptionTitle = isCurrentUser
+        ? "Obtuviste este logro por:" 
+        : "${profile.nombrePerfil} obtuvo este logro por:"; 
+    } else {
+      descriptionTitle = isCurrentUser
+        ? "Para desbloquear este logro necesitas:" 
+        : "Para obtener este logro, se necesita:"; 
+    } 
+
+
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        // ✅ ESTO ES LO QUE FALTABA - Fondo negro semitransparente
+        // Fondo semi-transparente para el "dim"
         color: Colors.black.withOpacity(0.7),
         child: GestureDetector(
           onTap: () {}, // Evita cerrar al tocar el modal
@@ -137,14 +186,12 @@ class _ModalContent extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      // ✅ Gris cálido si está bloqueado, blanco si está desbloqueado
-                      color: isUnlocked ? colors.surface : const Color(0xFFBDBDBD), // Gris cálido
+                      color: isUnlocked ? colors.surface : const Color(0xFFBDBDBD), 
                       boxShadow: [
                         BoxShadow(
-                          // ✅ Sombra gris si está bloqueado, color vibrante si está desbloqueado
                           color: isUnlocked
                               ? borderColor.withOpacity(0.7)
-                              : Colors.grey.shade600.withOpacity(0.6), // ✅ Más visible
+                              : Colors.grey.shade600.withOpacity(0.6), 
                           blurRadius: isUnlocked ? 30 : 20,
                           spreadRadius: isUnlocked ? 5 : 3,
                         ),
@@ -166,7 +213,7 @@ class _ModalContent extends StatelessWidget {
                                     child: Text(
                                       "ID: ${achievement.id}",
                                       style: TextStyle(
-                                        color: colors.onSurfaceVariant, // ✅ Siempre con color normal
+                                        color: colors.onSurfaceVariant, 
                                         fontSize: 12,
                                       ),
                                     ),
@@ -174,7 +221,7 @@ class _ModalContent extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: borderColor.withOpacity(0.8), // ✅ Siempre con color bonito
+                                      color: isUnlocked ? borderColor.withOpacity(0.8) : Colors.grey.shade500, // Tag gris
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -182,7 +229,7 @@ class _ModalContent extends StatelessWidget {
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
-                                        color: colors.onPrimary, // ✅ Siempre con color normal
+                                        color: isUnlocked ? colors.onPrimary : Colors.white, // Texto de tag
                                       ),
                                     ),
                                   ),
@@ -208,11 +255,10 @@ class _ModalContent extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
-                                color: isUnlocked ? borderColor : Colors.grey.shade600, // ✅ Gris si está bloqueado
+                                color: isUnlocked ? borderColor : Colors.grey.shade600,
                                 width: 4,
                               ),
-                              color: isUnlocked ? colors.surface : Colors.grey.shade800, // ✅ Fondo gris si está bloqueado
-                              // ✅ Añadir sombra interna para efecto de "hundido" cuando está bloqueado
+                              color: isUnlocked ? colors.surface : Colors.grey.shade800,
                               boxShadow: !isUnlocked ? [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.5),
@@ -235,7 +281,7 @@ class _ModalContent extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w900,
-                                          color: isUnlocked ? colors.onSurface : Colors.grey.shade400, // ✅ Gris si está bloqueado
+                                          color: isUnlocked ? colors.onSurface : Colors.grey.shade400,
                                           fontSize: 18,
                                         ),
                                       ),
@@ -243,7 +289,7 @@ class _ModalContent extends StatelessWidget {
                                     const SizedBox(height: 6),
                                     Icon(
                                       isUnlocked ? Icons.star : Icons.lock_outline,
-                                      color: isUnlocked ? borderColor : Colors.grey.shade500, // ✅ Gris si está bloqueado
+                                      color: isUnlocked ? borderColor : Colors.grey.shade500,
                                       size: 24,
                                     ),
                                     const SizedBox(height: 10),
@@ -252,13 +298,11 @@ class _ModalContent extends StatelessWidget {
                                       child: Column(
                                         children: [
                                           Text(
-                                            isUnlocked
-                                                ? "Obtuviste este logro por:"
-                                                : "Para obtener este logro, necesitas:",
+                                            descriptionTitle, // <-- ¡USANDO LA VARIABLE!
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: isUnlocked ? colors.onSurfaceVariant : Colors.grey.shade400, // ✅ Gris si está bloqueado
+                                              color: isUnlocked ? colors.onSurfaceVariant : Colors.grey.shade400,
                                             ),
                                           ),
                                           const SizedBox(height: 8),
@@ -266,7 +310,7 @@ class _ModalContent extends StatelessWidget {
                                             achievement.descripcion,
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
-                                              color: isUnlocked ? colors.onSurfaceVariant : Colors.grey.shade400, // ✅ Gris si está bloqueado
+                                              color: isUnlocked ? colors.onSurfaceVariant : Colors.grey.shade400,
                                             ),
                                           ),
                                         ],
@@ -275,17 +319,15 @@ class _ModalContent extends StatelessWidget {
                                     const SizedBox(height: 15),
                                   ],
                                 ),
-                                // ✅ Overlay de oscurecimiento cuando está bloqueado
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(11),
-                                        color: Colors.black.withOpacity(0.3), // Overlay oscuro
+                                        color: Colors.black.withOpacity(0.3),
                                       ),
                                     ),
                                   ),
-                                // ✅ Candado grande en el centro cuando está bloqueado
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Center(
@@ -313,13 +355,16 @@ class _ModalContent extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: () => Navigator.of(context).pop(),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.primary,
+                              backgroundColor: colors.primary, // Botón gris
                               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            child: Text("Cerrar", style: TextStyle(color: colors.onPrimary)),
+                            child: Text(
+                              "Cerrar", 
+                              style: TextStyle(color: colors.onPrimary),
+                            ),
                           ),
                         ),
                       ],

@@ -3,24 +3,29 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart';
-// ✅ 1. ¡IMPORTA EL HELPER QUE CREAMOS!
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+// helpers
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart';
 
 class AchievementCard extends StatelessWidget {
   final UserAchievementModel achievement;
   final ColorScheme colors;
   final bool isCompactView;
-  // ✅ NUEVO: Parámetro para controlar si es clickeable
   final bool isClickable;
+
+  // Nuevos parámetros para el perfil y si es el usuario actual
+  final UserProfileModel profile;
+  final bool isCurrentUser;
 
   const AchievementCard({
     super.key,
     required this.achievement,
     required this.colors,
     this.isCompactView = false,
-    this.isClickable = true, // Por defecto es clickeable
-  }); 
-
+    this.isClickable = true,
+    required this.profile,       // perfil del usuario
+    required this.isCurrentUser, // si es el usuario actual o no
+  });
   
 
   @override
@@ -113,11 +118,15 @@ class AchievementCard extends StatelessWidget {
     // Permite abrir el modal (que mostrará el estado bloqueado/desbloqueado)
     if (isClickable) {
       return GestureDetector(
-        onTap: () => AchievementModal.show(context, achievement),
+        onTap: () => AchievementModal.show(
+          context,
+          achievement,
+          profile: profile,       // <-- Pasa el perfil al modal (si el modal acepta este parámetro)
+          isCurrentUser: isCurrentUser, // <-- Pasa el booleano al modal (si el modal acepta este parámetro)
+        ),
         child: cardContent,
       );
     }
-
     // Si no es clickeable, solo retorna el contenido
     return cardContent;
   }

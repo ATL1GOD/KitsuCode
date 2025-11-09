@@ -9,9 +9,9 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart'; 
 import 'package:kitsucode/features/profile/view/widgets/achievement_card.dart';
-import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart';
+// import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart'; // No se usa aquí
 import 'package:animate_do/animate_do.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+// import 'package:flutter_animate/flutter_animate.dart'; // No se usa aquí
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -24,24 +24,32 @@ class AllAchievementsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    // Activamos el listener de realtime
     ref.watch(achievementRealtimeProvider);
-    final achievementsAsync = ref.watch(userAchievementsProvider(userId));
 
-    final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    // Obtenemos el ID del usuario actual (el que usa la app)
+    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
 
-    if (currentUserId == null) {
+    if (currentAuthUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
     }
 
+    // Observamos el perfil que se está viendo
     final profileState = ref.watch(userProfileByIdProvider(userId));
+    // Observamos los logros de ESE perfil
     final achievementsState = ref.watch(userAchievementsProvider(userId));
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
       body: profileState.when(
-        loading: () => const _AchievementsLoadingShimmer(),
+        loading: () => _AchievementsLoadingShimmer(colors: colors), // Pasamos colors al shimmer
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
+          // ¡Calculamos si es el usuario actual!
+          // Asumiendo que tu UserProfileModel SÍ tiene un campo 'id'
+          // Esta línea es la correcta
+          final isCurrentUser = userId == currentAuthUserId;
           final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
 
           return Stack(
@@ -64,7 +72,7 @@ class AllAchievementsView extends ConsumerWidget {
               // --- ANIMACIÓN DE FONDO CON LOTTIE ---
               ColorFiltered(
                 colorFilter: ColorFilter.mode(
-                  colors.secondaryFixedDim.withOpacity(0.8),
+                  colors.secondaryFixedDim.withOpacity(0.8), // Usando 'withOpacity' corregido si es necesario
                   BlendMode.srcIn, 
                 ),
                 child: Lottie.asset(
@@ -74,7 +82,8 @@ class AllAchievementsView extends ConsumerWidget {
                   fit: BoxFit.cover,
                 ),
               ),
-
+              
+              // --- CONTENIDO PRINCIPAL ---
               SafeArea(
                 child: Column(
                   children: [
@@ -103,21 +112,22 @@ class AllAchievementsView extends ConsumerWidget {
                               style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          const SizedBox(width: 48),
+                          const SizedBox(width: 48), // Espacio para centrar el título
                         ],
                       ),
                     ),
 
-                    // --- CONTENIDO PRINCIPAL ---
+                    // --- CONTENIDO (LA CUADRÍCULA) ---
                     Expanded(
                       child: achievementsState.when(
-                        loading: () => const _AchievementsLoadingShimmer(),
+                        loading: () => _AchievementsLoadingShimmer(colors: colors),
                         error: (e, s) => Center(child: Text('Error al cargar logros: $e')),
                         data: (achievements) {
                           return _AchievementsGrid(
                             achievements: achievements, 
                             colors: colors,
-                            profileName: profile.nombrePerfil,
+                            profile: profile, // ✅ Pasamos el perfil
+                            isCurrentUser: isCurrentUser, // ✅ Pasamos el booleano
                           );
                         },
                       ),
@@ -134,35 +144,42 @@ class AllAchievementsView extends ConsumerWidget {
 }
 
 // --- WIDGET PARA LA CUADRÍCULA DE LOGROS ---
+// --- WIDGET PARA LA CUADRÍCULA DE LOGROS (CON SECCIONES SEPARADAS) ---
 class _AchievementsGrid extends StatelessWidget {
   final List<UserAchievementModel> achievements;
   final ColorScheme colors;
-  final String profileName;
+  final UserProfileModel profile; // ✅ Recibimos el perfil
+  final bool isCurrentUser;      // ✅ Recibimos el booleano
 
   const _AchievementsGrid({
     required this.achievements,
     required this.colors,
-    required this.profileName,
+    required this.profile,
+    required this.isCurrentUser,
   });
 
   @override
   Widget build(BuildContext context) {
-    final obtainedAchievements = achievements.where((a) => a.obtenido).toList();
-    final unobtainedAchievements = achievements.where((a) => !a.obtenido).toList();
-    
-    final obtainedCount = obtainedAchievements.length;
+    // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+    // 1. Separamos las listas en lugar de solo ordenarlas
+    final unlockedAchievements =
+        achievements.where((a) => a.obtenido).toList();
+    final lockedAchievements =
+        achievements.where((a) => !a.obtenido).toList();
+
     final totalCount = achievements.length;
     final textTheme = Theme.of(context).textTheme;
 
     return ListView(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
       children: [
-        // Información de resumen
+        // --- Información de resumen (igual que antes) ---
         FadeInDown(
           child: Column(
             children: [
               Text(
-                profileName,
+                profile.nombrePerfil,
+                textAlign: TextAlign.center,
                 style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colors.onSurface,
@@ -170,108 +187,112 @@ class _AchievementsGrid extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '$obtainedCount / $totalCount Logros Desbloqueados',
+                '${unlockedAchievements.length} / $totalCount Logros Desbloqueados',
                 style: textTheme.titleMedium?.copyWith(
                   color: colors.secondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 30),
             ],
           ),
         ),
 
-        // --- SECCIÓN 1: LOGROS OBTENIDOS ---
-        if (obtainedAchievements.isNotEmpty) ...[
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: obtainedAchievements.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemBuilder: (context, index) {
-              final achievement = obtainedAchievements[index];
-              return FadeInUp(
-                delay: Duration(milliseconds: 50 * index),
-                child: AchievementCard(
-                  achievement: achievement,
-                  colors: colors,
-                  isCompactView: false,
-                  isClickable: true, // ✅ Los desbloqueados SÍ son clickeables
-                ),
-              );
-            },
+        // --- SECCIÓN 1: DESBLOQUEADOS ---
+        if (unlockedAchievements.isNotEmpty) ...[
+          _buildSectionHeader(
+            textTheme,
+            'Desbloqueados',
+            Icons.lock_open_rounded,
           ),
-          const SizedBox(height: 40),
+          _buildGridView(unlockedAchievements),
         ],
 
-        // --- SECCIÓN 2: DESAFÍOS PENDIENTES ---
-        if (unobtainedAchievements.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              'Logros pendientes (${unobtainedAchievements.length})',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold, 
-                color: colors.onSurface
-              ),
-            ),
+        // --- SECCIÓN 2: PENDIENTES ---
+        if (lockedAchievements.isNotEmpty) ...[
+          _buildSectionHeader(
+            textTheme,
+            'Bloqueados',
+            Icons.lock_outline_rounded,
           ),
-          
-          // ✅ SOLUCIÓN CORRECTA: Sin GestureDetector ni IgnorePointer
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: unobtainedAchievements.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemBuilder: (context, index) {
-              final achievement = unobtainedAchievements[index];
-
-              return FadeInUp(
-                delay: Duration(milliseconds: 50 * index),
-                // child: InkWell(
-                //   onTap: () => AchievementModal.show(context, achievement),
-                //   borderRadius: BorderRadius.circular(12),
-                  child: AchievementCard(
-                    achievement: achievement,
-                    colors: colors,
-                    isCompactView: false,
-                    isClickable: true, // ✅ Desactiva el clic en la tarjeta
-                  ),
-                // ),
-              );
-            },
-          ),
+          _buildGridView(lockedAchievements),
         ],
+
+        // Espacio extra al final para que no quede pegado
+        const SizedBox(height: 40),
       ],
+    );
+  }
+
+  // --- WIDGET HELPER PARA LOS TÍTULOS ---
+  Widget _buildSectionHeader(
+      TextTheme textTheme, String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 30.0, bottom: 16.0, left: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: colors.primary),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- WIDGET HELPER PARA LA CUADRÍCULA ---
+  Widget _buildGridView(List<UserAchievementModel> items) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemBuilder: (context, index) {
+        final achievement = items[index];
+        // Usamos un delay menor para la segunda sección si quisiéramos,
+        // pero 50ms por item se ve bien.
+        return FadeInUp(
+          delay: Duration(milliseconds: 30 * index),
+          duration: const Duration(milliseconds: 400),
+          child: AchievementCard(
+            achievement: achievement,
+            colors: colors,
+            isCompactView: false,
+            isClickable: true,
+            profile: profile,
+            isCurrentUser: isCurrentUser,
+          ),
+        );
+      },
     );
   }
 }
 
 // --- SHIMMER DE CARGA ---
 class _AchievementsLoadingShimmer extends StatelessWidget {
-  const _AchievementsLoadingShimmer();
+  final ColorScheme colors;
+  const _AchievementsLoadingShimmer({required this.colors});
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Shimmer.fromColors( 
       baseColor: colors.surfaceContainerHigh,
       highlightColor: colors.surfaceContainerHighest,
       child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(), // No permitir scroll
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 60), // Espacio para el appbar
             Column(
               children: [
                 Container(

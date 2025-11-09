@@ -39,6 +39,7 @@ class ProfileView extends ConsumerWidget {
 
     final profileState = ref.watch(userProfileByIdProvider(targetUserId));
     final colors = Theme.of(context).colorScheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: profileState.when(
@@ -102,7 +103,10 @@ class ProfileView extends ConsumerWidget {
                             Positioned.fill(
                               child: ColorFiltered(
                                 colorFilter: ColorFilter.mode(
-                                  colors.secondaryFixedDim.withOpacity(0.3),
+                                  // Partículas más visibles en ambos modos
+                                  isDarkMode
+                                      ? colors.secondaryFixedDim.withOpacity(0.3)
+                                      : colors.secondary.withOpacity(0.4),
                                   BlendMode.srcIn,
                                 ),
                                 child: Lottie.asset(

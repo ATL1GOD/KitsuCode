@@ -4,12 +4,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:animate_do/animate_do.dart';
+// import 'package:animate_do/animate_do.dart'; // Import no usado
 import 'package:go_router/go_router.dart';
 
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
+// import 'package:kitsucode/features/profile/model/user_achievement_model.dart'; // Import no usado
 
 import 'achievement_card.dart';
 import 'achievement_modal.dart';
@@ -72,7 +72,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
               const SizedBox(height: 15),
 
               achievementsState.when(
-                loading: () => const _AchievementsLoadingShimmer(),
+                loading: () => _AchievementsLoadingShimmer(colors: colors),
                 error: (error, stack) => const Center(child: Text('No se pudieron cargar los logros')),
                 data: (achievements) {
                   final obtained = achievements.where((a) => a.obtenido).toList();
@@ -108,13 +108,13 @@ class ProfileAchievementsSection extends ConsumerWidget {
 
                         return GestureDetector(
                           onTap: () {
-                            // showDialog(
-                            //   context: context,
-                            //   barrierColor: Colors.black54,
-                            //   builder: (context) =>
-                            //       AchievementModal(achievement: achievement), // ✅ Modal correcto
-                            // );
-                            AchievementModal.show(context, achievement);
+                            // ✅ 1. ¡CORRECCIÓN AQUÍ!
+                            AchievementModal.show(
+                              context, 
+                              achievement,
+                              profile: userProfile,
+                              isCurrentUser: isCurrentUserProfile,
+                            );
                           },
                           child: Padding(
                             padding: const EdgeInsets.only(right: 10.0),
@@ -124,6 +124,9 @@ class ProfileAchievementsSection extends ConsumerWidget {
                                 achievement: achievement,
                                 colors: colors,
                                 isCompactView: true,
+                                // ✅ 2. ¡CORRECCIÓN AQUÍ!
+                                profile: userProfile,
+                                isCurrentUser: isCurrentUserProfile,
                               ),
                             ),
                           ),
@@ -147,17 +150,39 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    // 1. Obtenemos el tema y el brillo
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    // 2. Definimos los colores adaptativos
+    final Color cardColor;
+    final Color borderColor;
+
+    if (isDarkMode) {
+      // --- MODO OSCURO ---
+      // Glass effect más sutil con gris oscuro
+      cardColor = colors.surfaceContainerHighest.withOpacity(0.6); 
+      borderColor = colors.outline.withOpacity(0.3);
+    } else {
+      // --- MODO CLARO ---
+      // Glass effect más transparente para ver las partículas
+      cardColor = Colors.white.withOpacity(0.2); 
+      borderColor = colors.outline.withOpacity(0.2);
+    }
+
+    // 3. Construimos el widget
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Mantenemos el blur
           child: Container(
             decoration: BoxDecoration(
-              color: colors.surfaceContainerLow.withOpacity(0.4),
+              color: cardColor,     // <-- Color adaptativo
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: borderColor) // <-- Borde adaptativo
             ),
             child: child,
           ),
@@ -168,23 +193,24 @@ class _GlassCard extends StatelessWidget {
 }
 
 class _AchievementsLoadingShimmer extends StatelessWidget {
-  const _AchievementsLoadingShimmer();
+  final ColorScheme colors;
+  const _AchievementsLoadingShimmer({required this.colors});
 
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[400]!,
-      highlightColor: Colors.grey[200]!,
+      baseColor: colors.surfaceContainerHigh,
+      highlightColor: colors.surfaceContainerHighest,
       child: SizedBox(
-        height: 80,
+        height: 120, // Ajustado a la altura de la tarjeta
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: 4,
           itemBuilder: (context, index) => Padding(
             padding: const EdgeInsets.only(right: 10.0),
             child: Container(
-              width: 80,
-              height: 80,
+              width: 90,
+              height: 120,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),

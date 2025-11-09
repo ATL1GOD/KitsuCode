@@ -39,6 +39,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/navbar/
+    - assets/images/logros/
     #- assets/icons/
     #- assets/fonts/
     - assets/.env

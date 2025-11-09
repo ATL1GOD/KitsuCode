@@ -24,6 +24,8 @@ class AllAchievementsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    ref.watch(achievementRealtimeProvider);
+    final achievementsAsync = ref.watch(userAchievementsProvider(userId));
 
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
 

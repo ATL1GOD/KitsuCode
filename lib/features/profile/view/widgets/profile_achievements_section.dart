@@ -32,7 +32,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
-    Widget titleWidget(List<dynamic> achievements) {
+    Widget titleWidget(bool showButton) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -43,7 +43,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
               Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
-          if (achievements.isNotEmpty)
+          if (showButton)
             TextButton(
               onPressed: () => context.push('/profile/$userId/achievements'),
               child: Text('Ver todo', style: TextStyle(color: colors.secondary, fontWeight: FontWeight.bold)),
@@ -61,11 +61,11 @@ class ProfileAchievementsSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               achievementsState.when(
-                loading: () => titleWidget([]),
-                error: (e, s) => titleWidget([]),
+                loading: () => titleWidget(false),
+                error: (e, s) => titleWidget(false),
                 data: (achievements) {
-                  final obtained = achievements.where((a) => a.obtenido).toList();
-                  return titleWidget(obtained);
+                  // Mostrar el botón siempre que haya logros (obtenidos o no)
+                  return titleWidget(achievements.isNotEmpty);
                 },
               ),
 

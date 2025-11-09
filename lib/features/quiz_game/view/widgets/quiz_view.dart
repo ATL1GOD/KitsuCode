@@ -15,6 +15,7 @@ import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.da
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
+import 'package:giffy_dialog/giffy_dialog.dart';
 
 class QuizPage extends ConsumerStatefulWidget {
   final QuizData mydata;
@@ -353,26 +354,70 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   void _showExitDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("¿Salir del reto?"),
-        content: const Text("Tu progreso se perderá."),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Cierra el AlertDialog
-            },
-            child: const Text('Cancelar'),
+      builder: (BuildContext context) {
+        return GiffyDialog.image(
+          Image.asset(
+            "images/challenge/alerta1.png",
+            // "assets/images/challenge/alerta1.png",
+            height: 280,
+            fit: BoxFit.cover,
+            // fit: BoxFit.contain,
           ),
-          TextButton(
-            onPressed: () {
-              // Cierra el AlertDialog y luego sale de la QuizPage
-              Navigator.of(context).pop();
-              context.pop();
-            },
-            child: const Text('Salir'),
+          title: const Text(
+            '¿Quieres salir del reto?',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
+          content: const Text(
+            'Tu progreso en este reto se perderá.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 19),
+          ),
+          actions: [
+            // --- BOTÓN CANCELAR (PERSONALIZADO) ---
+            TextButton(
+              style: TextButton.styleFrom(
+                // Cambia el color del texto
+                foregroundColor: Colors.grey[700],
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              onPressed: () => Navigator.pop(context), // Cierra el diálogo
+              child: const Text('CANCELAR'),
+            ),
+            const SizedBox(width: 98),
+            // --- BOTÓN SALIR (PERSONALIZADO) ---
+            TextButton(
+              style: TextButton.styleFrom(
+                // Añade un color de fondo
+                backgroundColor: Colors.red,
+                // Cambia el color del texto a blanco
+                foregroundColor: Colors.white,
+                // Añade bordes redondeados
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              onPressed: () {
+                // Cierra el diálogo y LUEGO sale de la QuizPage
+                Navigator.pop(context);
+                context.pop();
+              },
+              child: const Text('SALIR'),
+            ),
+          ],
+        );
+      },
     );
   }
 

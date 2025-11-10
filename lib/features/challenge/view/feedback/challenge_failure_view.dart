@@ -71,11 +71,13 @@ class ChallengeFailureView extends ConsumerWidget {
     final textTheme = challengeTheme.textTheme;
 
     // 2. Envolvemos el Scaffold en el Tema del lenguaje
-    return Theme(
-      data: challengeTheme,
-      child: Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: SafeArea(
+    return PopScope(
+      canPop: false, // Bloquear el botón de retroceso y el gesto de swipe back
+      child: Theme(
+        data: challengeTheme,
+        child: Scaffold(
+          backgroundColor: colorScheme.surface,
+          body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -189,8 +191,9 @@ class ChallengeFailureView extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
+        ), // Cierra SafeArea
+      ), // Cierra Scaffold
+    ), // Cierra Theme
+    ); // Cierra PopScope
   }
 }

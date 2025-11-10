@@ -78,7 +78,7 @@ void showExitDialog(BuildContext context) {
           // ¡Ya no necesitas el 'SizedBox(width: 98)'!
           // 'actionsAlignment' ya los separa adecuadamente.
           // Si quieres más espacio, puedes usar un SizedBox(width: 20) o similar.
-
+          SizedBox(width: 80),
           // Botón SALIR
           TextButton(
             style: TextButton.styleFrom(

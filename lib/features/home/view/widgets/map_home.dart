@@ -8,9 +8,8 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/animated_level_node.dart';
 
 // --- ¡AÑADE ESTA IMPORTACIÓN! ---
-import 'package:kitsucode/features/home/provider/home_provider.dart'; 
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 // --- FIN DE LA IMPORTACIÓN ---
-
 
 class Section extends ConsumerWidget {
   final SectionData data;
@@ -21,12 +20,11 @@ class Section extends ConsumerWidget {
   void _navegarAReto(BuildContext context, WidgetRef ref, LevelData level) {
     // --- LÓGICA DE BLOQUEO DE NIVEL ---
     if (level.isLocked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Nivel bloqueado! Completa el reto anterior primero.'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
-        ),
+      // ¡Usa tu nueva función!
+      showWarningSnackbar(
+        context,
+        '¡Nivel Bloqueado!',
+        'Completa el reto anterior para desbloquear este nivel.',
       );
       return; // Bloquea la navegación
     }
@@ -45,12 +43,11 @@ class Section extends ConsumerWidget {
     final appBarState = ref.read(appBarProvider);
 
     if (appBarState.lives <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Oh no! Te has quedado sin vidas. Vuelve mañana.'),
-          backgroundColor: Colors.redAccent,
-          duration: Duration(seconds: 2),
-        ),
+      // ¡Usa tu nueva función!
+      showErrorSnackbar(
+        context,
+        '¡Sin Vidas!',
+        '¡Oh no! Te has quedado sin vidas. Vuelve mañana.',
       );
       return; // Bloquea la navegación
     }
@@ -123,13 +120,13 @@ class Section extends ConsumerWidget {
                 top: (i * 96.0) + 40.0,
                 left: getLeft(i),
                 right: getRight(i),
-                child: AnimatedLevelNode( // <-- ¡NUEVO WRAPPER!
+                child: AnimatedLevelNode(
+                  // <-- ¡NUEVO WRAPPER!
                   levelId: level.idNivel, // Le pasamos su ID
                   child: levelNodeWidget, // Le pasamos la bolita como hijo
                 ),
               );
               // --- FIN DE LA MODIFICACIÓN! ---
-
             }).toList(),
           ),
         ),

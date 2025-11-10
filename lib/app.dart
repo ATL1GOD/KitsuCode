@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:overlay_support/overlay_support.dart';
-import 'package:kitsucode/features/home/provider/home_provider.dart'; // ← AÑADIDO
+import 'package:kitsucode/features/home/provider/home_provider.dart'; 
+import 'package:kitsucode/core/providers/theme_provider.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -11,6 +12,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
     
     // INICIALIZAR EL LISTENER DE REALTIME AQUÍ 
     ref.read(progressRealtimeProvider);
@@ -21,7 +23,8 @@ class MyApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         theme: AppThemes.lightTheme,
         darkTheme: AppThemes.darkTheme,
-      routerConfig: router,
+        routerConfig: router,
+        themeMode: themeMode,
         ),
       );
     }

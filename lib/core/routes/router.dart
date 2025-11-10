@@ -30,11 +30,15 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
 
 // --- TUS VISTAS (dxniel7) ---
 import 'package:kitsucode/features/profile/view/follow_list_view.dart';
-import 'package:kitsucode/main.dart'; // <-- FUSIÓN: Importado de tu rama (dxniel7)
+import 'package:kitsucode/main.dart'; // 
 
 // --- VISTAS DEL EQUIPO (atl1god) ---
 import 'package:kitsucode/features/desafio/view/desafio_view.dart'; // <-- FUSIÓN: Importado de la rama (atl1god)
 
+// --- ¡NUEVAS VISTAS DE SETTINGS! ---
+import 'package:kitsucode/features/settings/view/settings_view.dart';
+import 'package:kitsucode/features/settings/view/notifications_view.dart';
+import 'package:kitsucode/features/settings/view/support_view.dart';
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -125,6 +129,29 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       
       GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
+
+      // --- ¡NUEVAS RUTAS DE SETTINGS AÑADIDAS! ---
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsView(),
+        routes: [
+          // Sub-rutas de settings
+          GoRoute(
+            path: 'notifications',
+            builder: (context, state) => const NotificationsView(),
+            // Aquí podrías anidar más rutas si quisieras:
+            // routes: [
+            //   GoRoute(path: 'recordatorios', ...),
+            //   GoRoute(path: 'amigos', ...),
+            // ]
+          ),
+          GoRoute(
+            path: 'support',
+            builder: (context, state) => const SupportView(),
+          ),
+        ]
+      ),
+      // --- FIN DE NUEVAS RUTAS ---
 
       // --- RUTA PARA FEEDBACK DE ÉXITO (sin cambios) ---
       GoRoute(

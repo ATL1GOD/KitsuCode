@@ -196,7 +196,7 @@ class _TopBar extends StatelessWidget {
           ),
           if (isCurrentUserProfile)
             InkWell(
-              onTap: () { /* Navegar a settings */ },
+              onTap: () { context.push('/settings'); },
               borderRadius: BorderRadius.circular(30),
               child: Container(
                 padding: const EdgeInsets.all(8.0),

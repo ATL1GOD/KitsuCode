@@ -23,18 +23,17 @@ class AchievementCard extends StatelessWidget {
     required this.colors,
     this.isCompactView = false,
     this.isClickable = true,
-    required this.profile,       // perfil del usuario
+    required this.profile, // perfil del usuario
     required this.isCurrentUser, // si es el usuario actual o no
   });
-  
 
   @override
   Widget build(BuildContext context) {
     final isUnlocked = achievement.obtenido;
-    
+
     // ✅ 2. ¡CORREGIDO! LLAMAMOS AL HELPER SIN EL PARÁMETRO 'colors'
-    final effectColor = getRarityColor(achievement.raridad); 
-    
+    final effectColor = getRarityColor(achievement.raridad);
+
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 360;
 
@@ -47,16 +46,15 @@ class AchievementCard extends StatelessWidget {
     Widget cardContent = Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: borderColor,
-          width: borderWidth,
-        ),
+        border: Border.all(color: borderColor, width: borderWidth),
         // ✅ Usar colores del tema
         color: isUnlocked ? colors.surface : lockedBackgroundColor,
         boxShadow: [
           BoxShadow(
             // ✅ Sombra según estado usando colores del tema
-            color: isUnlocked ? effectColor.withOpacity(0.3) : colors.shadow.withOpacity(0.15),
+            color: isUnlocked
+                ? effectColor.withOpacity(0.3)
+                : colors.shadow.withOpacity(0.15),
             blurRadius: 3,
             spreadRadius: 0,
           ),
@@ -68,15 +66,15 @@ class AchievementCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(4.0),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               child: ColorFiltered(
                 colorFilter: isUnlocked
-                    ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
+                    ? const ColorFilter.mode(
+                        Colors.transparent,
+                        BlendMode.multiply,
+                      )
                     : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
-                child: Image.asset(
-                  achievement.iconUrl,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset(achievement.iconUrl, fit: BoxFit.cover),
               ),
             ),
           ),
@@ -91,10 +89,12 @@ class AchievementCard extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 // ✅ Usar colores del tema
-                color: isUnlocked 
+                color: isUnlocked
                     ? colors.surface.withOpacity(0.8)
                     : lockedBackgroundColor.withOpacity(0.9),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(8),
+                ),
               ),
               child: Text(
                 achievement.nombre,
@@ -121,8 +121,10 @@ class AchievementCard extends StatelessWidget {
         onTap: () => AchievementModal.show(
           context,
           achievement,
-          profile: profile,       // <-- Pasa el perfil al modal (si el modal acepta este parámetro)
-          isCurrentUser: isCurrentUser, // <-- Pasa el booleano al modal (si el modal acepta este parámetro)
+          profile:
+              profile, // <-- Pasa el perfil al modal (si el modal acepta este parámetro)
+          isCurrentUser:
+              isCurrentUser, // <-- Pasa el booleano al modal (si el modal acepta este parámetro)
         ),
         child: cardContent,
       );

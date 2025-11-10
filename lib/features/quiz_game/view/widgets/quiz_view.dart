@@ -23,8 +23,14 @@ import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 class QuizPage extends ConsumerStatefulWidget {
   final QuizData mydata;
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
-  const QuizPage({super.key, required this.mydata, required this.retoId});
+  const QuizPage({
+    super.key, 
+    required this.mydata, 
+    required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
+  });
 
   @override
   ConsumerState<QuizPage> createState() => _QuizPageState();
@@ -213,8 +219,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               try {
                 // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
                 final currentStats = ref.read(appBarProvider);
-                print("📊 Quiz - Guardando valores VIEJOS: vidas=${currentStats.lives}, trofeos=${currentStats.trophies}, racha=${currentStats.streak}");
-                
                 ref.read(oldStatsValuesProvider.notifier).state = [
                   currentStats.lives,
                   currentStats.trophies,
@@ -226,18 +230,16 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-
-                print("🎮 Quiz: Enviando resultado a Supabase (correcto: $esCorrecto)");
+                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
                   // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
                   final int trofeos = await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: true,
                     tiempoQueTardo: durationInSeconds, 
                   );
-                  
-                  print("🏆 Trofeos obtenidos: $trofeos");
                   
                   ref.invalidate(globalRankingProvider);
                   
@@ -249,11 +251,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 } else {
                   await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: false,
                     tiempoQueTardo: durationInSeconds,
                   );
-
-                  print("❌ Intento fallido enviado");
 
                   // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.mydata.recursos;
@@ -262,10 +263,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   if (!context.mounted) return;
                   context.push('/challenge_failure', extra: recursos);
                 }
-              } catch (e, stackTrace) {
-                print("❌ Error en onContinue (Quiz): $e");
-                print("Stack trace: $stackTrace");
-                
+              } catch (e) {
                 // Mostrar error al usuario
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

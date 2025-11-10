@@ -21,7 +21,6 @@ import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
-import 'package:kitsucode/features/home/provider/home_provider.dart';
 // --- FIN NUEVO ---
 
 
@@ -207,8 +206,6 @@ class PuzzleView extends ConsumerWidget {
                       try {
                         // 0. GUARDAR valores actuales ANTES de submitChallengeAttempt
                         final currentStats = ref.read(appBarProvider);
-                        print("📊 Puzzle - Guardando valores VIEJOS: vidas=${currentStats.lives}, trofeos=${currentStats.trophies}, racha=${currentStats.streak}");
-                        
                         ref.read(oldStatsValuesProvider.notifier).state = [
                           currentStats.lives,
                           currentStats.trophies,
@@ -222,21 +219,17 @@ class PuzzleView extends ConsumerWidget {
                         // Leemos el estado actual que tiene el ID y los recursos
                         final currentState = ref.read(puzzleProvider); 
                         
-                        print("🎮 Puzzle: Enviando resultado a Supabase (correcto: $esCorrecto)");
-                        
                         if (esCorrecto) {
                           // 1. Enviar intento y obtener trofeos
                           final int trofeos = await repository.submitChallengeAttempt(
                             retoId: currentState.challengeId,
+                            nivelId: currentState.nivelId, // ← ¡AÑADIDO!
                             fueExitoso: true,
                             tiempoQueTardo: 0, // TODO: Implementar timer
                           );
                           
-                          print("🏆 Trofeos obtenidos: $trofeos");
-                          
-                          // 2. Refrescar Ranking Y Home (para actualizar el mapa)
+                          // 2. Refrescar Ranking (NO refrescamos stats aquí - se hará al regresar al Home)
                           ref.invalidate(globalRankingProvider);
-                          ref.invalidate(homeViewModelProvider);
 
                           // 3. Navegar a la vista de éxito
                           if (!context.mounted) return;
@@ -246,11 +239,10 @@ class PuzzleView extends ConsumerWidget {
                           // 1. Enviar intento fallido (y obtener 0 trofeos)
                           await repository.submitChallengeAttempt(
                             retoId: currentState.challengeId,
+                            nivelId: currentState.nivelId, // ← ¡AÑADIDO!
                             fueExitoso: false,
                             tiempoQueTardo: 0,
                           );
-                          
-                          print("❌ Intento fallido enviado");
                           
                           // 2. Obtener recursos del estado (NO refrescamos stats aquí - se hará al regresar al Home)
                           final List<RecursoModel> recursos = currentState.recursos;
@@ -259,10 +251,7 @@ class PuzzleView extends ConsumerWidget {
                           if (!context.mounted) return;
                           context.push('/challenge_failure', extra: recursos);
                         }
-                      } catch (e, stackTrace) {
-                        print("❌ Error en onContinue: $e");
-                        print("Stack trace: $stackTrace");
-                        
+                      } catch (e) {
                         // Mostrar error al usuario
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

@@ -134,37 +134,42 @@ class SectionData {
     List<SectionData> sections,
   ) {
     final List<SectionData> finalSections = [];
-    bool isPreviousSectionCompleted = true; // Desbloquea la Sección 1
+    
+    // Esta es la ÚNICA bandera que importa.
+    // Trata todo el mapa (todas las secciones) como un solo camino.
+    // Empieza en 'true' para desbloquear el primer nivel del mapa.
+    bool previousLevelWasCompleted = true;
 
     // Bucle de SECCIONES
-    for (int i = 0; i < sections.length; i++) {
-      final currentSection = sections[i];
-      final bool isSectionLocked = !isPreviousSectionCompleted;
+    for (var currentSection in sections) {
+      
+      final List<LevelData> newLevels = [];
 
       // Bucle de NIVELES
-      final List<LevelData> newLevels = [];
-      bool isPreviousLevelCompleted = true; // Desbloquea el Nivel 1.1
-
-      for (int j = 0; j < currentSection.levels.length; j++) {
-        final level = currentSection.levels[j];
-
-        final bool isLevelLocked = isSectionLocked || !isPreviousLevelCompleted;
+      // Este bucle simplemente continúa donde el anterior se quedó
+      for (var level in currentSection.levels) {
+        
+        // Un nivel está bloqueado SI Y SOLO SI
+        // el nivel anterior (incluso si fue en la sección anterior) NO está completo.
+        final bool isLevelLocked = !previousLevelWasCompleted;
 
         newLevels.add(level.copyWith(isLocked: isLevelLocked));
 
-        isPreviousLevelCompleted = level.isCompleted;
+        // Actualizamos la bandera para la *siguiente* iteración.
+        // El siguiente nivel dependerá de si *este* nivel está completo.
+        previousLevelWasCompleted = level.isCompleted;
       }
 
+      // La sección en sí misma NUNCA debe estar bloqueada.
+      // Solo sus niveles internos.
       final newSection = currentSection.copyWith(
-        isLocked: isSectionLocked,
+        isLocked: false, // <-- ¡Importante!
         levels: newLevels,
       );
+      
       finalSections.add(newSection);
-
-      isPreviousSectionCompleted = newLevels.every(
-        (level) => level.isCompleted,
-      );
     }
+    
     return finalSections;
   }
 }

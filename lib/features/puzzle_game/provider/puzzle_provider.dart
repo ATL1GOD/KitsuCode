@@ -34,6 +34,7 @@ class PuzzleState {
   
   // --- CAMPOS NUEVOS ---
   final int challengeId; 
+  final int nivelId; // ← ¡AÑADIDO!
   final List<RecursoModel> recursos;
 
   // --- CAMPOS ORIGINALES (DE VUELTA) ---
@@ -46,6 +47,7 @@ class PuzzleState {
     this.availableOptions = const [],
     this.status = PuzzleStatus.playing,
     this.challengeId = 0,
+    this.nivelId = 0, // ← ¡AÑADIDO!
     this.recursos = const [],
     this.isLoading = true, // <-- Valor inicial
     this.error,
@@ -57,6 +59,7 @@ class PuzzleState {
     List<PuzzleOption>? availableOptions,
     PuzzleStatus? status,
     int? challengeId,
+    int? nivelId, // ← ¡AÑADIDO!
     List<RecursoModel>? recursos,
     bool? isLoading,
     String? error,
@@ -67,6 +70,7 @@ class PuzzleState {
       availableOptions: availableOptions ?? this.availableOptions,
       status: status ?? this.status,
       challengeId: challengeId ?? this.challengeId,
+      nivelId: nivelId ?? this.nivelId, // ← ¡AÑADIDO!
       recursos: recursos ?? this.recursos,
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -81,12 +85,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   PuzzleNotifier(
     Map<String, dynamic> challengeContent,
     int challengeId,
+    int nivelId, // ← ¡AÑADIDO!
   ) : super(const PuzzleState()) {
-    _loadChallenge(challengeContent, challengeId);
+    _loadChallenge(challengeContent, challengeId, nivelId); // ← ¡MODIFICADO!
   }
 
   // Lógica de carga (con duplicados y campos de estado)
-  void _loadChallenge(Map<String, dynamic> challengeContent, int challengeId) {
+  void _loadChallenge(Map<String, dynamic> challengeContent, int challengeId, int nivelId) { // ← ¡MODIFICADO!
     try {
       final challenge = PuzzleChallengeModel.fromJson(challengeContent);
 
@@ -138,6 +143,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         availableOptions: bankOptions,
         status: PuzzleStatus.playing,
         challengeId: challengeId,
+        nivelId: nivelId, // ← ¡AÑADIDO!
         recursos: challenge.recursos,
         isLoading: false, // <-- Corregido
         error: null,
@@ -225,6 +231,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
        {}, // Esto sigue estando mal si el JSON no está guardado,
           // pero es la lógica que tenías.
        state.challengeId,
+       state.nivelId, // ← ¡AÑADIDO!
      );
   }
 }

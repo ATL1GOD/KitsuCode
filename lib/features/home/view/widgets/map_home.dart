@@ -51,8 +51,8 @@ class Section extends ConsumerWidget {
 
     // 3. Si tiene vidas Y está desbloqueado, navegamos
     final int retoId = level.retoId!;
-    debugPrint("Navegando al distribuidor de retos con ID: $retoId");
-    context.push('/reto/$retoId');
+    final int nivelId = level.idNivel;
+    context.push('/reto/$retoId/$nivelId');
   }
 
   @override

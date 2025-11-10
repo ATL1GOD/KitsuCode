@@ -23,11 +23,13 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
 class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
   const CodigoChallengeView({
     super.key,
     required this.challenge,
     required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
   });
 
   @override
@@ -191,8 +193,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
               try {
                 // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
                 final currentStats = ref.read(appBarProvider);
-                print("📊 Codigo - Guardando valores VIEJOS: vidas=${currentStats.lives}, trofeos=${currentStats.trophies}, racha=${currentStats.streak}");
-                
                 // ignore: use_of_void_result
                 ref.read(oldStatsValuesProvider.notifier).state = [
                   currentStats.lives,
@@ -205,18 +205,16 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-
-                print("🎮 Codigo: Enviando resultado a Supabase (correcto: $esCorrecto)");
+                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
                   // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
                   final int trofeos = await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: true,
                     tiempoQueTardo: 0, 
                   );
-                  
-                  print("🏆 Trofeos obtenidos: $trofeos");
                   
                   // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
@@ -229,11 +227,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   // 1. Enviar intento fallido
                   await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: false,
                     tiempoQueTardo: 0,
                   );
-
-                  print("❌ Intento fallido enviado");
 
                   // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.challenge.recursos;
@@ -242,10 +239,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   if (!context.mounted) return;
                   context.push('/challenge_failure', extra: recursos);
                 }
-              } catch (e, stackTrace) {
-                print("❌ Error en onContinue (Codigo): $e");
-                print("Stack trace: $stackTrace");
-                
+              } catch (e) {
                 // Mostrar error al usuario
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -59,11 +59,13 @@ class QuizData {
 class QuizLoaderPage extends ConsumerWidget {
   final Map<String, dynamic> challengeContent;
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
   const QuizLoaderPage({
     super.key,
     required this.challengeContent,
     required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
   });
 
   @override
@@ -95,6 +97,10 @@ class QuizLoaderPage extends ConsumerWidget {
     }
 
     // Si todo está bien, pasamos el objeto 'mydata' ya construido.
-    return QuizPage(mydata: mydata, retoId: retoId);
+    return QuizPage(
+      mydata: mydata, 
+      retoId: retoId,
+      nivelId: nivelId, // ← ¡AÑADIDO!
+    );
   }
 }

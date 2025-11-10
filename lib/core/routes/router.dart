@@ -100,10 +100,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       GoRoute(
-        path: '/reto/:retoId', // RUTA GENERAL
+        path: '/reto/:retoId/:nivelId', // ← ¡MODIFICADO!
         builder: (context, state) {
           final retoId = state.pathParameters['retoId']!;
-          return RetoDistribuidorPage(retoId: retoId);
+          final nivelId = state.pathParameters['nivelId']!; // ← ¡AÑADIDO!
+          return RetoDistribuidorPage(
+            retoId: retoId,
+            nivelId: nivelId, // ← ¡AÑADIDO!
+          );
         },
       ),
       

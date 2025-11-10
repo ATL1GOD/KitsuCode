@@ -1,41 +1,42 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/home/model/home_model.dart';
+import 'package:kitsucode/features/home/model/home_model.dart'; // ¡Importante!
 import 'package:kitsucode/features/home/repository/home_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
-// --- ¡CAMBIO 1: AÑADIR IMPORTACIÓN DE SUPABASE! ---
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// --- ¡CAMBIO 2: AÑADIR ESTE PROVIDER DE REALTIME! ---
-/// Este provider escucha en tiempo real las inserciones en la tabla `progreso_usuario`.
-/// NO es autoDispose, para que siga vivo mientras el usuario está en un reto.
+// --- SOLUCIÓN A: (Evitar Race Condition) ---
+// Escucha el Realtime y pasa el ID del nivel nuevo
 final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
   final supabase = Supabase.instance.client;
   final currentUserId = supabase.auth.currentUser?.id;
 
-  // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
-  // Debe ser 'return null;' para que coincida con el tipo RealtimeChannel?
-  if (currentUserId == null) return null; 
-  // --- FIN DE LA CORRECCIÓN ---
+  if (currentUserId == null) return null;
 
-  // El nombre del canal 'home_v2' es solo un ejemplo, puede ser lo que quieras
-  final channel = supabase.channel('public:progreso_usuario:home_v2');
+  final channel = supabase.channel('public:progreso_usuario:home_v3');
   channel.onPostgresChanges(
-    event: PostgresChangeEvent.insert, // Escuchamos solo inserciones
+    event: PostgresChangeEvent.insert,
     schema: 'public',
-    table: 'progreso_usuario', // <-- ¡La tabla clave que nos diste!
-    // Filtramos para que solo nos notifique de NUESTRO propio progreso
+    table: 'progreso_usuario',
     filter: PostgresChangeFilter(
       type: PostgresChangeFilterType.eq,
       column: 'id_usuario',
       value: currentUserId,
     ),
     callback: (payload) {
-      debugPrint("--- Realtime: ¡NUEVO PROGRESO DE NIVEL DETECTADO! ---");
-      
-      // ¡Esta es la nueva lógica!
-      // En lugar de invalidar, llamamos al nuevo método en el notifier.
-      ref.read(homeViewModelProvider.notifier).triggerMapUpdate();
+      try {
+        final newRecord = payload.newRecord;
+        if (newRecord.isEmpty) return;
+        
+        final newLevelId = newRecord['id_nivel'] as int?;
+        
+        if (newLevelId != null) {
+          // Llama al método que actualiza el estado localmente
+          ref.read(homeViewModelProvider.notifier).unlockLevelLocally(newLevelId);
+        }
+      } catch (e) {
+        ref.read(homeViewModelProvider.notifier).triggerMapUpdate();
+      }
     },
   ).subscribe();
 
@@ -45,137 +46,130 @@ final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
 
   return channel;
 });
-// --- FIN DEL CAMBIO 2 ---
+// --- FIN SOLUCIÓN A ---
 
 
-// 1. El Provider (ViewModel)
 final homeViewModelProvider =
     AsyncNotifierProvider<HomeViewModel, List<SectionData>>(HomeViewModel.new);
 
-// 2. El Notifier (Clase del ViewModel)
 class HomeViewModel extends AsyncNotifier<List<SectionData>> {
   
   @override
   Future<List<SectionData>> build() async {
-    // --- ¡CAMBIO 3: AÑADIR ESTA LÍNEA! ---
-    // "Escuchamos" al provider para activarlo y mantenerlo vivo.
-    // Esto asegura que el listener de Supabase se suscriba.
-    ref.watch(progressRealtimeProvider);
-    // --- FIN DEL CAMBIO 3 ---
+    ref.watch(progressRealtimeProvider); // Activa el listener
 
-    // --- ¡DEBUG! ---
-    debugPrint("--- HomeViewModel: build() SE EJECUTÓ (Carga inicial) ---");
-
-    // 1. Observamos SOLO el languageId
     final languageId = ref.watch(currentLanguageIdProvider);
-
-    // --- ¡DEBUG! ---
-    debugPrint("HomeViewModel: 'languageId' observado -> $languageId");
-
-    // 2. Si el ID es 0, retornamos una lista vacía
+    
     if (languageId == 0) {
-      
-      // --- ¡DEBUG! ---
-      debugPrint("HomeViewModel: languageId es 0. Retornando mapa vacío [].");
-      
       return [];
     }
-
-    // --- ¡DEBUG! ---
-    debugPrint("HomeViewModel: Llamando a _fetchSections con ID: $languageId");
-
-    // 3. Cargamos las secciones.
+    
     return _fetchSections(languageId);
   }
 
-  // --- ¡CAMBIO 4: AÑADIR ESTE NUEVO MÉTODO! ---
-  /// Vuelve a cargar los datos del mapa y actualiza el estado
-  /// directamente a AsyncData, evitando el "pantallazo negro" de carga.
+  /// SOLUCIÓN A: Actualiza el estado localmente sin re-consultar
+  void unlockLevelLocally(int newLevelId) {
+    final currentState = state.value;
+    if (currentState == null) {
+      triggerMapUpdate(); // No hay datos, mejor recargar
+      return;
+    }
+
+    // 1. Marcar el nuevo nivel como 'completado' en el estado actual
+    final List<SectionData> sectionsWithNewProgress = currentState.map((section) {
+      return section.copyWith(
+        levels: section.levels.map((level) {
+          if (level.idNivel == newLevelId) {
+            return level.copyWith(isCompleted: true);
+          }
+          return level;
+        }).toList(),
+      );
+    }).toList();
+
+    // 2. Volver a correr la lógica de BLOQUEO (de home_model.dart)
+    final List<SectionData> finalSections =
+        SectionData.applySequentialSectionLock(sectionsWithNewProgress);
+
+    // 3. Actualizar la UI
+    state = AsyncData(finalSections);
+  }
+
+
+  /// Fallback por si `unlockLevelLocally` falla
   Future<void> triggerMapUpdate() async {
-    debugPrint("--- Realtime: triggerMapUpdate() llamado ---");
+    await Future.delayed(const Duration(milliseconds: 500)); // Dar tiempo a la BD
+    
     final languageId = ref.read(currentLanguageIdProvider);
     if (languageId == 0) return;
-
     try {
-      // 1. Volvemos a ejecutar la lógica de carga
       final newSections = await _fetchSections(languageId);
-      
-      // 2. ¡ESTA ES LA CLAVE!
-      // Actualizamos el estado directamente a AsyncData.
-      // La UI recibirá la nueva lista y se reconstruirá
-      // sin mostrar un estado de 'loading'.
       state = AsyncData(newSections);
-      
-      debugPrint("--- Realtime: ¡Mapa actualizado en vivo! ---");
-      
     } catch (e, s) {
-      // Si algo falla, sí pasamos al estado de error
       state = AsyncError(e, s);
-      debugPrint("--- Realtime: Error al actualizar mapa: $e ---");
     }
   }
-  // --- FIN DEL CAMBIO 4 ---
 
-
-  // (El resto de tu clase no cambia)
-
+  
+  /// Esta función ahora contiene la SOLUCIÓN B y la C (Corrección)
   Future<List<SectionData>> _fetchSections(int languageId) async {
-    final repository = ref.read(sectionRepositoryProvider); // .read es mejor aquí
+    try {
+      debugPrint("--- 🚀 _fetchSections INICIADO para lenguaje: $languageId ---");
+      final repository = ref.read(sectionRepositoryProvider);
+      final HomeMapData homeData = await repository.getHomeMapData(languageId);
+      final List<SectionData> sections = homeData.sections;
+    
+    // --- ¡¡INICIO DE LA CORRECCIÓN!! ---
+    // ¡Usamos los ID de progreso que SÍ vienen del repositorio!
+    final Set<int> completedIds = homeData.completedLevelIds; 
+    // --- ¡¡FIN DE LA CORRECCIÓN!! ---
 
-    // 1. Obtenemos los datos (ambas listas)
-    final HomeMapData homeData = await repository.getHomeMapData(languageId);
 
-    final List<SectionData> sections = homeData.sections;
-    final Set<int> completedIds = homeData.completedLevelIds;
+    // --- SOLUCIÓN B: (Ordenar Niveles) ---
+    // 1. Ordenar manualmente los niveles DENTRO de cada sección
+    final List<SectionData> sortedSections = sections.map((section) {
+      final sortedLevels = List<LevelData>.from(section.levels);
+      
+      // ¡Ordena por el campo 'nivel' (que es 'niveles.orden')!
+      sortedLevels.sort((a, b) => a.nivel.compareTo(b.nivel)); 
+      
+      return section.copyWith(levels: sortedLevels);
+    }).toList();
+    // --- FIN SOLUCIÓN B ---
 
-    // 2. Aplicamos el PROGRESO (isCompleted) manualmente
-    final List<SectionData> sectionsWithProgress = sections.map((section) {
+    // 2. Aplicar el progreso (isCompleted) a la lista YA ORDENADA
+    final List<SectionData> sectionsWithProgress = sortedSections.map((section) { 
       final List<LevelData> updatedLevels = section.levels.map((level) {
+        // ¡Ahora 'completedIds' tiene los datos correctos!
         final bool isCompleted = completedIds.contains(level.idNivel);
-
+        
         return level.copyWith(
-          isCompleted: isCompleted, // ¡Aplicamos el progreso!
+          isCompleted: isCompleted,
         );
       }).toList();
-
       return section.copyWith(levels: updatedLevels);
     }).toList();
 
-    debugPrint("--- DATOS ANTES DE LÓGICA (PROGRESO APLICADO) ---");
-    for (var sec in sectionsWithProgress) {
-      for (var lvl in sec.levels) {
-        debugPrint(
-          'Seccion ${sec.etapa}, Nivel ${lvl.nivel} (ID: ${lvl.idNivel}), isCompleted: ${lvl.isCompleted}',
-        );
-      }
-    }
-
-    // 3. ¡Aplicamos la lógica de BLOQUEO (isLocked)!
+    // 3. Aplicar bloqueo (usando la función de home_model.dart)
     final List<SectionData> finalSections =
         SectionData.applySequentialSectionLock(sectionsWithProgress);
-
-    debugPrint("--- DATOS DESPUÉS DE LÓGICA (BLOQUEO APLICADO) ---");
-    for (var sec in finalSections) {
-      for (var lvl in sec.levels) {
-        debugPrint(
-          'Seccion ${sec.etapa}, Nivel ${lvl.nivel}, isLocked: ${lvl.isLocked}',
-        );
-      }
-    }
-
-    // 4. Devolvemos la lista final a la UI
+    
     return finalSections;
+    } catch (e, stack) {
+      debugPrint("--- ❌ ERROR EN _fetchSections: $e ---");
+      debugPrint("--- STACK: $stack ---");
+      rethrow;
+    }
   }
 
+  // refreshSections no cambia
   Future<void> refreshSections() async {
     state = const AsyncValue.loading();
     final languageId = ref.read(currentLanguageIdProvider);
-
     if (languageId == 0) {
       state = await AsyncValue.guard(() => Future.value([]));
       return;
     }
-
     state = await AsyncValue.guard(() => _fetchSections(languageId));
   }
 }

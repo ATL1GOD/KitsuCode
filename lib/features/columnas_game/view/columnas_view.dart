@@ -23,11 +23,13 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
 class ColumnsChallengeView extends ConsumerStatefulWidget {
   final ColumnsChallenge challenge;
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
   const ColumnsChallengeView({
     super.key,
     required this.challenge,
     required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
   });
 
   @override
@@ -194,8 +196,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               try {
                 // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
                 final currentStats = ref.read(appBarProvider);
-                print("📊 Columnas - Guardando valores VIEJOS: vidas=${currentStats.lives}, trofeos=${currentStats.trophies}, racha=${currentStats.streak}");
-                
                 // ignore: use_of_void_result
                 ref.read(oldStatsValuesProvider.notifier).state = [
                   currentStats.lives,
@@ -208,18 +208,16 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-
-                print("🎮 Columnas: Enviando resultado a Supabase (correcto: $esCorrecto)");
+                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
                   // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
                   final int trofeos = await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: true,
                     tiempoQueTardo: 0, 
                   );
-                  
-                  print("🏆 Trofeos obtenidos: $trofeos");
                   
                   // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
@@ -232,11 +230,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                   // 1. Enviar intento fallido
                   await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: false,
                     tiempoQueTardo: 0,
                   );
-
-                  print("❌ Intento fallido enviado");
 
                   // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.challenge.recursos;
@@ -254,10 +251,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                     _incorrectItem2 = null;
                   });
                 }
-              } catch (e, stackTrace) {
-                print("❌ Error en onContinue (Columnas): $e");
-                print("Stack trace: $stackTrace");
-                
+              } catch (e) {
                 // Mostrar error al usuario
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

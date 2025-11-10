@@ -15,6 +15,7 @@ class ChallengeRepository {
   // --- ¡FUNCIÓN QUE RETORNA LOS TROFEOS GANADOS! ---
   Future<int> submitChallengeAttempt({
     required int retoId,
+    required int nivelId, // ← ¡AÑADIDO!
     required bool fueExitoso,
     required int tiempoQueTardo, // en segundos
   }) async {
@@ -29,36 +30,28 @@ class ChallengeRepository {
         'completar_reto',
         params: {
           'id_reto_param': retoId,
+          'id_nivel_param': nivelId, // ← ¡AÑADIDO!
           'id_usuario_param': user.id,
           'resultado_param': fueExitoso ? 'completado' : 'fallido',
           'tiempo_param': tiempoQueTardo,
         },
       );
       
-      // Debug: Ver qué retorna la función
-      print("✅ RPC completar_reto response: $response (tipo: ${response.runtimeType})");
-      
       // Convertir la respuesta a int de manera segura
       if (response == null) {
-        print("⚠️ La respuesta es null, retornando 0");
         return 0;
       }
       
       // Intentar convertir a int
       if (response is int) {
-        print("✅ Retornando trofeos: $response");
         return response;
       } else if (response is num) {
-        print("✅ Retornando trofeos (convertido): ${response.toInt()}");
         return response.toInt();
       } else {
-        print("⚠️ Respuesta inesperada, retornando 0");
         return 0;
       }
-    } catch (e, stackTrace) {
-      // Manejar el error con más detalle
-      print("❌ Error al llamar RPC 'completar_reto': $e");
-      print("Stack trace: $stackTrace");
+    } catch (e) {
+      // Manejar el error
       rethrow;
     }
   }

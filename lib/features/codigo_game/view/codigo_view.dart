@@ -7,10 +7,7 @@ import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
-
-// --- FUSIÓN: Se añade el import de TU lógica de animación (dxniel7) ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
-// --- FIN FUSIÓN ---
 
 // --- NUEVO: Importaciones para el modal y el router ---
 import 'package:go_router/go_router.dart';
@@ -20,6 +17,11 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
     show RecursoModel;
 import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
+
+// --- ¡CAMBIO ESTÉTICO! (Añadimos imports de animación y tarjeta) ---
+import 'package:animate_do/animate_do.dart';
+import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_instruction_card.dart';
+// --- FIN CAMBIO ESTÉTICO ---
 
 class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
@@ -47,10 +49,19 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
   bool _hasSubmitted = false;
 
+  late final int _totalInputsDelChallenge;
+  int _inputsCompletadosEnPaginasAnteriores = 0;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+
+    _totalInputsDelChallenge = widget.challenge.preguntas
+        .expand((pregunta) => pregunta.fragmentos)
+        .where((fragmento) => fragmento.tipo == 'input')
+        .length;
+
     _setupControllersAndFocusNodesForPage(0);
   }
 
@@ -60,10 +71,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     _clearControllersAndFocusNodes();
     super.dispose();
   }
-
-  // ... (Las funciones _clearControllersAndFocusNodes, _setupControllersAndFocusNodesForPage,
-  // _verificarRespuesta, y _siguientePregunta son idénticas en ambos archivos,
-  // así que las dejamos tal cual) ...
 
   void _clearControllersAndFocusNodes() {
     for (var controller in _controllers) {
@@ -141,7 +148,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     }
   }
 
-  // --- NUEVO: Función helper de Tema (Copiada de puzzle_view) ---
+  // --- Función helper de Tema (Copiada de puzzle_view) ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -159,8 +166,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   }
   // --- FIN NUEVO ---
 
-  // --- FUSIÓN: Se usa TU '_showFeedbackModal' (dxniel7) ---
-  // ¡¡Esta es la lógica CORRECTA!!
   void _showFeedbackModal(bool esCorrecto) {
     // Evita múltiples envíos si el usuario es muy rápido
     if (_hasSubmitted) return;
@@ -182,7 +187,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
           data: challengeTheme,
           child: ChallengeFeedbackModal(
             isCorrect: esCorrecto,
-            // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
               Navigator.of(
                 ctx,
@@ -192,7 +196,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
               _hasSubmitted = true; // Marcamos como enviado
 
               try {
-                // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
+                // 0. GUARDAR valores actuales
                 final currentStats = ref.read(appBarProvider);
                 // ignore: use_of_void_result
                 ref.read(oldStatsValuesProvider.notifier).state = [
@@ -201,7 +205,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   currentStats.streak,
                 ];
 
-                // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
+                // Marcar flag
                 markForStatsRefresh(ref);
 
                 final repository = ref.read(challengeRepositoryProvider);
@@ -211,7 +215,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                 ); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
-                  // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
+                  // 1. Enviar intento y OBTENER trofeos
                   final int trofeos = await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
                     nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
@@ -253,15 +257,12 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                 }
               }
             },
-            // --- FIN DE TU LÓGICA ---
           ),
         );
       },
     );
   }
-  // --- FIN FUSIÓN ---
 
-  // --- FUSIÓN: Se usa el '_buildCodeSpans' de ELLOS (theme-aware) ---
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
@@ -297,12 +298,13 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                     border: const OutlineInputBorder(),
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(
-                        // ¡Usa el color del tema!
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
                   onChanged: (value) {
+                    setState(() {});
+
                     if (value.trim() == respuestasCorrectas[currentIndex]) {
                       if (currentIndex + 1 < _focusNodes.length) {
                         _focusNodes[currentIndex + 1].requestFocus();
@@ -322,12 +324,9 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     }
     return spans;
   }
-  // --- FIN FUSIÓN ---
 
   @override
   Widget build(BuildContext context) {
-    // --- FUSIÓN: Se usa el 'build' de ELLOS (theme-aware) ---
-
     // 1. Obtenemos el estado del AppBar
     final appBarState = ref.watch(appBarProvider);
 
@@ -341,29 +340,36 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     final colorScheme = challengeTheme.colorScheme;
     // --- FIN LÓGICA DE TEMA ---
 
+    // --- LÓGICA DE PROGRESO MODIFICADA ---
+    final int inputsCompletadosPaginaActual = _controllers
+        .where((controller) => controller.text.isNotEmpty)
+        .length;
+    final int totalCompletados =
+        _inputsCompletadosEnPaginasAnteriores + inputsCompletadosPaginaActual;
+    final double progress = _totalInputsDelChallenge > 0
+        ? (totalCompletados / _totalInputsDelChallenge)
+        : 0.0;
+    // --- FIN LÓGICA DE PROGRESO ---
+
     final codeStyle = TextStyle(
       fontFamily: 'monospace',
       fontSize: 16,
-      color: colorScheme.onSurface, // ¡Usa el color del tema!
+      color: colorScheme.onSurface,
       height: 1.5,
     );
     final inputStyle = TextStyle(
       fontFamily: 'monospace',
       fontSize: 16,
-      color: colorScheme.secondary, // ¡Usa el color del tema!
+      color: colorScheme.secondary,
       fontWeight: FontWeight.bold,
       height: 1.5,
     );
 
-    final double progress =
-        (_currentPageIndex + 1) / widget.challenge.preguntas.length;
-
     return Theme(
-      // <-- Envolver aquí
       data: challengeTheme,
       child: Scaffold(
-        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-        // 2. Reemplazamos el AppBar anterior
+        // --- ¡CAMBIO ESTÉTICO 1! (Fondo del Scaffold) ---
+        backgroundColor: colorScheme.surfaceContainerLow,
         appBar: ChallengeAppBar2(
           progress: progress,
           onClose: () {
@@ -378,6 +384,14 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: widget.challenge.preguntas.length,
                 onPageChanged: (newIndex) {
+                  if (newIndex > _currentPageIndex) {
+                    final preguntaAnterior =
+                        widget.challenge.preguntas[_currentPageIndex];
+                    _inputsCompletadosEnPaginasAnteriores += preguntaAnterior
+                        .fragmentos
+                        .where((f) => f.tipo == 'input')
+                        .length;
+                  }
                   _setupControllersAndFocusNodesForPage(newIndex);
                 },
                 itemBuilder: (context, index) {
@@ -387,63 +401,89 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   final pregunta = widget.challenge.preguntas[index];
 
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
+                    // --- ¡CAMBIO ESTÉTICO 2! (Padding) ---
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0,
+                      vertical: 16.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          pregunta.instruccion,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            // ¡Usa el color del tema!
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8.0),
+                        // --- ¡CAMBIO ESTÉTICO 3! (Tarjeta de Instrucción) ---
+                        FadeInDown(
+                          duration: const Duration(milliseconds: 300),
+                          child: PuzzleInstructionCard(
+                            text: pregunta.instruccion,
                           ),
-                          child: RichText(
-                            text: TextSpan(
-                              children: _buildCodeSpans(
-                                pregunta,
-                                codeStyle,
-                                inputStyle,
+                        ),
+                        // --- FIN CAMBIO 3 ---
+                        const SizedBox(height: 24),
+                        // --- ¡CAMBIO ESTÉTICO 4! (Animación para el código) ---
+                        FadeIn(
+                          duration: const Duration(milliseconds: 300),
+                          delay: const Duration(milliseconds: 150),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: RichText(
+                              text: TextSpan(
+                                children: _buildCodeSpans(
+                                  pregunta,
+                                  codeStyle,
+                                  inputStyle,
+                                ),
                               ),
                             ),
                           ),
                         ),
+                        // --- FIN CAMBIO 4 ---
                       ],
                     ),
                   );
                 },
               ),
             ),
-            // --- Botón de Verificar (sin cambios, ya usa el tema) ---
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _verificarRespuesta,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
+            // --- El botón se movió al bottomNavigationBar ---
+          ],
+        ),
+        // --- ¡CAMBIO ESTÉTICO 5! (Barra de botón inferior) ---
+        bottomNavigationBar: SlideInUp(
+          duration: const Duration(milliseconds: 250),
+          from: 100,
+          child: Container(
+            // Añadimos padding, color y borde para emular la barra
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainer,
+              border: Border(
+                top: BorderSide(color: colorScheme.outlineVariant, width: 1.0),
+              ),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _verificarRespuesta,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  child: const Text(
-                    'VERIFICAR',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                ),
+                child: const Text(
+                  'VERIFICAR',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-          ],
+          ),
         ),
+        // --- FIN CAMBIO 5 ---
       ),
     );
   }

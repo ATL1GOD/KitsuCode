@@ -364,7 +364,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       child: Scaffold(
         // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
         // 2. Reemplazamos el AppBar anterior
-        appBar: ChallengeAppBar(
+        appBar: ChallengeAppBar2(
           progress: progress,
           onClose: () {
             showExitDialog(context);

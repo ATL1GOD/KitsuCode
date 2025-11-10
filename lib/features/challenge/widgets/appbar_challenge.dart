@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 ///
 /// Muestra un botón para cerrar (X) y una barra de progreso lineal.
 /// NO incluye el temporizador del quiz.
-class ChallengeAppBar extends StatelessWidget implements PreferredSizeWidget {
+class ChallengeAppBar1 extends StatelessWidget implements PreferredSizeWidget {
   /// El progreso actual a mostrar en la barra (valor entre 0.0 y 1.0).
   final double progress;
 
   /// El callback que se ejecuta al presionar el botón de cerrar (X).
   final VoidCallback? onClose;
 
-  const ChallengeAppBar({super.key, required this.progress, this.onClose});
+  const ChallengeAppBar1({super.key, required this.progress, this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -37,12 +37,13 @@ class ChallengeAppBar extends StatelessWidget implements PreferredSizeWidget {
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               child: LinearProgressIndicator(
                 value: progress, // Usamos el parámetro 'progress'
-                backgroundColor: colorScheme.surfaceContainerHigh,
+                backgroundColor: colorScheme.surfaceContainerHigh, //
                 valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
                 minHeight: 12,
               ),
             ),
           ),
+          SizedBox(width: 50),
           // --- ¡ELIMINADO! ---
           // Aquí es donde estaba el 'SizedBox(width: 10)' y el 'Container'
           // que dibujaba el cronómetro. Los hemos quitado.
@@ -51,6 +52,53 @@ class ChallengeAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       // Nos aseguramos de que el título se alinee a la izquierda
       centerTitle: false,
+    );
+  }
+
+  /// Esto es necesario para que el widget pueda ser usado como un AppBar.
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class ChallengeAppBar2 extends StatelessWidget implements PreferredSizeWidget {
+  /// El progreso actual a mostrar en la barra (valor entre 0.0 y 1.0).
+  final double progress;
+
+  /// El callback que se ejecuta al presionar el botón de cerrar (X).
+  final VoidCallback? onClose;
+
+  const ChallengeAppBar2({super.key, required this.progress, this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    // Obtenemos el tema del contexto actual
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AppBar(
+      backgroundColor: colorScheme.surface,
+      elevation: 0,
+
+      // Botón de Cerrar (X) - Esto se queda igual
+      leading: onClose != null
+          ? IconButton(
+              icon: Icon(Icons.close, color: colorScheme.onSurface),
+              onPressed: onClose,
+            )
+          : null,
+      title: null,
+      centerTitle: false,
+
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(4.0),
+        child: LinearProgressIndicator(
+          value: progress, // Usamos el parámetro 'progress'
+          // --- CAMBIO 3: Estilos de color de 'puzzle_view' ---
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.secondary),
+
+          // Ya no necesitamos 'minHeight' ni 'ClipRRect'
+        ),
+      ),
     );
   }
 

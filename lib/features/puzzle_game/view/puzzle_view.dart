@@ -1,8 +1,8 @@
 // lib/features/puzzle_game/view/puzzle_view.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/puzzle_game/provider/puzzle_provider.dart'; 
+import 'package:kitsucode/features/puzzle_game/provider/puzzle_provider.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_code_area.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_instruction_card.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_options_area.dart';
@@ -19,10 +19,12 @@ import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 
 // --- NUEVO: Importaciones para el repositorio, modelo y ranking ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
-import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
+    show RecursoModel;
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
+import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
+import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 // --- FIN NUEVO ---
-
 
 // --- 1. DEFINIMOS LA VISTA DEL PUZZLE ---
 class PuzzleView extends ConsumerWidget {
@@ -31,7 +33,7 @@ class PuzzleView extends ConsumerWidget {
   // --- ¡CAMBIO 2! (Función Helper para obtener el Tema) ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    
+
     switch (langName.toLowerCase().trim()) {
       case 'python':
         return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
@@ -48,18 +50,17 @@ class PuzzleView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    
     // --- ¡CAMBIO 3! (Obtener el tema del lenguaje actual) ---
     final appBarState = ref.watch(appBarProvider);
 
     final challengeTheme = _getLanguageTheme(
-      appBarState.languageName, 
+      appBarState.languageName,
       Theme.of(context).brightness, // Mantenemos el modo claro/oscuro
     );
-    
+
     final colorScheme = challengeTheme.colorScheme;
     // --- FIN CAMBIO 3 ---
-    
+
     final puzzleState = ref.watch(puzzleProvider);
     final puzzleNotifier = ref.read(puzzleProvider.notifier);
 
@@ -89,57 +90,39 @@ class PuzzleView extends ConsumerWidget {
     final challenge = puzzleState.challenge!;
     final bool isPuzzleComplete = !puzzleState.filledBlanks.containsValue(null);
 
+    // --- ¡AÑADE ESTO! ---
+    // Calculamos el progreso basado en los espacios llenos
+    final int totalBlanks = puzzleState.filledBlanks.length;
+    final int filledCount = puzzleState.filledBlanks.values
+        .where((v) => v != null)
+        .length;
+
+    // Evitamos división por cero
+    final double progress = (totalBlanks > 0)
+        ? (filledCount / totalBlanks)
+        : 0.0;
+    // --- FIN DEL BLOQUE AÑADIDO ---
+
     // --- ¡CAMBIO 5! (Envolver el Scaffold principal en el Tema) ---
     return Theme(
       data: challengeTheme,
       child: Scaffold(
-        backgroundColor: colorScheme.surfaceContainerLow, 
-        appBar: AppBar(
-          leadingWidth: 72,
-          leading: Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: InkWell( 
-                onTap: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go('/home');
-                  }
-                },
-                borderRadius: BorderRadius.circular(30),
-                child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface.withAlpha(50), 
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colorScheme.outlineVariant.withAlpha(130))
-                  ),
-                  child: Icon(Icons.arrow_back_ios_new_rounded, color: colorScheme.onSurface),
-                ),
-              ),
-            ),
-          ),
-          title: const Text(''),
-          centerTitle: true,
-          backgroundColor: Colors.transparent, 
-          elevation: 0, 
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(4.0),
-            child: LinearProgressIndicator(
-              value: 0.5, // TODO: Calcular esto desde el state
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.secondary), 
-            ),
-          ),
+        backgroundColor: colorScheme.surfaceContainerLow,
+        appBar: ChallengeAppBar2(
+          progress: progress,
+          onClose: () {
+            showExitDialog(context);
+          },
         ),
         body: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0), 
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0,
+                    vertical: 16.0,
+                  ),
                   child: Column(
                     children: [
                       FadeInDown(
@@ -148,7 +131,7 @@ class PuzzleView extends ConsumerWidget {
                           text: challenge.instruction,
                         ),
                       ),
-                      const SizedBox(height: 24), 
+                      const SizedBox(height: 24),
                       FadeIn(
                         duration: const Duration(milliseconds: 300),
                         delay: const Duration(milliseconds: 150),
@@ -156,7 +139,10 @@ class PuzzleView extends ConsumerWidget {
                           lines: challenge.lines,
                           filledBlanks: puzzleState.filledBlanks,
                           onOptionDropped: (blankId, option) {
-                            puzzleNotifier.onOptionDroppedOnBlank(blankId, option);
+                            puzzleNotifier.onOptionDroppedOnBlank(
+                              blankId,
+                              option,
+                            );
                           },
                         ),
                       ),
@@ -177,14 +163,15 @@ class PuzzleView extends ConsumerWidget {
             ),
           ],
         ),
-        
+
         // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
         bottomNavigationBar: PuzzleBottomBar(
           isButtonEnabled: isPuzzleComplete,
-          onCheckPressed: () { 
+          onCheckPressed: () {
             puzzleNotifier.checkSolution(); // Esto solo actualiza el estado
-            final esCorrecto = ref.read(puzzleProvider).status == PuzzleStatus.correct;
-            
+            final esCorrecto =
+                ref.read(puzzleProvider).status == PuzzleStatus.correct;
+
             showModalBottomSheet(
               context: context,
               backgroundColor: Colors.transparent,
@@ -201,8 +188,10 @@ class PuzzleView extends ConsumerWidget {
                     isCorrect: esCorrecto,
                     // --- MODIFICADO: Lógica de onContinue ---
                     onContinue: () async {
-                      Navigator.of(ctx).pop(); // Cierra el pop-up usando el ctx del builder
-                      
+                      Navigator.of(
+                        ctx,
+                      ).pop(); // Cierra el pop-up usando el ctx del builder
+
                       try {
                         // 0. GUARDAR valores actuales ANTES de submitChallengeAttempt
                         final currentStats = ref.read(appBarProvider);
@@ -211,30 +200,32 @@ class PuzzleView extends ConsumerWidget {
                           currentStats.trophies,
                           currentStats.streak,
                         ];
-                        
+
                         // Marcar flag para que Realtime NO actualice mientras estamos en feedback
                         markForStatsRefresh(ref);
-                        
-                        final repository = ref.read(challengeRepositoryProvider);
+
+                        final repository = ref.read(
+                          challengeRepositoryProvider,
+                        );
                         // Leemos el estado actual que tiene el ID y los recursos
-                        final currentState = ref.read(puzzleProvider); 
-                        
+                        final currentState = ref.read(puzzleProvider);
+
                         if (esCorrecto) {
                           // 1. Enviar intento y obtener trofeos
-                          final int trofeos = await repository.submitChallengeAttempt(
-                            retoId: currentState.challengeId,
-                            nivelId: currentState.nivelId, // ← ¡AÑADIDO!
-                            fueExitoso: true,
-                            tiempoQueTardo: 0, // TODO: Implementar timer
-                          );
-                          
+                          final int trofeos = await repository
+                              .submitChallengeAttempt(
+                                retoId: currentState.challengeId,
+                                nivelId: currentState.nivelId, // ← ¡AÑADIDO!
+                                fueExitoso: true,
+                                tiempoQueTardo: 0, // TODO: Implementar timer
+                              );
+
                           // 2. Refrescar Ranking (NO refrescamos stats aquí - se hará al regresar al Home)
                           ref.invalidate(globalRankingProvider);
 
                           // 3. Navegar a la vista de éxito
                           if (!context.mounted) return;
                           context.push('/challenge_success', extra: trofeos);
-                        
                         } else {
                           // 1. Enviar intento fallido (y obtener 0 trofeos)
                           await repository.submitChallengeAttempt(
@@ -243,10 +234,11 @@ class PuzzleView extends ConsumerWidget {
                             fueExitoso: false,
                             tiempoQueTardo: 0,
                           );
-                          
+
                           // 2. Obtener recursos del estado (NO refrescamos stats aquí - se hará al regresar al Home)
-                          final List<RecursoModel> recursos = currentState.recursos;
-                          
+                          final List<RecursoModel> recursos =
+                              currentState.recursos;
+
                           // 3. Navegar a la vista de fracaso
                           if (!context.mounted) return;
                           context.push('/challenge_failure', extra: recursos);

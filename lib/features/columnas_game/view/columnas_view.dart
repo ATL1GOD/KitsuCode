@@ -294,7 +294,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       data: challengeTheme,
       child: Scaffold(
         backgroundColor: colorScheme.surface, // <-- Usar color de tema
-        appBar: ChallengeAppBar(
+        appBar: ChallengeAppBar1(
           progress: progress, // Le pasamos el progreso
           onClose: () {
             // Reutilizamos la lógica de salida del quiz

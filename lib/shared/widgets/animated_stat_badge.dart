@@ -47,27 +47,27 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
 
     _flipController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 450),
+      duration: const Duration(milliseconds: 650), // Aumentado de 450 a 650
     );
 
     _popController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 450),
+      duration: const Duration(milliseconds: 650), // Aumentado de 450 a 650
     );
 
     _streakFireController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2200), // Aumentado de 1800 a 2200
     );
 
     _lifeLossController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 550),
+      duration: const Duration(milliseconds: 750), // Aumentado de 550 a 750
     );
 
     _trophyGainController = AnimationController( // 🏆 NEW
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800), // Aumentado de 600 a 800
     );
   }
 
@@ -83,7 +83,7 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         setState(() => _playStreakFire = true);
         _streakFireController.forward(from: 0);
 
-        Future.delayed(const Duration(milliseconds: 1800), () {
+        Future.delayed(const Duration(milliseconds: 2200), () { // Actualizado de 1800 a 2200
           if (mounted) {
             setState(() => _playStreakFire = false);
             _streakFireController.reset();
@@ -96,7 +96,7 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         setState(() => _lifeLoss = true);
         _lifeLossController.forward(from: 0);
 
-        Future.delayed(const Duration(milliseconds: 550), () {
+        Future.delayed(const Duration(milliseconds: 750), () { // Actualizado de 550 a 750
           if (mounted) {
             setState(() => _lifeLoss = false);
             _lifeLossController.reset();
@@ -109,7 +109,7 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         setState(() => _trophyGain = true);
         _trophyGainController.forward(from: 0);
 
-        Future.delayed(const Duration(milliseconds: 600), () {
+        Future.delayed(const Duration(milliseconds: 800), () { // Actualizado de 600 a 800
           if (mounted) {
             setState(() => _trophyGain = false);
             _trophyGainController.reset();

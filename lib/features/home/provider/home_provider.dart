@@ -1,10 +1,52 @@
-import 'package:flutter/foundation.dart'; // <-- FUSIÓN: Importado de AMBOS
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-
-// --- FUSIÓN: Importaciones de AMBOS ---
 import 'package:kitsucode/features/home/repository/home_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+// --- ¡CAMBIO 1: AÑADIR IMPORTACIÓN DE SUPABASE! ---
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+// --- ¡CAMBIO 2: AÑADIR ESTE PROVIDER DE REALTIME! ---
+/// Este provider escucha en tiempo real las inserciones en la tabla `progreso_usuario`.
+/// NO es autoDispose, para que siga vivo mientras el usuario está en un reto.
+final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
+  final supabase = Supabase.instance.client;
+  final currentUserId = supabase.auth.currentUser?.id;
+
+  // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
+  // Debe ser 'return null;' para que coincida con el tipo RealtimeChannel?
+  if (currentUserId == null) return null; 
+  // --- FIN DE LA CORRECCIÓN ---
+
+  // El nombre del canal 'home_v2' es solo un ejemplo, puede ser lo que quieras
+  final channel = supabase.channel('public:progreso_usuario:home_v2');
+  channel.onPostgresChanges(
+    event: PostgresChangeEvent.insert, // Escuchamos solo inserciones
+    schema: 'public',
+    table: 'progreso_usuario', // <-- ¡La tabla clave que nos diste!
+    // Filtramos para que solo nos notifique de NUESTRO propio progreso
+    filter: PostgresChangeFilter(
+      type: PostgresChangeFilterType.eq,
+      column: 'id_usuario',
+      value: currentUserId,
+    ),
+    callback: (payload) {
+      debugPrint("--- Realtime: ¡NUEVO PROGRESO DE NIVEL DETECTADO! ---");
+      
+      // ¡Esta es la nueva lógica!
+      // En lugar de invalidar, llamamos al nuevo método en el notifier.
+      ref.read(homeViewModelProvider.notifier).triggerMapUpdate();
+    },
+  ).subscribe();
+
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
+
+  return channel;
+});
+// --- FIN DEL CAMBIO 2 ---
+
 
 // 1. El Provider (ViewModel)
 final homeViewModelProvider =
@@ -15,13 +57,16 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
   
   @override
   Future<List<SectionData>> build() async {
-    // --- FUSIÓN: Se usa TU 'build()' (dxniel7) porque es más eficiente ---
-    
-    // --- ¡DEBUG! ---
-    debugPrint("--- HomeViewModel: build() SE EJECUTÓ ---");
+    // --- ¡CAMBIO 3: AÑADIR ESTA LÍNEA! ---
+    // "Escuchamos" al provider para activarlo y mantenerlo vivo.
+    // Esto asegura que el listener de Supabase se suscriba.
+    ref.watch(progressRealtimeProvider);
+    // --- FIN DEL CAMBIO 3 ---
 
-    // 1. Observamos SOLO el languageId (no todo el appBarState)
-    //    Esto evita rebuilds cuando cambian vidas/trofeos/racha
+    // --- ¡DEBUG! ---
+    debugPrint("--- HomeViewModel: build() SE EJECUTÓ (Carga inicial) ---");
+
+    // 1. Observamos SOLO el languageId
     final languageId = ref.watch(currentLanguageIdProvider);
 
     // --- ¡DEBUG! ---
@@ -39,12 +84,41 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
     // --- ¡DEBUG! ---
     debugPrint("HomeViewModel: Llamando a _fetchSections con ID: $languageId");
 
-    // 3. Una vez que tenemos el ID del lenguaje, cargamos las secciones.
+    // 3. Cargamos las secciones.
     return _fetchSections(languageId);
   }
 
-  // --- FUSIÓN: Se usa el '_fetchSections()' DE ELLOS (atl1god) ---
-  // Tiene la lógica de datos correcta (HomeMapData, isCompleted, isLocked)
+  // --- ¡CAMBIO 4: AÑADIR ESTE NUEVO MÉTODO! ---
+  /// Vuelve a cargar los datos del mapa y actualiza el estado
+  /// directamente a AsyncData, evitando el "pantallazo negro" de carga.
+  Future<void> triggerMapUpdate() async {
+    debugPrint("--- Realtime: triggerMapUpdate() llamado ---");
+    final languageId = ref.read(currentLanguageIdProvider);
+    if (languageId == 0) return;
+
+    try {
+      // 1. Volvemos a ejecutar la lógica de carga
+      final newSections = await _fetchSections(languageId);
+      
+      // 2. ¡ESTA ES LA CLAVE!
+      // Actualizamos el estado directamente a AsyncData.
+      // La UI recibirá la nueva lista y se reconstruirá
+      // sin mostrar un estado de 'loading'.
+      state = AsyncData(newSections);
+      
+      debugPrint("--- Realtime: ¡Mapa actualizado en vivo! ---");
+      
+    } catch (e, s) {
+      // Si algo falla, sí pasamos al estado de error
+      state = AsyncError(e, s);
+      debugPrint("--- Realtime: Error al actualizar mapa: $e ---");
+    }
+  }
+  // --- FIN DEL CAMBIO 4 ---
+
+
+  // (El resto de tu clase no cambia)
+
   Future<List<SectionData>> _fetchSections(int languageId) async {
     final repository = ref.read(sectionRepositoryProvider); // .read es mejor aquí
 
@@ -55,23 +129,18 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
     final Set<int> completedIds = homeData.completedLevelIds;
 
     // 2. Aplicamos el PROGRESO (isCompleted) manualmente
-    //    Usamos 'map' para recrear las listas con los datos actualizados
     final List<SectionData> sectionsWithProgress = sections.map((section) {
-      // Creamos la nueva lista de niveles para esta sección
       final List<LevelData> updatedLevels = section.levels.map((level) {
-        // Comprobamos si el ID de este nivel está en el Set de completados
         final bool isCompleted = completedIds.contains(level.idNivel);
 
         return level.copyWith(
           isCompleted: isCompleted, // ¡Aplicamos el progreso!
         );
-      }).toList(); // Fin .map de niveles
+      }).toList();
 
-      // Devolvemos la sección con su nueva lista de niveles
       return section.copyWith(levels: updatedLevels);
-    }).toList(); // Fin .map de secciones
+    }).toList();
 
-    // --- Tus prints de debug (¡ahora deberían funcionar!) ---
     debugPrint("--- DATOS ANTES DE LÓGICA (PROGRESO APLICADO) ---");
     for (var sec in sectionsWithProgress) {
       for (var lvl in sec.levels) {
@@ -80,13 +149,11 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
         );
       }
     }
-    // --- Fin Debug ---
 
     // 3. ¡Aplicamos la lógica de BLOQUEO (isLocked)!
     final List<SectionData> finalSections =
         SectionData.applySequentialSectionLock(sectionsWithProgress);
 
-    // --- Debug final ---
     debugPrint("--- DATOS DESPUÉS DE LÓGICA (BLOQUEO APLICADO) ---");
     for (var sec in finalSections) {
       for (var lvl in sec.levels) {
@@ -95,14 +162,11 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
         );
       }
     }
-    // --- Fin Debug ---
 
     // 4. Devolvemos la lista final a la UI
     return finalSections;
   }
 
-  // --- FUSIÓN: Se usa TU 'refreshSections()' (dxniel7) ---
-  // Es más eficiente porque usa 'currentLanguageIdProvider'
   Future<void> refreshSections() async {
     state = const AsyncValue.loading();
     final languageId = ref.read(currentLanguageIdProvider);
@@ -112,8 +176,6 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
       return;
     }
 
-    // ¡Esto ahora llamará a la versión fusionada de _fetchSections!
     state = await AsyncValue.guard(() => _fetchSections(languageId));
   }
 }
-// [FIN DEL ARCHIVO home_provider.dart]

@@ -210,48 +210,71 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               if (_hasSubmitted) return;
               _hasSubmitted = true;
               
-              // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
-              final currentStats = ref.read(appBarProvider);
-              ref.read(oldStatsValuesProvider.notifier).state = [
-                currentStats.lives,
-                currentStats.trophies,
-                currentStats.streak,
-              ];
-              
-              // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
-              markForStatsRefresh(ref);
-
-              final repository = ref.read(challengeRepositoryProvider);
-              final int retoIdAsInt = int.parse(widget.retoId);
-
-              if (esCorrecto) {
-                // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
-                final int trofeos = await repository.submitChallengeAttempt(
-                  retoId: retoIdAsInt,
-                  fueExitoso: true,
-                  tiempoQueTardo: durationInSeconds, 
-                );
+              try {
+                // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
+                final currentStats = ref.read(appBarProvider);
+                print("📊 Quiz - Guardando valores VIEJOS: vidas=${currentStats.lives}, trofeos=${currentStats.trophies}, racha=${currentStats.streak}");
                 
-                ref.invalidate(globalRankingProvider);
+                ref.read(oldStatsValuesProvider.notifier).state = [
+                  currentStats.lives,
+                  currentStats.trophies,
+                  currentStats.streak,
+                ];
                 
-                // 2. Navegar CON TROFEOS
-                if (!context.mounted) return;
-                // Usamos pushReplacement para evitar volver al quiz
-                context.pushReplacement('/challenge_success', extra: trofeos);
-              
-              } else {
-                 await repository.submitChallengeAttempt(
-                  retoId: retoIdAsInt,
-                  fueExitoso: false,
-                  tiempoQueTardo: durationInSeconds,
-                );
+                // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
+                markForStatsRefresh(ref);
 
-                // 2. Obtener recursos
-                final List<RecursoModel> recursos = widget.mydata.recursos;
+                final repository = ref.read(challengeRepositoryProvider);
+                final int retoIdAsInt = int.parse(widget.retoId);
+
+                print("🎮 Quiz: Enviando resultado a Supabase (correcto: $esCorrecto)");
+
+                if (esCorrecto) {
+                  // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
+                  final int trofeos = await repository.submitChallengeAttempt(
+                    retoId: retoIdAsInt,
+                    fueExitoso: true,
+                    tiempoQueTardo: durationInSeconds, 
+                  );
+                  
+                  print("🏆 Trofeos obtenidos: $trofeos");
+                  
+                  ref.invalidate(globalRankingProvider);
+                  
+                  // 2. Navegar CON TROFEOS
+                  if (!context.mounted) return;
+                  // Cambiado a push para mantener la pantalla del quiz en la pila
+                  context.push('/challenge_success', extra: trofeos);
                 
-                // 3. Navegar
-                if (!context.mounted) return;
-                context.pushReplacement('/challenge_failure', extra: recursos);
+                } else {
+                  await repository.submitChallengeAttempt(
+                    retoId: retoIdAsInt,
+                    fueExitoso: false,
+                    tiempoQueTardo: durationInSeconds,
+                  );
+
+                  print("❌ Intento fallido enviado");
+
+                  // 2. Obtener recursos
+                  final List<RecursoModel> recursos = widget.mydata.recursos;
+                  
+                  // 3. Navegar
+                  if (!context.mounted) return;
+                  context.push('/challenge_failure', extra: recursos);
+                }
+              } catch (e, stackTrace) {
+                print("❌ Error en onContinue (Quiz): $e");
+                print("Stack trace: $stackTrace");
+                
+                // Mostrar error al usuario
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al enviar resultado: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             // --- FIN DE TU LÓGICA ---

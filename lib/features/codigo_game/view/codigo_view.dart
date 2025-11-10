@@ -183,54 +183,78 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
             isCorrect: esCorrecto,
             // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
-              context.pop(); // Cierra el modal
+              Navigator.of(ctx).pop(); // Cierra el modal usando el ctx del builder
               
               if (_hasSubmitted) return;
               _hasSubmitted = true; // Marcamos como enviado
 
-              // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
-              final currentStats = ref.read(appBarProvider);
-              ref.read(oldStatsValuesProvider.notifier).state = [
-                currentStats.lives,
-                currentStats.trophies,
-                currentStats.streak,
-              ];
-              
-              // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
-              markForStatsRefresh(ref);
-
-              final repository = ref.read(challengeRepositoryProvider);
-              final int retoIdAsInt = int.parse(widget.retoId);
-
-              if (esCorrecto) {
-                // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
-                final int trofeos = await repository.submitChallengeAttempt(
-                  retoId: retoIdAsInt,
-                  fueExitoso: true,
-                  tiempoQueTardo: 0, 
-                );
+              try {
+                // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
+                final currentStats = ref.read(appBarProvider);
+                print("📊 Codigo - Guardando valores VIEJOS: vidas=${currentStats.lives}, trofeos=${currentStats.trophies}, racha=${currentStats.streak}");
                 
-                // 2. Refrescar ranking
-                ref.invalidate(globalRankingProvider);
+                // ignore: use_of_void_result
+                ref.read(oldStatsValuesProvider.notifier).state = [
+                  currentStats.lives,
+                  currentStats.trophies,
+                  currentStats.streak,
+                ];
                 
-                // 3. Navegar CON TROFEOS
-                if (!context.mounted) return;
-                context.push('/challenge_success', extra: trofeos);
-              
-              } else {
-                // 1. Enviar intento fallido
-                 await repository.submitChallengeAttempt(
-                  retoId: retoIdAsInt,
-                  fueExitoso: false,
-                  tiempoQueTardo: 0,
-                );
+                // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
+                markForStatsRefresh(ref);
 
-                // 2. Obtener recursos
-                final List<RecursoModel> recursos = widget.challenge.recursos;
+                final repository = ref.read(challengeRepositoryProvider);
+                final int retoIdAsInt = int.parse(widget.retoId);
+
+                print("🎮 Codigo: Enviando resultado a Supabase (correcto: $esCorrecto)");
+
+                if (esCorrecto) {
+                  // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
+                  final int trofeos = await repository.submitChallengeAttempt(
+                    retoId: retoIdAsInt,
+                    fueExitoso: true,
+                    tiempoQueTardo: 0, 
+                  );
+                  
+                  print("🏆 Trofeos obtenidos: $trofeos");
+                  
+                  // 2. Refrescar ranking
+                  ref.invalidate(globalRankingProvider);
+                  
+                  // 3. Navegar CON TROFEOS
+                  if (!context.mounted) return;
+                  context.push('/challenge_success', extra: trofeos);
                 
-                // 3. Navegar
-                if (!context.mounted) return;
-                context.push('/challenge_failure', extra: recursos);
+                } else {
+                  // 1. Enviar intento fallido
+                  await repository.submitChallengeAttempt(
+                    retoId: retoIdAsInt,
+                    fueExitoso: false,
+                    tiempoQueTardo: 0,
+                  );
+
+                  print("❌ Intento fallido enviado");
+
+                  // 2. Obtener recursos
+                  final List<RecursoModel> recursos = widget.challenge.recursos;
+                  
+                  // 3. Navegar
+                  if (!context.mounted) return;
+                  context.push('/challenge_failure', extra: recursos);
+                }
+              } catch (e, stackTrace) {
+                print("❌ Error en onContinue (Codigo): $e");
+                print("Stack trace: $stackTrace");
+                
+                // Mostrar error al usuario
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al enviar resultado: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             // --- FIN DE TU LÓGICA ---

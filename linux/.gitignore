@@ -1,1 +1,97 @@
-flutter/ephemeral
+# ----------------------
+# FLUTTER / DART DEFAULT
+# ----------------------
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+.env
+.env.*.local
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (optional, comment if you want to track settings)
+#.vscode/
+
+# Flutter / Dart / Pub
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+.packages
+
+# Symbolication & Maps
+app.*.symbols
+app.*.map.json
+
+# Android generated
+/android/app/debug
+/android/app/profile
+/android/app/release
+*.apk
+*.aab
+android/key.properties
+
+# iOS generated & ephemeral
+ios/Flutter/.last_build_id
+ios/Flutter/Flutter.framework/
+ios/Flutter/Flutter.podspec
+ios/Flutter/App.framework
+ios/Flutter/Generated.xcconfig
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Pods/
+Podfile.lock
+
+# macOS generated
+macos/Flutter/GeneratedPluginRegistrant.swift
+macos/Pods/
+macos/Podfile.lock
+
+# Linux generated
+linux/flutter/ephemeral/
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugins.cmake
+
+# Windows generated
+windows/flutter/ephemeral/
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugins.cmake
+
+# Web ephemeral
+web/.flutter/
+
+# Prevent committing sensitive files
+**/*.keystore
+**/*.jks
+*.pem
+*.p12
+
+# Flutter ephemeral & plugin auto-generated (catch-all)
+**/ephemeral/
+**/Flutter/ephemeral/
+**/GeneratedPluginRegistrant.*
+**/generated_plugin_registrant.*
+**/generated_plugins.cmake
+
+# Environment files
+.env
+.env.*
+assets/.env
+assets/env
+assets/**/.env
+

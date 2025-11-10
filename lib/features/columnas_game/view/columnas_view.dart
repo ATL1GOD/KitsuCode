@@ -8,6 +8,7 @@ import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
 // --- Importaciones para la puntuación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+// --- FUSIÓN: Se añade el import de TU lógica de animación (dxniel7) ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 
@@ -50,8 +51,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     _setupItems();
   }
 
+  // ... (Las funciones _setupItems, _onItemTapped, _triggerIncorrectAnimation,
+  // y _showWinDialogAndSubmit son idénticas en ambos, se mantienen) ...
+
   void _setupItems() {
-    // ... (Tu función _setupItems no cambia) ...
     final List<ChallengeItem> leftColumn = [];
     final List<ChallengeItem> rightColumn = [];
     final random = Random();
@@ -84,35 +87,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       _items.add(rightColumn[i]);
     }
   }
-
-  // Future<void> _submitAttempt(bool esCorrecto) async {
-  //   if (_hasSubmitted) return;
-  //   _hasSubmitted = true;
-
-  //   final int retoIdAsInt;
-  //   try {
-  //     retoIdAsInt = int.parse(widget.retoId);
-  //   } catch (e) {
-  //     debugPrint("Error: retoId no es un número válido: ${widget.retoId}");
-  //     return;
-  //   }
-
-  //   try {
-  //     final repository = ref.read(challengeRepositoryProvider);
-  //     await repository.submitChallengeAttempt(
-  //       retoId: retoIdAsInt,
-  //       fueExitoso: esCorrecto,
-  //       tiempoQueTardo: 0,
-  //     );
-
-  //     ref.read(appBarProvider.notifier).fetchStats();
-  //     ref.invalidate(globalRankingProvider);
-
-  //   } catch (e) {
-  //     debugPrint("Error al enviar intento de columnas: $e");
-  //   }
-  // }
-
+  
   void _onItemTapped(ChallengeItem tappedItem) {
     if (_solvedPairIds.contains(tappedItem.pairId) || _isIncorrect) {
       return;
@@ -121,7 +96,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     setState(() {
       if (_selectedItem == null) {
         _selectedItem = tappedItem;
-        _incorrectItem1 = null;
+        _incorrectItem1 = null; 
         _incorrectItem2 = null;
       } else {
         bool isCorrectPair =
@@ -130,7 +105,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
         if (isCorrectPair) {
           _solvedPairIds.add(tappedItem.pairId);
-          _selectedItem = null;
+          _selectedItem = null; 
 
           if (_solvedPairIds.length == widget.challenge.pares.length) {
             Future.delayed(const Duration(milliseconds: 300), () {
@@ -142,39 +117,37 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         } else {
           _incorrectItem1 = _selectedItem;
           _incorrectItem2 = tappedItem;
-          _selectedItem = null;
+          _selectedItem = null; 
           _triggerIncorrectAnimation(); // <-- Llamada a la función de fallo
         }
       }
     });
   }
 
-  // --- MODIFICADO: Lógica de fallo ---
   Future<void> _triggerIncorrectAnimation() async {
     setState(() {
       _isIncorrect = true;
     });
 
-    // --- MODIFICADO: Solo mostramos el modal ---
     if (mounted) {
       _showFeedbackModal(false);
     }
+    
+    // Reseteamos el estado de error después del modal
+    // (Esto se maneja ahora en onContinue del modal)
+    // Ya no es necesario el 'Future.delayed' aquí
   }
-  // --- FIN MODIFICADO ---
 
-  // --- MODIFICADO: Lógica de éxito ---
   Future<void> _showWinDialogAndSubmit() async {
-    // --- MODIFICADO: Solo mostramos el modal ---
     if (mounted) {
       _showFeedbackModal(true);
     }
   }
-  // --- FIN MODIFICADO ---
 
-  // --- NUEVO: Función helper de Tema (Copiada de puzzle_view) ---
+  // --- NUEVO: Función helper de Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-
+    
     // Asumiendo que tienes AppThemes.
     switch (langName.toLowerCase().trim()) {
       case 'python':
@@ -189,11 +162,11 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   }
   // --- FIN NUEVO ---
 
-  // --- NUEVO: Función para mostrar el modal genérico ---
-  // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
+  // --- FUSIÓN: Se usa TU '_showFeedbackModal' (dxniel7) ---
+  // ¡¡Esta es la lógica CORRECTA!!
   void _showFeedbackModal(bool esCorrecto) {
     if (_hasSubmitted) return;
-
+    
     final appBarState = ref.read(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -204,23 +177,21 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      // ✅ 1. DESHABILITA EL TAP AFUERA
       isDismissible: false,
-      // ✅ 2. DESHABILITA ARRASTRAR PARA CERRAR
       enableDrag: false,
       builder: (ctx) {
         return Theme(
           data: challengeTheme,
           child: ChallengeFeedbackModal(
             isCorrect: esCorrecto,
-            // --- MODIFICADO: Lógica de onContinue ---
+            // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
               context.pop(); // Cierra el modal
-
+              
               if (_hasSubmitted) return;
               _hasSubmitted = true;
 
-              // 0. GUARDAR valores actuales ANTES de submitChallengeAttempt
+              // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
               final currentStats = ref.read(appBarProvider);
               ref.read(oldStatsValuesProvider.notifier).state = [
                 currentStats.lives,
@@ -228,76 +199,78 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 currentStats.streak,
               ];
               
-              // Marcar flag para que Realtime NO actualice mientras estamos en feedback
+              // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
               markForStatsRefresh(ref);
 
               final repository = ref.read(challengeRepositoryProvider);
               final int retoIdAsInt = int.parse(widget.retoId);
 
               if (esCorrecto) {
-                // 1. Enviar intento
-                await repository.submitChallengeAttempt(
+                // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
+                final int trofeos = await repository.submitChallengeAttempt(
                   retoId: retoIdAsInt,
                   fueExitoso: true,
-                  tiempoQueTardo: 0,
+                  tiempoQueTardo: 0, 
                 );
-
-                // 2. Refrescar ranking (NO refrescamos stats aquí - se hará al regresar al Home)
+                
+                // 2. Refrescar ranking
                 ref.invalidate(globalRankingProvider);
-
-                // 3. Navegar (assuming default trophy value or get it from elsewhere)
+                
+                // 3. Navegar CON TROFEOS
                 if (!context.mounted) return;
-                context.push('/challenge_success', extra: 0);
+                context.push('/challenge_success', extra: trofeos);
+              
               } else {
                 // 1. Enviar intento fallido
-                await repository.submitChallengeAttempt(
+                 await repository.submitChallengeAttempt(
                   retoId: retoIdAsInt,
                   fueExitoso: false,
                   tiempoQueTardo: 0,
                 );
 
-                // 2. Obtener recursos del widget (NO refrescamos stats aquí - se hará al regresar al Home)
+                // 2. Obtener recursos
                 final List<RecursoModel> recursos = widget.challenge.recursos;
-
+                
                 // 3. Navegar
                 if (!context.mounted) return;
                 context.push('/challenge_failure', extra: recursos);
               }
+              
+              // Lógica extra para resetear el estado de error de columnas
+              if (!esCorrecto && mounted) {
+                 setState(() {
+                  _isIncorrect = false;
+                  _incorrectItem1 = null;
+                  _incorrectItem2 = null;
+                });
+              }
             },
-            // --- FIN MODIFICACIÓN ---
+            // --- FIN DE TU LÓGICA ---
           ),
         );
       },
     );
   }
-  // --- FIN NUEVO ---
+  // --- FIN FUSIÓN ---
+
 
   @override
   Widget build(BuildContext context) {
-    // ... (Tu función build no cambia) ...
     double progress = _solvedPairIds.length / widget.challenge.pares.length;
     bool isComplete = progress == 1.0;
-    // --- INICIO DE LA MODIFICACIÓN ---
-
-    // 1. Obtenemos el estado del AppBar
+    
+    // --- FUSIÓN: Se usa la lógica de UI de ELLOS (theme-aware) ---
     final appBarState = ref.watch(appBarProvider);
-
-    // 2. Usamos la función helper (que ya existe en este archivo)
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
       Theme.of(context).brightness,
     );
-
-    // 3. Extraemos el esquema de color
     final colorScheme = challengeTheme.colorScheme;
-
-    // --- FIN DE LA MODIFICACIÓN ---
+    
     return Theme(
-      // <-- Envolver aquí
       data: challengeTheme,
       child: Scaffold(
         backgroundColor: colorScheme.surface, // <-- Usar color de tema
-        //...
         body: SafeArea(
           child: Column(
             children: [
@@ -311,7 +284,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                     IconButton(
                       icon: Icon(
                         Icons.close,
-                        color: colorScheme.onSurfaceVariant,
+                        color: colorScheme.onSurfaceVariant, // <-- Usar color de tema
                         size: 30,
                       ),
                       onPressed: () => Navigator.of(context).pop(),
@@ -321,18 +294,18 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                         borderRadius: BorderRadius.circular(10),
                         child: LinearProgressIndicator(
                           value: progress,
-                          backgroundColor: colorScheme.surfaceContainerHighest,
-                          color: colorScheme.primary,
+                          backgroundColor: colorScheme.surfaceContainerHighest, // <-- Usar color de tema
+                          color: colorScheme.primary, // <-- Usar color de tema
                           minHeight: 15,
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.flash_on, color: colorScheme.error, size: 20),
+                    Icon(Icons.flash_on, color: colorScheme.error, size: 20), // <-- Usar color de tema
                     Text(
                       ' ∞',
                       style: TextStyle(
-                        color: colorScheme.error,
+                        color: colorScheme.error, // <-- Usar color de tema
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -345,11 +318,11 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Selecciona los pares',
+                    'Selecciona los pares', 
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                      color: colorScheme.onSurface, // <-- Usar color de tema
                     ),
                   ),
                 ),
@@ -359,21 +332,22 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: GridView.builder(
-                    key: const ValueKey('grid_view'),
+                    key: const ValueKey('grid_view'), 
                     itemCount: _items.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 2.8,
-                          crossAxisSpacing: 12.0,
-                          mainAxisSpacing: 30.0,
-                        ),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, 
+                      childAspectRatio: 2.8, 
+                      crossAxisSpacing: 12.0, 
+                      mainAxisSpacing: 30.0, 
+                    ),
                     itemBuilder: (context, index) {
+                      // Pasa el colorScheme al widget
                       return _buildItemChip(_items[index], colorScheme);
                     },
                   ),
                 ),
               ),
+              // Pasa el colorScheme al widget
               _buildCheckButton(isComplete, colorScheme),
             ],
           ),
@@ -382,14 +356,13 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
+  // --- FUSIÓN: Se usa el '_buildItemChip' de ELLOS (theme-aware) ---
   Widget _buildItemChip(ChallengeItem item, ColorScheme colorScheme) {
-    // ... (Tu función _buildItemChip no cambia) ...
     final bool isSolved = _solvedPairIds.contains(item.pairId);
     final bool isSelected = _selectedItem == item;
     final bool isMarkedIncorrect =
         _isIncorrect && (_incorrectItem1 == item || _incorrectItem2 == item);
 
-    // ... dentro de _buildItemChip ...
     Color backgroundColor = colorScheme.surfaceContainer; // <-- Default
     Color borderColor = colorScheme.outline; // <-- Default
     Color textColor = colorScheme.onSurfaceVariant; // <-- Default
@@ -398,15 +371,13 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
     if (isSolved) {
       // Verde (éxito)
-      backgroundColor = Colors.green.withAlpha(
-        51,
-      ); // Puedes mantener estos o crear unos
+      backgroundColor = Colors.green.withAlpha(51);
       borderColor = Colors.green;
       textColor = Colors.green;
       elevation = 0.0;
     } else if (isMarkedIncorrect) {
       // Rojo (error)
-      backgroundColor = Colors.red.withAlpha(51); // Puedes mantener estos
+      backgroundColor = Colors.red.withAlpha(51); 
       borderColor = Colors.red;
       textColor = Colors.red;
       elevation = 2.0;
@@ -417,24 +388,26 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       textColor = colorScheme.primary;
       elevation = 4.0;
     }
-    // ... el resto del widget ...
 
     VoidCallback? onTap = isSolved ? null : () => _onItemTapped(item);
 
     return Material(
       elevation: elevation,
-      color: backgroundColor,
+      color: backgroundColor, 
       borderRadius: BorderRadius.circular(12.0),
       shadowColor: Colors.grey.shade50,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Container(
-          width: double.infinity,
+          width: double.infinity, 
           height: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(color: borderColor, width: 2.5),
+            border: Border.all(
+              color: borderColor,
+              width: 2.5,
+            ), 
           ),
           child: Center(
             child: Padding(
@@ -457,8 +430,8 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
+  // --- FUSIÓN: Se usa el '_buildCheckButton' de ELLOS (theme-aware) ---
   Widget _buildCheckButton(bool isComplete, ColorScheme colorScheme) {
-    // ... (Tu función _buildCheckButton no cambia) ...
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16.0),
@@ -467,7 +440,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
             ? () {
                 _showWinDialogAndSubmit();
               }
-            : null,
+            : null, 
         style: ElevatedButton.styleFrom(
           backgroundColor: isComplete
               ? colorScheme.primary

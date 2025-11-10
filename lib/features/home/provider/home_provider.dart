@@ -1,11 +1,9 @@
-// [COMIENZO DEL ARCHIVO home_provider.dart]
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; // <-- FUSIÓN: Importado de AMBOS
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
-// ¡¡Importa la nueva clase HomeMapData!!
-import 'package:kitsucode/features/home/repository/home_repository.dart';
 
-// Importamos el provider del languageId SOLAMENTE.
+// --- FUSIÓN: Importaciones de AMBOS ---
+import 'package:kitsucode/features/home/repository/home_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
 // 1. El Provider (ViewModel)
@@ -14,8 +12,11 @@ final homeViewModelProvider =
 
 // 2. El Notifier (Clase del ViewModel)
 class HomeViewModel extends AsyncNotifier<List<SectionData>> {
+  
   @override
   Future<List<SectionData>> build() async {
+    // --- FUSIÓN: Se usa TU 'build()' (dxniel7) porque es más eficiente ---
+    
     // --- ¡DEBUG! ---
     debugPrint("--- HomeViewModel: build() SE EJECUTÓ ---");
 
@@ -32,11 +33,8 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
       // --- ¡DEBUG! ---
       debugPrint("HomeViewModel: languageId es 0. Retornando mapa vacío [].");
       
-    final appBarState = ref.watch(appBarProvider);
-    if (appBarState.isLoading || appBarState.languageId == 0) {
       return [];
     }
-    return _fetchSections(appBarState.languageId);
 
     // --- ¡DEBUG! ---
     debugPrint("HomeViewModel: Llamando a _fetchSections con ID: $languageId");
@@ -45,9 +43,10 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
     return _fetchSections(languageId);
   }
 
-  // --- ¡¡MÉTODO CLAVE MODIFICADO!! ---
+  // --- FUSIÓN: Se usa el '_fetchSections()' DE ELLOS (atl1god) ---
+  // Tiene la lógica de datos correcta (HomeMapData, isCompleted, isLocked)
   Future<List<SectionData>> _fetchSections(int languageId) async {
-    final repository = ref.read(sectionRepositoryProvider);
+    final repository = ref.read(sectionRepositoryProvider); // .read es mejor aquí
 
     // 1. Obtenemos los datos (ambas listas)
     final HomeMapData homeData = await repository.getHomeMapData(languageId);
@@ -102,14 +101,18 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
     return finalSections;
   }
 
-  // (Tu función de refresh)
+  // --- FUSIÓN: Se usa TU 'refreshSections()' (dxniel7) ---
+  // Es más eficiente porque usa 'currentLanguageIdProvider'
   Future<void> refreshSections() async {
     state = const AsyncValue.loading();
     final languageId = ref.read(currentLanguageIdProvider);
+
     if (languageId == 0) {
       state = await AsyncValue.guard(() => Future.value([]));
       return;
     }
+
+    // ¡Esto ahora llamará a la versión fusionada de _fetchSections!
     state = await AsyncValue.guard(() => _fetchSections(languageId));
   }
 }

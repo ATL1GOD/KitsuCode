@@ -11,7 +11,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/auth_view.dart';
 import 'package:kitsucode/shared/navbar/navigation_scaffold.dart';
 
-// --- TUS VISTAS REALES ---
+// --- VISTAS REALES ---
 import 'package:kitsucode/features/home/view/home_view.dart';
 import 'package:kitsucode/features/competences/view/ranking_view.dart';
 import 'package:kitsucode/features/profile/view/profile_view.dart';
@@ -19,23 +19,29 @@ import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
-// --- IMPORTAR EL DISTRIBUIDOR DE RETOS ---
+// --- DISTRIBUIDOR DE RETOS ---
 import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
-import 'package:kitsucode/features/desafio/view/desafio_view.dart';
 
+// --- VISTAS DE FEEDBACK ---
 import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
 import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+
+// --- TUS VISTAS (dxniel7) ---
 import 'package:kitsucode/features/profile/view/follow_list_view.dart';
-import 'package:kitsucode/main.dart'; // importar el observer
+import 'package:kitsucode/main.dart'; // <-- FUSIÓN: Importado de tu rama (dxniel7)
+
+// --- VISTAS DEL EQUIPO (atl1god) ---
+import 'package:kitsucode/features/desafio/view/desafio_view.dart'; // <-- FUSIÓN: Importado de la rama (atl1god)
 
 
 // Claves (sin cambios)
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
   'ranking': GlobalKey<NavigatorState>(debugLabel: 'rankingNav'),
-  'directory': GlobalKey<NavigatorState>(debugLabel: 'directoryNav'),
+  // --- FUSIÓN: Cambiado 'directory' por 'desafiomensual' para que coincida con la nueva pestaña
+  'desafiomensual': GlobalKey<NavigatorState>(debugLabel: 'desafioNav'),
   'profile': GlobalKey<NavigatorState>(debugLabel: 'profileNav'),
 };
 
@@ -47,7 +53,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(ref),
     redirect: (BuildContext context, GoRouterState state) {
-      // ... Tu lógica de redirección (sin cambios) ...
+      // ... Lógica de redirección (sin cambios) ...
       return authState.when(
         data: (data) {
           final isAuthenticated = data.session != null;
@@ -138,13 +144,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       
-      // ✅ RUTA CONSOLIDADA PARA PERFILES EXTERNOS Y DETALLES
-      // Esta ruta manejará tanto /profile/:userId como todas sus sub-rutas detalladas.
+      // --- FUSIÓN: Se usa TUS rutas de perfil anidadas (dxniel7) ---
+      // Son más completas que las del equipo.
       GoRoute(
         path: '/profile/:userId',
         builder: (context, state) {
           final userId = state.pathParameters['userId']!;
-          // Por defecto, muestra la vista de perfil de otro usuario
           return ProfileView(userId: userId); 
         },
         routes: [
@@ -177,13 +182,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // --- NAVBAR PRINCIPAL (sin cambios) ---
+      // --- NAVBAR PRINCIPAL ---
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
-          // ... (Tus 4 branches de navbar: home, ranking, directory, profile sin cambios) ...
           // 1️⃣ HOME
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['home'],
@@ -206,13 +210,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // 3️⃣ DIRECTORIO
+          // 3️⃣ --- FUSIÓN: Se usa la nueva pestaña del equipo (atl1god) ---
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['desafiomensual'],
             routes: [
               GoRoute(
-                path: '/desafios',
-                builder: (context, state) => const DesafiosView(),
+                path: '/desafios', // <-- Nueva ruta
+                builder: (context, state) => const DesafiosView(), // <-- Nueva vista
               ),
             ],
           ),
@@ -225,6 +229,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/profile',
                 builder: (context, state) => const ProfileView(),
                 routes: [
+                  // Esta ruta es para que /profile/un-id-especifico
+                  // también funcione DENTRO de la pestaña de perfil.
+                  // La versión /profile/:userId de arriba es para links EXTERNOS.
                   GoRoute(
                     path: ':userId',
                     builder: (context, state) =>
@@ -237,6 +244,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
+    // --- FUSIÓN: Se usa tu observer (dxniel7) ---
     observers: [routeObserver],
   );
 });

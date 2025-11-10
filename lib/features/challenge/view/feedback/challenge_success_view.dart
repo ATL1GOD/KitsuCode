@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+// --- FUSIÓN: Se mantiene TU import de navigation_tracker_provider ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:lottie/lottie.dart'; // Necesitarás Lottie para la animación
 
@@ -16,7 +17,7 @@ class ChallengeSuccessView extends ConsumerWidget {
     required this.trofeosObtenidos,
   });
 
-  // --- Función helper para obtener el Tema (copiada de tus otras vistas) ---
+  // --- Función helper para obtener el Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     
@@ -62,7 +63,7 @@ class ChallengeSuccessView extends ConsumerWidget {
                 SizedBox(
                   height: 250,
                   child: Lottie.asset(
-                    'assets/animations/fox_run.json', // TODO: Reemplaza con tu animacióm de "éxito"
+                    'assets/animations/fox_run.json',
                     repeat: true,
                   ),
                 ),
@@ -70,7 +71,7 @@ class ChallengeSuccessView extends ConsumerWidget {
                 
                 // --- Mensaje de Felicitación ---
                 Text(
-                  '¡Eres todo un programador!', // Como en la Imagen 3
+                  '¡Eres todo un programador!',
                   textAlign: TextAlign.center,
                   style: textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -106,9 +107,10 @@ class ChallengeSuccessView extends ConsumerWidget {
                 const Spacer(),
                 
                 // --- Botón de Continuar ---
+                // --- FUSIÓN: Se usa TU 'onPressed' (dxniel7) ---
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary, // Botón con color del lenguaje
+                    backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(

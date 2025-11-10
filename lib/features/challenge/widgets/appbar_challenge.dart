@@ -37,7 +37,7 @@ class ChallengeAppBar1 extends StatelessWidget implements PreferredSizeWidget {
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               child: LinearProgressIndicator(
                 value: progress, // Usamos el parámetro 'progress'
-                backgroundColor: colorScheme.surfaceContainerHigh, //
+                backgroundColor: colorScheme.surfaceContainerHighest, //
                 valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
                 minHeight: 12,
               ),

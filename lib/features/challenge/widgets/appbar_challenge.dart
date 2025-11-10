@@ -39,7 +39,7 @@ class ChallengeAppBar1 extends StatelessWidget implements PreferredSizeWidget {
                 value: progress, // Usamos el parámetro 'progress'
                 backgroundColor: colorScheme.surfaceContainerHighest, //
                 valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                minHeight: 12,
+                minHeight: 8,
               ),
             ),
           ),
@@ -95,7 +95,6 @@ class ChallengeAppBar2 extends StatelessWidget implements PreferredSizeWidget {
           // --- CAMBIO 3: Estilos de color de 'puzzle_view' ---
           backgroundColor: colorScheme.surfaceContainerHighest,
           valueColor: AlwaysStoppedAnimation<Color>(colorScheme.secondary),
-
           // Ya no necesitamos 'minHeight' ni 'ClipRRect'
         ),
       ),

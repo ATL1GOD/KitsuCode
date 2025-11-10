@@ -1,6 +1,6 @@
 // lib/features/quiz_game/view/widgets/quiz_view.dart
 
-import 'dart:async';
+// REMOVIDO: import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -42,12 +42,12 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   int i = 0;
   bool disableAnswer = false;
   int j = 1;
-  int timer = 30;
-  String _showTimer = "30";
+  // REMOVIDO: int timer = 30;
+  // REMOVIDO: String _showTimer = "30";
   late List<int> _randomArray;
   int totalQuestions = 0;
   String? selectedAnswer;
-  bool _cancelTimer = false;
+  // REMOVIDO: bool _cancelTimer = false;
   bool _hasSubmitted = false;
   bool? _wasCorrect;
   bool correct = false;
@@ -55,18 +55,14 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    // REMOVIDO: _startTimer();
     _genRandomArray();
     if (_randomArray.isNotEmpty) {
       i = _randomArray[0];
     }
   }
 
-  @override
-  void dispose() {
-    _cancelTimer = true;
-    super.dispose();
-  }
+  // REMOVIDO: El método dispose() completo, ya que solo gestionaba el _cancelTimer.
 
   // ... (Las funciones _genRandomArray, _startTimer, _nextQuestion,
   // y _checkAnswer son idénticas o mejores en la versión de 'ELLOS',
@@ -88,34 +84,11 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
   }
 
-  void _startTimer() {
-    const onesec = Duration(seconds: 1);
-    Timer.periodic(onesec, (Timer t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      setState(() {
-        if (disableAnswer) {
-          return;
-        }
-
-        if (timer < 1) {
-          t.cancel();
-          _checkAnswer("");
-        } else if (_cancelTimer == true) {
-          t.cancel();
-        } else {
-          timer = timer - 1;
-        }
-        _showTimer = timer.toString();
-      });
-    });
-  }
+  // REMOVIDO: El método _startTimer() completo.
 
   void _nextQuestion() {
-    _cancelTimer = false;
-    timer = 30;
+    // REMOVIDO: _cancelTimer = false;
+    // REMOVIDO: timer = 30;
     if (mounted) {
       setState(() {
         if (j < totalQuestions) {
@@ -123,7 +96,12 @@ class _QuizPageState extends ConsumerState<QuizPage> {
           j++;
         } else {
           if (context.mounted) {
-            int duration = (30 * totalQuestions) - (timer < 0 ? 0 : timer);
+            // NOTA: El cálculo de la duración dependía del temporizador.
+            // Se establece en 0.
+            // Si necesitas el tiempo total, implementa un Stopwatch
+            // en initState() y detenlo aquí.
+            const int duration = 0;
+            // REMOVIDO: int duration = (30 * totalQuestions) - (timer < 0 ? 0 : timer);
 
             final double scoreRatio = marks / (totalQuestions * 5);
             final int percentage = (scoreRatio * 100).round();
@@ -141,7 +119,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         _wasCorrect = null;
       });
     }
-    _startTimer();
+    // REMOVIDO: _startTimer();
   }
 
   void _checkAnswer(String k) {
@@ -156,7 +134,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
     if (mounted) {
       setState(() {
-        _cancelTimer = true;
+        // REMOVIDO: _cancelTimer = true;
         disableAnswer = true;
         _wasCorrect = correct;
       });
@@ -380,53 +358,16 @@ class _QuizPageState extends ConsumerState<QuizPage> {
           showExitDialog(context);
         },
         child: Scaffold(
-          appBar: _buildAppBar(colorScheme, progress),
+          appBar: ChallengeAppBar2(
+            progress: progress, // Le pasamos el progreso
+            onClose: () {
+              // Reutilizamos la lógica de salida del quiz
+              showExitDialog(context);
+            },
+          ),
           body: _buildQuizBody(colorScheme, questionKey),
           bottomNavigationBar: _buildBottomBar(colorScheme),
         ),
-      ),
-    );
-  }
-
-  /// Widget que construye el AppBar de la página.
-  PreferredSizeWidget _buildAppBar(ColorScheme colorScheme, double progress) {
-    return AppBar(
-      backgroundColor: colorScheme.surface,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.close, color: colorScheme.onSurface),
-        onPressed: () => showExitDialog(context), // Lógica de 'X' reparada
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: colorScheme.surfaceContainerHigh,
-                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                minHeight: 12,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              _showTimer,
-              style: TextStyle(
-                color: colorScheme.onPrimaryContainer,
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

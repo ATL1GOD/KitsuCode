@@ -169,6 +169,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     final bool esCorrecto = (percentage > 50);
 
     final appBarState = ref.read(appBarProvider);
+    // Usar el brightness del Theme actual del contexto
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
       Theme.of(context).brightness,
@@ -331,7 +332,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       DeviceOrientation.portraitUp,
     ]);
 
-    final brightness = MediaQuery.of(context).platformBrightness;
+    // Obtener el brightness del sistema actual
+    final brightness = Theme.of(context).brightness;
     final appBarState = ref.watch(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -359,9 +361,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         },
         child: Scaffold(
           appBar: ChallengeAppBar2(
-            progress: progress, // Le pasamos el progreso
+            progress: progress,
             onClose: () {
-              // Reutilizamos la lógica de salida del quiz
               showExitDialog(context);
             },
           ),

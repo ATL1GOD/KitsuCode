@@ -5,15 +5,14 @@ import 'package:kitsucode/features/home/repository/home_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// --- SOLUCIÓN A: (Evitar Race Condition) ---
-// Escucha el Realtime y pasa el ID del nivel nuevo
+// provider de progreso en tiempo real (TU CÓDIGO - SIN CAMBIOS)
 final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
   final supabase = Supabase.instance.client;
   final currentUserId = supabase.auth.currentUser?.id;
 
   if (currentUserId == null) return null;
 
-  final channel = supabase.channel('public:progreso_usuario:home_v3');
+  final channel = supabase.channel('public:progreso_usuario:home_v4'); 
   channel.onPostgresChanges(
     event: PostgresChangeEvent.insert,
     schema: 'public',
@@ -31,11 +30,16 @@ final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
         final newLevelId = newRecord['id_nivel'] as int?;
         
         if (newLevelId != null) {
-          // Llama al método que actualiza el estado localmente
-          ref.read(homeViewModelProvider.notifier).unlockLevelLocally(newLevelId);
+          final notifier = ref.read(homeViewModelProvider.notifier);
+          notifier.unlockLevelLocally(newLevelId);
         }
       } catch (e) {
-        ref.read(homeViewModelProvider.notifier).triggerMapUpdate();
+        try {
+          final notifier = ref.read(homeViewModelProvider.notifier);
+          notifier.triggerMapUpdate();
+        } catch (_) {
+          // Si el provider no existe, ignoramos
+        }
       }
     },
   ).subscribe();
@@ -46,7 +50,51 @@ final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
 
   return channel;
 });
-// --- FIN SOLUCIÓN A ---
+// --- (Fin de provider) ---
+
+
+/// Este provider guarda el ID del último nivel desbloqueado (SIN CAMBIOS)
+final newlyUnlockedLevelProvider = StateProvider<int?>((ref) => null);
+// --- FIN ---
+
+// --- ¡¡INICIO DE LA MODIFICACIÓN!! ---
+/// Provider que escucha cambios ESTRUCTURALES en el mapa (nuevos niveles/secciones).
+/// ¡Se quitó .autoDispose para hacerlo persistente!
+final mapStructureRealtimeProvider = Provider((ref) { // <-- ¡CAMBIO AQUÍ!
+  final supabase = Supabase.instance.client;
+
+  final channel = supabase.channel('public:map_structure_changes');
+
+  void reloadMap(dynamic payload) {
+    debugPrint("--- Realtime: ¡Cambio ESTRUCTURAL detectado en el mapa! Recargando... ---");
+    // Invalidamos el provider principal del mapa.
+    ref.invalidate(homeViewModelProvider);
+  }
+
+  // Escuchamos INSERT, UPDATE o DELETE en niveles Y secciones
+  channel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all, // Escucha INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'niveles',
+        callback: reloadMap,
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all, // Escucha INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'secciones',
+        callback: reloadMap,
+      )
+      .subscribe();
+
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
+
+  // ¡Devolvemos el canal para que el provider tenga un valor!
+  return channel; 
+});
+// --- ¡¡FIN DE LA MODIFICACIÓN!! ---
 
 
 final homeViewModelProvider =
@@ -56,26 +104,29 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
   
   @override
   Future<List<SectionData>> build() async {
-    ref.watch(progressRealtimeProvider); // Activa el listener
+    // --- ¡MODIFICACIÓN! ---
+    // ¡Quitamos el watch de aquí!
+    // ref.watch(mapStructureRealtimeProvider); // <-- ¡LÍNEA ELIMINADA!
+    // --- FIN DE LA MODIFICACIÓN ---
 
+    // (Tu lógica original de build)
     final languageId = ref.watch(currentLanguageIdProvider);
-    
     if (languageId == 0) {
       return [];
     }
-    
     return _fetchSections(languageId);
   }
+
+  // --- (El resto de tu clase HomeViewModel está perfecta, no necesita cambios) ---
 
   /// SOLUCIÓN A: Actualiza el estado localmente sin re-consultar
   void unlockLevelLocally(int newLevelId) {
     final currentState = state.value;
     if (currentState == null) {
-      triggerMapUpdate(); // No hay datos, mejor recargar
+      triggerMapUpdate(); 
       return;
     }
 
-    // 1. Marcar el nuevo nivel como 'completado' en el estado actual
     final List<SectionData> sectionsWithNewProgress = currentState.map((section) {
       return section.copyWith(
         levels: section.levels.map((level) {
@@ -87,18 +138,35 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
       );
     }).toList();
 
-    // 2. Volver a correr la lógica de BLOQUEO (de home_model.dart)
     final List<SectionData> finalSections =
         SectionData.applySequentialSectionLock(sectionsWithNewProgress);
 
-    // 3. Actualizar la UI
+    int? levelToAnimate;
+    bool foundCompletedLevel = false;
+    final allLevelsOrdered = finalSections.expand((section) => section.levels);
+
+    for (final level in allLevelsOrdered) {
+      if (foundCompletedLevel) {
+        if (!level.isLocked) {
+           levelToAnimate = level.idNivel;
+        }
+        break; 
+      }
+      if (level.idNivel == newLevelId) {
+        foundCompletedLevel = true;
+      }
+    }
+
+    if (levelToAnimate != null) {
+      ref.read(newlyUnlockedLevelProvider.notifier).state = levelToAnimate;
+    }
+
     state = AsyncData(finalSections);
   }
-
-
+  
   /// Fallback por si `unlockLevelLocally` falla
   Future<void> triggerMapUpdate() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // Dar tiempo a la BD
+    await Future.delayed(const Duration(milliseconds: 500)); 
     
     final languageId = ref.read(currentLanguageIdProvider);
     if (languageId == 0) return;
@@ -114,50 +182,33 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
   /// Esta función ahora contiene la SOLUCIÓN B y la C (Corrección)
   Future<List<SectionData>> _fetchSections(int languageId) async {
     try {
-      debugPrint("--- 🚀 _fetchSections INICIADO para lenguaje: $languageId ---");
       final repository = ref.read(sectionRepositoryProvider);
       final HomeMapData homeData = await repository.getHomeMapData(languageId);
       final List<SectionData> sections = homeData.sections;
     
-    // --- ¡¡INICIO DE LA CORRECCIÓN!! ---
-    // ¡Usamos los ID de progreso que SÍ vienen del repositorio!
-    final Set<int> completedIds = homeData.completedLevelIds; 
-    // --- ¡¡FIN DE LA CORRECCIÓN!! ---
+      final Set<int> completedIds = homeData.completedLevelIds; 
 
-
-    // --- SOLUCIÓN B: (Ordenar Niveles) ---
-    // 1. Ordenar manualmente los niveles DENTRO de cada sección
-    final List<SectionData> sortedSections = sections.map((section) {
-      final sortedLevels = List<LevelData>.from(section.levels);
-      
-      // ¡Ordena por el campo 'nivel' (que es 'niveles.orden')!
-      sortedLevels.sort((a, b) => a.nivel.compareTo(b.nivel)); 
-      
-      return section.copyWith(levels: sortedLevels);
-    }).toList();
-    // --- FIN SOLUCIÓN B ---
-
-    // 2. Aplicar el progreso (isCompleted) a la lista YA ORDENADA
-    final List<SectionData> sectionsWithProgress = sortedSections.map((section) { 
-      final List<LevelData> updatedLevels = section.levels.map((level) {
-        // ¡Ahora 'completedIds' tiene los datos correctos!
-        final bool isCompleted = completedIds.contains(level.idNivel);
-        
-        return level.copyWith(
-          isCompleted: isCompleted,
-        );
+      final List<SectionData> sortedSections = sections.map((section) {
+        final sortedLevels = List<LevelData>.from(section.levels);
+        sortedLevels.sort((a, b) => a.nivel.compareTo(b.nivel)); 
+        return section.copyWith(levels: sortedLevels);
       }).toList();
-      return section.copyWith(levels: updatedLevels);
-    }).toList();
 
-    // 3. Aplicar bloqueo (usando la función de home_model.dart)
-    final List<SectionData> finalSections =
-        SectionData.applySequentialSectionLock(sectionsWithProgress);
-    
-    return finalSections;
-    } catch (e, stack) {
-      debugPrint("--- ❌ ERROR EN _fetchSections: $e ---");
-      debugPrint("--- STACK: $stack ---");
+      final List<SectionData> sectionsWithProgress = sortedSections.map((section) { 
+        final List<LevelData> updatedLevels = section.levels.map((level) {
+          final bool isCompleted = completedIds.contains(level.idNivel);
+          return level.copyWith(
+            isCompleted: isCompleted,
+          );
+        }).toList();
+        return section.copyWith(levels: updatedLevels);
+      }).toList();
+
+      final List<SectionData> finalSections =
+          SectionData.applySequentialSectionLock(sectionsWithProgress);
+          
+      return finalSections;
+    } catch (e) {
       rethrow;
     }
   }

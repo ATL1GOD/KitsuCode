@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:kitsucode/features/home/provider/home_provider.dart'; // ← AÑADIDO
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -10,6 +11,10 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    
+    // INICIALIZAR EL LISTENER DE REALTIME AQUÍ 
+    ref.read(progressRealtimeProvider);
+    ref.watch(mapStructureRealtimeProvider);
 
     return OverlaySupport.global(
       child: MaterialApp.router(

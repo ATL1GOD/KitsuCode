@@ -7,9 +7,9 @@ Color _colorFromHex(String hexColor) {
   return Color(int.parse("FF$hex", radix: 16));
 }
 
-// ------------------------------------
+
 // MODELO DE NIVEL
-// ------------------------------------
+  
 class LevelData {
   // ... (campos sin cambios) ...
   final int idNivel;
@@ -30,7 +30,6 @@ class LevelData {
     this.isLocked = false,
   });
 
-  // --- ¡¡SIMPLIFICADO!! ---
   // Ya no necesita leer 'progreso_usuario'
   factory LevelData.fromJson(Map<String, dynamic> json) {
     final retoData = json['reto'] as Map<String, dynamic>?;
@@ -53,7 +52,7 @@ class LevelData {
     );
   }
 
-  // ¡¡IMPORTANTE!! Asegúrate que 'copyWith' tenga 'isCompleted'
+  // Esto se usa para actualizar isCompleted e isLocked
   LevelData copyWith({bool? isCompleted, bool? isLocked}) {
     return LevelData(
       idNivel: idNivel,
@@ -67,9 +66,7 @@ class LevelData {
   }
 }
 
-// ------------------------------------
 // MODELO DE SECCIÓN
-// ------------------------------------
 class SectionData {
   // ... (campos sin cambios) ...
   final int id;
@@ -92,8 +89,7 @@ class SectionData {
     this.isLocked = false,
   });
 
-  // --- SIN CAMBIOS ---
-  // (Solo se simplificó la lógica interna de LevelData)
+  // esta función no cambia en absoluto
   factory SectionData.fromJson(Map<String, dynamic> json) {
     final hexColor = json['color'] as String;
     final hexColorOscuro = json['coloroscuro'] as String;
@@ -127,8 +123,6 @@ class SectionData {
     );
   }
 
-  // --- ¡¡SIN CAMBIOS!! ---
-  // Esta lógica ya es perfecta y no necesita modificarse.
   // Recibirá los datos con 'isCompleted' ya aplicado por el provider.
   static List<SectionData> applySequentialSectionLock(
     List<SectionData> sections,
@@ -163,7 +157,7 @@ class SectionData {
       // La sección en sí misma NUNCA debe estar bloqueada.
       // Solo sus niveles internos.
       final newSection = currentSection.copyWith(
-        isLocked: false, // <-- ¡Importante!
+        isLocked: false, // Siempre desbloqueada
         levels: newLevels,
       );
       

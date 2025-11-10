@@ -5,12 +5,19 @@ import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/features/home/view/widgets/animated_level_node.dart';
+
+// --- ¡AÑADE ESTA IMPORTACIÓN! ---
+import 'package:kitsucode/features/home/provider/home_provider.dart'; 
+// --- FIN DE LA IMPORTACIÓN ---
+
 
 class Section extends ConsumerWidget {
   final SectionData data;
 
   const Section({super.key, required this.data});
 
+  // --- (Tu función _navegarAReto no cambia en absoluto) ---
   void _navegarAReto(BuildContext context, WidgetRef ref, LevelData level) {
     // --- LÓGICA DE BLOQUEO DE NIVEL ---
     if (level.isLocked) {
@@ -65,6 +72,7 @@ class Section extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // --- (El Row de la sección no cambia) ---
         Row(
           children: [
             const Expanded(child: Divider(color: Color(0xFF2D3D41))),
@@ -91,26 +99,37 @@ class Section extends ConsumerWidget {
               int i = entry.key;
               LevelData level = entry.value;
 
+              // --- ¡INICIO DE LA MODIFICACIÓN! ---
+
+              // 1. Definimos la bolita (el botón) como un widget
+              final Widget levelNodeWidget = ReliefSectionButton(
+                onPressed: () {
+                  // Llamamos a la función con el ref
+                  _navegarAReto(context, ref, level);
+                },
+                baseColor: data.color,
+                reliefColor: data.colorOscuro,
+                svgAsset: level.iconAsset,
+                size: 56.0,
+                reliefThickness: 6.0,
+                // --- Usamos el estado de bloqueo del modelo ---
+                isLocked: level.isLocked,
+                lockColor: Colors.grey.shade600,
+                // --- Fin del estado de bloqueo ---
+              );
+
+              // 2. Envolvemos la bolita en el nuevo wrapper animado
               return Positioned(
                 top: (i * 96.0) + 40.0,
                 left: getLeft(i),
                 right: getRight(i),
-                child: ReliefSectionButton(
-                  onPressed: () {
-                    // Llamamos a la función con el ref
-                    _navegarAReto(context, ref, level);
-                  },
-                  baseColor: data.color,
-                  reliefColor: data.colorOscuro,
-                  svgAsset: level.iconAsset,
-                  size: 56.0,
-                  reliefThickness: 6.0,
-                  // --- Usamos el estado de bloqueo del modelo ---
-                  isLocked: level.isLocked,
-                  lockColor: Colors.grey.shade600,
-                  // --- Fin del estado de bloqueo ---
+                child: AnimatedLevelNode( // <-- ¡NUEVO WRAPPER!
+                  levelId: level.idNivel, // Le pasamos su ID
+                  child: levelNodeWidget, // Le pasamos la bolita como hijo
                 ),
               );
+              // --- FIN DE LA MODIFICACIÓN! ---
+
             }).toList(),
           ),
         ),
@@ -118,7 +137,7 @@ class Section extends ConsumerWidget {
     );
   }
 
-  // Lógica de posicionamiento (Sin cambios)
+  // --- (Tus funciones getLeft y getRight no cambian) ---
   double getLeft(int indice) {
     const margin = 72.0;
     int pos = indice % 9;
@@ -128,7 +147,6 @@ class Section extends ConsumerWidget {
     return 0.0;
   }
 
-  // Lógica de posicionamiento (Sin cambios)
   double getRight(int indice) {
     const margin = 72.0;
     int pos = indice % 9;

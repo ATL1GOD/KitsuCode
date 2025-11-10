@@ -47,10 +47,23 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
   bool _hasSubmitted = false;
 
+  // --- ¡NUEVO! Variables para el progreso granular ---
+  late final int _totalInputsDelChallenge;
+  int _inputsCompletadosEnPaginasAnteriores = 0;
+  // --- FIN NUEVO ---
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+
+    // --- ¡NUEVO! Calculamos el total de inputs del reto al inicio ---
+    _totalInputsDelChallenge = widget.challenge.preguntas
+        .expand((pregunta) => pregunta.fragmentos)
+        .where((fragmento) => fragmento.tipo == 'input')
+        .length;
+    // --- FIN NUEVO ---
+
     _setupControllersAndFocusNodesForPage(0);
   }
 
@@ -60,10 +73,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     _clearControllersAndFocusNodes();
     super.dispose();
   }
-
-  // ... (Las funciones _clearControllersAndFocusNodes, _setupControllersAndFocusNodesForPage,
-  // _verificarRespuesta, y _siguientePregunta son idénticas en ambos archivos,
-  // así que las dejamos tal cual) ...
 
   void _clearControllersAndFocusNodes() {
     for (var controller in _controllers) {
@@ -262,6 +271,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   // --- FIN FUSIÓN ---
 
   // --- FUSIÓN: Se usa el '_buildCodeSpans' de ELLOS (theme-aware) ---
+  // --- MODIFICADO: Se añade un setState() en el onChanged ---
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
@@ -303,6 +313,12 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                     ),
                   ),
                   onChanged: (value) {
+                    // --- ¡NUEVO! ---
+                    // Forzar un rebuild para actualizar la barra de progreso
+                    // cada vez que el usuario escribe algo.
+                    setState(() {});
+                    // --- FIN NUEVO ---
+
                     if (value.trim() == respuestasCorrectas[currentIndex]) {
                       if (currentIndex + 1 < _focusNodes.length) {
                         _focusNodes[currentIndex + 1].requestFocus();
@@ -341,6 +357,24 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     final colorScheme = challengeTheme.colorScheme;
     // --- FIN LÓGICA DE TEMA ---
 
+    // --- LÓGICA DE PROGRESO MODIFICADA ---
+
+    // 1. Contar inputs (no vacíos) en la página ACTUAL
+    final int inputsCompletadosPaginaActual = _controllers
+        .where((controller) => controller.text.isNotEmpty)
+        .length;
+
+    // 2. Calcular el total de inputs completados
+    final int totalCompletados =
+        _inputsCompletadosEnPaginasAnteriores + inputsCompletadosPaginaActual;
+
+    // 3. Calcular el progreso (evitando división por cero)
+    final double progress = _totalInputsDelChallenge > 0
+        ? (totalCompletados / _totalInputsDelChallenge)
+        : 0.0;
+
+    // --- FIN LÓGICA DE PROGRESO ---
+
     final codeStyle = TextStyle(
       fontFamily: 'monospace',
       fontSize: 16,
@@ -355,9 +389,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       height: 1.5,
     );
 
-    final double progress =
-        (_currentPageIndex + 1) / widget.challenge.preguntas.length;
-
     return Theme(
       // <-- Envolver aquí
       data: challengeTheme,
@@ -365,7 +396,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
         // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
         // 2. Reemplazamos el AppBar anterior
         appBar: ChallengeAppBar2(
-          progress: progress,
+          progress: progress, // <-- ¡Usa el nuevo progreso!
           onClose: () {
             showExitDialog(context);
           },
@@ -378,6 +409,21 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: widget.challenge.preguntas.length,
                 onPageChanged: (newIndex) {
+                  // --- LÓGICA DE PROGRESO MODIFICADA ---
+                  // Si avanzamos (newIndex > _currentPageIndex),
+                  // sumamos los inputs de la página que acabamos de dejar.
+                  if (newIndex > _currentPageIndex) {
+                    final preguntaAnterior =
+                        widget.challenge.preguntas[_currentPageIndex];
+                    _inputsCompletadosEnPaginasAnteriores += preguntaAnterior
+                        .fragmentos
+                        .where((f) => f.tipo == 'input')
+                        .length;
+                  }
+                  // (Si retrocediéramos, necesitaríamos restar, pero este
+                  // PageView solo avanza programáticamente, así que esto es seguro.)
+                  // --- FIN LÓGICA ---
+
                   _setupControllersAndFocusNodesForPage(newIndex);
                 },
                 itemBuilder: (context, index) {

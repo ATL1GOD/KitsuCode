@@ -26,6 +26,8 @@ class FollowListView extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     final profileState = ref.watch(userProfileByIdProvider(userId));
+    final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    final isOwnProfile = currentUserId == userId;
     final title = type == 'following' ? 'Siguiendo' : 'Seguidores';
 
     return Scaffold(
@@ -67,6 +69,18 @@ class FollowListView extends ConsumerWidget {
                         error: (_, __) => const Center(child: Text("Error cargando lista")),
                         data: (users) {
                           if (users.isEmpty) {
+                            // Determinar el mensaje según si es perfil propio o ajeno
+                            String emptyMessage;
+                            if (type == "following") {
+                              emptyMessage = isOwnProfile
+                                  ? "No sigues a nadie aún."
+                                  : "${profile.nombrePerfil} no sigue a nadie.";
+                            } else {
+                              emptyMessage = isOwnProfile
+                                  ? "No tienes seguidores todavía."
+                                  : "${profile.nombrePerfil} no tiene seguidores todavía.";
+                            }
+
                             return Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -80,9 +94,7 @@ class FollowListView extends ConsumerWidget {
                                   Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                                     child: Text(
-                                      type == "following"
-                                          ? "No sigues a nadie aún."
-                                          : "${profile.nombrePerfil} no tiene seguidores todavía.",
+                                      emptyMessage,
                                       style: textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -155,14 +167,14 @@ class FollowListView extends ConsumerWidget {
   }
 }
 
-// 🎯 Tarjeta de usuario
+// Tarjeta de usuario
 class _FollowUserTile extends ConsumerStatefulWidget {
   final FollowListModel user;
   final Color dynamicColor;
   final FollowListArgs currentListArgs;
 
   const _FollowUserTile({
-    super.key, // 🔥 Agregamos super.key
+    super.key, // Agregamos super.key
     required this.user,
     required this.dynamicColor,
     required this.currentListArgs,
@@ -280,7 +292,7 @@ Future<void> _toggle() async {
       setState(() => _isFollowing = result);
     }
 
-    // 🔥 SIEMPRE refrescar la lista para actualizar estados de botones
+    // SIEMPRE refrescar la lista para actualizar estados de botones
     // (solo removemos de la lista visualmente si es nuestra propia lista, pero siempre actualizamos los estados)
     Future.microtask(() {
       ref.invalidate(followListProvider(widget.currentListArgs));
@@ -370,7 +382,7 @@ Future<void> _toggle() async {
                 ),
               ),
 
-              // ✅ Botón Seguir / Siguiendo
+              // Botón Seguir / Siguiendo
               if (!_isCurrentUser)
                 ScaleTransition(
                   scale: _popAnimation,
@@ -405,7 +417,7 @@ Future<void> _toggle() async {
   }
 }
 
-// 💡 Shimmer loading
+// Shimmer loading
 class _FollowListLoadingShimmer extends StatelessWidget {
   const _FollowListLoadingShimmer();
 

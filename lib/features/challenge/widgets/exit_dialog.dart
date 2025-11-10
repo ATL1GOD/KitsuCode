@@ -1,78 +1,98 @@
-// lib/shared/widgets/show_app_exit_dialog.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:giffy_dialog/giffy_dialog.dart';
+// ¡Ya no necesitas 'package:giffy_dialog/giffy_dialog.dart'!
+// Puedes ejecutar: flutter pub remove giffy_dialog
 
 /// Muestra un diálogo de confirmación genérico para salir de un reto.
 void showExitDialog(BuildContext context) {
-  // --- INICIO DE CAMBIOS ---
-
-  // 1. OBTÉN EL TEMA
+  // 1. OBTÉN EL TEMA (Esto se mantiene igual)
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
   final textTheme = theme.textTheme;
 
-  // 2. DEFINE ESTILOS DE TEXTO BASADOS EN EL TEMA
-  // Usamos 'headlineSmall' para el título y 'bodyLarge' para el contenido.
+  // 2. DEFINE ESTILOS DE TEXTO (Esto se mantiene igual)
   final titleStyle = textTheme.headlineSmall?.copyWith(
     fontWeight: FontWeight.bold,
   );
   final contentStyle = textTheme.bodyLarge;
-  // 'labelLarge' es el estilo estándar para texto de botones en Material 3
   final buttonTextStyle = textTheme.labelLarge?.copyWith(
     fontWeight: FontWeight.bold,
   );
 
-  // --- FIN DE CAMBIOS ---
+  // --- INICIO DE CAMBIOS ---
 
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      return GiffyDialog.image(
-        Image.asset(
-          "images/challenge/alerta4.png",
-          height: 280, // <-- Valor fijo original
-          fit: BoxFit.cover,
+      // 3. REEMPLAZA GiffyDialog CON AlertDialog
+      return AlertDialog(
+        // Usa el color de fondo de tu tema
+        backgroundColor: colorScheme.surface,
+        // Define bordes redondeados
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
         ),
+
+        // 4. TÍTULO (¡Ahora está arriba!)
         title: Text(
           '¿Quieres salir del reto?',
           textAlign: TextAlign.center,
-          style: titleStyle, // <-- TEMA
+          style: titleStyle,
         ),
-        content: Text(
-          'Tu progreso en este reto se perderá.',
-          textAlign: TextAlign.center,
-          style: contentStyle, // <-- TEMA
+
+        // 5. CONTENIDO
+        // Usamos una Columna para poner la imagen y el texto debajo
+        content: Column(
+          mainAxisSize: MainAxisSize.min, // ¡Muy importante!
+          children: [
+            // Tu imagen
+            Image.asset(
+              "images/challenge/alerta4.png",
+              height: 220, // Ajusta esta altura como veas necesario
+              fit: BoxFit.cover,
+            ),
+            const SizedBox(height: 16), // Espacio entre imagen y texto
+            // Tu texto de contenido
+            Text(
+              'Tu progreso en este reto se perderá.',
+              textAlign: TextAlign.center,
+              style: contentStyle,
+            ),
+          ],
         ),
+
+        // 6. ACCIONES (Tus mismos botones)
+        // Alinear los botones
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
+          // Botón CANCELAR
           TextButton(
             style: TextButton.styleFrom(
-              // Usa un color del tema (como 'onSurfaceVariant') para el texto
-              foregroundColor: colorScheme.onSurfaceVariant, // <-- TEMA
-              textStyle: buttonTextStyle, // <-- TEMA
+              foregroundColor: colorScheme.onSurfaceVariant,
+              textStyle: buttonTextStyle,
             ),
-            onPressed: () => Navigator.pop(context), // Cierra el diálogo
+            onPressed: () => Navigator.pop(context),
             child: const Text('CANCELAR'),
           ),
-          const SizedBox(width: 98), // <-- Valor fijo original
+
+          // ¡Ya no necesitas el 'SizedBox(width: 98)'!
+          // 'actionsAlignment' ya los separa adecuadamente.
+          // Si quieres más espacio, puedes usar un SizedBox(width: 20) o similar.
+
+          // Botón SALIR
           TextButton(
             style: TextButton.styleFrom(
-              // Usa los colores de 'error' del tema.
-              backgroundColor: colorScheme.error, // <-- TEMA
-              foregroundColor: colorScheme.onError, // <-- TEMA
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.0),
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ), // <-- Valor fijo original
-              textStyle: buttonTextStyle, // <-- TEMA
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              textStyle: buttonTextStyle,
             ),
             onPressed: () {
               Navigator.pop(context); // Cierra el diálogo
-              context.pop(); // Cierra la pantalla actual (p.ej. QuizPage)
+              context.pop(); // Cierra la pantalla actual
             },
             child: const Text('SALIR'),
           ),
@@ -80,4 +100,5 @@ void showExitDialog(BuildContext context) {
       );
     },
   );
+  // --- FIN DE CAMBIOS ---
 }

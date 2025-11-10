@@ -182,23 +182,64 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN DEL BUG!! ---
   
   void onOptionDroppedOnBlank(String blankId, PuzzleOption option) {
-    // 1. Mira si ya hay una ficha en ese hueco
-    final PuzzleOption? existingOption = state.filledBlanks[blankId];
-
-    // 2. Prepara la nueva lista de opciones del banco
-    List<PuzzleOption> newAvailableOptions = 
-        state.availableOptions.where((o) => o.uniqueId != option.uniqueId).toList();
-
-    // 3. ¡LA CORRECCIÓN! Si había una ficha, devuélvela al banco
-    if (existingOption != null) {
-      newAvailableOptions.add(existingOption);
-      newAvailableOptions.shuffle(); // (Opcional)
+    // 1. Buscar si la opción que se está moviendo ya estaba en otro blank
+    String? sourceBlankId;
+    for (var entry in state.filledBlanks.entries) {
+      if (entry.value?.uniqueId == option.uniqueId) {
+        sourceBlankId = entry.key;
+        break;
+      }
     }
 
-    // 4. Actualiza el estado
+    // CASO ESPECIAL: Soltar en el mismo blank (no hacer nada)
+    if (sourceBlankId != null && sourceBlankId == blankId) {
+      // No hacer nada, el chip ya está en su lugar
+      return;
+    }
+
+    // 2. Mira si ya hay una ficha en el hueco destino
+    final PuzzleOption? existingOption = state.filledBlanks[blankId];
+
+    // 3. Prepara el nuevo mapa de blanks y la lista de opciones
+    Map<String, PuzzleOption?> newFilledBlanks = {...state.filledBlanks};
+    List<PuzzleOption> newAvailableOptions = [...state.availableOptions];
+
+    // 4. LÓGICA DE INTERCAMBIO O DEVOLUCIÓN
+    if (sourceBlankId != null) {
+      // La opción viene de otro blank (ya verificamos que sourceBlankId != blankId)
+      if (existingOption != null) {
+        // CASO 1: Intercambio entre dos blanks
+        // Coloca la opción que estaba en el destino en el origen
+        newFilledBlanks[sourceBlankId] = existingOption;
+        // Y la opción que viene en el destino
+        newFilledBlanks[blankId] = option;
+      } else {
+        // CASO 2: Mover de un blank a un blank vacío
+        newFilledBlanks[sourceBlankId] = null;
+        newFilledBlanks[blankId] = option;
+      }
+    } else {
+      // La opción viene del banco de opciones
+      // Eliminamos la opción del banco
+      newAvailableOptions = newAvailableOptions
+          .where((o) => o.uniqueId != option.uniqueId)
+          .toList();
+      
+      if (existingOption != null) {
+        // CASO 3: Viene del banco y hay una ficha en el destino
+        // Devolvemos la ficha que estaba en el destino al banco
+        newAvailableOptions.add(existingOption);
+        newAvailableOptions.shuffle(); // (Opcional)
+      }
+      
+      // Colocamos la nueva opción en el blank
+      newFilledBlanks[blankId] = option;
+    }
+
+    // 5. Actualiza el estado
     state = state.copyWith(
-      filledBlanks: {...state.filledBlanks, blankId: option}, // Pone la nueva ficha
-      availableOptions: newAvailableOptions, // Actualiza el banco
+      filledBlanks: newFilledBlanks,
+      availableOptions: newAvailableOptions,
       status: PuzzleStatus.playing,
     );
   }

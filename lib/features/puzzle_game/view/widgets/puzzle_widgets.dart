@@ -93,17 +93,24 @@ class EmptyBlank extends StatelessWidget {
 class DraggableOption extends StatelessWidget {
   final PuzzleOption option;
   final bool isFilled;
+  final VoidCallback? onDragStarted;
+  final VoidCallback? onDragEnd;
 
   const DraggableOption({
     super.key,
     required this.option,
     this.isFilled = false,
+    this.onDragStarted,
+    this.onDragEnd,
   });
 
   @override
   Widget build(BuildContext context) {
     return Draggable<PuzzleOption>(
-      data: option, 
+      data: option,
+      onDragStarted: onDragStarted,
+      onDragEnd: (_) => onDragEnd?.call(),
+      onDraggableCanceled: (_, __) => onDragEnd?.call(),
       feedback: PuzzleChip(
         text: option.text,
         isFilled: isFilled,
@@ -135,30 +142,173 @@ class DragTargetBlank extends StatelessWidget {
   final String blankId;
   final PuzzleOption? filledOption;
   final void Function(String, PuzzleOption) onOptionDropped;
+  final String? draggingFromBlankId;
+  final PuzzleOption? draggingOption;
+  final Map<String, PuzzleOption?> allFilledBlanks;
+  final void Function(String, PuzzleOption) onDragStarted;
+  final VoidCallback onDragEnd;
+  final String? hoveringOverBlankId;
+  final void Function(String?) onHoverBlank;
 
   const DragTargetBlank({
     super.key,
     required this.blankId,
     required this.filledOption,
     required this.onOptionDropped,
+    required this.draggingFromBlankId,
+    required this.draggingOption,
+    required this.allFilledBlanks,
+    required this.onDragStarted,
+    required this.onDragEnd,
+    required this.hoveringOverBlankId,
+    required this.onHoverBlank,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    // Determinar si este blank es el origen del arrastre
+    final bool isSourceBlank = draggingFromBlankId == blankId;
+    
+    // Determinar si el cursor está sobre otro blank con chip (para intercambio)
+    final bool isHoveringOverOtherBlank = hoveringOverBlankId != null && 
+                                          hoveringOverBlankId != blankId;
+    final PuzzleOption? hoveringBlankOption = isHoveringOverOtherBlank 
+        ? allFilledBlanks[hoveringOverBlankId]
+        : null;
+    
     return DragTarget<PuzzleOption>(
+      onMove: (details) {
+        // Notificar que el cursor está sobre este blank SOLO si hay drag activo
+        if (draggingFromBlankId != null) {
+          onHoverBlank(blankId);
+        }
+      },
+      onLeave: (data) {
+        // Notificar que el cursor salió de este blank
+        onHoverBlank(null);
+      },
       builder: (context, candidateData, rejectedData) {
+        // Si hay un chip siendo arrastrado sobre este blank
+        final bool isBeingDraggedOver = candidateData.isNotEmpty;
+        final PuzzleOption? incomingOption = 
+            candidateData.isNotEmpty ? candidateData.first : null;
+        
+        // CASO ESPECIAL 1: Este es el blank origen durante el drag ACTIVO
+        // Solo aplicar esta lógica si realmente hay un drag en progreso
+        // (verificando que filledOption coincida con draggingOption)
+        // PERO: si estamos arrastrando de vuelta sobre el mismo blank (regresando),
+        // NO aplicar esta lógica y dejar que se maneje normalmente
+        if (isSourceBlank && 
+            draggingOption != null && 
+            draggingFromBlankId != null &&
+            filledOption?.uniqueId == draggingOption?.uniqueId &&
+            !isBeingDraggedOver) { // <-- NUEVO: No aplicar si estamos sobre el mismo blank
+          // Si además estamos sobre otro blank con chip, mostrar preview del intercambio
+          if (hoveringBlankOption != null &&
+              hoveringOverBlankId != null &&
+              hoveringOverBlankId != blankId) {
+            // Preview del chip que va a recibir
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0),
+                color: colorScheme.tertiary.withOpacity(0.25),
+                border: Border.all(
+                  color: colorScheme.tertiary,
+                  width: 3.0,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                hoveringBlankOption.text,
+                style: TextStyle(
+                  color: colorScheme.tertiary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            );
+          }
+          
+          // Si NO estamos sobre otro blank (o no tiene chip), mostrar vacío
+          // mientras se arrastra
+          return const EmptyBlank();
+        }
+        
+        // Si estamos arrastrando de vuelta sobre el mismo blank origen,
+        // el DraggableOption maneja esto automáticamente con su childWhenDragging
+        // así que continuamos con la lógica normal
+        
+        // CASO 1: Blank vacío
         if (filledOption == null) {
-          return EmptyBlank(
-            isHighlighted: candidateData.isNotEmpty, 
+          // Si están arrastrando algo sobre él, mostrar preview
+          if (isBeingDraggedOver && incomingOption != null) {
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0),
+                color: colorScheme.primary.withOpacity(0.2),
+                border: Border.all(
+                  color: colorScheme.primary,
+                  width: 3.0,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(
+                incomingOption.text,
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            );
+          }
+          // Si no, mostrar blank vacío normal
+          return const EmptyBlank();
+        }
+        
+        // CASO 2: Blank con chip
+        // Si están arrastrando otro chip sobre él, SOLO mostrar el preview (sin superposición)
+        if (isBeingDraggedOver && 
+            incomingOption != null && 
+            incomingOption.uniqueId != filledOption!.uniqueId) {
+          // Preview del chip que va a llegar
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12.0),
+              color: colorScheme.primary.withOpacity(0.25),
+              border: Border.all(
+                color: colorScheme.primary,
+                width: 3.0,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text(
+              incomingOption.text,
+              style: TextStyle(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
           );
         }
+        
+        // Si no hay drag sobre este blank, mostrar el chip normal draggable
         return DraggableOption(
           option: filledOption!,
           isFilled: true,
+          onDragStarted: () => onDragStarted(blankId, filledOption!),
+          onDragEnd: onDragEnd,
         );
       },
       onWillAcceptWithDetails: (details) => true,
       onAcceptWithDetails: (details) {
+        // Limpiar INMEDIATAMENTE el hover y llamar onDragEnd para limpiar el estado
+        onHoverBlank(null);
+        onDragEnd(); // Limpiar el estado de drag inmediatamente
+        // Luego procesar el drop
         onOptionDropped(blankId, details.data);
       },
     );

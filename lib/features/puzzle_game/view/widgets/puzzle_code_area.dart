@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_widgets.dart';
 
-class PuzzleCodeArea extends StatelessWidget {
+class PuzzleCodeArea extends StatefulWidget {
   final List<PuzzleLine> lines;
   final Map<String, PuzzleOption?> filledBlanks;
   final void Function(String, PuzzleOption) onOptionDropped;
@@ -13,6 +13,48 @@ class PuzzleCodeArea extends StatelessWidget {
     required this.filledBlanks,
     required this.onOptionDropped,
   });
+
+  @override
+  State<PuzzleCodeArea> createState() => _PuzzleCodeAreaState();
+}
+
+class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
+  // Rastrear qué chip está siendo arrastrado y desde dónde
+  String? _draggingFromBlankId;
+  PuzzleOption? _draggingOption;
+  bool _isDragging = false; // Prevenir múltiples llamadas a onDragStarted
+  String? _hoveringOverBlankId; // Nuevo: rastrear sobre qué blank está el cursor
+
+  void _onDragStarted(String blankId, PuzzleOption option) {
+    if (_isDragging) return; // Ya estamos arrastrando, ignorar
+    setState(() {
+      _draggingFromBlankId = blankId;
+      _draggingOption = option;
+      _isDragging = true;
+    });
+  }
+
+  void _onDragEnd() {
+    // Usar un pequeño delay para asegurar que el estado se limpie después del drop
+    Future.microtask(() {
+      if (mounted) {
+        setState(() {
+          _draggingFromBlankId = null;
+          _draggingOption = null;
+          _isDragging = false;
+          _hoveringOverBlankId = null;
+        });
+      }
+    });
+  }
+
+  void _onHoverBlank(String? blankId) {
+    if (_hoveringOverBlankId != blankId) {
+      setState(() {
+        _hoveringOverBlankId = blankId;
+      });
+    }
+  }
 
   // --- 1. FUNCIÓN HELPER PARA LOS COLORES ---
   TextStyle _getStyleForToken(
@@ -60,7 +102,7 @@ class PuzzleCodeArea extends StatelessWidget {
       child: RichText(
         text: TextSpan(
           style: baseStyle, // Estilo base para todo
-          children: lines.map((line) {
+          children: widget.lines.map((line) {
             // --- 3. LÓGICA DE RENDERIZADO MODIFICADA
             if (line is TokenLine) {
               return TextSpan(
@@ -77,7 +119,7 @@ class PuzzleCodeArea extends StatelessWidget {
 
             if (line is BlankLine) {
               final blankId = line.id;
-              final filledOption = filledBlanks[blankId];
+              final filledOption = widget.filledBlanks[blankId];
 
               return WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
@@ -86,7 +128,14 @@ class PuzzleCodeArea extends StatelessWidget {
                   child: DragTargetBlank(
                     blankId: blankId,
                     filledOption: filledOption,
-                    onOptionDropped: onOptionDropped,
+                    onOptionDropped: widget.onOptionDropped,
+                    draggingFromBlankId: _draggingFromBlankId,
+                    draggingOption: _draggingOption,
+                    allFilledBlanks: widget.filledBlanks,
+                    onDragStarted: _onDragStarted,
+                    onDragEnd: _onDragEnd,
+                    hoveringOverBlankId: _hoveringOverBlankId,
+                    onHoverBlank: _onHoverBlank,
                   ),
                 ),
               );

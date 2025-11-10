@@ -282,7 +282,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     double progress = _solvedPairIds.length / widget.challenge.pares.length;
     bool isComplete = progress == 1.0;
 
-    // --- FUSIÓN: Se usa la lógica de UI de ELLOS (theme-aware) ---
     final appBarState = ref.watch(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -293,11 +292,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     return Theme(
       data: challengeTheme,
       child: Scaffold(
-        backgroundColor: colorScheme.surface, // <-- Usar color de tema
+        backgroundColor: colorScheme.surface,
         appBar: ChallengeAppBar2(
-          progress: progress, // Le pasamos el progreso
+          progress: progress,
           onClose: () {
-            // Reutilizamos la lógica de salida del quiz
             showExitDialog(context);
           },
         ),
@@ -313,7 +311,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface, // <-- Usar color de tema
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -322,24 +320,41 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: GridView.builder(
-                    key: const ValueKey('grid_view'),
-                    itemCount: _items.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 2.8,
-                          crossAxisSpacing: 12.0,
-                          mainAxisSpacing: 30.0,
+                  child: ListView.builder(
+                    key: const ValueKey('list_view'),
+                    itemCount: (_items.length / 2).ceil(),
+                    itemBuilder: (context, rowIndex) {
+                      final leftIndex = rowIndex * 2;
+                      final rightIndex = leftIndex + 1;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _buildItemChip(
+                                  _items[leftIndex],
+                                  colorScheme,
+                                ),
+                              ),
+                              const SizedBox(width: 12.0),
+                              if (rightIndex < _items.length)
+                                Expanded(
+                                  child: _buildItemChip(
+                                    _items[rightIndex],
+                                    colorScheme,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                    itemBuilder: (context, index) {
-                      // Pasa el colorScheme al widget
-                      return _buildItemChip(_items[index], colorScheme);
+                      );
                     },
                   ),
                 ),
               ),
-              // Pasa el colorScheme al widget
               _buildCheckButton(isComplete, colorScheme),
             ],
           ),
@@ -348,33 +363,29 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
-  // --- FUSIÓN: Se usa el '_buildItemChip' de ELLOS (theme-aware) ---
   Widget _buildItemChip(ChallengeItem item, ColorScheme colorScheme) {
     final bool isSolved = _solvedPairIds.contains(item.pairId);
     final bool isSelected = _selectedItem == item;
     final bool isMarkedIncorrect =
         _isIncorrect && (_incorrectItem1 == item || _incorrectItem2 == item);
 
-    Color backgroundColor = colorScheme.surfaceContainer; // <-- Default
-    Color borderColor = colorScheme.outline; // <-- Default
-    Color textColor = colorScheme.onSurfaceVariant; // <-- Default
+    Color backgroundColor = colorScheme.surfaceContainer;
+    Color borderColor = colorScheme.outline;
+    Color textColor = colorScheme.onSurfaceVariant;
     double elevation = 2.0;
     FontWeight fontWeight = FontWeight.bold;
 
     if (isSolved) {
-      // Verde (éxito)
       backgroundColor = Colors.green.withAlpha(51);
       borderColor = Colors.green;
       textColor = Colors.green;
       elevation = 0.0;
     } else if (isMarkedIncorrect) {
-      // Rojo (error)
       backgroundColor = Colors.red.withAlpha(51);
       borderColor = Colors.red;
       textColor = Colors.red;
       elevation = 2.0;
     } else if (isSelected) {
-      // Primario (seleccionado)
       backgroundColor = colorScheme.primaryContainer.withAlpha(77);
       borderColor = colorScheme.primary;
       textColor = colorScheme.primary;
@@ -392,7 +403,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Container(
-          width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12.0),
@@ -400,16 +410,18 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
           ),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 12.0,
+              ),
               child: Text(
                 item.text,
                 textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: textColor,
                   fontWeight: fontWeight,
                   fontSize: 16,
+                  height: 1.3,
                 ),
               ),
             ),

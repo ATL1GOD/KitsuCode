@@ -1,87 +1,222 @@
-// [COMIENZO DEL ARCHIVO home_provider.dart]
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kitsucode/features/home/model/home_model.dart';
-// ¡¡Importa la nueva clase HomeMapData!!
+import 'package:kitsucode/features/home/model/home_model.dart'; // ¡Importante!
 import 'package:kitsucode/features/home/repository/home_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// 1. El Provider (ViewModel)
+// provider de progreso en tiempo real (TU CÓDIGO - SIN CAMBIOS)
+final progressRealtimeProvider = Provider<RealtimeChannel?>((ref) {
+  final supabase = Supabase.instance.client;
+  final currentUserId = supabase.auth.currentUser?.id;
+
+  if (currentUserId == null) return null;
+
+  final channel = supabase.channel('public:progreso_usuario:home_v4'); 
+  channel.onPostgresChanges(
+    event: PostgresChangeEvent.insert,
+    schema: 'public',
+    table: 'progreso_usuario',
+    filter: PostgresChangeFilter(
+      type: PostgresChangeFilterType.eq,
+      column: 'id_usuario',
+      value: currentUserId,
+    ),
+    callback: (payload) {
+      try {
+        final newRecord = payload.newRecord;
+        if (newRecord.isEmpty) return;
+        
+        final newLevelId = newRecord['id_nivel'] as int?;
+        
+        if (newLevelId != null) {
+          final notifier = ref.read(homeViewModelProvider.notifier);
+          notifier.unlockLevelLocally(newLevelId);
+        }
+      } catch (e) {
+        try {
+          final notifier = ref.read(homeViewModelProvider.notifier);
+          notifier.triggerMapUpdate();
+        } catch (_) {
+          // Si el provider no existe, ignoramos
+        }
+      }
+    },
+  ).subscribe();
+
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
+
+  return channel;
+});
+// --- (Fin de provider) ---
+
+
+/// Este provider guarda el ID del último nivel desbloqueado (SIN CAMBIOS)
+final newlyUnlockedLevelProvider = StateProvider<int?>((ref) => null);
+// --- FIN ---
+
+// --- ¡¡INICIO DE LA MODIFICACIÓN!! ---
+/// Provider que escucha cambios ESTRUCTURALES en el mapa (nuevos niveles/secciones).
+/// ¡Se quitó .autoDispose para hacerlo persistente!
+final mapStructureRealtimeProvider = Provider((ref) { // <-- ¡CAMBIO AQUÍ!
+  final supabase = Supabase.instance.client;
+
+  final channel = supabase.channel('public:map_structure_changes');
+
+  void reloadMap(dynamic payload) {
+    debugPrint("--- Realtime: ¡Cambio ESTRUCTURAL detectado en el mapa! Recargando... ---");
+    // Invalidamos el provider principal del mapa.
+    ref.invalidate(homeViewModelProvider);
+  }
+
+  // Escuchamos INSERT, UPDATE o DELETE en niveles Y secciones
+  channel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all, // Escucha INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'niveles',
+        callback: reloadMap,
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.all, // Escucha INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: 'secciones',
+        callback: reloadMap,
+      )
+      .subscribe();
+
+  ref.onDispose(() {
+    supabase.removeChannel(channel);
+  });
+
+  // ¡Devolvemos el canal para que el provider tenga un valor!
+  return channel; 
+});
+// --- ¡¡FIN DE LA MODIFICACIÓN!! ---
+
+
 final homeViewModelProvider =
     AsyncNotifierProvider<HomeViewModel, List<SectionData>>(HomeViewModel.new);
 
-// 2. El Notifier (Clase del ViewModel)
 class HomeViewModel extends AsyncNotifier<List<SectionData>> {
+  
   @override
   Future<List<SectionData>> build() async {
-    final appBarState = ref.watch(appBarProvider);
-    if (appBarState.isLoading || appBarState.languageId == 0) {
+    // --- ¡MODIFICACIÓN! ---
+    // ¡Quitamos el watch de aquí!
+    // ref.watch(mapStructureRealtimeProvider); // <-- ¡LÍNEA ELIMINADA!
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // (Tu lógica original de build)
+    final languageId = ref.watch(currentLanguageIdProvider);
+    if (languageId == 0) {
       return [];
     }
-    return _fetchSections(appBarState.languageId);
+    return _fetchSections(languageId);
   }
 
-  // --- ¡¡MÉTODO CLAVE MODIFICADO!! ---
-  Future<List<SectionData>> _fetchSections(int languageId) async {
-    final repository = ref.read(sectionRepositoryProvider);
+  // --- (El resto de tu clase HomeViewModel está perfecta, no necesita cambios) ---
 
-    // 1. Obtenemos los datos (ambas listas)
-    final HomeMapData homeData = await repository.getHomeMapData(languageId);
-
-    final List<SectionData> sections = homeData.sections;
-    final Set<int> completedIds = homeData.completedLevelIds;
-
-    // 2. Aplicamos el PROGRESO (isCompleted) manualmente
-    //    Usamos 'map' para recrear las listas con los datos actualizados
-    final List<SectionData> sectionsWithProgress = sections.map((section) {
-      // Creamos la nueva lista de niveles para esta sección
-      final List<LevelData> updatedLevels = section.levels.map((level) {
-        // Comprobamos si el ID de este nivel está en el Set de completados
-        final bool isCompleted = completedIds.contains(level.idNivel);
-
-        return level.copyWith(
-          isCompleted: isCompleted, // ¡Aplicamos el progreso!
-        );
-      }).toList(); // Fin .map de niveles
-
-      // Devolvemos la sección con su nueva lista de niveles
-      return section.copyWith(levels: updatedLevels);
-    }).toList(); // Fin .map de secciones
-
-    // --- Tus prints de debug (¡ahora deberían funcionar!) ---
-    debugPrint("--- DATOS ANTES DE LÓGICA (PROGRESO APLICADO) ---");
-    for (var sec in sectionsWithProgress) {
-      for (var lvl in sec.levels) {
-        debugPrint(
-          'Seccion ${sec.etapa}, Nivel ${lvl.nivel} (ID: ${lvl.idNivel}), isCompleted: ${lvl.isCompleted}',
-        );
-      }
+  /// SOLUCIÓN A: Actualiza el estado localmente sin re-consultar
+  void unlockLevelLocally(int newLevelId) {
+    final currentState = state.value;
+    if (currentState == null) {
+      triggerMapUpdate(); 
+      return;
     }
-    // --- Fin Debug ---
 
-    // 3. ¡Aplicamos la lógica de BLOQUEO (isLocked)!
+    final List<SectionData> sectionsWithNewProgress = currentState.map((section) {
+      return section.copyWith(
+        levels: section.levels.map((level) {
+          if (level.idNivel == newLevelId) {
+            return level.copyWith(isCompleted: true);
+          }
+          return level;
+        }).toList(),
+      );
+    }).toList();
+
     final List<SectionData> finalSections =
-        SectionData.applySequentialSectionLock(sectionsWithProgress);
+        SectionData.applySequentialSectionLock(sectionsWithNewProgress);
 
-    // --- Debug final ---
-    debugPrint("--- DATOS DESPUÉS DE LÓGICA (BLOQUEO APLICADO) ---");
-    for (var sec in finalSections) {
-      for (var lvl in sec.levels) {
-        debugPrint(
-          'Seccion ${sec.etapa}, Nivel ${lvl.nivel}, isLocked: ${lvl.isLocked}',
-        );
+    int? levelToAnimate;
+    bool foundCompletedLevel = false;
+    final allLevelsOrdered = finalSections.expand((section) => section.levels);
+
+    for (final level in allLevelsOrdered) {
+      if (foundCompletedLevel) {
+        if (!level.isLocked) {
+           levelToAnimate = level.idNivel;
+        }
+        break; 
+      }
+      if (level.idNivel == newLevelId) {
+        foundCompletedLevel = true;
       }
     }
-    // --- Fin Debug ---
 
-    // 4. Devolvemos la lista final a la UI
-    return finalSections;
+    if (levelToAnimate != null) {
+      ref.read(newlyUnlockedLevelProvider.notifier).state = levelToAnimate;
+    }
+
+    state = AsyncData(finalSections);
+  }
+  
+  /// Fallback por si `unlockLevelLocally` falla
+  Future<void> triggerMapUpdate() async {
+    await Future.delayed(const Duration(milliseconds: 500)); 
+    
+    final languageId = ref.read(currentLanguageIdProvider);
+    if (languageId == 0) return;
+    try {
+      final newSections = await _fetchSections(languageId);
+      state = AsyncData(newSections);
+    } catch (e, s) {
+      state = AsyncError(e, s);
+    }
   }
 
-  // (Tu función de refresh)
+  
+  /// Esta función ahora contiene la SOLUCIÓN B y la C (Corrección)
+  Future<List<SectionData>> _fetchSections(int languageId) async {
+    try {
+      final repository = ref.read(sectionRepositoryProvider);
+      final HomeMapData homeData = await repository.getHomeMapData(languageId);
+      final List<SectionData> sections = homeData.sections;
+    
+      final Set<int> completedIds = homeData.completedLevelIds; 
+
+      final List<SectionData> sortedSections = sections.map((section) {
+        final sortedLevels = List<LevelData>.from(section.levels);
+        sortedLevels.sort((a, b) => a.nivel.compareTo(b.nivel)); 
+        return section.copyWith(levels: sortedLevels);
+      }).toList();
+
+      final List<SectionData> sectionsWithProgress = sortedSections.map((section) { 
+        final List<LevelData> updatedLevels = section.levels.map((level) {
+          final bool isCompleted = completedIds.contains(level.idNivel);
+          return level.copyWith(
+            isCompleted: isCompleted,
+          );
+        }).toList();
+        return section.copyWith(levels: updatedLevels);
+      }).toList();
+
+      final List<SectionData> finalSections =
+          SectionData.applySequentialSectionLock(sectionsWithProgress);
+          
+      return finalSections;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // refreshSections no cambia
   Future<void> refreshSections() async {
     state = const AsyncValue.loading();
-    final languageId = ref.read(appBarProvider).languageId;
+    final languageId = ref.read(currentLanguageIdProvider);
     if (languageId == 0) {
       state = await AsyncValue.guard(() => Future.value([]));
       return;
@@ -89,4 +224,3 @@ class HomeViewModel extends AsyncNotifier<List<SectionData>> {
     state = await AsyncValue.guard(() => _fetchSections(languageId));
   }
 }
-// [FIN DEL ARCHIVO home_provider.dart]

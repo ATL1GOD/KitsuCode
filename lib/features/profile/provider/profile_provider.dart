@@ -133,40 +133,71 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
 
 final achievementRealtimeProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
+  final currentUserId = supabase.auth.currentUser?.id;
+  
+  if (currentUserId == null) return;
 
-  // 1. Creamos un canal para la tabla 'usuario_logro'
-  final channel = supabase.channel('public:usuario_logro');
+  final channelsToCleanup = <RealtimeChannel>[];
 
-  channel.onPostgresChanges(
-    event: PostgresChangeEvent.insert, // <-- ¡Solo nos importa cuando se INSERTA un nuevo logro!
+  // --- 1. Listener para cuando un USUARIO GANA UN LOGRO (Tu lógica original) ---
+  // Se encarga de actualizar la lista de logros si el usuario actual (o cualquier otro que se esté viendo) gana uno.
+  final earnedChannel = supabase.channel('public:usuario_logro_earned');
+  channelsToCleanup.add(earnedChannel);
+  
+  earnedChannel.onPostgresChanges(
+    event: PostgresChangeEvent.insert, 
     schema: 'public',
     table: 'usuario_logro',
     callback: (payload) {
-      // ¡Alguien ganó un logro!
-      // ignore: avoid_print
-      print('Cambio detectado en usuario_logro: ${payload.newRecord}');
-
       final newRecord = payload.newRecord;
       if (newRecord.isNotEmpty) {
-        
-        // 2. Obtenemos el ID del usuario que ganó el logro
         final userId = newRecord['id_usuario'];
-
-        // 3. Invalidamos el provider de logros para ESE usuario
-        // Esto forzará a la UI a recargar la lista de logros
         if (userId != null) {
-          ref.invalidate(userAchievementsProvider(userId));
+          // Invalida la lista de logros para el usuario que ganó el logro
+          ref.invalidate(userAchievementsProvider(userId)); 
         }
       }
     },
-  ).subscribe(); // <-- ¡No olvides suscribirte!
+  ).subscribe();
 
-  // 4. Limpiamos el canal cuando el provider ya no se use
+  // Listener para cambios GLOBALES en la tabla de logros (C/D)
+  final globalAchievementChannel = supabase.channel('public:logro_definition');
+  channelsToCleanup.add(globalAchievementChannel);
+  
+  // Callback sin guión bajo inicial (evita el warning)
+  void globalAchievementCallback(dynamic payload) {
+    debugPrint("Realtime: Logro GLOBAL (C/D) detectado. Forzando recarga de lista.");
+    
+    // Forzamos la recarga de la lista de logros del usuario actual.
+    ref.invalidate(userAchievementsProvider(currentUserId)); 
+  }
+  
+  // Suscribimos a INSERT y DELETE en una secuencia encadenada.
+  globalAchievementChannel
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert, // Evento 1: CREACIÓN
+        schema: 'public',
+        table: 'logro',
+        callback: globalAchievementCallback,
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete, // Evento 2: ELIMINACIÓN
+        schema: 'public',
+        table: 'logro',
+        callback: globalAchievementCallback,
+      )
+      .subscribe();
+
+
+  // 3. Limpieza: Eliminar todos los canales al desecharse el provider
   ref.onDispose(() {
-    supabase.removeChannel(channel);
+    for (final channel in channelsToCleanup) {
+      supabase.removeChannel(channel);
+    }
   });
 
-  return channel;
+  // No retornamos nada, solo usamos el side-effect
+  return; 
 });
 
 // --- PASO 1: Un modelo simple para los datos de la notificación ---

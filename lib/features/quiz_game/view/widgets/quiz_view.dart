@@ -1,4 +1,4 @@
-// lib/features/quiz_game/view/widgets/quiz_page.dart
+// lib/features/quiz_game/view/widgets/quiz_view.dart
 
 import 'dart:async';
 import 'dart:math';
@@ -17,11 +17,20 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
     show RecursoModel;
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 
+// --- FUSIÓN: Se añade el import de TU lógica de animación (dxniel7) ---
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
+
 class QuizPage extends ConsumerStatefulWidget {
   final QuizData mydata;
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
-  const QuizPage({super.key, required this.mydata, required this.retoId});
+  const QuizPage({
+    super.key, 
+    required this.mydata, 
+    required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
+  });
 
   @override
   ConsumerState<QuizPage> createState() => _QuizPageState();
@@ -58,6 +67,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     super.dispose();
   }
 
+  // ... (Las funciones _genRandomArray, _startTimer, _nextQuestion,
+  // y _checkAnswer son idénticas o mejores en la versión de 'ELLOS',
+  // así que las mantenemos) ...
+
   void _genRandomArray() {
     if (widget.mydata.questions.isNotEmpty) {
       totalQuestions = widget.mydata.totalQuestions;
@@ -88,8 +101,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
         if (timer < 1) {
           t.cancel();
-          // --- REFACTOR: 'colorScheme' ya no es necesario aquí ---
-          // Simplemente llama a _checkAnswer.
           _checkAnswer("");
         } else if (_cancelTimer == true) {
           t.cancel();
@@ -131,10 +142,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
     _startTimer();
   }
-
-  // --- REFACTOR: ¡Parámetro 'colorScheme' eliminado! ---
-  // No se estaba usando dentro de la función, así que lo eliminé
-  // para simplificar el código y las llamadas a esta función.
+  
   void _checkAnswer(String k) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
 
@@ -154,7 +162,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
   }
 
-  // --- Lógica del modal (movida de result_page) ---
+  // --- Lógica del modal (base de 'ELLOS') ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -170,13 +178,16 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
   }
 
+
+  // --- FUSIÓN: Se usa TU '_showFeedbackModal' (dxniel7) ---
+  // ¡¡Esta es la lógica CORRECTA para trofeos y animación!!
   void _showFeedbackModal({
     required int percentage,
     required int durationInSeconds,
     required List<RecursoModel> recursos,
   }) {
-    if (_hasSubmitted) return;
-
+    if (_hasSubmitted) return; 
+    
     final bool esCorrecto = (percentage > 50);
 
     final appBarState = ref.read(appBarProvider);
@@ -189,56 +200,91 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      useRootNavigator: true,
-      // ✅ 1. DESHABILITA EL TAP AFUERA
+      useRootNavigator: true, 
       isDismissible: false,
-      // ✅ 2. DESHABILITA ARRASTRAR PARA CERRAR
       enableDrag: false,
-      builder: (ctx) {
+      builder: (ctx) { 
         return Theme(
           data: challengeTheme,
           child: ChallengeFeedbackModal(
             isCorrect: esCorrecto,
+            // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
-              Navigator.of(ctx).pop();
-
+              
+              Navigator.of(ctx).pop(); 
+              
               if (_hasSubmitted) return;
               _hasSubmitted = true;
+              
+              try {
+                // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
+                final currentStats = ref.read(appBarProvider);
+                ref.read(oldStatsValuesProvider.notifier).state = [
+                  currentStats.lives,
+                  currentStats.trophies,
+                  currentStats.streak,
+                ];
+                
+                // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
+                markForStatsRefresh(ref);
 
-              final repository = ref.read(challengeRepositoryProvider);
-              final int retoIdAsInt = int.parse(widget.retoId);
+                final repository = ref.read(challengeRepositoryProvider);
+                final int retoIdAsInt = int.parse(widget.retoId);
+                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
 
-              if (esCorrecto) {
-                await repository.submitChallengeAttempt(
-                  retoId: retoIdAsInt,
-                  fueExitoso: true,
-                  tiempoQueTardo: durationInSeconds,
-                );
+                if (esCorrecto) {
+                  // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
+                  final int trofeos = await repository.submitChallengeAttempt(
+                    retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
+                    fueExitoso: true,
+                    tiempoQueTardo: durationInSeconds, 
+                  );
+                  
+                  ref.invalidate(globalRankingProvider);
+                  
+                  // 2. Navegar CON TROFEOS
+                  if (!context.mounted) return;
+                  // Cambiado a push para mantener la pantalla del quiz en la pila
+                  context.push('/challenge_success', extra: trofeos);
+                
+                } else {
+                  await repository.submitChallengeAttempt(
+                    retoId: retoIdAsInt,
+                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
+                    fueExitoso: false,
+                    tiempoQueTardo: durationInSeconds,
+                  );
 
-                ref.read(appBarProvider.notifier).fetchStats();
-                ref.invalidate(globalRankingProvider);
-
-                if (!context.mounted) return;
-                context.pushReplacement('/challenge_success', extra: 0);
-              } else {
-                await repository.submitChallengeAttempt(
-                  retoId: retoIdAsInt,
-                  fueExitoso: false,
-                  tiempoQueTardo: durationInSeconds,
-                );
-
-                ref.read(appBarProvider.notifier).fetchStats();
-
-                if (!context.mounted) return;
-                context.pushReplacement('/challenge_failure', extra: recursos);
+                  // 2. Obtener recursos
+                  final List<RecursoModel> recursos = widget.mydata.recursos;
+                  
+                  // 3. Navegar
+                  if (!context.mounted) return;
+                  context.push('/challenge_failure', extra: recursos);
+                }
+              } catch (e) {
+                // Mostrar error al usuario
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al enviar resultado: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
+            // --- FIN DE TU LÓGICA ---
           ),
         );
       },
     );
   }
+  // --- FIN FUSIÓN ---
 
+
+  // --- FUSIÓN: Se usa el '_choiceButton' de ELLOS (UI actualizada) ---
   Widget _choiceButton(String k, ColorScheme colorScheme) {
     bool isSelected = selectedAnswer == k;
 
@@ -256,9 +302,17 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         borderColor = Colors.red;
         textColor = Colors.red;
       } else {
-        borderColor = colorScheme.outline;
-        textColor = colorScheme.onSurface;
-        buttonColor = colorScheme.surfaceContainer;
+        // --- Fix de 'ELLOS' para mostrar la correcta si te equivocas ---
+        String questionKey = widget.mydata.questions.keys.elementAt(i);
+        if (k == widget.mydata.answers[questionKey]) {
+          buttonColor = Colors.green.withAlpha(51);
+          borderColor = Colors.green;
+          textColor = Colors.green;
+        } else {
+           borderColor = colorScheme.outline;
+           textColor = colorScheme.onSurface;
+           buttonColor = colorScheme.surfaceContainer;
+        }
       }
     } else if (isSelected) {
       buttonColor = colorScheme.primaryContainer.withAlpha(77);
@@ -285,8 +339,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               },
         child: Text(
           widget.mydata.options[widget.mydata.questions.keys.elementAt(
-                i,
-              )]![k] ??
+                  i,
+                )]![k] ??
               "",
           textAlign: TextAlign.start,
           maxLines: 5,
@@ -302,10 +356,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     );
   }
 
-  // --- REFACTOR (PASO 1): Extraer Widgets del 'build' ---
-  // El método 'build' se vuelve mucho más limpio al
-  // mover la construcción de UI compleja a métodos privados.
-
+  // --- FUSIÓN: Se usa la UI de ELLOS (refactorizada) ---
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([
@@ -331,8 +382,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
     double progress = j / totalQuestions;
 
-    // --- REFACTOR (PASO 2): 'build' método limpio ---
-    // Ahora el método 'build' solo se encarga de ensamblar las piezas.
     return Theme(
       data: challengeTheme,
       child: PopScope(
@@ -488,8 +537,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               backgroundColor: disableAnswer
                   ? (_wasCorrect == true ? Colors.green : Colors.red)
                   : (selectedAnswer != null
-                        ? colorScheme.primary
-                        : colorScheme.surfaceContainerHighest),
+                      ? colorScheme.primary
+                      : colorScheme.surfaceContainerHighest),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -502,7 +551,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     if (disableAnswer) {
                       _nextQuestion();
                     } else {
-                      // --- REFACTOR: Llamada simplificada ---
                       _checkAnswer(selectedAnswer!);
                     }
                   },

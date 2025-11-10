@@ -147,14 +147,28 @@ class ProfileHeader extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildFollowStat(context, userProfile.siguiendoCount.toString(), 'Siguiendo'),
+                    // Se modifica para ser clickable y navegar a /profile/:userId/follow/following
+                    _buildFollowStat(
+                      context,
+                      userProfile.siguiendoCount.toString(),
+                      'Siguiendo',
+                      userProfile.userId, 
+                      'following',
+                    ),
                     Container(
                       height: 30,
                       width: 1,
                       color: colors.onSurface.withOpacity(0.2),
                       margin: const EdgeInsets.symmetric(horizontal: 24),
                     ),
-                    _buildFollowStat(context, userProfile.seguidoresCount.toString(), 'Seguidores'),
+                    // Se modifica para ser clickable y navegar a /profile/:userId/follow/followers
+                    _buildFollowStat(
+                      context,
+                      userProfile.seguidoresCount.toString(),
+                      'Seguidores',
+                      userProfile.userId, 
+                      'followers',
+                    ),
                   ],
                 ),
               ),
@@ -165,13 +179,24 @@ class ProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildFollowStat(BuildContext context, String count, String label) {
+  // Se modifica el método para aceptar userId y type, y se envuelve en un InkWell
+  Widget _buildFollowStat(BuildContext context, String count, String label, String userId, String type) {
     final textTheme = Theme.of(context).textTheme;
-    return Column(
-      children: [
-        Text(count, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-        Text(label, style: textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-      ],
+    return InkWell(
+      onTap: () {
+        // Navegación a la nueva pantalla de listas sociales
+        context.push('/profile/$userId/follow/$type');
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+        child: Column(
+          children: [
+            Text(count, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+            Text(label, style: textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+          ],
+        ),
+      ),
     );
   }
 }

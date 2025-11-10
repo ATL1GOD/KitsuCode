@@ -15,8 +15,13 @@ import 'package:kitsucode/features/puzzle_game/view/puzzle_loader_page.dart';
 
 class RetoDistribuidorPage extends ConsumerWidget {
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
-  const RetoDistribuidorPage({super.key, required this.retoId});
+  const RetoDistribuidorPage({
+    super.key, 
+    required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,6 +49,7 @@ class RetoDistribuidorPage extends ConsumerWidget {
             return QuizLoaderPage(
               challengeContent: challengeContent,
               retoId: retoId.toString(),
+              nivelId: nivelId, // ← ¡AÑADIDO!
             );
 
           // case 'Puzzle':
@@ -51,18 +57,21 @@ class RetoDistribuidorPage extends ConsumerWidget {
             return PuzzleLoaderPage(
               challengeContent: challengeContent,
               retoId: retoId,
+              nivelId: nivelId, // ← ¡AÑADIDO!
             );
 
           case 'Relacion':
             return ColumnsLoader(
               challengeContent: challengeContent,
               retoId: retoId,
+              nivelId: nivelId, // ← ¡AÑADIDO!
             );
 
           case 'Codigo':
             return CodigoLoader(
               challengeContent: challengeContent,
               retoId: retoId,
+              nivelId: nivelId, // ← ¡AÑADIDO!
             );
 
           default:

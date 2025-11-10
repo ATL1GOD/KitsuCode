@@ -8,11 +8,13 @@ import 'package:kitsucode/features/puzzle_game/view/puzzle_view.dart';
 class PuzzleLoaderPage extends StatelessWidget {
   final Map<String, dynamic> challengeContent;
   final String retoId; // (ej: "2")
+  final String nivelId; // ← ¡AÑADIDO!
 
   const PuzzleLoaderPage({
     super.key,
     required this.challengeContent,
     required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
   });
 
   @override
@@ -25,6 +27,7 @@ class PuzzleLoaderPage extends StatelessWidget {
           (ref) => PuzzleNotifier(
             challengeContent,
             int.parse(retoId), // Convierte "2" a 2
+            int.parse(nivelId), // ← ¡AÑADIDO!
             // ref, // <-- Eliminado
           ),
         ),

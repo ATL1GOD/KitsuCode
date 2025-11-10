@@ -10,11 +10,13 @@ import 'package:kitsucode/features/codigo_game/view/codigo_view.dart';
 class CodigoLoader extends ConsumerWidget {
   final Map<String, dynamic> challengeContent;
   final String retoId;
+  final String nivelId; // ← ¡AÑADIDO!
 
   const CodigoLoader({
     super.key,
     required this.challengeContent,
     required this.retoId,
+    required this.nivelId, // ← ¡AÑADIDO!
   });
 
   @override
@@ -24,7 +26,11 @@ class CodigoLoader extends ConsumerWidget {
       final challenge = CodigoChallenge.fromJson(challengeContent);
 
       // 2. Pasa el objeto parseado a la vista del reto
-      return CodigoChallengeView(challenge: challenge, retoId: retoId);
+      return CodigoChallengeView(
+        challenge: challenge, 
+        retoId: retoId,
+        nivelId: nivelId, // ← ¡AÑADIDO!
+      );
     } catch (e, stack) {
       // 3. Maneja cualquier error durante el parseo del JSON
       return Scaffold(

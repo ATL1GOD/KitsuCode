@@ -3,21 +3,26 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
-import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
-    show RecursoModel;
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+
 
 // --- DISTRIBUIDOR DE ESTADO
-final puzzleProvider =
-    StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>((ref) {
-      // Este error es correcto. Se anula en PuzzleLoaderPage.
-      throw UnimplementedError(
-        'PuzzleProvider debe ser anulado (overridden) por PuzzleLoaderPage '
-        'con el id_reto y el contenido del reto.',
-      );
-    });
+final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>(
+  (ref) {
+    // Este error es correcto. Se anula en PuzzleLoaderPage.
+    throw UnimplementedError(
+      'PuzzleProvider debe ser anulado (overridden) por PuzzleLoaderPage '
+      'con el id_reto y el contenido del reto.'
+    );
+  },
+);
 
 // --- ENUM (Sin cambios)
-enum PuzzleStatus { playing, correct, incorrect }
+enum PuzzleStatus {
+  playing,
+  correct,
+  incorrect,
+}
 
 // --- PuzzleState (Corregido con isLoading y error) ---
 @immutable
@@ -26,13 +31,14 @@ class PuzzleState {
   final Map<String, PuzzleOption?> filledBlanks;
   final List<PuzzleOption> availableOptions;
   final PuzzleStatus status;
-
+  
   // --- CAMPOS NUEVOS ---
-  final int challengeId;
+  final int challengeId; 
+  final int nivelId; // ← ¡AÑADIDO!
   final List<RecursoModel> recursos;
 
   // --- CAMPOS ORIGINALES (DE VUELTA) ---
-  final bool isLoading;
+  final bool isLoading; 
   final String? error;
 
   const PuzzleState({
@@ -41,6 +47,7 @@ class PuzzleState {
     this.availableOptions = const [],
     this.status = PuzzleStatus.playing,
     this.challengeId = 0,
+    this.nivelId = 0, // ← ¡AÑADIDO!
     this.recursos = const [],
     this.isLoading = true, // <-- Valor inicial
     this.error,
@@ -52,6 +59,7 @@ class PuzzleState {
     List<PuzzleOption>? availableOptions,
     PuzzleStatus? status,
     int? challengeId,
+    int? nivelId, // ← ¡AÑADIDO!
     List<RecursoModel>? recursos,
     bool? isLoading,
     String? error,
@@ -62,6 +70,7 @@ class PuzzleState {
       availableOptions: availableOptions ?? this.availableOptions,
       status: status ?? this.status,
       challengeId: challengeId ?? this.challengeId,
+      nivelId: nivelId ?? this.nivelId, // ← ¡AÑADIDO!
       recursos: recursos ?? this.recursos,
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -69,16 +78,20 @@ class PuzzleState {
   }
 }
 
+
 // --- PuzzleNotifier (Corregido) ---
 class PuzzleNotifier extends StateNotifier<PuzzleState> {
   // El constructor ya no necesita 'ref'
-  PuzzleNotifier(Map<String, dynamic> challengeContent, int challengeId)
-    : super(const PuzzleState()) {
-    _loadChallenge(challengeContent, challengeId);
+  PuzzleNotifier(
+    Map<String, dynamic> challengeContent,
+    int challengeId,
+    int nivelId, // ← ¡AÑADIDO!
+  ) : super(const PuzzleState()) {
+    _loadChallenge(challengeContent, challengeId, nivelId); // ← ¡MODIFICADO!
   }
 
   // Lógica de carga (con duplicados y campos de estado)
-  void _loadChallenge(Map<String, dynamic> challengeContent, int challengeId) {
+  void _loadChallenge(Map<String, dynamic> challengeContent, int challengeId, int nivelId) { // ← ¡MODIFICADO!
     try {
       final challenge = PuzzleChallengeModel.fromJson(challengeContent);
 
@@ -91,39 +104,33 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
 
       // --- ¡LÓGICA DE DUPLICADOS CORREGIDA! ---
       final List<PuzzleOption> bankOptions = [];
-
+      
       // 1. Añadir todas las opciones correctas (con duplicados)
       for (var line in challenge.lines) {
         if (line is BlankLine) {
           final templateOption = challenge.options.firstWhere(
             (opt) => opt.id == line.correctOptionId,
-            orElse: () => throw Exception(
-              "Opción correcta '${line.correctOptionId}' no encontrada",
-            ),
+            orElse: () => throw Exception("Opción correcta '${line.correctOptionId}' no encontrada"),
           );
-
-          bankOptions.add(
-            PuzzleOption(
-              id: templateOption.id,
-              text: templateOption.text,
-              uniqueId: UniqueKey().toString(), // ¡ID único!
-            ),
-          );
+          
+          bankOptions.add(PuzzleOption(
+            id: templateOption.id,
+            text: templateOption.text,
+            uniqueId: UniqueKey().toString(), // ¡ID único!
+          ));
         }
       }
 
       // 2. Añadir las opciones "distractoras"
       final correctIds = bankOptions.map((opt) => opt.id).toSet();
-
+      
       for (var templateOption in challenge.options) {
         if (!correctIds.contains(templateOption.id)) {
-          bankOptions.add(
-            PuzzleOption(
-              id: templateOption.id,
-              text: templateOption.text,
-              uniqueId: UniqueKey().toString(), // ¡ID único!
-            ),
-          );
+           bankOptions.add(PuzzleOption(
+            id: templateOption.id,
+            text: templateOption.text,
+            uniqueId: UniqueKey().toString(), // ¡ID único!
+          ));
         }
       }
 
@@ -136,6 +143,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         availableOptions: bankOptions,
         status: PuzzleStatus.playing,
         challengeId: challengeId,
+        nivelId: nivelId, // ← ¡AÑADIDO!
         recursos: challenge.recursos,
         isLoading: false, // <-- Corregido
         error: null,
@@ -152,14 +160,14 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   // Lógica de checkSolution (simple)
   void checkSolution() {
     if (state.challenge == null) return;
-
+    
     bool isCorrect = true;
     for (var line in state.challenge!.lines) {
       if (line is BlankLine) {
         final userOption = state.filledBlanks[line.id];
         if (userOption == null || userOption.id != line.correctOptionId) {
-          isCorrect = false;
-          break;
+          isCorrect = false; 
+          break; 
         }
       }
     }
@@ -172,15 +180,14 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   }
 
   // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN DEL BUG!! ---
-
+  
   void onOptionDroppedOnBlank(String blankId, PuzzleOption option) {
     // 1. Mira si ya hay una ficha en ese hueco
     final PuzzleOption? existingOption = state.filledBlanks[blankId];
 
     // 2. Prepara la nueva lista de opciones del banco
-    List<PuzzleOption> newAvailableOptions = state.availableOptions
-        .where((o) => o.uniqueId != option.uniqueId)
-        .toList();
+    List<PuzzleOption> newAvailableOptions = 
+        state.availableOptions.where((o) => o.uniqueId != option.uniqueId).toList();
 
     // 3. ¡LA CORRECCIÓN! Si había una ficha, devuélvela al banco
     if (existingOption != null) {
@@ -190,10 +197,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
 
     // 4. Actualiza el estado
     state = state.copyWith(
-      filledBlanks: {
-        ...state.filledBlanks,
-        blankId: option,
-      }, // Pone la nueva ficha
+      filledBlanks: {...state.filledBlanks, blankId: option}, // Pone la nueva ficha
       availableOptions: newAvailableOptions, // Actualiza el banco
       status: PuzzleStatus.playing,
     );
@@ -221,12 +225,13 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
   }
 
   void resetPuzzle() {
-    if (state.challenge == null) return;
-    // Recarga el reto con la lógica de duplicados
-    _loadChallenge(
-      {}, // Esto sigue estando mal si el JSON no está guardado,
-      // pero es la lógica que tenías.
-      state.challengeId,
-    );
+     if (state.challenge == null) return;
+     // Recarga el reto con la lógica de duplicados
+     _loadChallenge(
+       {}, // Esto sigue estando mal si el JSON no está guardado,
+          // pero es la lógica que tenías.
+       state.challengeId,
+       state.nivelId, // ← ¡AÑADIDO!
+     );
   }
 }

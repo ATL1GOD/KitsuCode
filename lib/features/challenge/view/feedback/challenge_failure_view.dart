@@ -5,17 +5,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+// --- FUSIÓN: Se mantiene TU import de navigation_tracker_provider ---
+import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Para abrir los enlaces
 
 // --- Modelo Temporal de Recursos ---
-// (Eventualmente moveremos esto a un archivo de modelo)
 class RecursoModel {
   final String titulo;
   final String url;
   
   RecursoModel({required this.titulo, required this.url});
 
-  // Usaremos un factory 'fromJson' para cuando lo conectemos a Supabase
   factory RecursoModel.fromJson(Map<String, dynamic> json) {
     return RecursoModel(
       titulo: json['titulo'] as String,
@@ -54,7 +54,6 @@ class ChallengeFailureView extends ConsumerWidget {
   Future<void> _launchURL(String urlString) async {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      // Podríamos mostrar un snackbar si falla
       debugPrint('No se pudo lanzar $urlString');
     }
   }
@@ -87,7 +86,7 @@ class ChallengeFailureView extends ConsumerWidget {
                 
                 // --- Animación o Ilustración ---
                 Image.asset(
-                  'assets/images/zorro_oops.png', // ¡Tu imagen de zorro oops!
+                  'assets/images/zorro_oops.png',
                   height: 200,
                   fit: BoxFit.contain,
                 ),
@@ -95,7 +94,7 @@ class ChallengeFailureView extends ConsumerWidget {
                 
                 // --- Mensaje de Ánimo ---
                 Text(
-                  '¡No te rindas!', // Como en la Imagen 4
+                  '¡No te rindas!',
                   textAlign: TextAlign.center,
                   style: textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -157,17 +156,26 @@ class ChallengeFailureView extends ConsumerWidget {
                 const Spacer(),
                 
                 // --- Botón de Continuar ---
+                // --- FUSIÓN: Se usa TU 'onPressed' (dxniel7) ---
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary, // Botón con color del lenguaje
+                    backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  onPressed: () {
-                    // Acción final: Regresar al home
+                  onPressed: () async {
+                    // Los valores viejos ya están guardados en oldStatsValuesProvider
+                    // Ahora hacemos fetchStats para obtener los nuevos valores
+                    await ref.read(appBarProvider.notifier).fetchStats();
+                    
+                    // Limpiar valores guardados y resetear flag
+                    ref.read(oldStatsValuesProvider.notifier).state = null;
+                    ref.read(shouldRefreshStatsProvider.notifier).state = false;
+                    
+                    if (!context.mounted) return;
                     context.go('/home');
                   },
                   child: const Text(

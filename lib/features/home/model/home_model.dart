@@ -7,9 +7,9 @@ Color _colorFromHex(String hexColor) {
   return Color(int.parse("FF$hex", radix: 16));
 }
 
-// ------------------------------------
+
 // MODELO DE NIVEL
-// ------------------------------------
+  
 class LevelData {
   // ... (campos sin cambios) ...
   final int idNivel;
@@ -30,7 +30,6 @@ class LevelData {
     this.isLocked = false,
   });
 
-  // --- ¡¡SIMPLIFICADO!! ---
   // Ya no necesita leer 'progreso_usuario'
   factory LevelData.fromJson(Map<String, dynamic> json) {
     final retoData = json['reto'] as Map<String, dynamic>?;
@@ -53,7 +52,7 @@ class LevelData {
     );
   }
 
-  // ¡¡IMPORTANTE!! Asegúrate que 'copyWith' tenga 'isCompleted'
+  // Esto se usa para actualizar isCompleted e isLocked
   LevelData copyWith({bool? isCompleted, bool? isLocked}) {
     return LevelData(
       idNivel: idNivel,
@@ -67,9 +66,7 @@ class LevelData {
   }
 }
 
-// ------------------------------------
 // MODELO DE SECCIÓN
-// ------------------------------------
 class SectionData {
   // ... (campos sin cambios) ...
   final int id;
@@ -92,8 +89,7 @@ class SectionData {
     this.isLocked = false,
   });
 
-  // --- SIN CAMBIOS ---
-  // (Solo se simplificó la lógica interna de LevelData)
+  // esta función no cambia en absoluto
   factory SectionData.fromJson(Map<String, dynamic> json) {
     final hexColor = json['color'] as String;
     final hexColorOscuro = json['coloroscuro'] as String;
@@ -127,44 +123,47 @@ class SectionData {
     );
   }
 
-  // --- ¡¡SIN CAMBIOS!! ---
-  // Esta lógica ya es perfecta y no necesita modificarse.
   // Recibirá los datos con 'isCompleted' ya aplicado por el provider.
   static List<SectionData> applySequentialSectionLock(
     List<SectionData> sections,
   ) {
     final List<SectionData> finalSections = [];
-    bool isPreviousSectionCompleted = true; // Desbloquea la Sección 1
+    
+    // Esta es la ÚNICA bandera que importa.
+    // Trata todo el mapa (todas las secciones) como un solo camino.
+    // Empieza en 'true' para desbloquear el primer nivel del mapa.
+    bool previousLevelWasCompleted = true;
 
     // Bucle de SECCIONES
-    for (int i = 0; i < sections.length; i++) {
-      final currentSection = sections[i];
-      final bool isSectionLocked = !isPreviousSectionCompleted;
+    for (var currentSection in sections) {
+      
+      final List<LevelData> newLevels = [];
 
       // Bucle de NIVELES
-      final List<LevelData> newLevels = [];
-      bool isPreviousLevelCompleted = true; // Desbloquea el Nivel 1.1
-
-      for (int j = 0; j < currentSection.levels.length; j++) {
-        final level = currentSection.levels[j];
-
-        final bool isLevelLocked = isSectionLocked || !isPreviousLevelCompleted;
+      // Este bucle simplemente continúa donde el anterior se quedó
+      for (var level in currentSection.levels) {
+        
+        // Un nivel está bloqueado SI Y SOLO SI
+        // el nivel anterior (incluso si fue en la sección anterior) NO está completo.
+        final bool isLevelLocked = !previousLevelWasCompleted;
 
         newLevels.add(level.copyWith(isLocked: isLevelLocked));
 
-        isPreviousLevelCompleted = level.isCompleted;
+        // Actualizamos la bandera para la *siguiente* iteración.
+        // El siguiente nivel dependerá de si *este* nivel está completo.
+        previousLevelWasCompleted = level.isCompleted;
       }
 
+      // La sección en sí misma NUNCA debe estar bloqueada.
+      // Solo sus niveles internos.
       final newSection = currentSection.copyWith(
-        isLocked: isSectionLocked,
+        isLocked: false, // Siempre desbloqueada
         levels: newLevels,
       );
+      
       finalSections.add(newSection);
-
-      isPreviousSectionCompleted = newLevels.every(
-        (level) => level.isCompleted,
-      );
     }
+    
     return finalSections;
   }
 }

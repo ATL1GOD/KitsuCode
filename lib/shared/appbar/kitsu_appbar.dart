@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
+
 
 // Sigue siendo un StatefulWidget para el OverlayPortal
 class KitsuAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
@@ -34,6 +36,20 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     }
   }
 
+  // Helper para obtener el color primario del lenguaje
+  Color _getColorForLanguage(String langName) {
+    switch (langName.toLowerCase().trim()) { 
+      case 'python':
+        return const Color(0xFF19647E); // Azul de Python
+      case 'java':
+        return const Color(0xFFB31900); // Rojo de Java
+      case 'c':
+        return const Color(0xFF004D92); // Azul de C
+      default:
+        return const Color(0xFF19647E); // Default Python
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(appBarRealtimeProvider);
@@ -58,7 +74,9 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           ));
     }
 
-    // Contenido Real (sin cambios)
+    // Contenido Real
+    final languageColor = _getColorForLanguage(stats.languageName);
+    
     return Container(
       height: widget.preferredSize.height, 
       padding: const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
@@ -68,9 +86,30 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildLanguageSelector(context, ref, stats), 
-          _buildStatItem(icon: Icons.local_fire_department, color: Colors.orange, text: stats.streak.toString()), 
-          _buildStatItem(icon: Icons.emoji_events, color: Colors.amber, text: stats.trophies.toString()),
-          _buildStatItem(icon: Icons.favorite, color: Colors.red, text: stats.lives.toString()), 
+          AnimatedStatBadge(
+            value: stats.streak,
+            icon: Icons.local_fire_department,
+            color: Colors.orange,
+            type: StatType.streak,
+            borderColor: languageColor, // Color del lenguaje
+          ),
+
+          AnimatedStatBadge(
+            value: stats.trophies,
+            icon: Icons.emoji_events,
+            color: Colors.amber,
+            type: StatType.trophy,
+            borderColor: languageColor, // Color del lenguaje
+          ),
+
+          AnimatedStatBadge(
+            value: stats.lives,
+            icon: Icons.favorite,
+            color: Colors.red,
+            type: StatType.life,
+            borderColor: languageColor, // Color del lenguaje
+          ),
+
         ],
       ),
     );

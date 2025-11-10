@@ -29,7 +29,6 @@ dependencies:
   simple_animations: ^5.2.0
   supabase_flutter: ^2.9.1
   overlay_support: ^2.1.0
-  giffy_dialog: ^2.3.0
   awesome_snackbar_content: ^0.1.8
 
 dev_dependencies:

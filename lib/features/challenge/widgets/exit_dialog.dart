@@ -31,7 +31,7 @@ void showExitDialog(BuildContext context) {
     builder: (BuildContext context) {
       return GiffyDialog.image(
         Image.asset(
-          "images/challenge/alerta1.png",
+          "images/challenge/alerta4.png",
           height: 280, // <-- Valor fijo original
           fit: BoxFit.cover,
         ),

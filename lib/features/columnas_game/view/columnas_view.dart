@@ -18,6 +18,9 @@ import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.da
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
+import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
+import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
+
 // --- FIN NUEVO ---
 
 class ColumnsChallengeView extends ConsumerStatefulWidget {
@@ -89,7 +92,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       _items.add(rightColumn[i]);
     }
   }
-  
+
   void _onItemTapped(ChallengeItem tappedItem) {
     if (_solvedPairIds.contains(tappedItem.pairId) || _isIncorrect) {
       return;
@@ -98,7 +101,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     setState(() {
       if (_selectedItem == null) {
         _selectedItem = tappedItem;
-        _incorrectItem1 = null; 
+        _incorrectItem1 = null;
         _incorrectItem2 = null;
       } else {
         bool isCorrectPair =
@@ -107,7 +110,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
         if (isCorrectPair) {
           _solvedPairIds.add(tappedItem.pairId);
-          _selectedItem = null; 
+          _selectedItem = null;
 
           if (_solvedPairIds.length == widget.challenge.pares.length) {
             Future.delayed(const Duration(milliseconds: 300), () {
@@ -119,7 +122,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         } else {
           _incorrectItem1 = _selectedItem;
           _incorrectItem2 = tappedItem;
-          _selectedItem = null; 
+          _selectedItem = null;
           _triggerIncorrectAnimation(); // <-- Llamada a la función de fallo
         }
       }
@@ -134,7 +137,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     if (mounted) {
       _showFeedbackModal(false);
     }
-    
+
     // Reseteamos el estado de error después del modal
     // (Esto se maneja ahora en onContinue del modal)
     // Ya no es necesario el 'Future.delayed' aquí
@@ -149,7 +152,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   // --- NUEVO: Función helper de Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    
+
     // Asumiendo que tienes AppThemes.
     switch (langName.toLowerCase().trim()) {
       case 'python':
@@ -168,7 +171,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   // ¡¡Esta es la lógica CORRECTA!!
   void _showFeedbackModal(bool esCorrecto) {
     if (_hasSubmitted) return;
-    
+
     final appBarState = ref.read(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -188,8 +191,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
             isCorrect: esCorrecto,
             // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
-              Navigator.of(ctx).pop(); // Cierra el modal usando el ctx del builder
-              
+              Navigator.of(
+                ctx,
+              ).pop(); // Cierra el modal usando el ctx del builder
+
               if (_hasSubmitted) return;
               _hasSubmitted = true;
 
@@ -202,13 +207,15 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                   currentStats.trophies,
                   currentStats.streak,
                 ];
-                
+
                 // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
                 markForStatsRefresh(ref);
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
+                final int nivelIdAsInt = int.parse(
+                  widget.nivelId,
+                ); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
                   // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
@@ -216,16 +223,15 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                     retoId: retoIdAsInt,
                     nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: true,
-                    tiempoQueTardo: 0, 
+                    tiempoQueTardo: 0,
                   );
-                  
+
                   // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
-                  
+
                   // 3. Navegar CON TROFEOS
                   if (!context.mounted) return;
                   context.push('/challenge_success', extra: trofeos);
-                
                 } else {
                   // 1. Enviar intento fallido
                   await repository.submitChallengeAttempt(
@@ -237,12 +243,12 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
                   // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.challenge.recursos;
-                  
+
                   // 3. Navegar
                   if (!context.mounted) return;
                   context.push('/challenge_failure', extra: recursos);
                 }
-                
+
                 // Lógica extra para resetear el estado de error de columnas
                 if (!esCorrecto && mounted) {
                   setState(() {
@@ -271,12 +277,11 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   }
   // --- FIN FUSIÓN ---
 
-
   @override
   Widget build(BuildContext context) {
     double progress = _solvedPairIds.length / widget.challenge.pares.length;
     bool isComplete = progress == 1.0;
-    
+
     // --- FUSIÓN: Se usa la lógica de UI de ELLOS (theme-aware) ---
     final appBarState = ref.watch(appBarProvider);
     final challengeTheme = _getLanguageTheme(
@@ -284,59 +289,27 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       Theme.of(context).brightness,
     );
     final colorScheme = challengeTheme.colorScheme;
-    
+
     return Theme(
       data: challengeTheme,
       child: Scaffold(
         backgroundColor: colorScheme.surface, // <-- Usar color de tema
+        appBar: ChallengeAppBar(
+          progress: progress, // Le pasamos el progreso
+          onClose: () {
+            // Reutilizamos la lógica de salida del quiz
+            showExitDialog(context);
+          },
+        ),
         body: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        color: colorScheme.onSurfaceVariant, // <-- Usar color de tema
-                        size: 30,
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: colorScheme.surfaceContainerHighest, // <-- Usar color de tema
-                          color: colorScheme.primary, // <-- Usar color de tema
-                          minHeight: 15,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.flash_on, color: colorScheme.error, size: 20), // <-- Usar color de tema
-                    Text(
-                      ' ∞',
-                      style: TextStyle(
-                        color: colorScheme.error, // <-- Usar color de tema
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Selecciona los pares', 
+                    'Selecciona los pares',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -350,14 +323,15 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: GridView.builder(
-                    key: const ValueKey('grid_view'), 
+                    key: const ValueKey('grid_view'),
                     itemCount: _items.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, 
-                      childAspectRatio: 2.8, 
-                      crossAxisSpacing: 12.0, 
-                      mainAxisSpacing: 30.0, 
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.8,
+                          crossAxisSpacing: 12.0,
+                          mainAxisSpacing: 30.0,
+                        ),
                     itemBuilder: (context, index) {
                       // Pasa el colorScheme al widget
                       return _buildItemChip(_items[index], colorScheme);
@@ -395,7 +369,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       elevation = 0.0;
     } else if (isMarkedIncorrect) {
       // Rojo (error)
-      backgroundColor = Colors.red.withAlpha(51); 
+      backgroundColor = Colors.red.withAlpha(51);
       borderColor = Colors.red;
       textColor = Colors.red;
       elevation = 2.0;
@@ -411,21 +385,18 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
     return Material(
       elevation: elevation,
-      color: backgroundColor, 
+      color: backgroundColor,
       borderRadius: BorderRadius.circular(12.0),
       shadowColor: Colors.grey.shade50,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Container(
-          width: double.infinity, 
+          width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(
-              color: borderColor,
-              width: 2.5,
-            ), 
+            border: Border.all(color: borderColor, width: 2.5),
           ),
           child: Center(
             child: Padding(
@@ -458,7 +429,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
             ? () {
                 _showWinDialogAndSubmit();
               }
-            : null, 
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: isComplete
               ? colorScheme.primary

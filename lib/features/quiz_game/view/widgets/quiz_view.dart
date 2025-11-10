@@ -15,6 +15,7 @@ import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.da
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
+import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 
 // --- FUSIÓN: Se añade el import de TU lógica de animación (dxniel7) ---
@@ -26,8 +27,8 @@ class QuizPage extends ConsumerStatefulWidget {
   final String nivelId; // ← ¡AÑADIDO!
 
   const QuizPage({
-    super.key, 
-    required this.mydata, 
+    super.key,
+    required this.mydata,
     required this.retoId,
     required this.nivelId, // ← ¡AÑADIDO!
   });
@@ -142,7 +143,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
     _startTimer();
   }
-  
+
   void _checkAnswer(String k) {
     String questionKey = widget.mydata.questions.keys.elementAt(i);
 
@@ -178,7 +179,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     }
   }
 
-
   // --- FUSIÓN: Se usa TU '_showFeedbackModal' (dxniel7) ---
   // ¡¡Esta es la lógica CORRECTA para trofeos y animación!!
   void _showFeedbackModal({
@@ -186,8 +186,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     required int durationInSeconds,
     required List<RecursoModel> recursos,
   }) {
-    if (_hasSubmitted) return; 
-    
+    if (_hasSubmitted) return;
+
     final bool esCorrecto = (percentage > 50);
 
     final appBarState = ref.read(appBarProvider);
@@ -200,22 +200,21 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      useRootNavigator: true, 
+      useRootNavigator: true,
       isDismissible: false,
       enableDrag: false,
-      builder: (ctx) { 
+      builder: (ctx) {
         return Theme(
           data: challengeTheme,
           child: ChallengeFeedbackModal(
             isCorrect: esCorrecto,
             // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
-              
-              Navigator.of(ctx).pop(); 
-              
+              Navigator.of(ctx).pop();
+
               if (_hasSubmitted) return;
               _hasSubmitted = true;
-              
+
               try {
                 // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
                 final currentStats = ref.read(appBarProvider);
@@ -224,13 +223,15 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   currentStats.trophies,
                   currentStats.streak,
                 ];
-                
+
                 // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
                 markForStatsRefresh(ref);
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
+                final int nivelIdAsInt = int.parse(
+                  widget.nivelId,
+                ); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
                   // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
@@ -238,16 +239,15 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                     retoId: retoIdAsInt,
                     nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: true,
-                    tiempoQueTardo: durationInSeconds, 
+                    tiempoQueTardo: durationInSeconds,
                   );
-                  
+
                   ref.invalidate(globalRankingProvider);
-                  
+
                   // 2. Navegar CON TROFEOS
                   if (!context.mounted) return;
                   // Cambiado a push para mantener la pantalla del quiz en la pila
                   context.push('/challenge_success', extra: trofeos);
-                
                 } else {
                   await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
@@ -258,7 +258,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
                   // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.mydata.recursos;
-                  
+
                   // 3. Navegar
                   if (!context.mounted) return;
                   context.push('/challenge_failure', extra: recursos);
@@ -283,7 +283,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
   // --- FIN FUSIÓN ---
 
-
   // --- FUSIÓN: Se usa el '_choiceButton' de ELLOS (UI actualizada) ---
   Widget _choiceButton(String k, ColorScheme colorScheme) {
     bool isSelected = selectedAnswer == k;
@@ -294,25 +293,15 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
     if (disableAnswer) {
       if (isSelected && _wasCorrect == true) {
+        // El usuario seleccionó esta y ERA CORRECTA
         buttonColor = Colors.green.withAlpha(51);
         borderColor = Colors.green;
         textColor = Colors.green;
       } else if (isSelected && _wasCorrect == false) {
+        // El usuario seleccionó esta y ERA INCORRECTA
         buttonColor = Colors.red.withAlpha(51);
         borderColor = Colors.red;
         textColor = Colors.red;
-      } else {
-        // --- Fix de 'ELLOS' para mostrar la correcta si te equivocas ---
-        String questionKey = widget.mydata.questions.keys.elementAt(i);
-        if (k == widget.mydata.answers[questionKey]) {
-          buttonColor = Colors.green.withAlpha(51);
-          borderColor = Colors.green;
-          textColor = Colors.green;
-        } else {
-           borderColor = colorScheme.outline;
-           textColor = colorScheme.onSurface;
-           buttonColor = colorScheme.surfaceContainer;
-        }
       }
     } else if (isSelected) {
       buttonColor = colorScheme.primaryContainer.withAlpha(77);
@@ -339,8 +328,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               },
         child: Text(
           widget.mydata.options[widget.mydata.questions.keys.elementAt(
-                  i,
-                )]![k] ??
+                i,
+              )]![k] ??
               "",
           textAlign: TextAlign.start,
           maxLines: 5,
@@ -461,7 +450,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
             children: <Widget>[
               const SizedBox(height: 10),
               Text(
-                "Selecciona la traducción correcta",
+                "Selecciona la respuesta correcta",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -537,8 +526,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               backgroundColor: disableAnswer
                   ? (_wasCorrect == true ? Colors.green : Colors.red)
                   : (selectedAnswer != null
-                      ? colorScheme.primary
-                      : colorScheme.surfaceContainerHighest),
+                        ? colorScheme.primary
+                        : colorScheme.surfaceContainerHighest),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(

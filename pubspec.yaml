@@ -30,6 +30,7 @@ dependencies:
   supabase_flutter: ^2.9.1
   overlay_support: ^2.1.0
   awesome_snackbar_content: ^0.1.8
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

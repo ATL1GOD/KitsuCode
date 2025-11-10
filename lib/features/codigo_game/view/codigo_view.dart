@@ -18,7 +18,8 @@ import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.da
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
     show RecursoModel;
-// --- FIN NUEVO ---
+import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
+import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 
 class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
@@ -63,7 +64,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   // ... (Las funciones _clearControllersAndFocusNodes, _setupControllersAndFocusNodesForPage,
   // _verificarRespuesta, y _siguientePregunta son idénticas en ambos archivos,
   // así que las dejamos tal cual) ...
-  
+
   void _clearControllersAndFocusNodes() {
     for (var controller in _controllers) {
       controller.dispose();
@@ -100,7 +101,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       });
     }
   }
-  
+
   Future<void> _verificarRespuesta() async {
     // ... (lógica de verificación) ...
     final preguntaActual = widget.challenge.preguntas[_currentPageIndex];
@@ -134,12 +135,11 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
         curve: Curves.easeInOut,
       );
     } else {
-      if (mounted) { 
+      if (mounted) {
         _showFeedbackModal(true);
       }
     }
   }
-
 
   // --- NUEVO: Función helper de Tema (Copiada de puzzle_view) ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
@@ -159,13 +159,12 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   }
   // --- FIN NUEVO ---
 
-
   // --- FUSIÓN: Se usa TU '_showFeedbackModal' (dxniel7) ---
   // ¡¡Esta es la lógica CORRECTA!!
   void _showFeedbackModal(bool esCorrecto) {
     // Evita múltiples envíos si el usuario es muy rápido
     if (_hasSubmitted) return;
-    
+
     final appBarState = ref.read(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -185,8 +184,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
             isCorrect: esCorrecto,
             // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
-              Navigator.of(ctx).pop(); // Cierra el modal usando el ctx del builder
-              
+              Navigator.of(
+                ctx,
+              ).pop(); // Cierra el modal usando el ctx del builder
+
               if (_hasSubmitted) return;
               _hasSubmitted = true; // Marcamos como enviado
 
@@ -199,13 +200,15 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   currentStats.trophies,
                   currentStats.streak,
                 ];
-                
+
                 // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
                 markForStatsRefresh(ref);
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-                final int nivelIdAsInt = int.parse(widget.nivelId); // ← ¡AÑADIDO!
+                final int nivelIdAsInt = int.parse(
+                  widget.nivelId,
+                ); // ← ¡AÑADIDO!
 
                 if (esCorrecto) {
                   // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
@@ -213,16 +216,15 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                     retoId: retoIdAsInt,
                     nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
                     fueExitoso: true,
-                    tiempoQueTardo: 0, 
+                    tiempoQueTardo: 0,
                   );
-                  
+
                   // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
-                  
+
                   // 3. Navegar CON TROFEOS
                   if (!context.mounted) return;
                   context.push('/challenge_success', extra: trofeos);
-                
                 } else {
                   // 1. Enviar intento fallido
                   await repository.submitChallengeAttempt(
@@ -234,7 +236,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
                   // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.challenge.recursos;
-                  
+
                   // 3. Navegar
                   if (!context.mounted) return;
                   context.push('/challenge_failure', extra: recursos);
@@ -258,7 +260,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     );
   }
   // --- FIN FUSIÓN ---
-
 
   // --- FUSIÓN: Se usa el '_buildCodeSpans' de ELLOS (theme-aware) ---
   List<InlineSpan> _buildCodeSpans(
@@ -323,11 +324,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   }
   // --- FIN FUSIÓN ---
 
-
   @override
   Widget build(BuildContext context) {
     // --- FUSIÓN: Se usa el 'build' de ELLOS (theme-aware) ---
-    
+
     // 1. Obtenemos el estado del AppBar
     final appBarState = ref.watch(appBarProvider);
 
@@ -355,10 +355,21 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       height: 1.5,
     );
 
-    return Theme( // <-- Envolver aquí
+    final double progress =
+        (_currentPageIndex + 1) / widget.challenge.preguntas.length;
+
+    return Theme(
+      // <-- Envolver aquí
       data: challengeTheme,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Completa el Código')),
+        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+        // 2. Reemplazamos el AppBar anterior
+        appBar: ChallengeAppBar(
+          progress: progress,
+          onClose: () {
+            showExitDialog(context);
+          },
+        ),
         body: Column(
           children: [
             Expanded(

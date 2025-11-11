@@ -73,11 +73,13 @@ class DesafioMensualData {
   final List<RetoIndividual> individuales; // Retos que lo componen
   final Set<int>
   completedRetoIds; // IDs de retos individuales completados por el usuario
+  final bool isParentCompleted;
 
   DesafioMensualData({
     required this.agrupador,
     required this.individuales,
     required this.completedRetoIds,
+    required this.isParentCompleted,
   });
 }
 
@@ -122,6 +124,7 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
       agrupador: null,
       individuales: [],
       completedRetoIds: {},
+      isParentCompleted: false,
     );
   }
 
@@ -157,17 +160,29 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
       .from('intento_reto')
       .select('id_reto')
       .eq('id_usuario', userId)
-      .eq('resultado', 'COMPLETADO')
+      .eq('resultado', 'completado')
       .inFilter('id_reto', retosIndividualesIds);
 
   final Set<int> completedMensualRetoIds = (resultsCompleted as List)
       .map((item) => item['id_reto'] as int)
       .toSet();
 
+  final parentResult = await supabase
+      .from('intento_reto')
+      .select('id_reto')
+      .eq('id_usuario', userId)
+      .eq('id_reto', event.idReto) // <-- El ID del reto padre (tipo 5)
+      .eq('resultado', 'completado')
+      .limit(1);
+
+  final bool isParentCompleted = parentResult.isNotEmpty;
+  // --- FIN DE LA NUEVA LÓGICA ---
+
   return DesafioMensualData(
     agrupador: event,
     individuales: retosIndividuales,
     completedRetoIds: completedMensualRetoIds,
+    isParentCompleted: isParentCompleted,
   );
 });
 // [FIN DEL ARCHIVO desafio_provider.dart]

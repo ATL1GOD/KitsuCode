@@ -28,6 +28,7 @@ class DesafiosView extends ConsumerWidget {
                       data.individuales, // Los retos individuales del mes
                   completedRetoIds:
                       data.completedRetoIds, // IDs completados para el progreso
+                  isParentCompleted: data.isParentCompleted,
                 ),
               ],
             );
@@ -60,12 +61,14 @@ class ExpandableSpecialEventCard extends StatefulWidget {
   final DesafioEspecial evento;
   final List<RetoIndividual> desafiosMensuales; // Contenido para la expansión
   final Set<int> completedRetoIds; // IDs de retos completados por el usuario
+  final bool isParentCompleted; // <-- ¡RECIBE EL NUEVO VALOR!
 
   const ExpandableSpecialEventCard({
     super.key,
     required this.evento,
     required this.desafiosMensuales,
     required this.completedRetoIds,
+    required this.isParentCompleted, // <-- ¡AÑADE ESTO AL CONSTRUCTOR!
   });
 
   @override
@@ -126,11 +129,15 @@ class _ExpandableSpecialEventCardState
         children: [
           // CABECERA (Siempre visible y control de expansión)
           InkWell(
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
+            onTap:
+                widget
+                    .isParentCompleted // Si el padre está completo
+                ? null // Bloquea el tap
+                : () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  },
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -169,6 +176,30 @@ class _ExpandableSpecialEventCardState
                         const SizedBox(height: 4),
                         Row(
                           children: [
+                            // --- ¡¡LÓGICA DE TEXTO COMPLETADO!! ---
+                            Icon(
+                              widget.isParentCompleted
+                                  ? Icons
+                                        .check_circle // Icono de completado
+                                  : Icons.timer, // Icono de timer
+                              color: widget.isParentCompleted
+                                  ? Colors.white
+                                  : Colors.white70,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.isParentCompleted
+                                  ? "¡EVENTO COMPLETADO!" // Texto de completado
+                                  : _formatTiempoRestante(
+                                      widget.evento.fechaFin,
+                                    ), // Texto de tiempo
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const Icon(
                               Icons.timer,
                               color: Colors.white70,

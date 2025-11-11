@@ -1,0 +1,217 @@
+-- Reemplaza tu trigger 'handle_new_intento' con este:
+
+CREATE OR REPLACE FUNCTION public.handle_new_intento()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  -- --- ¡NUEVAS VARIABLES DE PUNTUACIÓN! ---
+  v_dificultad_nombre TEXT;
+  v_final_score INT := 0; 
+  v_id_nivel_actual BIGINT; -- ¡YA NO INICIA EN 0!
+  v_intentos_previos_en_nivel INT;
+  v_total_intentos_en_nivel INT;
+  
+  -- Variables de Racha y Vidas (Tu código original)
+  v_current_streak INT;
+  v_last_success_date DATE;
+  v_last_success_date_to_save DATE;
+  v_current_lives INT; 
+
+  v_today DATE := (NEW.fecha_intento AT TIME ZONE 'America/Mexico_City')::DATE; 
+
+  -- Variables de Estadísticas (Tu código original)
+  v_total_intentos_usuario INT;
+  v_total_correctos_usuario INT;
+BEGIN
+  
+  -- --- ¡LÓGICA DE PUNTUACIÓN MODIFICADA! ---
+  
+  -- 1. Solo damos puntos si el reto fue 'completado'
+  IF NEW.resultado = 'completado' THEN
+    
+    -- 2. Encontrar el 'id_nivel' y 'dificultad' de este reto
+    --    (Vamos de reto -> dificultad Y de reto -> niveles)
+    SELECT 
+      n.id_nivel, 
+      d.nombre 
+    INTO 
+      v_id_nivel_actual, 
+      v_dificultad_nombre
+    FROM public.reto r
+    JOIN public.dificultad d ON r.dificultad = d.id_dificultad
+    LEFT JOIN public.niveles n ON r.id_reto = n.id_reto -- << CAMBIO A LEFT JOIN
+    WHERE r.id_reto = NEW.id_reto
+    LIMIT 1; -- Aseguramos un solo resultado
+
+    -- 3. ¡¡NUEVA VERIFICACIÓN!!
+    --    Si v_id_nivel_actual NO es nulo, significa que es un reto "normal"
+    --    del mapa de home, y calculamos su puntuación.
+    IF v_id_nivel_actual IS NOT NULL THEN
+      
+      -- 4. Contar intentos PREVIOS en este NIVEL (no en este reto específico)
+      SELECT COUNT(*)
+      INTO v_intentos_previos_en_nivel
+      FROM public.intento_reto ir
+      JOIN public.niveles n ON ir.id_reto = n.id_reto
+      WHERE ir.id_usuario = NEW.id_usuario
+        AND n.id_nivel = v_id_nivel_actual;
+        
+      -- 5. Calcular el número total de intentos para este nivel
+      v_total_intentos_en_nivel := v_intentos_previos_en_nivel + 1;
+
+      -- 6. Asignar puntuación basada en las NUEVAS reglas (Sin cambios)
+      IF v_dificultad_nombre = 'facil' THEN
+        -- ... (tu lógica de CASE)
+      ELSIF v_dificultad_nombre = 'intermedio' THEN
+        -- ... (tu lógica de CASE)
+      ELSIF v_dificultad_nombre = 'dificil' THEN
+        -- ... (tu lógica de CASE)
+      END IF;
+
+    ELSE
+      -- 7. ¡¡NUEVA LÓGICA!!
+      --    Si v_id_nivel_actual ES NULO, es un reto especial (como el padre)
+      --    No calculamos puntos, solo respetamos los que ya trae.
+      v_final_score := COALESCE(NEW.experiencia_obtenida, 0);
+    END IF; 
+    
+  END IF; -- Fin del chequeo 'completado'
+  
+  -- --- FIN DE LA LÓGICA MODIFICADA ---
+
+  -- 8. ASIGNAR PUNTAJE AL NUEVO INTENTO
+  NEW.experiencia_obtenida := v_final_score;
+
+  -- --- LÓGICA 'estadistica_usuario' (Tu código original, SIN CAMBIOS) ---
+  -- ... (Toda tu lógica de racha, vidas, estadísticas, etc., va aquí SIN CAMBIOS) ...
+  -- 9. Asegurarse de que el usuario tenga una fila ...
+  -- 10. Obtener la racha, la fecha Y LAS VIDAS ...
+  -- 11. CALCULAR LA NUEVA RACHA Y VIDAS ...
+  -- 12. Obtener conteos ACTUALES ...
+  -- 13. Sumar el intento actual ...
+  -- 14. Actualizar la tabla de estadísticas con TODO ...
+
+  -- 15. Devolver el intento modificado
+  RETURN NEW;
+  
+END;
+$$;
+
+##################################1
+
+
+CREATE OR REPLACE FUNCTION public.handle_parent_challenge_completion()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_parent_challenge RECORD;
+  v_total_children INT;
+  v_completed_children INT;
+  v_already_completed_parent BOOLEAN;
+  v_parent_reward INT := 100; -- <-- ¡Recompensa final por el desafío! (ajústala)
+BEGIN
+  -- 1. Solo nos importa si el reto fue 'completado'
+  IF NEW.resultado <> 'completado' THEN
+    RETURN NEW;
+  END IF;
+
+  -- 2. Buscar el desafío "padre" (tipo 5) al que pertenece este "hijo" (NEW.id_reto)
+  --    Usa la misma lógica de fechas que tu 'desafio_provider'
+  SELECT 
+    padre.id_reto, 
+    padre.fecha_inicio, 
+    padre.fecha_final
+    -- (Puedes añadir una columna 'recompensa_final' a tu tabla 'reto' y leerla aquí)
+  INTO v_parent_challenge
+  FROM public.reto AS hijo
+  JOIN public.reto AS padre ON 
+    hijo.fecha_inicio >= padre.fecha_inicio AND 
+    hijo.fecha_final <= padre.fecha_final AND
+    padre.tipo_reto = 5 AND -- Es un padre
+    padre.especial = true AND
+    padre.activo = true
+  WHERE 
+    hijo.id_reto = NEW.id_reto AND
+    hijo.tipo_reto <> 5; -- Asegurarse de que el reto completado es un "hijo"
+
+  -- 3. Si no se encontró un padre (es un reto normal del home), salir.
+  IF v_parent_challenge IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- 4. Verificar si el usuario YA completó este reto padre (evita recompensas duplicadas)
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.intento_reto
+    WHERE id_usuario = NEW.id_usuario
+      AND id_reto = v_parent_challenge.id_reto
+      AND resultado = 'completado'
+  ) INTO v_already_completed_parent;
+
+  IF v_already_completed_parent THEN
+    RETURN NEW;
+  END IF;
+
+  -- 5. Contar el TOTAL de retos "hijos" para este padre
+  SELECT COUNT(*)
+  INTO v_total_children
+  FROM public.reto
+  WHERE 
+    tipo_reto <> 5 AND
+    especial = false AND
+    activo = true AND
+    fecha_inicio >= v_parent_challenge.fecha_inicio AND
+    fecha_final <= v_parent_challenge.fecha_final;
+
+  -- 6. Contar cuántos de esos "hijos" ha completado el usuario
+  SELECT COUNT(DISTINCT ir.id_reto)
+  INTO v_completed_children
+  FROM public.intento_reto ir
+  JOIN public.reto r ON ir.id_reto = r.id_reto
+  WHERE 
+    ir.id_usuario = NEW.id_usuario AND
+    ir.resultado = 'completado' AND
+    r.tipo_reto <> 5 AND
+    r.especial = false AND
+    r.activo = true AND
+    r.fecha_inicio >= v_parent_challenge.fecha_inicio AND
+    r.fecha_final <= v_parent_challenge.fecha_final;
+
+  -- 7. ¡LA GRAN VERIFICACIÓN!
+  --    Si el total de hijos es > 0 y el usuario los ha completado TODOS...
+  IF v_total_children > 0 AND v_completed_children = v_total_children THEN
+    
+    -- ¡Otorga la recompensa!
+    -- Insertamos un nuevo intento para el reto PADRE.
+    -- El trigger 'handle_new_intento' (modificado) lo verá,
+    -- entrará en la sección 'ELSE' y respetará la 'experiencia_obtenida'.
+    INSERT INTO public.intento_reto (
+      id_usuario,
+      id_reto,
+      resultado,
+      experiencia_obtenida -- ¡Aquí va la recompensa!
+    )
+    VALUES (
+      NEW.id_usuario,
+      v_parent_challenge.id_reto,
+      'completado',
+      v_parent_reward 
+    );
+    
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+#####################################1
+
+-- Elimina el trigger si ya existe (para evitar errores)
+DROP TRIGGER IF EXISTS on_intento_complete_parent ON public.intento_reto;
+
+-- Crea el nuevo trigger
+CREATE TRIGGER on_intento_complete_parent
+AFTER INSERT ON public.intento_reto
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_parent_challenge_completion();

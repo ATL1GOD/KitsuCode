@@ -332,7 +332,7 @@ class MonthlyChallengeItem extends ConsumerWidget {
 
                 // 2. Navegamos al distribuidor de retos (el MISMO de siempre)
                 // ¡No necesitas un distribuidor nuevo!
-                context.go('/reto/${desafio.idReto}/${desafio.nivelId}');
+                context.push('/reto/${desafio.idReto}/${desafio.nivelId}');
               },
       ),
     );

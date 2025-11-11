@@ -1,0 +1,208 @@
+calcular_puntuacion_reto
+
+
+
+DECLARE
+  -- --- ¡NUEVAS VARIABLES DE PUNTUACIÓN! ---
+  v_dificultad_nombre TEXT;
+  v_final_score INT := 0; -- Inicia en 0 (si falla o no completa)
+  v_id_nivel_actual BIGINT;
+  v_intentos_previos_en_nivel INT;
+  v_total_intentos_en_nivel INT;
+  
+  -- Variables de Racha y Vidas (Tu código original)
+  v_current_streak INT;
+  v_last_success_date DATE;
+  v_last_success_date_to_save DATE;
+  v_current_lives INT; 
+
+  v_today DATE := (NEW.fecha_intento AT TIME ZONE 'America/Mexico_City')::DATE; 
+
+  -- Variables de Estadísticas (Tu código original)
+  v_total_intentos_usuario INT;
+  v_total_correctos_usuario INT;
+BEGIN
+  
+  -- --- ¡LÓGICA DE PUNTUACIÓN MODIFICADA! ---
+  
+  -- 1. Solo damos puntos si el reto fue 'completado'
+  IF NEW.resultado = 'completado' THEN
+    
+    -- 2. Encontrar el 'id_nivel' y 'dificultad' de este reto
+    -- (Vamos de reto -> dificultad Y de reto -> niveles)
+    SELECT 
+      n.id_nivel, 
+      d.nombre 
+    INTO 
+      v_id_nivel_actual, 
+      v_dificultad_nombre
+    FROM public.reto r
+    JOIN public.dificultad d ON r.dificultad = d.id_dificultad
+    JOIN public.niveles n ON r.id_reto = n.id_reto
+    WHERE r.id_reto = NEW.id_reto
+    LIMIT 1; -- Aseguramos un solo resultado
+
+    -- 3. Contar intentos PREVIOS en este NIVEL (no en este reto específico)
+    -- Esto cuenta todas las veces que el usuario ha intentado este "nodo" del mapa
+    SELECT COUNT(*)
+    INTO v_intentos_previos_en_nivel
+    FROM public.intento_reto ir
+    -- Unimos con niveles para encontrar el id_nivel de intentos pasados
+    JOIN public.niveles n ON ir.id_reto = n.id_reto
+    WHERE ir.id_usuario = NEW.id_usuario
+      AND n.id_nivel = v_id_nivel_actual;
+      
+    -- 4. Calcular el número total de intentos para este nivel
+    -- (Intentos previos + 1 que es el actual)
+    v_total_intentos_en_nivel := v_intentos_previos_en_nivel + 1;
+
+    -- 5. Asignar puntuación basada en las NUEVAS reglas
+    
+    -- Dificultad FACIL
+    IF v_dificultad_nombre = 'facil' THEN
+      CASE
+        WHEN v_total_intentos_en_nivel = 1 THEN v_final_score := 10;
+        WHEN v_total_intentos_en_nivel IN (2, 3) THEN v_final_score := 8;
+        WHEN v_total_intentos_en_nivel IN (4, 6) THEN v_final_score := 2;
+        WHEN v_total_intentos_en_nivel >= 7 THEN v_final_score := 1;
+        ELSE v_final_score := 0;
+      END CASE;
+      
+    -- Dificultad INTERMEDIO
+    ELSIF v_dificultad_nombre = 'intermedio' THEN
+      CASE
+        WHEN v_total_intentos_en_nivel = 1 THEN v_final_score := 20;
+        WHEN v_total_intentos_en_nivel IN (2, 3) THEN v_final_score := 16;
+        WHEN v_total_intentos_en_nivel >= 4 THEN v_final_score := 4;
+        ELSE v_final_score := 0;
+      END CASE;
+
+    -- Dificultad DIFICIL
+    ELSIF v_dificultad_nombre = 'dificil' THEN
+      CASE
+        WHEN v_total_intentos_en_nivel = 1 THEN v_final_score := 30;
+        WHEN v_total_intentos_en_nivel IN (2, 3) THEN v_final_score := 24;
+        WHEN v_total_intentos_en_nivel >= 4 THEN v_final_score := 6;
+        ELSE v_final_score := 0;
+      END CASE;
+      
+    END IF;
+
+  END IF; -- Fin del chequeo 'completado'
+  
+  -- --- FIN DE LA LÓGICA MODIFICADA ---
+
+  -- 7. ASIGNAR PUNTAJE AL NUEVO INTENTO
+  -- (Será 0 si falló, o el valor calculado si se completó)
+  NEW.experiencia_obtenida := v_final_score;
+
+  -- --- LÓGICA 'estadistica_usuario' (Tu código original, SIN CAMBIOS) ---
+
+  -- 8. Asegurarse de que el usuario tenga una fila
+  INSERT INTO public.estadistica_usuario (id_usuario, racha_dias, vidas)
+  VALUES (NEW.id_usuario, 0, 5) 
+  ON CONFLICT (id_usuario) DO NOTHING;
+
+  -- 9. Obtener la racha, la fecha Y LAS VIDAS
+  SELECT
+    COALESCE(e.racha_dias, 0),
+    MAX(i.fecha_intento AT TIME ZONE 'America/Mexico_City')::DATE,
+    COALESCE(e.vidas, 5) 
+  INTO
+    v_current_streak,
+    v_last_success_date,
+    v_current_lives
+  FROM
+    public.estadistica_usuario e
+  LEFT JOIN
+    public.intento_reto i ON e.id_usuario = i.id_usuario
+                         AND i.resultado = 'completado'
+  WHERE
+    e.id_usuario = NEW.id_usuario
+  GROUP BY
+    e.racha_dias, e.vidas;
+    
+  -- 10. CALCULAR LA NUEVA RACHA Y VIDAS
+  IF NEW.resultado = 'completado' THEN
+    -- Lógica de Racha
+    IF v_last_success_date IS NULL THEN
+      v_current_streak := 1;
+    ELSIF v_last_success_date = v_today THEN
+      NULL;
+    ELSIF v_last_success_date = v_today - INTERVAL '1 day' THEN
+      v_current_streak := v_current_streak + 1;
+    ELSE
+      v_current_streak := 1;
+    END IF;
+    v_last_success_date_to_save := v_today;
+  ELSE
+    -- Reto fallido
+    IF v_current_lives > 0 THEN
+      v_current_lives := v_current_lives - 1;
+    END IF;
+  END IF; 
+
+  -- 11. Obtener conteos ACTUALES
+  SELECT 
+    COUNT(*), 
+    COUNT(*) FILTER (WHERE resultado = 'completado')
+  INTO 
+    v_total_intentos_usuario, 
+    v_total_correctos_usuario
+  FROM public.intento_reto
+  WHERE id_usuario = NEW.id_usuario;
+
+  -- 12. Sumar el intento actual
+  v_total_intentos_usuario := v_total_intentos_usuario + 1;
+  IF NEW.resultado = 'completado' THEN
+    v_total_correctos_usuario := v_total_correctos_usuario + 1;
+  END IF;
+
+  -- 13. Actualizar la tabla de estadísticas con TODO
+  UPDATE public.estadistica_usuario
+  SET 
+    retos_completados = v_total_correctos_usuario,
+    porcentaje_aciertos = CASE 
+                            WHEN v_total_intentos_usuario > 0 THEN (v_total_correctos_usuario::NUMERIC / v_total_intentos_usuario::NUMERIC) * 100
+                            ELSE 0 
+                          END,
+    porcentaje_fallos = CASE 
+                            WHEN v_total_intentos_usuario > 0 THEN ((v_total_intentos_usuario - v_total_correctos_usuario)::NUMERIC / v_total_intentos_usuario::NUMERIC) * 100
+                            ELSE 0 
+                          END,
+    racha_dias = v_current_streak,
+    vidas = v_current_lives, 
+    ultima_racha_fecha = COALESCE(v_last_success_date_to_save, ultima_racha_fecha) 
+  WHERE
+    id_usuario = NEW.id_usuario;
+
+  -- 14. Devolver el intento modificado
+  RETURN NEW;
+  
+END;
+
+##############################
+
+completar_reto
+
+
+DECLARE
+  v_experiencia_obtenida INT := 0;
+BEGIN
+  -- 1. Insertar el intento (el TRIGGER calculará automáticamente experiencia_obtenida)
+  INSERT INTO public.intento_reto (id_usuario, id_reto, resultado, tiempo_empleado)
+  VALUES (id_usuario_param, id_reto_param, resultado_param, tiempo_param)
+  RETURNING experiencia_obtenida INTO v_experiencia_obtenida;
+
+  -- 2. Si el resultado es 'completado', insertar el progreso
+  IF resultado_param = 'completado' THEN
+    -- Usamos directamente el id_nivel que nos pasaron
+    INSERT INTO public.progreso_usuario (id_usuario, id_nivel)
+    VALUES (id_usuario_param, id_nivel_param)
+    -- Si ya existe, no hagas nada
+    ON CONFLICT (id_usuario, id_nivel) DO NOTHING;
+  END IF;
+
+  -- 3. Retornar la experiencia obtenida (trofeos)
+  RETURN v_experiencia_obtenida;
+END;

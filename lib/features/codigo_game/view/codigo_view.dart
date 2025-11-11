@@ -22,6 +22,7 @@ import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_instruction_card.dart';
 // --- FIN CAMBIO ESTÉTICO ---
+import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 
 class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
@@ -225,7 +226,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
                   // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
-
+                  // --- ¡¡AQUÍ!! ---
+                  // 3. Refrescar la lista de desafíos mensuales
+                  //    Esto hará que la barra de progreso se actualice.
+                  ref.invalidate(desafiosProvider);
                   // 3. Navegar CON TROFEOS
                   if (!context.mounted) return;
                   context.push('/challenge_success', extra: trofeos);

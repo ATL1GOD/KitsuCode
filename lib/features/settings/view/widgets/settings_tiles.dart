@@ -201,10 +201,10 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
           Switch(
             value: _currentValue,
             onChanged: (newValue) {
-              setState(() {
-                _currentValue = newValue;
-              });
+              // NO actualizamos el estado local inmediatamente
+              // Solo llamamos al callback y esperamos que el provider se actualice
               widget.onChanged(newValue);
+              // El estado local se actualizará en didUpdateWidget cuando el provider cambie
             },
             activeThumbColor: widget.dynamicColor,
           ),

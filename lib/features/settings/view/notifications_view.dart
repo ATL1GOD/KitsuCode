@@ -80,8 +80,9 @@ class NotificationsView extends ConsumerWidget {
     if (didConfirm == true) {
       ref.read(notificationSettingsProvider.notifier).updateAllEnabled(false);
     }
-    // Si no (pop(false) o tap fuera), el provider no cambia
-    // y el switch volverá a su estado original (true).
+    // Si canceló o tocó fuera del diálogo, NO hacer nada
+    // El provider mantiene su valor anterior y el switch se actualizará automáticamente
+    // gracias a didUpdateWidget en SettingsSwitchTile
   }
 
 

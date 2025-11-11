@@ -49,11 +49,20 @@ void main() async {
     await container.read(authStateProvider.future);
     await container.read(settingsProvider.future);
     
-    // Inicializar FCM después de que el router esté listo
+    // Inicializar FCM en paralelo con otros procesos (no bloqueante)
     final fcmService = container.read(fcmServiceProvider);
-    await fcmService.initialize();
+    fcmService.initialize().catchError((e) {
+      debugPrint('Error inicializando FCM: $e');
+    });
   } catch (e) {
     debugPrint('Error al cargar datos iniciales: $e');
+    // Intentar inicializar FCM incluso si hay errores anteriores
+    try {
+      final fcmService = container.read(fcmServiceProvider);
+      fcmService.initialize();
+    } catch (fcmError) {
+      debugPrint('Error inicializando FCM: $fcmError');
+    }
   }
 
   runApp(ProviderScope(parent: container, child: const MyApp()));

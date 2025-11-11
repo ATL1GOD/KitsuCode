@@ -4,6 +4,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/profile/provider/follow_provider.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 
 /// 🔥 Servicio de Firebase Cloud Messaging
 /// Maneja tokens FCM y recepción de notificaciones push
@@ -13,8 +16,9 @@ class FCMService {
       FlutterLocalNotificationsPlugin();
   final SupabaseClient _supabase = Supabase.instance.client;
   final GoRouter? _router;
+  final Ref? _ref;
 
-  FCMService([this._router]);
+  FCMService([this._router, this._ref]);
 
   /// 🚀 Inicializar servicio FCM
   Future<void> initialize() async {
@@ -36,8 +40,26 @@ class FCMService {
 
       // 5️⃣ Listener para actualización de tokens
       _messaging.onTokenRefresh.listen(_updateTokenInDatabase);
+      
+      // 6️⃣ Forzar actualización del token para asegurar sincronización
+      await _forceTokenRefresh();
     } catch (e, stackTrace) {
       developer.log('Error inicializando FCM: $e\n$stackTrace', name: 'FCMService');
+    }
+  }
+  
+  /// 🔄 Forzar actualización del token para asegurar sincronización
+  Future<void> _forceTokenRefresh() async {
+    try {
+      // Esperar un poco para que FCM se establezca completamente
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final token = await _messaging.getToken();
+      if (token != null) {
+        await _updateTokenInDatabase(token);
+      }
+    } catch (e) {
+      developer.log('Error en force token refresh: $e', name: 'FCMService');
     }
   }
 
@@ -132,6 +154,9 @@ class FCMService {
 
   /// 🎯 Manejar mensaje cuando app está en primer plano
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    // Invalidar providers si es una notificación de nuevo seguidor
+    _invalidateProvidersIfNeeded(message.data);
+    
     // Mostrar notificación local cuando app está abierta
     if (message.notification != null) {
       await _showLocalNotification(message);
@@ -178,14 +203,42 @@ class FCMService {
 
   /// 👆 Manejar tap en notificación (app en segundo plano)
   void _handleBackgroundMessageTap(RemoteMessage message) {
-    // TODO: Navegar a pantalla específica según tipo de notificación
+    // Invalidar providers si es necesario
+    _invalidateProvidersIfNeeded(message.data);
+    
+    // Navegar a pantalla específica según tipo de notificación
     _handleNotificationNavigation(message.data);
   }
+  
+  /// 🔄 Invalidar providers según el tipo de notificación
+  void _invalidateProvidersIfNeeded(Map<String, dynamic> data) {
+    if (_ref == null) return;
+    
+    final type = data['type'] as String?;
+    
+    // Si es una notificación de nuevo seguidor, invalidar los providers de seguidores
+    if (type == 'new_follower') {
+      try {
+        final currentUserId = _supabase.auth.currentUser?.id;
+        if (currentUserId != null) {
+          // Invalidar los providers de listas de seguidores
+          _ref.invalidate(followListProvider(FollowListArgs(userId: currentUserId, type: 'followers')));
+          _ref.invalidate(followListProvider(FollowListArgs(userId: currentUserId, type: 'following')));
+          
+          // Invalidar el perfil del usuario para actualizar contadores
+          _ref.invalidate(userProfileByIdProvider(currentUserId));
+        }
+      } catch (e) {
+        developer.log('Error invalidando providers: $e', name: 'FCMService');
+      }
+    }
+  }
 
-  /// 🚀 Verificar si app fue abierta desde notificación
+  ///  Verificar si app fue abierta desde notificación
   Future<void> _checkInitialMessage() async {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
+      _invalidateProvidersIfNeeded(initialMessage.data);
       _handleNotificationNavigation(initialMessage.data);
     }
   }
@@ -243,6 +296,8 @@ class FCMService {
     
     try {
       final Map<String, dynamic> data = jsonDecode(response.payload!);
+      // Invalidar providers si es necesario
+      _invalidateProvidersIfNeeded(data);
       // Usar el mismo método de navegación que para notificaciones de background
       _handleNotificationNavigation(data);
     } catch (e) {

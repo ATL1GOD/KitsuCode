@@ -8,9 +8,10 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:kitsucode/main.dart' show routeObserver;
 
 // Vista principal Seguidos / Seguidores
-class FollowListView extends ConsumerWidget {
+class FollowListView extends ConsumerStatefulWidget {
   final String userId;
   final String type; // 'following' o 'followers'
 
@@ -21,14 +22,61 @@ class FollowListView extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FollowListView> createState() => _FollowListViewState();
+}
+
+class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware {
+  
+  @override
+  void initState() {
+    super.initState();
+    // Refrescar la lista cuando se carga por primera vez
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshList();
+    });
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Registrar este widget como RouteAware para detectar cuando vuelve a estar visible
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      // Registrar con el RouteObserver global
+      routeObserver.subscribe(this, route);
+    }
+  }
+  
+  @override
+  void dispose() {
+    // Desregistrar cuando se destruya el widget
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+  
+  // Este método se llama cuando vuelves a esta pantalla
+  @override
+  void didPopNext() {
+    // El usuario volvió a esta pantalla desde otra pantalla
+    // Refrescar la lista
+    _refreshList();
+  }
+  
+  void _refreshList() {
+    final args = FollowListArgs(userId: widget.userId, type: widget.type);
+    ref.invalidate(followListProvider(args));
+    ref.invalidate(userProfileByIdProvider(widget.userId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final profileState = ref.watch(userProfileByIdProvider(userId));
+    final profileState = ref.watch(userProfileByIdProvider(widget.userId));
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
-    final isOwnProfile = currentUserId == userId;
-    final title = type == 'following' ? 'Siguiendo' : 'Seguidores';
+    final isOwnProfile = currentUserId == widget.userId;
+    final title = widget.type == 'following' ? 'Siguiendo' : 'Seguidores';
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
@@ -37,7 +85,7 @@ class FollowListView extends ConsumerWidget {
         error: (_, __) => const Center(child: Text("Error cargando perfil")),
         data: (profile) {
           final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
-          final args = FollowListArgs(userId: userId, type: type);
+          final args = FollowListArgs(userId: widget.userId, type: widget.type);
           final usersState = ref.watch(followListProvider(args));
 
           return Stack(
@@ -71,7 +119,7 @@ class FollowListView extends ConsumerWidget {
                           if (users.isEmpty) {
                             // Determinar el mensaje según si es perfil propio o ajeno
                             String emptyMessage;
-                            if (type == "following") {
+                            if (widget.type == "following") {
                               emptyMessage = isOwnProfile
                                   ? "No sigues a nadie aún."
                                   : "${profile.nombrePerfil} no sigue a nadie.";

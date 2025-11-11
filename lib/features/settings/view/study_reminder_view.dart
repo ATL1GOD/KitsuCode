@@ -6,11 +6,11 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/notifications/provider/notification_settings_provider.dart';
 // --- ¡IMPORTAMOS EL NUEVO PROVIDER! ---
-import 'package:kitsucode/features/notifications/provider/local_notification_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:lottie/lottie.dart';
+import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
+import 'package:animate_do/animate_do.dart';
 
 // --- Helpers para convertir (los movimos de tu versión anterior) ---
 TimeOfDay? _stringToTimeOfDay(String? hora) {
@@ -46,6 +46,17 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
   late bool _isEnabled;
   late TimeOfDay _selectedTime;
 
+  // Helper para obtener el color dinámico basado en el perfil
+  Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
+    final avatar = profile.avatarUrl.toLowerCase();
+    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
+    if (avatar.contains('zorro')) return const Color(0xFFE65100);
+    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
+    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
+    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
+    return colors.primary;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -75,10 +86,8 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
         newTimeString
       );
       
-      // --- 3. ¡CONECTADO! ---
-      // Llama al servicio para (re)programar la alarma con la nueva hora
-      ref.read(localNotificationProvider).scheduleStudyReminder(newTime);
-      debugPrint('Alarma reprogramada para las $newTimeString');
+      // La programación de la notificación se maneja vía FCM + Edge Functions (cron job)
+      debugPrint('Hora de recordatorio actualizada para las $newTimeString');
     }
   }
 
@@ -89,10 +98,6 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
 
     final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
-    
-    final dynamicColor = profileState.value != null 
-      ? AllStatsView.getHeaderColor(profileState.value!, colors)
-      : colors.primary;
 
     // Formatear la hora para mostrarla en el tile
     String timeSubtitle;
@@ -106,41 +111,27 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
-      body: Stack(
-        children: [
-          // --- FONDO y LOTTIE (Sin cambios) ---
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  dynamicColor.withAlpha(100),
-                  colors.surfaceContainerLowest,
-                ],
-                stops: const [0.0, 0.7]
+      body: profileState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, s) => Center(child: Text('Error: $e')),
+        data: (profile) {
+          // Calcular el color dinámico basado en el avatar
+          final dynamicColor = _getDynamicColor(profile, colors);
+          
+          return Stack(
+            children: [
+              // --- FONDO ANIMADO OPTIMIZADO ---
+              AnimatedSettingsBackground(
+                profile: profile,
+                colors: colors,
               ),
-            ),
-          ),
-          ColorFiltered(
-            colorFilter: ColorFilter.mode(
-              colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
-              BlendMode.srcIn, 
-            ),
-            child: Lottie.asset(
-              'assets/animations/spring.json', 
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
 
-          // --- CONTENIDO ---
-          SafeArea(
-            child: Column(
-              children: [
-                // --- BARRA SUPERIOR (Sin cambios) ---
-                Padding(
+              // --- CONTENIDO ---
+              SafeArea(
+                child: Column(
+                  children: [
+                    // --- BARRA SUPERIOR (Sin cambios) ---
+                    Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Row(
                     children: [
@@ -175,28 +166,27 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                     children: [
                       // 1. El Switch principal para Habilitar
-                      SettingsSwitchTile(
-                        title: 'Activar recordatorio',
-                        subtitle: 'Recibe una notificación diaria para practicar.',
-                        icon: Icons.notifications_active,
-                        dynamicColor: dynamicColor,
-                        initialValue: _isEnabled,
-                        onChanged: (newValue) {
-                          // 1. Actualiza el estado local
-                          setState(() {
-                            _isEnabled = newValue;
-                          });
+                      FadeInDown(
+                        delay: const Duration(milliseconds: 100),
+                        child: SettingsSwitchTile(
+                          title: 'Activar recordatorio',
+                          subtitle: 'Recibe una notificación diaria para practicar.',
+                          icon: Icons.notifications_active,
+                          dynamicColor: dynamicColor,
+                          initialValue: _isEnabled,
+                          onChanged: (newValue) {
+                            // 1. Actualiza el estado local
+                            setState(() {
+                              _isEnabled = newValue;
+                            });
                           
-                          // 2. Guarda en Supabase y actualiza el provider
+                            // 2. Guarda en Supabase y actualiza el provider
                           ref.read(notificationSettingsProvider.notifier)
                               .updateEnabled(widget.setting.preferenciaId, newValue);
                           
-                          // 3. ¡CONECTADO!
                           if (newValue) {
-                            // Si se ACTIVA, programa la alarma
-                            ref.read(localNotificationProvider)
-                               .scheduleStudyReminder(_selectedTime);
-                            debugPrint('Alarma activada para las ${_timeOfDayToString(_selectedTime)}');
+                            // Si se ACTIVA, guardar hora en BD (FCM + Edge Functions se encargan de enviar)
+                            debugPrint('Recordatorio activado para las ${_timeOfDayToString(_selectedTime)}');
                             
                             // También guardamos la hora por si se había desactivado
                             ref.read(notificationSettingsProvider.notifier).updateTime(
@@ -204,9 +194,8 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
                               _timeOfDayToString(_selectedTime)
                             );
                           } else {
-                            // Si se DESACTIVA, cancela la alarma
-                            ref.read(localNotificationProvider).cancelStudyReminder();
-                            debugPrint('Alarma cancelada');
+                            // Si se DESACTIVA, solo actualizar BD (FCM dejará de enviar)
+                            debugPrint('Recordatorio desactivado');
 
                             // Y guardamos NULL en la hora en la BD
                             ref.read(notificationSettingsProvider.notifier)
@@ -214,17 +203,21 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
                           }
                         },
                       ),
+                      ),
 
                       const SizedBox(height: 12),
 
                       // 2. El selector de hora (deshabilitado si el switch está off)
-                      SettingsNavigationTile(
-                        title: 'Hora del recordatorio',
-                        subtitle: timeSubtitle,
-                        icon: Icons.schedule,
-                        dynamicColor: dynamicColor,
-                        // ¡CLAVE! Deshabilitado si _isEnabled es false
-                        onTap: _isEnabled ? () => _pickTime(context) : null,
+                      FadeInDown(
+                        delay: const Duration(milliseconds: 200),
+                        child: SettingsNavigationTile(
+                          title: 'Hora del recordatorio',
+                          subtitle: timeSubtitle,
+                          icon: Icons.schedule,
+                          dynamicColor: dynamicColor,
+                          // ¡CLAVE! Deshabilitado si _isEnabled es false
+                          onTap: _isEnabled ? () => _pickTime(context) : null,
+                        ),
                       ),
                     ],
                   ),
@@ -232,7 +225,9 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
               ],
             ),
           ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -74,7 +74,8 @@ class ProfileHeader extends StatelessWidget {
                   children: [
                     Positioned.fill(
                       child: FadeIn(
-                        delay: const Duration(milliseconds: 200),
+                        duration: const Duration(milliseconds: 300),
+                        delay: const Duration(milliseconds: 50),
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -102,7 +103,8 @@ class ProfileHeader extends StatelessWidget {
                         bottom: 5,
                         right: 5,
                         child: FadeIn(
-                          delay: const Duration(milliseconds: 600),
+                          duration: const Duration(milliseconds: 300),
+                          delay: const Duration(milliseconds: 150),
                           child: Material(
                             elevation: 4,
                             color: colors.surface,
@@ -125,16 +127,18 @@ class ProfileHeader extends StatelessWidget {
               // TEXTOS Y STATS
               const SizedBox(height: 15),
               FadeInUp(
-                from: 20,
-                delay: const Duration(milliseconds: 300),
+                from: 15,
+                duration: const Duration(milliseconds: 400),
+                delay: const Duration(milliseconds: 100),
                 child: Text(
                   userProfile.nombrePerfil,
                   style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               FadeInUp(
-                from: 20,
-                delay: const Duration(milliseconds: 400),
+                from: 15,
+                duration: const Duration(milliseconds: 400),
+                delay: const Duration(milliseconds: 150),
                 child: Text(
                   '@${userProfile.nombreUsuario}',
                   style: textTheme.bodyLarge?.copyWith(color: colors.onSurface.withOpacity(0.7)),
@@ -142,8 +146,9 @@ class ProfileHeader extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               FadeInUp(
-                from: 20,
-                delay: const Duration(milliseconds: 500),
+                from: 15,
+                duration: const Duration(milliseconds: 400),
+                delay: const Duration(milliseconds: 200),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/notifications/provider/notification_settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:kitsucode/features/notifications/model/notification_settings_model.dart'; 
-import 'package:lottie/lottie.dart';
+import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:collection/collection.dart'; 
@@ -15,6 +14,17 @@ import 'package:intl/intl.dart';
 
 class NotificationsView extends ConsumerWidget {
   const NotificationsView({super.key});
+
+  // Helper para obtener el color dinámico basado en el perfil
+  Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
+    final avatar = profile.avatarUrl.toLowerCase();
+    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
+    if (avatar.contains('zorro')) return const Color(0xFFE65100);
+    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
+    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
+    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
+    return colors.primary;
+  }
 
   IconData _getIconForCategory(String categoryName) {
     switch (categoryName) {
@@ -90,36 +100,15 @@ class NotificationsView extends ConsumerWidget {
         loading: () => _NotificationsLoadingShimmer(colors: colors),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
-          final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
-
+          // Calculamos el color dinámico una sola vez
+          final dynamicColor = _getDynamicColor(profile, colors);
+          
           return Stack(
             children: [
-              // --- FONDO y LOTTIE (Sin cambios) ---
-              // ... (Idéntico) ...
-               Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha(100),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.7]
-                  ),
-                ),
-              ),
-              ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
-                  BlendMode.srcIn, 
-                ),
-                child: Lottie.asset(
-                  'assets/animations/spring.json', 
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+              // --- FONDO ANIMADO COMPARTIDO (optimizado) ---
+              AnimatedSettingsBackground(
+                profile: profile,
+                colors: colors,
               ),
               
               // --- CONTENIDO ---

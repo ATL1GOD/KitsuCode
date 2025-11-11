@@ -206,7 +206,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
               });
               widget.onChanged(newValue);
             },
-            activeColor: widget.dynamicColor,
+            activeThumbColor: widget.dynamicColor,
           ),
         ],
       ),

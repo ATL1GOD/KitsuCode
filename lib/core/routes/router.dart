@@ -26,7 +26,6 @@ import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
 import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
-import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 
 // --- TUS VISTAS (dxniel7) ---
 import 'package:kitsucode/features/profile/view/follow_list_view.dart';

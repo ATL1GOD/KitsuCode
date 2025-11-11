@@ -30,9 +30,12 @@ class ProfileView extends ConsumerWidget {
     final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
     final targetUserId = userId ?? currentAuthUserId;
     final isCurrentUserProfile = targetUserId == currentAuthUserId;
+    
+    // Activar listeners de Realtime
     ref.watch(profileRealtimeProvider);
-
     ref.watch(achievementRealtimeProvider);
+    ref.watch(followRealtimeProvider); // ⬅️ ¡ESTE FALTABA!
+    
     if (targetUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
     }
@@ -119,16 +122,16 @@ class ProfileView extends ConsumerWidget {
                             Column(
                               children: [
                                 FadeInUp(
-                                  from: 20,
-                                  delay: const Duration(milliseconds: 600),
+                                  from: 30,
+                                  delay: const Duration(milliseconds: 300),
                                   child: ProfileProgressSection(
                                     userId: targetUserId,
                                     showViewAllButton: isCurrentUserProfile,
                                   ),
                                 ),
                                 FadeInUp(
-                                  from: 20,
-                                  delay: const Duration(milliseconds: 700),
+                                  from: 30,
+                                  delay: const Duration(milliseconds: 400),
                                   child: ProfileAchievementsSection(
                                     userId: targetUserId,
                                     isCurrentUserProfile: isCurrentUserProfile,

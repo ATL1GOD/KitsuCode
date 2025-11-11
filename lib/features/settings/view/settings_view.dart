@@ -8,7 +8,7 @@ import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 // Importamos el provider de settings
 import 'package:kitsucode/features/settings/provider/settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:lottie/lottie.dart';
+import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
 
@@ -31,11 +31,23 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     final platformBrightness = SchedulerBinding.instance.platformDispatcher.platformBrightness;
     final isSystemDark = platformBrightness == Brightness.dark;
 
-    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    // Verificar autenticación PRIMERO
+    final authState = ref.watch(authStateProvider);
+    
+    // Mientras se carga la autenticación, mostrar loading
+    if (authState.isLoading) {
+      return Scaffold(
+        backgroundColor: colors.surfaceContainerLowest,
+        body: _SettingsLoadingShimmer(colors: colors),
+      );
+    }
+    
+    final currentAuthUserId = authState.value?.session?.user.id;
     if (currentAuthUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
     }
 
+    // Solo ahora cargamos las preferencias (cuando ya sabemos que hay usuario)
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
     final preferenciasState = ref.watch(settingsProvider);
 
@@ -45,36 +57,15 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         loading: () => _SettingsLoadingShimmer(colors: colors),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
+          // Calculamos el color dinámico una vez para usar en los tiles
           final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
-
+          
           return Stack(
             children: [
-              // --- FONDO (Sin Cambios) ---
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha(100),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.7]
-                  ),
-                ),
-              ),
-              // --- ANIMACIÓN LOTTIE (Sin Cambios) ---
-              ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
-                  BlendMode.srcIn, 
-                ),
-                child: Lottie.asset(
-                  'assets/animations/spring.json', 
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+              // --- FONDO ANIMADO OPTIMIZADO ---
+              AnimatedSettingsBackground(
+                profile: profile,
+                colors: colors,
               ),
               
               // --- CONTENIDO PRINCIPAL ---

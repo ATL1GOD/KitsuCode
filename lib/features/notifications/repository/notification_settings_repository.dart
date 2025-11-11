@@ -33,18 +33,47 @@ class NotificationSettingsRepository {
             )
           ''')
           .eq('id_usuario', userId)
-          .order('id_preferencia', ascending: true); // Ordenamos
+          .order('id_preferencia', ascending: true);
 
       final settings = response
-          .map((item) => NotificationSetting.fromJson(item))
+          .map((item) {
+            // Convertir hora UTC a hora local antes de crear el modelo
+            String? horaLocal;
+            if (item['hora_notificacion'] != null) {
+              horaLocal = _convertUtcToLocal(item['hora_notificacion'] as String);
+              item['hora_notificacion'] = horaLocal;
+            }
+            return NotificationSetting.fromJson(item);
+          })
           .toList();
 
       return settings;
       
     } catch (e) {
-      // TODO: Manejar el caso donde un usuario nuevo no tiene preferencias
       print('Error al obtener preferencias de notificación: $e');
       rethrow;
+    }
+  }
+
+  /// Convierte hora UTC de la BD a hora local del dispositivo
+  String _convertUtcToLocal(String horaUtc) {
+    try {
+      final parts = horaUtc.split(':');
+      final utcHour = int.parse(parts[0]);
+      final utcMinute = int.parse(parts[1]);
+      
+      // Crear DateTime en UTC
+      final now = DateTime.now();
+      final utcTime = DateTime.utc(now.year, now.month, now.day, utcHour, utcMinute);
+      
+      // Convertir a hora local
+      final localTime = utcTime.toLocal();
+      
+      // Formatear como HH:mm:ss
+      return '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}:00';
+    } catch (e) {
+      print('Error convirtiendo hora UTC a local: $e');
+      return horaUtc; // Si falla, devolver la hora original
     }
   }
 
@@ -61,12 +90,31 @@ Future<void> updateNotificationEnabled(int preferenciaId, bool habilitado) async
   }
 
   // --- ¡ASEGÚRATE DE QUE ESTA OTRA TAMBIÉN EXISTA! ---
-  /// Actualiza la hora de una preferencia específica (DEBE aceptar null)
+  /// Actualiza la hora de una preferencia específica (convierte a UTC)
   Future<void> updateNotificationTime(int preferenciaId, String? hora) async {
     try {
+      String? horaUTC;
+      
+      // Si hay una hora, convertirla a UTC
+      if (hora != null) {
+        final parts = hora.split(':');
+        final localHour = int.parse(parts[0]);
+        final localMinute = int.parse(parts[1]);
+        
+        // Crear DateTime con hora local
+        final now = DateTime.now();
+        final localTime = DateTime(now.year, now.month, now.day, localHour, localMinute);
+        
+        // Convertir a UTC
+        final utcTime = localTime.toUtc();
+        
+        // Formatear como HH:mm:ss
+        horaUTC = '${utcTime.hour.toString().padLeft(2, '0')}:${utcTime.minute.toString().padLeft(2, '0')}:00';
+      }
+      
       await _supabaseClient
           .from('preferencias_notificacion')
-          .update({'hora_notificacion': hora}) // Pasa la hora (o null)
+          .update({'hora_notificacion': horaUTC})
           .eq('id_preferencia', preferenciaId);
     } catch (e) {
       print("Error al actualizar 'hora_notificacion': $e");

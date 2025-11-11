@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/notifications/provider/notification_settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
+import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart'; 
-import 'package:lottie/lottie.dart';
 import 'package:animate_do/animate_do.dart';
 
 // Esta vista es genérica. Recibe un título y una lista de settings.
@@ -21,6 +21,17 @@ class NotificationCategoryView extends ConsumerWidget {
     required this.settings
   });
 
+  // Helper para obtener el color dinámico
+  Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
+    final avatar = profile.avatarUrl.toLowerCase();
+    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
+    if (avatar.contains('zorro')) return const Color(0xFFE65100);
+    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
+    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
+    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
+    return colors.primary;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
@@ -30,44 +41,24 @@ class NotificationCategoryView extends ConsumerWidget {
     final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
 
-    // Usamos el color del perfil o un color de fallback
-    final dynamicColor = profileState.value != null 
-      ? AllStatsView.getHeaderColor(profileState.value!, colors)
-      : colors.primary;
-
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
-      body: Stack(
-        children: [
-          // --- FONDO y LOTTIE (Idéntico a las otras vistas) ---
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  dynamicColor.withAlpha(100),
-                  colors.surfaceContainerLowest,
-                ],
-                stops: const [0.0, 0.7]
-              ),
-            ),
-          ),
-          ColorFiltered(
-            colorFilter: ColorFilter.mode(
-              colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
-              BlendMode.srcIn, 
-            ),
-            child: Lottie.asset(
-              'assets/animations/spring.json', 
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
+      body: profileState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, s) => Center(child: Text('Error: $e')),
+        data: (profile) {
+          final dynamicColor = _getDynamicColor(profile, colors);
           
-          // --- CONTENIDO ---
-          SafeArea(
+          return Stack(
+            children: [
+              // --- FONDO ANIMADO OPTIMIZADO ---
+              AnimatedSettingsBackground(
+                profile: profile,
+                colors: colors,
+              ),
+          
+              // --- CONTENIDO ---
+              SafeArea(
             child: Column(
               children: [
                 // --- BARRA SUPERIOR (Idéntica) ---
@@ -129,7 +120,9 @@ class NotificationCategoryView extends ConsumerWidget {
               ],
             ),
           ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -1,16 +1,13 @@
 // lib/features/profile/provider/profile_provider.dart para datos de prueba en profile
 
-import 'package:flutter/foundation.dart'; // <-- ¡IMPORTADO PARA debugPrint!
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
-import 'package:kitsucode/features/profile/repository/mock_profile_repository.dart'; 
-import 'dart:convert'; // Para decodificar el JSON
-import 'package:flutter/material.dart'; // Para el BuildContext
-import 'package:overlay_support/overlay_support.dart'; // Para mostrar la notificación
-import 'package:kitsucode/shared/widgets/achievement_toast.dart'; // El widget que creamos
+import 'package:flutter/material.dart';
+import 'package:overlay_support/overlay_support.dart';
+import 'package:kitsucode/shared/widgets/achievement_toast.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:collection';
@@ -47,7 +44,7 @@ final userStatsByIdProvider = FutureProvider.autoDispose.family<UserStatsModel, 
   return repository.fetchUserStatsById(userId);
 });
 
-// Provider de Realtime para seguimiento (sin cambios)
+// Provider de Realtime para seguimiento
 final followRealtimeProvider = Provider((ref) {
   final supabase = Supabase.instance.client;
   final channel = supabase.channel('public:seguimiento_usuario');
@@ -57,8 +54,6 @@ final followRealtimeProvider = Provider((ref) {
     schema: 'public',
     table: 'seguimiento_usuario',
     callback: (payload) {
-      // ignore: avoid_print
-      debugPrint('Cambio detectado en seguimiento_usuario: $payload');
       final eventType = payload.eventType;
       final record = eventType == PostgresChangeEvent.insert ? payload.newRecord : payload.oldRecord;
 
@@ -78,7 +73,7 @@ final followRealtimeProvider = Provider((ref) {
   return channel;
 });
 
-// --- ¡NUEVO Provider de Realtime para el Perfil (CORREGIDO)! ---
+// --- Provider de Realtime para el Perfil ---
 final profileRealtimeProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
@@ -227,10 +222,10 @@ class AchievementNotifier extends StateNotifier<bool> {
 
   // El "Oído" que escucha Supabase
   void _initListener() {
-    final supabase = Supabase.instance.client; // Supabase client 
+    final supabase = Supabase.instance.client;
 
     final authState = _ref.read(authStateProvider);
-    final currentUserId = authState.value?.session?.user?.id;
+    final currentUserId = authState.value?.session?.user.id;
     if (currentUserId == null) return;
 
     final channel = supabase.channel('public:usuario_logro_toast_v2');

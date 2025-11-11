@@ -12,8 +12,9 @@ class LocalNotificationService {
   Future<void> init() async {
     debugPrint(' [NOTIFICACIÓN] Inicializando servicio de notificaciones...');
     
+    // Usa el ícono de la app por defecto
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('ic_notification');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const DarwinInitializationSettings iOSSettings =
         DarwinInitializationSettings(

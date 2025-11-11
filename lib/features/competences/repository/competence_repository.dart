@@ -95,12 +95,7 @@ class MockCompetenceRepository implements CompetenceRepository {
           userId: userId,
           username: username,
           profileName: profileName,
-          avatarUrl:
-              'assets/images/avatar_${i % 4 == 0
-                  ? 'leon'
-                  : i % 3 == 0
-                  ? 'mono'
-                  : 'tiburon'}.png',
+          idAvatarSeleccionado: (i % 20) + 1, // ✅ Avatares rotativos (soporta hasta 20 avatares)
           totalScore: score,
           rank: rankName,
           position: i,
@@ -114,7 +109,7 @@ class MockCompetenceRepository implements CompetenceRepository {
         userId: ranking[i].userId,
         username: ranking[i].username,
         profileName: ranking[i].profileName,
-        avatarUrl: ranking[i].avatarUrl,
+        idAvatarSeleccionado: ranking[i].idAvatarSeleccionado, // ✅ CAMBIADO
         totalScore: ranking[i].totalScore,
         rank: ranking[i].rank,
         position: i + 1,

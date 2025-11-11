@@ -5,6 +5,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_achievements_section.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart';
@@ -16,13 +17,7 @@ class ProfileView extends ConsumerWidget {
   const ProfileView({super.key, this.userId});
 
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
-    final avatar = userProfile.avatarUrl.toLowerCase();
-    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
-    if (avatar.contains('zorro')) return const Color(0xFFE65100);
-    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
-    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
-    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
-    return colors.primary;
+    return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
 
   @override

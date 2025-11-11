@@ -5,6 +5,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/follow_list_model.dart';
 import 'package:kitsucode/features/profile/provider/follow_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ Añadido
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
@@ -407,9 +408,9 @@ Future<void> _toggle() async {
                   ),
                   CircleAvatar(
                     radius: 24,
-                    backgroundImage: widget.user.avatarUrl.startsWith("http")
-                        ? NetworkImage(widget.user.avatarUrl)
-                        : AssetImage(widget.user.avatarUrl) as ImageProvider,
+                    backgroundImage: AssetImage(
+                      getAvatarAssetPathById(widget.user.idAvatarSeleccionado),
+                    ),
                   ),
                 ],
               ),

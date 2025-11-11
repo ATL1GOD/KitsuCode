@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ AGREGADO
 
 class RankingTile extends StatelessWidget {
   final RankingModel user;
@@ -82,7 +83,7 @@ class RankingTile extends StatelessWidget {
               const SizedBox(width: 8),
               CircleAvatar(
                 radius: 22,
-                backgroundImage: AssetImage(user.avatarUrl),
+                backgroundImage: AssetImage(getAvatarAssetPathById(user.idAvatarSeleccionado)), // ✅ CAMBIADO
                 backgroundColor: colors.surfaceContainerHighest,
               ),
             ],

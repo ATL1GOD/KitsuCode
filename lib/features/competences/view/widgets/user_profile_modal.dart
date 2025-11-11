@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/profile/provider/follow_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 
 class UserProfileModal extends ConsumerWidget {
@@ -100,7 +101,9 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                     child: CircleAvatar(
                       radius: 55,
-                      backgroundImage: AssetImage(user.avatarUrl),
+                      backgroundImage: AssetImage(
+                        getAvatarAssetPathById(user.idAvatarSeleccionado),
+                      ),
                       backgroundColor: colors.surfaceContainer,
                     ),
                   ),

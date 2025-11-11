@@ -12,6 +12,7 @@ import 'package:kitsucode/features/competences/view/widgets/ranking_error_widget
 import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ AGREGADO
 import 'package:lottie/lottie.dart';
 
 // --- WIDGET PRINCIPAL: RankingView ---
@@ -427,7 +428,7 @@ class _PodiumPlace extends StatelessWidget {
                       backgroundColor: color,
                       child: CircleAvatar(
                           radius: (size / 2) - 4,
-                          backgroundImage: AssetImage(user.avatarUrl))),
+                          backgroundImage: AssetImage(getAvatarAssetPathById(user.idAvatarSeleccionado)))), // ✅ CAMBIADO
                   Positioned(
                     bottom: -10,
                     left: 0,

@@ -5,6 +5,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
+import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:kitsucode/shared/widgets/achievement_toast.dart';
@@ -44,6 +45,30 @@ final userStatsByIdProvider = FutureProvider.autoDispose.family<UserStatsModel, 
   return repository.fetchUserStatsById(userId);
 });
 
+// ==================== PROVIDERS PARA AVATARES ====================
+
+/// Provider para obtener todos los avatares de un usuario
+/// Con keepAlive para cachear los resultados
+final userAvatarsProvider = FutureProvider.family.autoDispose<List<AvatarModel>, String>((ref, userId) async {
+  // Mantener el provider vivo para cache
+  ref.keepAlive();
+  
+  final repository = ref.watch(profileRepositoryProvider);
+  return repository.fetchUserAvatars(userId);
+});
+
+/// Provider para el usuario actual (shortcut)
+final currentUserAvatarsProvider = FutureProvider.autoDispose<List<AvatarModel>>((ref) async {
+  final userId = ref.watch(authStateProvider).value?.session?.user.id;
+  if (userId == null) {
+    throw Exception('Usuario no autenticado');
+  }
+  
+  return ref.watch(userAvatarsProvider(userId).future);
+});
+
+// ==================== FIN PROVIDERS AVATARES ====================
+
 // Provider de Realtime para seguimiento
 final followRealtimeProvider = Provider((ref) {
   final supabase = Supabase.instance.client;
@@ -79,7 +104,7 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return;
 
-  // 1. Canal para cambios en 'usuarios' (nombre_perfil, avatar_url)
+  // 1. Canal para cambios en 'usuarios' (nombre_perfil, id_avatar_seleccionado)
   final userChannel = supabase.channel('public:usuarios:profile');
   userChannel.onPostgresChanges(
     event: PostgresChangeEvent.update,

@@ -8,6 +8,7 @@ import 'package:kitsucode/features/notifications/provider/notification_settings_
 // --- ¡IMPORTAMOS EL NUEVO PROVIDER! ---
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
 import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
@@ -48,13 +49,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
 
   // Helper para obtener el color dinámico basado en el perfil
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
-    final avatar = profile.avatarUrl.toLowerCase();
-    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
-    if (avatar.contains('zorro')) return const Color(0xFFE65100);
-    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
-    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
-    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
-    return colors.primary;
+    return getAvatarColorById(profile.idAvatarSeleccionado);
   }
 
   @override

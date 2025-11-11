@@ -4,7 +4,7 @@ class RankingModel {
   final String userId;
   final String username;
   final String profileName;
-  final String avatarUrl;
+  final int idAvatarSeleccionado; // ✅ CAMBIADO de avatarUrl a idAvatarSeleccionado
   final int totalScore;
   final String rank;
   final int position;
@@ -13,7 +13,7 @@ class RankingModel {
     required this.userId,
     required this.username,
     required this.profileName,
-    required this.avatarUrl,
+    required this.idAvatarSeleccionado,
     required this.totalScore,
     required this.rank,
     required this.position,
@@ -25,7 +25,8 @@ class RankingModel {
       userId: json['user_id'] ?? '', // Valor por defecto si es nulo
       username: json['username'] ?? 'N/A',
       profileName: json['profile_name'] ?? 'Usuario',
-      avatarUrl: json['avatar_url'] ?? 'assets/images/login_zorro.png', // Avatar por defecto
+      // ✅ CAMBIADO: Ahora lee id_avatar_seleccionado en lugar de avatar_url
+      idAvatarSeleccionado: json['id_avatar_seleccionado'] ?? 1, // Default: Zorro
       totalScore: (json['total_score'] ?? 0) as int,
       rank: json['rank'] ?? 'Bronce',
       position: (json['position'] ?? 0) as int,

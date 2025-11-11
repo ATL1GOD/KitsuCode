@@ -6,6 +6,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_controller.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:lottie/lottie.dart'; 
 
@@ -21,27 +22,23 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   TextEditingController? _nameController;
   String? _nameValidationError;
 
-  late String _currentAvatar;
+  late int _currentAvatarId;
+  late int _initialAvatarId; // ✅ Guardamos el avatar inicial
   late String _initialName;
   late UserProfileModel _currentProfileData;
 
   bool _isInitialized = false;
 
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
-    final avatar = userProfile.avatarUrl.toLowerCase();
-    if (avatar.contains('tiburon')) return const Color(0xFF0097A7);
-    if (avatar.contains('zorro')) return const Color(0xFFE65100);
-    if (avatar.contains('gato')) return const Color(0xFF7B1FA2);
-    if (avatar.contains('león') || avatar.contains('leon')) return const Color(0xFFF57F17);
-    if (avatar.contains('panda')) return const Color(0xFF2E7D32);
-    return colors.primary;
+    return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
 
   void _initializeControllers(UserProfileModel freshProfile) {
     if (_isInitialized) return;
 
     _nameController = TextEditingController(text: freshProfile.nombrePerfil);
-    _currentAvatar = freshProfile.avatarUrl;
+    _currentAvatarId = freshProfile.idAvatarSeleccionado;
+    _initialAvatarId = freshProfile.idAvatarSeleccionado; // ✅ Guardamos el inicial
     _initialName = freshProfile.nombrePerfil;
     _currentProfileData = freshProfile;
 
@@ -125,7 +122,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
 }
         _currentProfileData = profile;
         
-        final tempProfileForColor = profile.copyWith(avatarUrl: _isInitialized ? _currentAvatar : profile.avatarUrl);
+        final tempProfileForColor = profile.copyWith(idAvatarSeleccionado: _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado);
         final dynamicColor = getHeaderColor(tempProfileForColor, colors);
 
         final remainingName = 2 - _currentProfileData.cambiosNombrePerfilEsteMes;
@@ -134,20 +131,19 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
         final nameMessage = 'Te $nameVerb $remainingName $nameNoun de nombre este mes.';
         
         final isNameChanged = _isInitialized && _nameController!.text != _initialName;
-        final isAvatarChanged = _isInitialized && _currentAvatar != _currentProfileData.avatarUrl;
+        
+        // ✅ CORREGIDO: Comparamos con el avatar INICIAL, no con el del stream
+        final isAvatarChanged = _isInitialized && _currentAvatarId != _initialAvatarId;
+        
         final hasChanges = isNameChanged || isAvatarChanged;
 
         final maxAvatarChanges = _currentProfileData.cambiosAvatarHoy >= 2;
         final maxNameChanges = _currentProfileData.cambiosNombrePerfilEsteMes >= 2;
         
-        Widget avatarImage;
-        if (_isInitialized && _currentAvatar.startsWith('http')) {
-          avatarImage = Image.network(_currentAvatar, fit: BoxFit.cover);
-        } else if (_isInitialized) {
-          avatarImage = Image.asset(_currentAvatar, fit: BoxFit.cover);
-        } else {
-          avatarImage = const SizedBox.shrink();
-        }
+        final currentAvatarPath = getAvatarAssetPathById(_isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado);
+        Widget avatarImage = _isInitialized 
+          ? Image.asset(currentAvatarPath, fit: BoxFit.cover)
+          : const SizedBox.shrink();
 
         return Scaffold(
           resizeToAvoidBottomInset: true,
@@ -297,10 +293,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                             ));
                                             return;
                                           }
-                                          final newAvatar = await context.push<String>('/edit-avatar', extra: _currentProfileData.avatarUrl); 
+                                          final newAvatarId = await context.push<int>('/edit-avatar', extra: _currentProfileData.idAvatarSeleccionado); 
                                           
-                                          if (newAvatar != null && newAvatar != _currentAvatar) {
-                                            setState(() { _currentAvatar = newAvatar; });
+                                          if (newAvatarId != null && newAvatarId != _currentAvatarId) {
+                                            setState(() { _currentAvatarId = newAvatarId; });
                                           }
                                         },
                                       ),
@@ -363,10 +359,12 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                           ));
                                           return; 
                                         }
+                                        
                                         final updatedProfile = await ref.read(profileControllerProvider.notifier).updateProfile(
                                           newName: isNameChanged ? _nameController!.text : null,
-                                          newAvatar: isAvatarChanged ? _currentAvatar : null, 
+                                          newAvatarId: isAvatarChanged ? _currentAvatarId : null, 
                                         );
+                                        
                                         if (!context.mounted) return;
                                         if (updatedProfile != null) {
                                           if (isAvatarChanged) {
@@ -377,6 +375,11 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(avatarSnackBarMessage)));
                                           }
                                           context.pop();
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                            content: Text('Error al guardar cambios'),
+                                            backgroundColor: Colors.red,
+                                          ));
                                         }
                                       },
                                   style: ElevatedButton.styleFrom(

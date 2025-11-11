@@ -26,7 +26,7 @@ class ProfileController extends StateNotifier<bool> {
         _ref = ref,
         super(false);
 
-  Future<UserProfileModel?> updateProfile({String? newName, String? newAvatar}) async {
+  Future<UserProfileModel?> updateProfile({String? newName, int? newAvatarId}) async {
     final user = _ref.read(authStateProvider).value?.session?.user;
     if (user == null) return null;
 
@@ -35,7 +35,7 @@ class ProfileController extends StateNotifier<bool> {
       await _profileRepository.updateUserProfile(
         userId: user.id,
         newName: newName,
-        newAvatar: newAvatar,
+        newAvatarId: newAvatarId,
       );
       
       await Future.delayed(const Duration(milliseconds: 500));

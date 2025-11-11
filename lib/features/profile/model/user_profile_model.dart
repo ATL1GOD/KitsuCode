@@ -3,7 +3,7 @@ class UserProfileModel {
   final String nombreUsuario;
   final String correo;
   final String nombrePerfil;
-  final String avatarUrl;
+  final int idAvatarSeleccionado; // ¡CAMBIO! Ahora es int en lugar de String
   final int siguiendoCount;  
   final int seguidoresCount; 
   final int cambiosAvatarHoy;
@@ -14,7 +14,7 @@ class UserProfileModel {
     required this.nombreUsuario,
     required this.correo,
     required this.nombrePerfil,
-    required this.avatarUrl,
+    required this.idAvatarSeleccionado,
     required this.siguiendoCount,
     required this.seguidoresCount, 
     required this.cambiosAvatarHoy,
@@ -27,7 +27,7 @@ class UserProfileModel {
       nombreUsuario: json['nombre_usuario'] ?? 'N/A',
       correo: json['correo'] ?? 'Sin correo',
       nombrePerfil: json['nombre_perfil'] ?? 'Sin Nombre',
-      avatarUrl: json['avatar_url'] ?? 'assets/images/login_zorro.png',
+      idAvatarSeleccionado: json['id_avatar_seleccionado'] ?? 1, // Default: Zorro
       
       siguiendoCount: json['siguiendo_count'] ?? 0,
       seguidoresCount: json['seguidores_count'] ?? 0, 
@@ -42,7 +42,7 @@ class UserProfileModel {
     String? nombreUsuario,
     String? correo,
     String? nombrePerfil,
-    String? avatarUrl,
+    int? idAvatarSeleccionado,
     int? siguiendoCount,
     int? seguidoresCount,
     int? cambiosAvatarHoy,
@@ -53,7 +53,7 @@ class UserProfileModel {
       nombreUsuario: nombreUsuario ?? this.nombreUsuario,
       correo: correo ?? this.correo,
       nombrePerfil: nombrePerfil ?? this.nombrePerfil,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      idAvatarSeleccionado: idAvatarSeleccionado ?? this.idAvatarSeleccionado,
       siguiendoCount: siguiendoCount ?? this.siguiendoCount,
       seguidoresCount: seguidoresCount ?? this.seguidoresCount,
       cambiosAvatarHoy: cambiosAvatarHoy ?? this.cambiosAvatarHoy,

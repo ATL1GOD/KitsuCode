@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:particles_fly/particles_fly.dart';
 
@@ -22,12 +23,9 @@ class ProfileHeader extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
 
-    Widget avatarImage;
-    if (userProfile.avatarUrl.startsWith('http')) {
-      avatarImage = Image.network(userProfile.avatarUrl, fit: BoxFit.cover);
-    } else {
-      avatarImage = Image.asset(userProfile.avatarUrl, fit: BoxFit.cover);
-    }
+    final avatarAssetPath = getAvatarAssetPathById(userProfile.idAvatarSeleccionado);
+    
+    Widget avatarImage = Image.asset(avatarAssetPath, fit: BoxFit.cover);
 
     return Stack(
       alignment: Alignment.topCenter,

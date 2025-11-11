@@ -2,14 +2,14 @@ class FollowListModel {
   final String userId;
   final String nombreUsuario;
   final String nombrePerfil;
-  final String avatarUrl;
+  final int idAvatarSeleccionado; // ✅ CAMBIADO de avatarUrl a idAvatarSeleccionado
   final bool isFollowing; // Indica si el usuario que ve la lista sigue a este perfil.
 
   FollowListModel({
     required this.userId,
     required this.nombreUsuario,
     required this.nombrePerfil,
-    required this.avatarUrl,
+    required this.idAvatarSeleccionado,
     required this.isFollowing,
   });
 
@@ -18,8 +18,8 @@ class FollowListModel {
       userId: json['user_id'],
       nombreUsuario: json['nombre_usuario'] ?? 'N/A',
       nombrePerfil: json['nombre_perfil'] ?? 'Sin Nombre',
-      // Se asume que el backend devuelve un valor predeterminado o un URL válido.
-      avatarUrl: json['avatar_url'] ?? 'assets/images/login_zorro.png',
+      // ✅ CAMBIADO: Ahora lee id_avatar_seleccionado en lugar de avatar_url
+      idAvatarSeleccionado: json['id_avatar_seleccionado'] ?? 1, // Default: Zorro
       // Se asume que el backend devuelve un booleano para el estado de seguimiento.
       isFollowing: json['is_following'] ?? false, 
     );
@@ -30,14 +30,14 @@ class FollowListModel {
     String? userId,
     String? nombreUsuario,
     String? nombrePerfil,
-    String? avatarUrl,
+    int? idAvatarSeleccionado,
     bool? isFollowing,
   }) {
     return FollowListModel(
       userId: userId ?? this.userId,
       nombreUsuario: nombreUsuario ?? this.nombreUsuario,
       nombrePerfil: nombrePerfil ?? this.nombrePerfil,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      idAvatarSeleccionado: idAvatarSeleccionado ?? this.idAvatarSeleccionado,
       isFollowing: isFollowing ?? this.isFollowing,
     );
   }

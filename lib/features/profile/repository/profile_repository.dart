@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
+import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/profile/model/follow_list_model.dart';
 
@@ -128,14 +129,14 @@ class ProfileRepository {
     }
   }
 
-  Future<void> updateUserProfile({required String userId, String? newName, String? newAvatar}) async {
+  Future<void> updateUserProfile({required String userId, String? newName, int? newAvatarId}) async {
     try {
       final updates = <String, dynamic>{};
       if (newName != null) {
         updates['nombre_perfil'] = newName;
       }
-      if (newAvatar != null) {
-        updates['avatar_url'] = newAvatar;
+      if (newAvatarId != null) {
+        updates['id_avatar_seleccionado'] = newAvatarId;
       }
 
       if (updates.isNotEmpty) {
@@ -218,6 +219,48 @@ class ProfileRepository {
       // ignore: avoid_print
       print('Error fetching logro details: $e');
       throw Exception('Error al cargar detalles del logro');
+    }
+  }
+
+  // ==================== MÉTODOS PARA AVATARES ====================
+  
+  /// Obtiene todos los avatares disponibles para un usuario específico
+  /// Incluye el campo 'desbloqueado' que indica si el usuario tiene acceso
+  Future<List<AvatarModel>> fetchUserAvatars(String userId) async {
+    try {
+      final data = await _supabase.rpc(
+        'get_avatars_for_user',
+        params: {'p_user_id': userId},
+      );
+
+      final list = data as List;
+      return list.map((json) => AvatarModel.fromJson(json)).toList();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error fetching avatars: $e');
+      throw Exception('Error al cargar los avatares');
+    }
+  }
+
+  /// Desbloquea un avatar específico para un usuario
+  /// Retorna true si se desbloqueó correctamente
+  Future<bool> unlockAvatar({
+    required String userId,
+    required int avatarId,
+  }) async {
+    try {
+      final result = await _supabase.rpc(
+        'unlock_avatar_for_user',
+        params: {
+          'p_user_id': userId,
+          'p_avatar_id': avatarId,
+        },
+      );
+      return result as bool? ?? false;
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error unlocking avatar: $e');
+      return false;
     }
   }
 } 

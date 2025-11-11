@@ -128,9 +128,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
-          final currentAvatar =
-              state.extra as String? ?? 'assets/images/login_zorro.png';
-          return EditAvatarView(currentAvatar: currentAvatar);
+          final currentAvatarId = state.extra as int? ?? 1;
+          return EditAvatarView(currentAvatarId: currentAvatarId);
         },
       ),
 

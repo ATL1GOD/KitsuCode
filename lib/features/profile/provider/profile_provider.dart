@@ -117,9 +117,7 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
       value: userId,
     ),
     callback: (payload) {
-      debugPrint("CAMBIO EN USUARIOS (PERFIL) DETECTADO -> Invalidando providers de perfil");
-      // --- ¡ARREGLADO! ---
-      // Invalidamos el provider de datos, no el controlador
+      // Invalidamos el provider de datos cuando hay cambios
       ref.invalidate(userProfileByIdProvider(userId));
     },
   ).subscribe();
@@ -137,9 +135,7 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
       value: userId,
     ),
     callback: (payload) {
-      debugPrint("CAMBIO EN ESTADISTICAS (STATS) DETECTADO -> Invalidando providers de perfil");
-      // --- ¡ARREGLADO! ---
-      // Invalidamos el provider de datos, no el controlador
+      // Invalidamos el provider de datos cuando hay cambios
       ref.invalidate(userStatsByIdProvider(userId));
     },
   ).subscribe();
@@ -186,8 +182,6 @@ final achievementRealtimeProvider = Provider.autoDispose((ref) {
   
   // Callback sin guión bajo inicial (evita el warning)
   void globalAchievementCallback(dynamic payload) {
-    debugPrint("Realtime: Logro GLOBAL (C/D) detectado. Forzando recarga de lista.");
-    
     // Forzamos la recarga de la lista de logros del usuario actual.
     ref.invalidate(userAchievementsProvider(currentUserId)); 
   }

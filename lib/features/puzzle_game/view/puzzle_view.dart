@@ -25,6 +25,7 @@ import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
 // --- FIN NUEVO ---
+import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 
 // --- 1. DEFINIMOS LA VISTA DEL PUZZLE ---
 class PuzzleView extends ConsumerWidget {
@@ -222,7 +223,9 @@ class PuzzleView extends ConsumerWidget {
 
                           // 2. Refrescar Ranking (NO refrescamos stats aquí - se hará al regresar al Home)
                           ref.invalidate(globalRankingProvider);
-
+                          // 3. Refrescar la lista de desafíos mensuales
+                          //    Esto hará que la barra de progreso se actualice.
+                          ref.invalidate(desafiosProvider);
                           // 3. Navegar a la vista de éxito
                           if (!context.mounted) return;
                           context.push('/challenge_success', extra: trofeos);

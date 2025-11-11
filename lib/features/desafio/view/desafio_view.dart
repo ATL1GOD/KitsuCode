@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
+import 'package:kitsucode/core/providers/app_provider.dart';
 
 class DesafiosView extends ConsumerWidget {
   const DesafiosView({super.key});
@@ -282,7 +283,7 @@ class _ExpandableSpecialEventCardState
 // -----------------------------------------------------------------------------------
 // --- Item para cada Desafío Mensual (dentro del expandible, con estado de completado) ---
 // -----------------------------------------------------------------------------------
-class MonthlyChallengeItem extends StatelessWidget {
+class MonthlyChallengeItem extends ConsumerWidget {
   final RetoIndividual desafio; // Usar el nuevo modelo
   final Color parentColor;
   final bool isCompleted; // Indica si el reto fue completado
@@ -295,7 +296,7 @@ class MonthlyChallengeItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       color: Color.lerp(parentColor, Colors.black, 0.2),
@@ -324,7 +325,13 @@ class MonthlyChallengeItem extends StatelessWidget {
         onTap: isCompleted
             ? null // Desactiva el tap si ya está completo
             : () {
-                // Navegar a la dinámica del reto específico
+                // --- ¡¡ESTE ES EL CAMBIO!! ---
+                // 1. Establecemos la ruta de retorno
+                ref.read(navigationReturnPathProvider.notifier).state =
+                    '/desafiomensual';
+
+                // 2. Navegamos al distribuidor de retos (el MISMO de siempre)
+                // ¡No necesitas un distribuidor nuevo!
                 context.go('/reto/${desafio.idReto}/${desafio.nivelId}');
               },
       ),

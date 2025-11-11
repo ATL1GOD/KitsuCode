@@ -26,11 +26,12 @@ import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
 import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
-import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
+    show RecursoModel;
 
 // --- TUS VISTAS (dxniel7) ---
 import 'package:kitsucode/features/profile/view/follow_list_view.dart';
-import 'package:kitsucode/main.dart'; // 
+import 'package:kitsucode/main.dart'; //
 
 // --- VISTAS DEL EQUIPO (atl1god) ---
 import 'package:kitsucode/features/desafio/view/desafio_view.dart'; // <-- FUSIÓN: Importado de la rama (atl1god)
@@ -114,7 +115,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      
+
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
@@ -127,8 +128,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           return EditAvatarView(currentAvatar: currentAvatar);
         },
       ),
-      
-      GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
+
+      GoRoute(
+        path: '/all-stats',
+        builder: (context, state) => const AllStatsView(),
+      ),
 
       // --- ¡NUEVAS RUTAS DE SETTINGS AÑADIDAS! ---
       GoRoute(
@@ -149,7 +153,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'support',
             builder: (context, state) => const SupportView(),
           ),
-        ]
+        ],
       ),
       // --- FIN DE NUEVAS RUTAS ---
 
@@ -168,20 +172,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/challenge_failure',
         name: 'challenge_failure',
         builder: (context, state) {
-          final List<RecursoModel> recursos = (state.extra is List<RecursoModel>) 
+          final List<RecursoModel> recursos =
+              (state.extra is List<RecursoModel>)
               ? state.extra as List<RecursoModel>
-              : <RecursoModel>[]; 
+              : <RecursoModel>[];
           return ChallengeFailureView(recursos: recursos);
         },
       ),
-      
+
       // --- FUSIÓN: Se usa TUS rutas de perfil anidadas (dxniel7) ---
       // Son más completas que las del equipo.
       GoRoute(
         path: '/profile/:userId',
         builder: (context, state) {
           final userId = state.pathParameters['userId']!;
-          return ProfileView(userId: userId); 
+          return ProfileView(userId: userId);
         },
         routes: [
           // ✅ RUTA ANIDADA 1: /profile/:userId/achievements
@@ -192,7 +197,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               return AllAchievementsView(userId: userId);
             },
           ),
-          
+
           // ✅ RUTA ANIDADA 2: /profile/:userId/follow/:type
           GoRoute(
             path: 'follow/:type', // 'following' o 'followers'
@@ -201,13 +206,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               final type = state.pathParameters['type']!;
 
               if (type != 'following' && type != 'followers') {
-                return const Scaffold(body: Center(child: Text("Error: Tipo de lista inválido")));
+                return const Scaffold(
+                  body: Center(child: Text("Error: Tipo de lista inválido")),
+                );
               }
 
-              return FollowListView(
-                userId: userId,
-                type: type,
-              );
+              return FollowListView(userId: userId, type: type);
             },
           ),
         ],
@@ -246,8 +250,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             navigatorKey: _navigatorKeys['desafiomensual'],
             routes: [
               GoRoute(
-                path: '/desafios', // <-- Nueva ruta
-                builder: (context, state) => const DesafiosView(), // <-- Nueva vista
+                path: '/desafiomensual', // <-- Nueva ruta
+                builder: (context, state) =>
+                    const DesafiosView(), // <-- Nueva vista
               ),
             ],
           ),

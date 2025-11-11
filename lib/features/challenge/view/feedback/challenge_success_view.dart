@@ -8,19 +8,17 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 // --- FUSIÓN: Se mantiene TU import de navigation_tracker_provider ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:lottie/lottie.dart'; // Necesitarás Lottie para la animación
+import 'package:kitsucode/core/providers/app_provider.dart';
 
 class ChallengeSuccessView extends ConsumerWidget {
   final int trofeosObtenidos;
 
-  const ChallengeSuccessView({
-    super.key,
-    required this.trofeosObtenidos,
-  });
+  const ChallengeSuccessView({super.key, required this.trofeosObtenidos});
 
   // --- Función helper para obtener el Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    
+
     switch (langName.toLowerCase().trim()) {
       case 'python':
         return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
@@ -53,98 +51,121 @@ class ChallengeSuccessView extends ConsumerWidget {
         child: Scaffold(
           backgroundColor: colorScheme.surface, // Fondo con el color del tema
           body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
-                
-                // --- Animación o Ilustración ---
-                SizedBox(
-                  height: 250,
-                  child: Lottie.asset(
-                    'assets/animations/fox_run.json',
-                    repeat: true,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                
-                // --- Mensaje de Felicitación ---
-                Text(
-                  '¡Eres todo un programador!',
-                  textAlign: TextAlign.center,
-                  style: textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary, // Color principal del lenguaje
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // --- Trofeos Ganados ---
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.emoji_events, color: colorScheme.primary, size: 30),
-                      const SizedBox(width: 12),
-                      Text(
-                        '+$trofeosObtenidos Trofeos',
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const Spacer(),
-                
-                // --- Botón de Continuar ---
-                // --- FUSIÓN: Se usa TU 'onPressed' (dxniel7) ---
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Spacer(),
+
+                  // --- Animación o Ilustración ---
+                  SizedBox(
+                    height: 250,
+                    child: Lottie.asset(
+                      'assets/animations/fox_run.json',
+                      repeat: true,
                     ),
                   ),
-                  onPressed: () async {
-                    // Los valores viejos ya están guardados en oldStatsValuesProvider
-                    // Ahora hacemos fetchStats para obtener los nuevos valores
-                    await ref.read(appBarProvider.notifier).fetchStats();
-                    
-                    // Limpiar valores guardados y resetear flag
-                    ref.read(oldStatsValuesProvider.notifier).state = null;
-                    ref.read(shouldRefreshStatsProvider.notifier).state = false;
-                    
-                    if (!context.mounted) return;
-                    context.go('/home');
-                  },
-                  child: const Text(
-                    'CONTINUAR',
-                    style: TextStyle(
+                  const SizedBox(height: 32),
+
+                  // --- Mensaje de Felicitación ---
+                  Text(
+                    '¡Eres todo un programador!',
+                    textAlign: TextAlign.center,
+                    style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      color:
+                          colorScheme.primary, // Color principal del lenguaje
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+
+                  // --- Trofeos Ganados ---
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.emoji_events,
+                          color: colorScheme.primary,
+                          size: 30,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '+$trofeosObtenidos Trofeos',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // --- Botón de Continuar ---
+                  // --- FUSIÓN: Se usa TU 'onPressed' (dxniel7) ---
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                    onPressed: () async {
+                      // Los valores viejos ya están guardados en oldStatsValuesProvider
+                      // Ahora hacemos fetchStats para obtener los nuevos valores
+                      await ref.read(appBarProvider.notifier).fetchStats();
+
+                      // Limpiar valores guardados y resetear flag
+                      ref.read(oldStatsValuesProvider.notifier).state = null;
+                      ref.read(shouldRefreshStatsProvider.notifier).state =
+                          false;
+
+                      if (!context.mounted) return;
+                      // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
+
+                      // 1. Obtenemos la ruta de retorno guardada
+                      final returnPath = ref.read(navigationReturnPathProvider);
+
+                      // 2. Reseteamos el provider a su valor por defecto ('/home')
+                      //    para que el próximo reto del home funcione bien.
+                      ref.read(navigationReturnPathProvider.notifier).state =
+                          '/home';
+
+                      // 3. Navegamos a la ruta obtenida
+                      context.go(returnPath);
+
+                      // Línea original eliminada:
+                      // context.go('/home');
+                    },
+                    child: const Text(
+                      'CONTINUAR',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ), // Cierra SafeArea
-      ), // Cierra Scaffold
-    ), // Cierra Theme
+          ), // Cierra SafeArea
+        ), // Cierra Scaffold
+      ), // Cierra Theme
     ); // Cierra PopScope
   }
 }

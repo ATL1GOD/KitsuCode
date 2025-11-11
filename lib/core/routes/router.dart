@@ -39,6 +39,9 @@ import 'package:kitsucode/features/desafio/view/desafio_view.dart'; // <-- FUSI�
 import 'package:kitsucode/features/settings/view/settings_view.dart';
 import 'package:kitsucode/features/settings/view/notifications_view.dart';
 import 'package:kitsucode/features/settings/view/support_view.dart';
+import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
+// ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
+import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -130,21 +133,37 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       GoRoute(path: '/all-stats', builder: (context, state) => const AllStatsView()),
 
-      // --- ¡NUEVAS RUTAS DE SETTINGS AÑADIDAS! ---
+      // --- RUTA DE SETTINGS 
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsView(),
         routes: [
-          // Sub-rutas de settings
+          // /settings/notifications
           GoRoute(
             path: 'notifications',
             builder: (context, state) => const NotificationsView(),
-            // Aquí podrías anidar más rutas si quisieras:
-            // routes: [
-            //   GoRoute(path: 'recordatorios', ...),
-            //   GoRoute(path: 'amigos', ...),
-            // ]
+            routes: [
+              // ¡NUEVA RUTA ANIDADA!
+              // /settings/notifications/reminder
+              GoRoute(
+                path: 'reminder',
+                builder: (context, state) {
+                  // Obtenemos el objeto 'setting' pasado como extra
+                  final setting = state.extra as NotificationSetting?;
+                  
+                  if (setting == null) {
+                    // Fallback si se navega sin 'extra'
+                    return const Scaffold(
+                      body: Center(child: Text('Error: Falta información del recordatorio.'))
+                    );
+                  }
+                  return StudyReminderView(setting: setting);
+                },
+              ),
+            ]
           ),
+          
+          // /settings/support
           GoRoute(
             path: 'support',
             builder: (context, state) => const SupportView(),

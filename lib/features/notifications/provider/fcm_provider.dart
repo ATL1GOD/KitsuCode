@@ -6,5 +6,5 @@ import 'package:kitsucode/features/notifications/service/fcm_service.dart';
 /// Depende del router para poder navegar cuando se toca una notificación
 final fcmServiceProvider = Provider<FCMService>((ref) {
   final router = ref.watch(routerProvider);
-  return FCMService(router);
+  return FCMService(router, ref);
 });

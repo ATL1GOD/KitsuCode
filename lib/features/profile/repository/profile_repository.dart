@@ -95,17 +95,23 @@ class ProfileRepository {
     try {
       final currentUserId = _supabase.auth.currentUser?.id;
       if (currentUserId == null) return;
-      
-      // Llamar Edge Function de forma asíncrona
-      await _supabase.functions.invoke(
+
+      // Llamar Edge Function de forma asíncrona y loguear resultado para debug
+      final res = await _supabase.functions.invoke(
         'new-follower',
         body: {
           'follower_id': currentUserId,
           'followed_id': followedUserId,
         },
       );
+
+      // Supabase Functions.invoke puede devolver null o un objeto; imprimimos para diagnosticar
+      // ignore: avoid_print
+      print('[new-follower] invoke result: $res');
     } catch (e) {
-      // No fallar si la notificación falla
+      // Registrar el error para poder ver por qué falla en producción
+      // ignore: avoid_print
+      print('[new-follower] error invoking function: $e');
     }
   }
 

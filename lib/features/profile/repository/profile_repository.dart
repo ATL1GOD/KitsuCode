@@ -24,7 +24,7 @@ class ProfileRepository {
         .eq('id', userId);
 
     // 3. Escuchamos el stream. Cada vez que haya un cambio (un UPDATE)...
-    await for (final data in stream) {
+    await for (final _ in stream) {
       // ...obtenemos el perfil actualizado...
       final updatedProfile = await fetchUserProfileById(userId);
       // ...y lo emitimos.
@@ -78,7 +78,34 @@ class ProfileRepository {
       'toggle_follow',
       params: {'p_followed_user_id': followedUserId},
     );
-    return response as bool;
+    
+    final isNowFollowing = response as bool;
+    
+    // Si ahora está siguiendo (true), enviar notificación
+    if (isNowFollowing) {
+      _sendFollowerNotification(followedUserId);
+    }
+    
+    return isNowFollowing;
+  }
+  
+  /// Enviar notificación de nuevo seguidor (sin esperar respuesta)
+  void _sendFollowerNotification(String followedUserId) async {
+    try {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId == null) return;
+      
+      // Llamar Edge Function de forma asíncrona
+      await _supabase.functions.invoke(
+        'new-follower',
+        body: {
+          'follower_id': currentUserId,
+          'followed_id': followedUserId,
+        },
+      );
+    } catch (e) {
+      // No fallar si la notificación falla
+    }
   }
 
   Future<UserProfileModel> fetchUserProfile() async {
@@ -184,9 +211,9 @@ class ProfileRepository {
           .from('logro')
           .select('nombre, icono, raridad')
           .eq('id_logro', logroId)
-          .single(); // .single() asegura que obtenemos solo uno
+          .single();
 
-      return data as Map<String, dynamic>;
+      return data;
     } catch (e) {
       // ignore: avoid_print
       print('Error fetching logro details: $e');

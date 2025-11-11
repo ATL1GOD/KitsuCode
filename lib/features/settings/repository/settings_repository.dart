@@ -16,7 +16,11 @@ class SettingsRepository {
   // Obtiene las preferencias del usuario actual
   Future<PreferenciasUsuarioModel> getPreferencias() async {
     try {
-      final userId = _supabaseClient.auth.currentUser!.id;
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
+      
       final response = await _supabaseClient
           .from('preferencias_usuario')
           .select()
@@ -24,19 +28,26 @@ class SettingsRepository {
           .single(); // .single() espera un solo registro o lanza error
 
       return PreferenciasUsuarioModel.fromJson(response);
-    } catch (e) {
-      // Manejo de error: si no existe, crea y devuelve preferencias por defecto
-      if (e is PostgrestException && e.code == 'PGRST116') {
+    } on PostgrestException catch (e) {
+      // Si no existe el registro (código PGRST116), crea uno por defecto
+      if (e.code == 'PGRST116') {
         return await _crearPreferenciasPorDefecto();
       }
-      rethrow; // Lanza cualquier otro error
+      rethrow;
+    } catch (e) {
+      // Cualquier otro error (como "Usuario no autenticado")
+      rethrow;
     }
   }
 
   // Actualiza un campo específico de las preferencias
   Future<void> updatePreferencia(Map<String, dynamic> data) async {
     try {
-      final userId = _supabaseClient.auth.currentUser!.id;
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
+      
       await _supabaseClient
           .from('preferencias_usuario')
           .update(data)
@@ -48,7 +59,11 @@ class SettingsRepository {
 
   // Función privada para crear preferencias si el usuario no las tiene
   Future<PreferenciasUsuarioModel> _crearPreferenciasPorDefecto() async {
-    final userId = _supabaseClient.auth.currentUser!.id;
+    final userId = _supabaseClient.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Usuario no autenticado');
+    }
+    
     // ¡Usamos 'system' como por defecto, tal como lo pediste!
     final preferenciasPorDefecto = PreferenciasUsuarioModel(
       temaVisual: 'system',

@@ -314,10 +314,7 @@ class MonthlyChallengeItem extends StatelessWidget {
             decorationColor: Colors.white70,
           ),
         ),
-        subtitle: Text(
-          '${desafio.recompensaTrofeo} XP',
-          style: const TextStyle(color: Colors.white70),
-        ),
+        subtitle: Text('', style: const TextStyle(color: Colors.white70)),
         trailing: isCompleted
             ? const Icon(
                 Icons.check,
@@ -328,7 +325,7 @@ class MonthlyChallengeItem extends StatelessWidget {
             ? null // Desactiva el tap si ya está completo
             : () {
                 // Navegar a la dinámica del reto específico
-                context.go('/reto/${desafio.idReto}');
+                context.go('/reto/${desafio.idReto}/${desafio.nivelId}');
               },
       ),
     );

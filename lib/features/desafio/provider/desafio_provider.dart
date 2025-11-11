@@ -11,7 +11,6 @@ class DesafioEspecial {
   final String descripcion;
   final DateTime fechaInicio;
   final DateTime fechaFin;
-  final int recompensaTrofeo;
 
   DesafioEspecial({
     required this.idReto,
@@ -19,7 +18,6 @@ class DesafioEspecial {
     required this.descripcion,
     required this.fechaInicio,
     required this.fechaFin,
-    required this.recompensaTrofeo,
   });
 
   // Factory para crear desde el JSON de Supabase
@@ -30,7 +28,6 @@ class DesafioEspecial {
       descripcion: map['descripcion'] ?? 'Sin descripción.',
       fechaInicio: DateTime.parse(map['fecha_inicio']),
       fechaFin: DateTime.parse(map['fecha_final']),
-      recompensaTrofeo: map['recompensa_trofeos'] ?? 0,
     );
   }
 }
@@ -39,32 +36,45 @@ class DesafioEspecial {
 class RetoIndividual {
   final int idReto;
   final String titulo;
-  final int recompensaTrofeo;
+  final int nivelId; // <-- ¡AÑADIDO!
 
   RetoIndividual({
     required this.idReto,
     required this.titulo,
-    required this.recompensaTrofeo,
+    required this.nivelId, // <-- ¡AÑADIDO!
   });
 
   // Factory para crear desde el JSON de Supabase
   factory RetoIndividual.fromMap(Map<String, dynamic> map) {
+    // El join 'niveles(id_nivel)' devuelve una LISTA.
+    // Tomamos el 'id_nivel' del primer (y probablemente único) nivel asociado.
+    final niveles = map['niveles'] as List?;
+    final int idNivelEncontrado;
+
+    if (niveles != null && niveles.isNotEmpty) {
+      // Extraemos el id_nivel del primer mapa en la lista
+      idNivelEncontrado =
+          (niveles.first as Map<String, dynamic>)['id_nivel'] as int? ?? 0;
+    } else {
+      idNivelEncontrado = 0; // Valor por defecto si no se encuentra
+    }
+
     return RetoIndividual(
       idReto: map['id_reto'],
       titulo: map['titulo'],
-      recompensaTrofeo: map['recompensa_trofeos'] ?? 0,
+      nivelId: idNivelEncontrado, // <-- ¡AÑADIDO!
     );
   }
 }
 
 // Clase contenedora ÚNICA para el Reto Mensual
-class RetoMensualData {
+class DesafioMensualData {
   final DesafioEspecial? agrupador; // Reto tipo 5
   final List<RetoIndividual> individuales; // Retos que lo componen
   final Set<int>
   completedRetoIds; // IDs de retos individuales completados por el usuario
 
-  RetoMensualData({
+  DesafioMensualData({
     required this.agrupador,
     required this.individuales,
     required this.completedRetoIds,
@@ -76,7 +86,7 @@ class RetoMensualData {
 final supabase = Supabase.instance.client;
 
 // El provider ahora devuelve RetoMensualData
-final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
+final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
   // 0. Obtener el ID del usuario.
   final user = supabase.auth.currentUser;
   if (user == null) {
@@ -85,15 +95,21 @@ final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
   }
   final userId = user.id;
 
-  // 1. Consulta el Reto Agrupador Activo (tipo_reto = 5)
+  // 1. Obtener la fecha y hora actual en formato ISO
+  final String now = DateTime.now().toIso8601String();
+
+  // 1. Consulta el Reto Agrupador Activo
   final resultsEspeciales = await supabase
       .from('reto')
-      .select(
-        'id_reto, titulo, descripcion, fecha_inicio, fecha_final, recompensa_trofeos',
-      )
-      .eq('tipo_reto', 5) // Asumiendo que 5 es el tipo "Agrupador/Evento"
+      .select('id_reto, titulo, descripcion, fecha_inicio, fecha_final')
+      .eq('tipo_reto', 5)
       .eq('especial', true)
-      .eq('activo', true)
+      .eq(
+        'activo',
+        true,
+      ) // Es bueno mantenerlo por si quieres desactivar uno manualmente
+      .lte('fecha_inicio', now) // La fecha de inicio debe ser hoy o antes
+      .gte('fecha_final', now) // La fecha final debe ser hoy o después
       .limit(1);
 
   final List<DesafioEspecial> especiales = (resultsEspeciales as List)
@@ -102,7 +118,7 @@ final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
 
   // Si no hay evento especial activo, retornar datos vacíos.
   if (especiales.isEmpty) {
-    return RetoMensualData(
+    return DesafioMensualData(
       agrupador: null,
       individuales: [],
       completedRetoIds: {},
@@ -117,7 +133,10 @@ final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
   // Consulta 2.1: Retos Individuales que forman el Evento Mensual
   final resultsRetosIndividuales = await supabase
       .from('reto')
-      .select('id_reto, titulo, recompensa_trofeos')
+      // ¡¡CAMBIO CLAVE AQUÍ!!
+      // Hacemos un join a la tabla 'niveles' (basado en tu schema)
+      // para obtener el 'id_nivel' asociado a este 'id_reto'.
+      .select('id_reto, titulo, niveles(id_nivel)')
       .neq('tipo_reto', 5)
       .eq('especial', false)
       .eq('activo', true)
@@ -145,7 +164,7 @@ final desafiosProvider = FutureProvider<RetoMensualData>((ref) async {
       .map((item) => item['id_reto'] as int)
       .toSet();
 
-  return RetoMensualData(
+  return DesafioMensualData(
     agrupador: event,
     individuales: retosIndividuales,
     completedRetoIds: completedMensualRetoIds,

@@ -40,6 +40,11 @@ import 'package:kitsucode/features/desafio/view/desafio_view.dart'; // <-- FUSI�
 import 'package:kitsucode/features/settings/view/settings_view.dart';
 import 'package:kitsucode/features/settings/view/notifications_view.dart';
 import 'package:kitsucode/features/settings/view/support_view.dart';
+import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
+// ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
+import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
+import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
+
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -134,21 +139,54 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AllStatsView(),
       ),
 
-      // --- ¡NUEVAS RUTAS DE SETTINGS AÑADIDAS! ---
+      // --- RUTA DE SETTINGS 
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsView(),
         routes: [
-          // Sub-rutas de settings
           GoRoute(
-            path: 'notifications',
+            path: 'notifications', // /settings/notifications
             builder: (context, state) => const NotificationsView(),
-            // Aquí podrías anidar más rutas si quisieras:
-            // routes: [
-            //   GoRoute(path: 'recordatorios', ...),
-            //   GoRoute(path: 'amigos', ...),
-            // ]
+            routes: [
+              GoRoute(
+                path: 'reminder', // /settings/notifications/reminder
+                builder: (context, state) {
+                  // Pasamos el setting al constructor
+                  final setting = state.extra as NotificationSetting?;
+                  if (setting == null) {
+                    // Manejo de error si no se pasa el setting
+                    return const Scaffold(
+                      body: Center(child: Text('Error: Falta setting')),
+                    );
+                  }
+                  return StudyReminderView(setting: setting);
+                },
+              ),
+              // --- ¡AÑADE ESTA NUEVA RUTA! ---
+              GoRoute(
+                path: 'category', // /settings/notifications/category
+                builder: (context, state) {
+                  // Obtenemos los datos del 'extra'
+                  final extra = state.extra as Map<String, dynamic>?;
+                  
+                  if (extra == null || extra['title'] == null || extra['settings'] == null) {
+                    return const Scaffold(
+                      body: Center(child: Text('Error: Faltan datos de categoría')),
+                    );
+                  }
+                  
+                  final title = extra['title'] as String;
+                  final settings = extra['settings'] as List<NotificationSetting>;
+                  
+                  return NotificationCategoryView(
+                    title: title,
+                    settings: settings,
+                  );
+                },
+              ),
+            ],
           ),
+          // /settings/support
           GoRoute(
             path: 'support',
             builder: (context, state) => const SupportView(),

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 class PreferenciasUsuarioModel {
   final String temaVisual; // 'system', 'light', 'dark'

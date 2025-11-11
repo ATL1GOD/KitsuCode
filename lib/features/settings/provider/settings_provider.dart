@@ -1,42 +1,65 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/settings/model/preferencias_usuario_model.dart';
-// ¡Este import ahora debería funcionar una vez que crees el archivo de arriba!
 import 'package:kitsucode/features/settings/repository/settings_repository.dart';
 
-// 1. El StateNotifier
-class SettingsNotifier extends StateNotifier<AsyncValue<PreferenciasUsuarioModel>> {
-  final SettingsRepository _repository;
+// --- ¡CAMBIO 1: El Provider! ---
+// Se convierte en AsyncNotifierProvider.
+// Ahora SÍ tendrá el getter ".future"
+final settingsProvider = AsyncNotifierProvider<SettingsNotifier, PreferenciasUsuarioModel>(() {
+  return SettingsNotifier();
+});
+
+// --- ¡CAMBIO 2: El Notifier! ---
+// Se convierte de StateNotifier a AsyncNotifier
+class SettingsNotifier extends AsyncNotifier<PreferenciasUsuarioModel> {
   Timer? _debounce;
 
-  SettingsNotifier(this._repository) : super(const AsyncLoading()) {
-    loadPreferencias();
+  // --- ¡CAMBIO 3: 'build()' reemplaza a 'loadPreferencias()' ---
+  // Esta función se llama automáticamente para obtener el estado inicial
+  @override
+  Future<PreferenciasUsuarioModel> build() async {
+    // ¡NUEVO! Esperar a que la autenticación esté lista
+    final authState = await ref.watch(authStateProvider.future);
+    
+    // Si no hay sesión, lanza un error
+    if (authState.session == null) {
+      throw Exception('Usuario no autenticado');
+    }
+    
+    // Obtenemos el repositorio usando 'ref' (es parte de AsyncNotifier)
+    final repository = ref.watch(settingsRepositoryProvider);
+
+    // 'ref.onDispose' es el nuevo 'dispose()'
+    ref.onDispose(() {
+      _debounce?.cancel();
+    });
+    
+    // El 'return' de build es el estado inicial
+    return repository.getPreferencias();
   }
 
-  // Cargar las preferencias iniciales
-  Future<void> loadPreferencias() async {
-    state = const AsyncLoading();
-    try {
-      final preferencias = await _repository.getPreferencias();
-      state = AsyncData(preferencias);
-    } catch (e, s) {
-      state = AsyncError(e, s);
-    }
-  }
+  // Método helper para no repetir código
+  SettingsRepository get _repository => ref.read(settingsRepositoryProvider);
 
   // Actualizar Tema Visual
   Future<void> updateTemaVisual(String tema) async {
     final currentState = state.valueOrNull;
     if (currentState == null || currentState.temaVisual == tema) return;
 
+    // 1. Actualización optimista: actualiza la UI al instante
     state = AsyncData(currentState.copyWith(temaVisual: tema));
 
+    // 2. Intenta actualizar la BD (usando tu método original)
     try {
-      // ¡Corregido!
       await _repository.updatePreferencia({'tema_visual': tema});
     } catch (e) {
-      // Si falla, revertir el estado
+      // 3. Si falla, revierte el estado y reporta el error
+      // (Tu lógica original revertía al estado anterior)
       state = AsyncData(currentState);
+      // Opcional: reportar el error
+      // state = AsyncError(e, s); 
     }
   }
 
@@ -45,13 +68,17 @@ class SettingsNotifier extends StateNotifier<AsyncValue<PreferenciasUsuarioModel
     final currentState = state.valueOrNull;
     if (currentState == null) return;
 
+    // Actualización optimista
     state = AsyncData(currentState.copyWith(sonidoEfectos: estaActivado));
 
     try {
-      // ¡Corregido!
+      // (usando tu método original)
       await _repository.updatePreferencia({'sonido_efectos': estaActivado});
     } catch (e) {
+      // Revertir
       state = AsyncData(currentState);
+      // Opcional: reportar el error
+      // state = AsyncError(e, s);
     }
   }
 
@@ -60,30 +87,20 @@ class SettingsNotifier extends StateNotifier<AsyncValue<PreferenciasUsuarioModel
     final currentState = state.valueOrNull;
     if (currentState == null) return;
 
+    // Actualización optimista
     state = AsyncData(currentState.copyWith(volumenAudio: volumen));
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       try {
-        // ¡Corregido!
+        // (usando tu método original)
         await _repository.updatePreferencia({'volumen_audio': volumen});
-      } catch (e) {
-        // No revertimos en el slider, solo logueamos
+      } catch (e, s) {
+        // Reportar error
+        state = AsyncError(e, s);
       }
     });
   }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
+  
 }
-
-// 2. El StateNotifierProvider
-final settingsProvider = StateNotifierProvider<SettingsNotifier, AsyncValue<PreferenciasUsuarioModel>>((ref) {
-  // ¡Esto ahora debería funcionar!
-  final repository = ref.watch(settingsRepositoryProvider);
-  return SettingsNotifier(repository);
-});

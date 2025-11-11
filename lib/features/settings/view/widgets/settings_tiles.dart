@@ -87,7 +87,9 @@ class SettingsNavigationTile extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color dynamicColor;
-  final VoidCallback onTap;
+  // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+  // Se añade '?' para hacerlo nulable
+  final VoidCallback? onTap; 
 
   const SettingsNavigationTile({
     super.key,
@@ -105,7 +107,7 @@ class SettingsNavigationTile extends StatelessWidget {
 
     return _BaseSettingsTile(
       dynamicColor: dynamicColor,
-      onTap: onTap,
+      onTap: onTap, // Ahora acepta 'null' sin problemas
       child: Row(
         children: [
           Icon(icon, color: c.primary, size: 28),
@@ -204,7 +206,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
               });
               widget.onChanged(newValue);
             },
-            activeColor: widget.dynamicColor,
+            activeThumbColor: widget.dynamicColor,
           ),
         ],
       ),

@@ -57,7 +57,7 @@ class NotificationSettingsNotifier extends AsyncNotifier<List<NotificationSettin
   }
 
   // Método para actualizar la hora del recordatorio
-  Future<void> updateTime(int preferenciaId, String hora) async {
+  Future<void> updateTime(int preferenciaId, String? hora) async { // <-- String?
     final repository = ref.read(notificationSettingsRepositoryProvider);
 
     // Actualización optimista
@@ -69,7 +69,7 @@ class NotificationSettingsNotifier extends AsyncNotifier<List<NotificationSettin
             NotificationSetting(
               preferenciaId: setting.preferenciaId,
               habilitado: setting.habilitado,
-              horaNotificacion: hora, // <-- El valor nuevo
+              horaNotificacion: hora, // <-- El valor nuevo (puede ser null)
               tipoId: setting.tipoId,
               nombreTipo: setting.nombreTipo,
               descripcion: setting.descripcion,
@@ -82,7 +82,36 @@ class NotificationSettingsNotifier extends AsyncNotifier<List<NotificationSettin
 
     // Actualizar la BD
     try {
-      await repository.updateNotificationTime(preferenciaId, hora);
+      await repository.updateNotificationTime(preferenciaId, hora); // <-- Pasa la hora (o null)
+    } catch (e, s) {
+      state = AsyncError(e, s);
+    }
+  }
+
+  // --- ¡AÑADE ESTA NUEVA FUNCIÓN! ---
+  Future<void> updateAllEnabled(bool isEnabled) async {
+    final repository = ref.read(notificationSettingsRepositoryProvider);
+
+    // Actualización optimista (actualiza todas en el estado local)
+    state = await AsyncValue.guard(() async {
+      final currentState = state.value ?? [];
+      return [
+        for (final setting in currentState)
+          NotificationSetting(
+            preferenciaId: setting.preferenciaId,
+            habilitado: isEnabled, // <-- El valor nuevo para todas
+            horaNotificacion: setting.horaNotificacion,
+            tipoId: setting.tipoId,
+            nombreTipo: setting.nombreTipo,
+            descripcion: setting.descripcion,
+            esRecordatorioHora: setting.esRecordatorioHora,
+          )
+      ];
+    });
+
+    // Actualizar la BD
+    try {
+      await repository.updateAllEnabled(isEnabled);
     } catch (e, s) {
       state = AsyncError(e, s);
     }

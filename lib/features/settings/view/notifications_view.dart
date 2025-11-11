@@ -4,18 +4,76 @@ import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
-// ¡Usando tus rutas!
 import 'package:kitsucode/features/notifications/provider/notification_settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart'; 
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
-// --- ¡IMPORTAMOS EL PAQUETE! ---
 import 'package:collection/collection.dart'; 
+import 'package:intl/intl.dart';
 
 class NotificationsView extends ConsumerWidget {
   const NotificationsView({super.key});
+
+  IconData _getIconForCategory(String categoryName) {
+    switch (categoryName) {
+      case 'Recordatorio de Estudio':
+        return Icons.schedule;
+      case 'Amigos':
+        return Icons.people_alt_outlined;
+      case 'Retos y Novedades':
+        return Icons.star_outline_rounded;
+      default:
+        return Icons.notifications;
+    }
+  }
+
+  // --- ¡NUEVO! ---
+  // Diálogo de confirmación para el Master Switch
+  Future<void> _showConfirmationDialog(
+    BuildContext context, 
+    WidgetRef ref, 
+    bool newValue,
+    ColorScheme colors,
+  ) async {
+    // Si están encendiendo, no preguntes, solo hazlo.
+    if (newValue) {
+      ref.read(notificationSettingsProvider.notifier).updateAllEnabled(true);
+      return;
+    }
+
+    // Si están apagando, pregunta.
+    final didConfirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: colors.surfaceContainer,
+          title: const Text('¿Desactivar todo?'),
+          content: const Text('¿Estás seguro de que quieres desactivar todas las notificaciones de la aplicación?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancelar', style: TextStyle(color: colors.onSurfaceVariant)),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(backgroundColor: colors.error),
+              child: const Text('Desactivar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Si confirmaron (pop(true)), entonces ejecuta la acción
+    if (didConfirm == true) {
+      ref.read(notificationSettingsProvider.notifier).updateAllEnabled(false);
+    }
+    // Si no (pop(false) o tap fuera), el provider no cambia
+    // y el switch volverá a su estado original (true).
+  }
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,7 +95,8 @@ class NotificationsView extends ConsumerWidget {
           return Stack(
             children: [
               // --- FONDO y LOTTIE (Sin cambios) ---
-              Container(
+              // ... (Idéntico) ...
+               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -68,7 +127,8 @@ class NotificationsView extends ConsumerWidget {
                 child: Column(
                   children: [
                     // --- BARRA SUPERIOR (Sin cambios) ---
-                    Padding(
+                    // ... (Idéntico) ...
+                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Row(
                         children: [
@@ -97,67 +157,104 @@ class NotificationsView extends ConsumerWidget {
                       ),
                     ),
 
-                    // --- LISTA DE OPCIONES REALES ---
+                    // --- ¡LISTA DE OPCIONES CORREGIDA! ---
                     Expanded(
                       child: notificationSettingsState.when(
                         loading: () => _NotificationsLoadingShimmer(colors: colors),
                         error: (e, s) => Center(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            // Mostramos el error real en la UI
                             child: Text('Error al cargar: $e', textAlign: TextAlign.center),
                           )
                         ),
                         data: (settings) {
                           
-                          // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-                          // 1. Manejar el caso de lista vacía
-                          if (settings.isEmpty) {
-                            return Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Text(
-                                  'Aún no hay configuraciones de notificación. Esto puede tardar un momento si es tu primer inicio.',
-                                  textAlign: TextAlign.center,
-                                  style: textTheme.titleMedium,
-                                ),
-                              ),
-                            );
-                          }
+                          // --- LÓGICA DE AGRUPACIÓN (CORREGIDA Y CON FILTROS) ---
+                          
+                          // 1. Estado del "Master Switch"
+                          // El Master Switch SÍ debe considerar TODAS las settings (visibles y ocultas)
+                          final bool masterSwitchState = settings.isEmpty 
+                            ? false 
+                            : settings.any((s) => s.habilitado);
 
-                          // 2. Separamos el recordatorio de forma segura
-                          // Usamos 'firstWhereOrNull' del paquete 'collection'
-                          final reminderSetting = settings.firstWhereOrNull(
-                            (s) => s.esRecordatorioHora
+                          // --- ¡NUEVA LÓGICA DE FILTRADO! ---
+                          // Define los tipos "ocultos" que NO queremos mostrar en la UI
+                          const tiposOcultos = {
+                            'Recordatorio de Racha',
+                            'Recordatorio de Inactividad',
+                          };
+
+                          // Crea una NUEVA lista que solo contenga los settings VISIBLES
+                          final visibleSettings = settings.where(
+                            (s) => !tiposOcultos.contains(s.nombreTipo.trim())
+                          ).toList();
+                          // --- FIN DE LÓGICA DE FILTRADO ---
+
+
+                          // 2. Buscamos el recordatorio (¡usando visibleSettings!)
+                          final reminderSetting = visibleSettings.firstWhereOrNull(
+                            (s) => s.nombreTipo.trim() == 'Recordatorio de Estudio'
                           );
                           
-                          // 3. Obtenemos el resto de los switches
-                          final generalSettings = settings.where(
-                            (s) => !s.esRecordatorioHora
+                          // 3. Buscamos los settings de "Amigos" (¡usando visibleSettings!)
+                          final amigosSettings = visibleSettings.where(
+                            (s) => s.nombreTipo.trim() == 'Nuevos Seguidores'
                           ).toList();
-                          // --- FIN DE LA CORRECCIÓN ---
+
+                          // 4. Buscamos los settings de "Retos y Novedades" (¡usando visibleSettings!)
+                          final retosSettings = visibleSettings.where(
+                            (s) => s.nombreTipo.trim() == 'Nuevos Retos' || s.nombreTipo.trim() == 'Novedades'
+                          ).toList();
+                          // --- FIN DE LA LÓGICA DE AGRUPACIÓN ---
 
                           return ListView(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                             children: [
-                              // --- SECCIÓN 1: RECORDATORIOS ---
-                              // Solo muestra esta sección si se encontró un recordatorio
-                              if (reminderSetting != null) ...[
+                              // --- ¡NUEVO! SECCIÓN 1: GENERAL (TU IDEA) ---
+                              FadeInDown(
+                                child: SectionHeader(
+                                  title: 'General', 
+                                  icon: Icons.tune, 
+                                  colors: colors
+                                )
+                              ),
+                              FadeInDown(
+                                delay: const Duration(milliseconds: 100),
+                                child: SettingsSwitchTile(
+                                  title: 'Permitir notificaciones',
+                                  subtitle: masterSwitchState 
+                                    ? 'Todo activado' 
+                                    : 'Todo desactivado',
+                                  icon: Icons.notifications,
+                                  dynamicColor: dynamicColor,
+                                  initialValue: masterSwitchState,
+                                  onChanged: (newValue) {
+                                    // ¡Llama al diálogo!
+                                    _showConfirmationDialog(context, ref, newValue, colors);
+                                  },
+                                ),
+                              ),
+
+                              // --- SECCIÓN 2: RECORDATORIOS (¡AHORA SÍ APARECE!) ---
+                              if (reminderSetting != null)...[
                                 FadeInDown(
+                                  delay: const Duration(milliseconds: 200),
                                   child: SectionHeader(
-                                    title: 'Recordatorios', 
-                                    icon: Icons.schedule, 
-                                    colors: colors
+                                  title: 'Recordatorios', 
+                                  icon: Icons.schedule, 
+                                  colors: colors
                                   )
                                 ),
                                 FadeInDown(
-                                  delay: const Duration(milliseconds: 100),
+                                  delay: const Duration(milliseconds: 300),
                                   child: SettingsNavigationTile(
-                                    title: reminderSetting.nombreTipo,
+                                    title: 'Recordatorio de Estudio',
                                     subtitle: reminderSetting.habilitado 
-                                        ? (reminderSetting.horaNotificacion ?? 'Toca para fijar hora')
+                                        ? (reminderSetting.horaNotificacion != null 
+                                          ? 'Diario a las ${DateFormat.jm().format(DateTime(2024, 1, 1, _stringToTimeOfDay(reminderSetting.horaNotificacion)!.hour, _stringToTimeOfDay(reminderSetting.horaNotificacion)!.minute))}' 
+                                          : 'Toca para fijar hora')
                                         : 'Desactivado',
-                                    icon: Icons.schedule,
+                                    icon: _getIconForCategory('Recordatorio de Estudio'),
                                     dynamicColor: dynamicColor,
                                     onTap: () { 
                                       context.push(
@@ -168,36 +265,54 @@ class NotificationsView extends ConsumerWidget {
                                   ),
                                 ),
                               ],
-                              
-                              // --- SECCIÓN 2: OTRAS ALERTAS ---
-                              if (generalSettings.isNotEmpty)
+
+                              // --- SECCIÓN 3: ACTIVIDAD ---
+                              FadeInDown(
+                                delay: const Duration(milliseconds: 400),
+                                child: SectionHeader(
+                                  title: 'Actividad', 
+                                  icon: Icons.group, 
+                                  colors: colors
+                                )
+                              ),
+                              if (amigosSettings.isNotEmpty)
                                 FadeInDown(
-                                  delay: const Duration(milliseconds: 200),
-                                  child: SectionHeader(
-                                    title: 'Alertas y Actividad', 
-                                    icon: Icons.campaign_outlined, 
-                                    colors: colors
-                                  )
-                                ),
-                              
-                              ...List.generate(generalSettings.length, (index) {
-                                final setting = generalSettings[index];
-                                return FadeInDown(
-                                  delay: Duration(milliseconds: 300 + (index * 100)),
-                                  child: SettingsSwitchTile(
-                                    title: setting.nombreTipo,
-                                    subtitle: setting.descripcion ?? 'Activar o desactivar esta alerta',
-                                    // TODO: Mapear un ícono basado en setting.nombreTipo
-                                    icon: Icons.notifications_active_outlined, 
+                                  delay: const Duration(milliseconds: 500),
+                                  child: SettingsNavigationTile(
+                                    title: 'Amigos',
+                                    subtitle: 'Alertas de actividad social',
+                                    icon: _getIconForCategory('Amigos'),
                                     dynamicColor: dynamicColor,
-                                    initialValue: setting.habilitado,
-                                    onChanged: (newValue) {
-                                      ref.read(notificationSettingsProvider.notifier)
-                                          .updateEnabled(setting.preferenciaId, newValue);
+                                    onTap: () {
+                                      context.push(
+                                        '/settings/notifications/category',
+                                        extra: {
+                                          'title': 'Amigos',
+                                          'settings': amigosSettings,
+                                        },
+                                      );
                                     },
                                   ),
-                                );
-                              }),
+                                ),
+                              if (retosSettings.isNotEmpty)
+                                FadeInDown(
+                                  delay: const Duration(milliseconds: 600),
+                                  child: SettingsNavigationTile(
+                                    title: 'Retos y Novedades',
+                                    subtitle: 'Alertas de nuevos desafíos y anuncios',
+                                    icon: _getIconForCategory('Retos y Novedades'),
+                                    dynamicColor: dynamicColor,
+                                    onTap: () {
+                                      context.push(
+                                        '/settings/notifications/category',
+                                        extra: {
+                                          'title': 'Retos y Novedades',
+                                          'settings': retosSettings,
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
                             ],
                           );
                         },
@@ -212,10 +327,25 @@ class NotificationsView extends ConsumerWidget {
       ),
     );
   }
+
+  // --- Helper method ---
+  TimeOfDay? _stringToTimeOfDay(String? hora) {
+    if (hora == null) return null;
+    try {
+      final parts = hora.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      print('Error parseando hora: $e');
+      return null;
+    }
+  }
 }
 
 // ... (El shimmer se queda igual) ...
 class _NotificationsLoadingShimmer extends StatelessWidget {
+// ... (Idéntico) ...
   final ColorScheme colors;
   const _NotificationsLoadingShimmer({required this.colors});
 

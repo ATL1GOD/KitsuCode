@@ -48,30 +48,45 @@ class NotificationSettingsRepository {
     }
   }
 
-  // Actualiza el estado 'habilitado' de una preferencia específica
-  Future<void> updateNotificationEnabled(int preferenciaId, bool habilitado) async {
+Future<void> updateNotificationEnabled(int preferenciaId, bool habilitado) async {
     try {
       await _supabaseClient
           .from('preferencias_notificacion')
           .update({'habilitado': habilitado})
           .eq('id_preferencia', preferenciaId);
     } catch (e) {
-      // --- ¡CORREGIDO! (Comillas dobles en lugar de simples) ---
       print("Error al actualizar 'habilitado': $e"); 
       rethrow;
     }
   }
 
-  // Actualiza la hora de una preferencia específica
-  Future<void> updateNotificationTime(int preferenciaId, String hora) async {
+  // --- ¡ASEGÚRATE DE QUE ESTA OTRA TAMBIÉN EXISTA! ---
+  /// Actualiza la hora de una preferencia específica (DEBE aceptar null)
+  Future<void> updateNotificationTime(int preferenciaId, String? hora) async {
     try {
       await _supabaseClient
           .from('preferencias_notificacion')
-          .update({'hora_notificacion': hora})
+          .update({'hora_notificacion': hora}) // Pasa la hora (o null)
           .eq('id_preferencia', preferenciaId);
     } catch (e) {
-      // --- ¡CORREGIDO! (Comillas dobles en lugar de simples) ---
       print("Error al actualizar 'hora_notificacion': $e");
+      rethrow;
+    }
+  }
+
+  // --- ¡Y ASEGÚRATE DE QUE ESTA NUEVA TAMBIÉN EXISTA! ---
+  /// Actualiza el estado 'habilitado' de TODAS las preferencias del usuario.
+  Future<void> updateAllEnabled(bool isEnabled) async {
+    try {
+      final userId = _supabaseClient.auth.currentUser!.id;
+      
+      await _supabaseClient
+        .from('preferencias_notificacion')
+        .update({'habilitado': isEnabled})
+        .eq('id_usuario', userId);
+
+    } catch (e) {
+      print("Error al actualizar todas las notificaciones: $e");
       rethrow;
     }
   }

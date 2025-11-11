@@ -35,6 +35,7 @@ dependencies:
   flutter_timezone: ^5.0.1
   timezone: ^0.10.1
   collection: ^1.19.1
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

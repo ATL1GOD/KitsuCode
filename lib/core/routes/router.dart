@@ -44,6 +44,8 @@ import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
 // ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
+import 'package:kitsucode/features/splash/view/splash_view.dart';
+
 
 
 // Claves (sin cambios)
@@ -59,11 +61,12 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/splash', 
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(ref),
+    
+    // Lógica de redirección mejorada
     redirect: (BuildContext context, GoRouterState state) {
-      // ... Lógica de redirección (sin cambios) ...
       return authState.when(
         data: (data) {
           final isAuthenticated = data.session != null;
@@ -80,6 +83,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
 
           if (isSplashing) {
+            // Si estamos en /splash y tenemos datos, redirigimos.
             return isAuthenticated ? '/home' : authRoute;
           }
           if (isAuthenticated && isGoingToAuthRoute) {
@@ -88,23 +92,28 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (!isAuthenticated && !isGoingToAuthRoute) {
             return authRoute;
           }
+          return null; // Todo en orden, no redirigir.
+        },
+        loading: () {
+          // ¡IMPORTANTE! Si authState está cargando, NO redirigimos.
+          // Esto permite que GoRouter muestre la ruta '/splash'.
           return null;
         },
-        loading: () => null,
         error: (error, stackTrace) {
           if (kDebugMode) {
             print("Redirect: Auth Error: $error");
           }
+          // Si hay un error de auth, mandamos a /auth
           return '/auth';
         },
       );
     },
+
     routes: [
       // --- Rutas de Nivel Superior (sin cambios) ---
       GoRoute(
         path: '/splash',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, state) => const SplashView(),
       ),
 
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
@@ -161,7 +170,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   return StudyReminderView(setting: setting);
                 },
               ),
-              // --- ¡AÑADE ESTA NUEVA RUTA! ---
+              // ruta de categoría
               GoRoute(
                 path: 'category', // /settings/notifications/category
                 builder: (context, state) {

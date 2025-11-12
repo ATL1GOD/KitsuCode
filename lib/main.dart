@@ -48,17 +48,19 @@ void main() async {
     // Espera a que se cargue la sesión de usuario
     await container.read(authStateProvider.future);
     await container.read(settingsProvider.future);
-    
-    // Inicializar FCM en paralelo con otros procesos (no bloqueante)
+
+    // AHORA SÍ ESPERAMOS a que FCM termine y guarde el token
     final fcmService = container.read(fcmServiceProvider);
-    fcmService.initialize().catchError((e) {
-      debugPrint('Error inicializando FCM: $e');
-    });
+    await fcmService.initialize(); // <-- ¡ASÍ DEBE QUEDAR!
+    // fin 
+
   } catch (e) {
     debugPrint('Error al cargar datos iniciales: $e');
     // Intentar inicializar FCM incluso si hay errores anteriores
     try {
       final fcmService = container.read(fcmServiceProvider);
+      // Aquí también puedes dejar el initialize() sin await
+      // porque si el primer try falla, es menos crítico.
       fcmService.initialize();
     } catch (fcmError) {
       debugPrint('Error inicializando FCM: $fcmError');

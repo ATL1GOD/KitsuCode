@@ -14,7 +14,7 @@ class LocalNotificationService {
     
     // Usa el ícono de la app por defecto
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/ic_stat_kitsu');
 
     const DarwinInitializationSettings iOSSettings =
         DarwinInitializationSettings(

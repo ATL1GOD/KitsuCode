@@ -80,7 +80,7 @@ class FCMService {
 
   /// 🔔 Configurar notificaciones locales para mostrar en primer plano
   Future<void> _setupLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_stat_kitsu');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -186,7 +186,7 @@ class FCMService {
             priority: Priority.high,
             playSound: true,
             enableVibration: true,
-            icon: '@mipmap/ic_launcher',
+            icon: '@mipmap/ic_stat_kitsu',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,

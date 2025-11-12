@@ -5,35 +5,27 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
 // Necesario para detectar la plataforma
 import 'package:flutter/foundation.dart' show kIsWeb;
-
-// Importamos el handler de background de FCM
-import 'package:kitsucode/features/notifications/service/fcm_service.dart';
-
-// Importamos el widget principal de la App
 import 'app.dart';
 
-// El RouteObserver se queda igual
+// Route observer global para monitorear cambios de ruta
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 // El handler de background DEBE ser una función de nivel superior
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Asegúrate de inicializar Firebase aquí también para que
-  // el handler de background funcione cuando la app está terminada.
+  // Asegura que Firebase esté inicializado
   await Firebase.initializeApp();
-  debugPrint("Handling a background message: ${message.messageId}");
 }
 
 void main() async {
-  // --- INICIO: TAREAS DE INICIALIZACIÓN OBLIGATORIAS (RÁPIDAS) ---
+  // --- INICIO: TAREAS DE INICIALIZACIÓN OBLIGATORIAS 
 
   // 1. Asegura la inicialización de Flutter
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Inicializa Firebase (es rápido, solo configura la conexión)
+  // 2. Inicializa Firebase (IMPORTANTE: Diferente para Web y Móvil)
   if (kIsWeb) {
     // Si estamos en la Web, usa esta configuración explícita
     await Firebase.initializeApp(
@@ -52,29 +44,28 @@ void main() async {
   }
 
   // 3. Configura el handler de background
-  // (Nota: El 'firebaseMessagingBackgroundHandler' real está en fcm_service.dart)
+  // Esto es necesario para recibir notificaciones cuando la app está en background o cerrada
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // 4. Carga las variables de entorno (rápido, lee un archivo)
+  // 4. Carga las variables de entorno
   await dotenv.load(fileName: "assets/.env");
 
-  // 5. Inicializa el *cliente* de Supabase (rápido, no espera la sesión)
+  // 5. Inicializa el *cliente* de Supabase 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  // 6. Configuración de UI (rápido, síncrono)
+  // 6. Configuración de UI
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // --- FIN: TAREAS OBLIGATORIAS ---
+  // --- FIN: TAREAS OBLIGATORIAS 
 
-  // ¡YA NO HAY 'await' DE RED NI 'ProviderContainer' MANUAL!
-  // Simplemente ejecutamos la app. ProviderScope se encargará del resto.
+  // Ejecuta la app dentro de ProviderScope
   runApp(
     const ProviderScope(
       child: MyApp(),

@@ -38,6 +38,7 @@ dependencies:
   intl: ^0.20.2
   firebase_core: ^3.8.1
   firebase_messaging: ^15.1.6
+  animated_text_kit: ^4.3.0
 
 dev_dependencies:
   flutter_test:

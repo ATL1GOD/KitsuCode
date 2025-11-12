@@ -61,54 +61,32 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/splash', 
+    // Pon la ruta correcta de tu splash
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(ref),
-    
-    // Lógica de redirección mejorada
-    redirect: (BuildContext context, GoRouterState state) {
-      return authState.when(
-        data: (data) {
-          final isAuthenticated = data.session != null;
-          final currentLocation = state.matchedLocation;
+    redirect: (context, state) {
+      final isAuthenticated = authState.valueOrNull?.session != null;
+      final isAuthRoute = state.matchedLocation == '/auth';
+      final isSplash = state.matchedLocation == '/splash';
 
-          const authRoute = '/auth';
-          final isGoingToAuthRoute = currentLocation == authRoute;
-          final isSplashing = currentLocation == '/splash';
+      // Mientras estés en el splash, no redirijas (SplashView decide qué hacer).
+      if (isSplash) return null;
 
-          if (kDebugMode) {
-            print(
-              "Redirect: Auth state received. Authenticated: $isAuthenticated, Location: $currentLocation",
-            );
-          }
+      // Si no hay sesión y estás intentando ir a cualquier ruta que no sea /auth o /splash,
+      // envía al login.
+      if (!isAuthenticated && !isAuthRoute) {
+        return '/auth';
+      }
 
-          if (isSplashing) {
-            // Si estamos en /splash y tenemos datos, redirigimos.
-            return isAuthenticated ? '/home' : authRoute;
-          }
-          if (isAuthenticated && isGoingToAuthRoute) {
-            return '/home';
-          }
-          if (!isAuthenticated && !isGoingToAuthRoute) {
-            return authRoute;
-          }
-          return null; // Todo en orden, no redirigir.
-        },
-        loading: () {
-          // ¡IMPORTANTE! Si authState está cargando, NO redirigimos.
-          // Esto permite que GoRouter muestre la ruta '/splash'.
-          return null;
-        },
-        error: (error, stackTrace) {
-          if (kDebugMode) {
-            print("Redirect: Auth Error: $error");
-          }
-          // Si hay un error de auth, mandamos a /auth
-          return '/auth';
-        },
-      );
+      // Si hay sesión y estás intentando ir a /auth, envía al home.
+      if (isAuthenticated && isAuthRoute) {
+        return '/home';
+      }
+
+      // En cualquier otro caso, no redirigir.
+      return null;
     },
-
     routes: [
       // --- Rutas de Nivel Superior (sin cambios) ---
       GoRoute(
@@ -116,7 +94,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashView(),
       ),
 
-      GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
+      // Ruta de autenticación
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => const AuthView(),
+      ),
 
       GoRoute(
         path: '/reto/:retoId/:nivelId', // ← ¡MODIFICADO!
@@ -335,6 +317,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     notifyListeners();
+    
+    // Escuchar SÓLO a Auth
     ref.listen(authStateProvider, (previous, next) {
       notifyListeners();
     });

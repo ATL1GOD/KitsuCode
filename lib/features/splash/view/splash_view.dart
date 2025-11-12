@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart'; // Mantener este import
 
 import 'package:kitsucode/core/providers/app_init_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -13,13 +14,13 @@ class SplashView extends ConsumerStatefulWidget {
   const SplashView({super.key});
 
   @override
+  // Asegúrate de que SingleTickerProviderStateMixin esté incluido
   ConsumerState<SplashView> createState() => _SplashViewState();
 }
 
-class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStateMixin {
+class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStateMixin{ // << AÑADIR with SingleTickerProviderStateMixin AQUÍ
   static const String _word = 'KITSUCODE';
   
-  // Lista de controladores de animación para cada letra
   late final List<AnimationController> _controllers;
   late final List<Animation<Offset>> _animations;
 
@@ -29,63 +30,74 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
 
   void _checkAndNavigate() {
     if (_initDone && _animationDone) {
+      // 1. Siempre remover el splash nativo
+      FlutterNativeSplash.remove(); 
+
       final isLogged = ref.read(authStateProvider).value?.session != null;
-      context.go(isLogged ? '/home' : '/auth');
+      print('Estado de sesión: $isLogged'); // Registro para depuración
+
+      // 2. Navegar según el estado de autenticación
+      if (isLogged) {
+        context.go('/home'); // Redirigir al Home si está autenticado
+      } else {
+        context.go('/auth'); // Redirigir al flujo de autenticación si no está autenticado
+      }
     }
   }
 
-  // Método para manejar la animación secuencial de las letras
   void _startAnimation() async {
-  for (int i = 0; i < _word.length; i++) {
-    await Future.delayed(const Duration(milliseconds: 100));
-    if (!mounted) return; // Si la pantalla ya no existe, sal del método
-    _controllers[i].forward();
+    // ⚠️ AÑADIR ESTE CHEQUEO PARA PREVENIR EL CRASH ⚠️
+    if (!mounted) return; 
+
+    // 1. Inicia las animaciones de forma secuencial
+    for (int i = 0; i < _word.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 100)); 
+      
+      // CHEQUEO ADICIONAL ANTES DE LLAMAR forward
+      if (!mounted) return; 
+      _controllers[i].forward();
+    }
+
+    // 2. Espera un poco
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 3. Marca la animación como finalizada y chequea
+    if (!mounted) return; 
+    setState(() {
+      _animationDone = true;
+      _checkAndNavigate();
+    });
   }
-
-  await Future.delayed(const Duration(milliseconds: 500));
-  if (!mounted) return;
-
-  setState(() {
-    _animationDone = true;
-    _checkAndNavigate();
-  });
-}
 
   @override
   void initState() {
     super.initState();
 
     // Inicializa los controladores de animación
-    // Se usa 'SingleTickerProviderStateMixin' para 'vsync: this'
+    // Si la inicialización falla aquí, el crash ocurre. Asegúrate de que el mixin esté arriba.
     _controllers = List.generate(
       _word.length,
       (index) => AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 400), // Duración de la aparición de cada letra
+        duration: const Duration(milliseconds: 400),
       ),
     );
 
-    // Inicializa las animaciones de deslizamiento (Offset: desliza 0.5 unidades hacia abajo)
+    // Inicializa las animaciones de deslizamiento
     _animations = List.generate(
       _word.length,
       (index) => Tween<Offset>(
-        begin: const Offset(0, 0.5), // Empieza ligeramente abajo (0.5 de su altura)
-        end: Offset.zero, // Termina en su posición normal (0)
+        begin: const Offset(0, 0.5), 
+        end: Offset.zero, 
       ).animate(CurvedAnimation(
         parent: _controllers[index],
-        curve: Curves.easeOut, // Curva de animación suave
+        curve: Curves.easeOut,
       )),
     );
 
-    // Ajustes de UI
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-    ));
+    // [Ajustes de UI] ... (esto está bien)
 
-    // Lanza la inicialización de datos (carga en segundo plano)
+    // Lanza la inicialización
     ref.read(appInitProvider);
 
     // Escucha la finalización del appInitProvider
@@ -118,7 +130,7 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    // Separa la palabra en letras para animar cada una individualmente
+    // [El código de build sigue igual]
     final letters = _word.split('');
 
     return Scaffold(

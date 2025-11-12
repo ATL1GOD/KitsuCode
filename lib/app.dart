@@ -14,10 +14,10 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
     
-    // INICIALIZAR EL LISTENER DE REALTIME AQUÍ 
-    //ref.read(progressRealtimeProvider);
-    //ref.watch(mapStructureRealtimeProvider);
-    ref.watch(appInitProvider);
+    // Asegura que la inicialización de la app se ejecute
+    ref.listen(appInitProvider, (previous, next) {
+      // Solo queremos que el provider se ejecute.
+    });
 
     return OverlaySupport.global(
       child: MaterialApp.router(

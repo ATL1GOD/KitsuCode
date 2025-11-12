@@ -18,7 +18,7 @@ final loginStateProvider = StateNotifierProvider<LoginState, AsyncValue<void>>((
   ref,
 ) {
   final authRepository = ref.read(authRepositoryProvider);
-  return LoginState(authRepository);
+  return LoginState(authRepository, ref);
 });
 
 // Provider de estado para la pantalla de registro
@@ -30,7 +30,8 @@ final registerStateProvider =
 
 class LoginState extends StateNotifier<AsyncValue<void>> {
   final AuthRepository _authRepository;
-  LoginState(this._authRepository) : super(const AsyncValue.data(null));
+  final Ref _ref;
+  LoginState(this._authRepository, this._ref) : super(const AsyncValue.data(null));
 
   Future<void> signInWithEmailPassword(String email, String password) async {
     state = const AsyncValue.loading();
@@ -40,6 +41,7 @@ class LoginState extends StateNotifier<AsyncValue<void>> {
         password: password,
       );
       state = const AsyncValue.data(null);
+      _ref.invalidate(authStateProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow; // Permite que el error se propague si es necesario
@@ -52,6 +54,7 @@ class LoginState extends StateNotifier<AsyncValue<void>> {
     try {
       await _authRepository.signInWithGoogle();
       state = const AsyncValue.data(null);
+      _ref.invalidate(authStateProvider);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;

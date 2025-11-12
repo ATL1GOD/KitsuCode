@@ -58,12 +58,18 @@ final _navigatorKeys = {
 };
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authStateProvider);
+  //final auth = ref.watch(authStateProvider);
+
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(ref),
+    refreshListenable: GoRouterRefreshStream(ref), // Permite que el router se reconstruya cuando cambia auth
+    
+    // 🚨 LÓGICA DE REDIRECCIÓN CORREGIDA 🚨
     redirect: (context, state) {
-      final isLogged = auth.valueOrNull?.session != null;
+      // USA ref.read PARA OBTENER EL ESTADO ACTUAL
+      final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
+
+      // El resto de tu lógica de redirect se queda igual
       final loc = state.matchedLocation;
       final inAuth = loc == '/auth';
       final inSplash = loc == '/';

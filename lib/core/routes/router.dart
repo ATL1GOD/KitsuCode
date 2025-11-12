@@ -58,39 +58,27 @@ final _navigatorKeys = {
 };
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
+  final auth = ref.watch(authStateProvider);
   return GoRouter(
-    // Pon la ruta correcta de tu splash
-    initialLocation: '/splash',
-    debugLogDiagnostics: true,
+    initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(ref),
     redirect: (context, state) {
-      final isAuthenticated = authState.valueOrNull?.session != null;
-      final isAuthRoute = state.matchedLocation == '/auth';
-      final isSplash = state.matchedLocation == '/splash';
+      final isLogged = auth.valueOrNull?.session != null;
+      final loc = state.matchedLocation;
+      final inAuth = loc == '/auth';
+      final inSplash = loc == '/';
 
-      // Mientras estés en el splash, no redirijas (SplashView decide qué hacer).
-      if (isSplash) return null;
-
-      // Si no hay sesión y estás intentando ir a cualquier ruta que no sea /auth o /splash,
-      // envía al login.
-      if (!isAuthenticated && !isAuthRoute) {
-        return '/auth';
-      }
-
-      // Si hay sesión y estás intentando ir a /auth, envía al home.
-      if (isAuthenticated && isAuthRoute) {
-        return '/home';
-      }
-
-      // En cualquier otro caso, no redirigir.
+      if (inSplash) return null;
+      if (!isLogged && !inAuth) return '/auth';
+      if (isLogged && inAuth) return '/home';
       return null;
     },
+
+
     routes: [
       // --- Rutas de Nivel Superior (sin cambios) ---
       GoRoute(
-        path: '/splash',
+        path: '/',
         builder: (context, state) => const SplashView(),
       ),
 

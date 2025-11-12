@@ -39,6 +39,17 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+            <!-- Icono de notificaciones -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_stat_kitsu" />
+
+        <!-- Color para notificación -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/orange" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

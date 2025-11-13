@@ -34,15 +34,11 @@ class DesafioBusquedaView extends ConsumerWidget {
       body: Column(
         children: [
           // --- SECCIÓN 1: DESAFÍO (Arriba) ---
-          // ¡CAMBIO! Usamos Padding normal, no SliverPadding
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            // ¡CAMBIO! El .when() va directo, no dentro de un 'sliver:'
             child: desafiosAsync.when(
               data: (data) {
-                // Si hay reto, muestra la tarjeta
                 if (data.agrupador != null) {
-                  // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
                   return ExpandableSpecialEventCard(
                     evento: data.agrupador!,
                     desafiosMensuales: data.individuales,
@@ -50,8 +46,6 @@ class DesafioBusquedaView extends ConsumerWidget {
                     isParentCompleted: data.isParentCompleted,
                   );
                 }
-                // Mensaje si no hay reto
-                // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
@@ -63,62 +57,91 @@ class DesafioBusquedaView extends ConsumerWidget {
                   ),
                 );
               },
-              // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(child: Text('Error: $error')),
             ),
           ),
 
           // --- SECCIÓN 2: CAMPO DE BÚSQUEDA (En medio) ---
-          // ¡CAMBIO! Usamos el widget directamente, sin SliverToBoxAdapter
           const SearchField(),
 
           // --- SECCIÓN 3: RESULTADOS DE BÚSQUEDA (Abajo) ---
-          // ¡CAMBIO CLAVE! Usamos Expanded para que ocupe el resto de la pantalla
           Expanded(
-            // ¡CAMBIO! Usamos Padding normal, no SliverPadding
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              // ¡CAMBIO! El .when() va directo, no dentro de un 'sliver:'
               child: searchResults.when(
                 loading: () {
                   if (currentQuery.isEmpty) {
-                    // --- ¡CAMBIO AQUÍ! ---
-                    // Usamos SvgPicture en lugar de 'icon:'
-                    return EmptyState(
-                      //
-                      iconWidget: SvgPicture.asset(
-                        'images/mensual/amigos.svg', // <-- ¡CAMBIA ESTA RUTA!
-                        width: 200,
-                        height: 200,
-                      ),
-                      message: 'Busca usuarios por nombre o @usuario',
-                    );
+                    //si no hay búsqueda activa
+                    // --- ¡CAMBIO SOLICITADO (1 de 2)! ---
+                    // Usamos un Column para apilar verticalmente
+                    // return EmptyState(
+                    //   iconWidget: SizedBox(
+                    //     width: 250,
+                    //     height: 250,
+                    //     child: Column(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         // SVG 1 (Tu Título)
+                    //         SvgPicture.asset(
+                    //           'images/mensual/tu_titulo_svg.svg', // <-- ¡RUTA A TU TÍTULO!
+                    //           width: 220,
+                    //           height: 50,
+                    //           fit: BoxFit.contain,
+                    //         ),
+                    //         const SizedBox(height: 16),
+                    //         // SVG 2 (Tu Imagen)
+                    //         SvgPicture.asset(
+                    //           'images/mensual/amigos.svg', // <-- Tu imagen principal
+                    //           width: 180,
+                    //           height: 180,
+                    //           fit: BoxFit.contain,
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    //   message: 'Busca usuarios por nombre o @usuario',
+                    // );
                     // --- FIN DEL CAMBIO ---
                   }
-                  // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
                   return const Center(child: CircularProgressIndicator());
                 },
                 error: (err, stack) =>
-                    // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
                     Center(child: Text('Error al buscar: $err')),
                 data: (users) {
                   if (currentQuery.isEmpty) {
-                    // --- ¡CAMBIO AQUÍ! ---
-                    // Usamos SvgPicture en lugar de 'icon:'
+                    //si no hay búsqueda activa
+                    // --- ¡CAMBIO SOLICITADO (2 de 2)! ---
+                    // Usamos un Column para apilar verticalmente
                     return EmptyState(
-                      iconWidget: SvgPicture.asset(
-                        'images/mensual/amigos.svg', // <-- ¡CAMBIA ESTA RUTA!
-                        width: 200,
-                        height: 200,
+                      iconWidget: SizedBox(
+                        width: 400,
+                        height: 400,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // SVG 1 (Tu Título)
+                            SvgPicture.asset(
+                              'images/mensual/amigos2.svg', // <-- ¡RUTA A TU TÍTULO!
+                              width: 300,
+                              fit: BoxFit.contain,
+                            ),
+                            const SizedBox(height: 5),
+                            // SVG 2 (Tu Imagen)
+                            SvgPicture.asset(
+                              'images/mensual/amigos.svg', // <-- Tu imagen principal
+                              width: 200,
+                              height: 200,
+                              fit: BoxFit.contain,
+                            ),
+                          ],
+                        ),
                       ),
                       message: 'Busca usuarios por nombre o @usuario',
                     );
                     // --- FIN DEL CAMBIO ---
                   }
                   if (users.isEmpty) {
-                    // --- ¡CAMBIO AQUÍ! ---
-                    // Ahora pasamos un widget Icon completo
                     return EmptyState(
                       iconWidget: Icon(
                         Icons.person_search,
@@ -128,11 +151,8 @@ class DesafioBusquedaView extends ConsumerWidget {
                       message:
                           'No se encontraron usuarios para "$currentQuery"',
                     );
-                    // --- FIN DEL CAMBIO ---
                   }
 
-                  // ¡CAMBIO! Convertimos SliverGrid en GridView.builder
-                  // GridView.builder SÍ sabe cómo funcionar dentro de un Expanded.
                   return GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -143,7 +163,6 @@ class DesafioBusquedaView extends ConsumerWidget {
                         ),
                     itemCount: users.length,
                     itemBuilder: (context, index) {
-                      // ¡Llamamos al widget importado!
                       return UserSearchCard(user: users[index]);
                     },
                   );

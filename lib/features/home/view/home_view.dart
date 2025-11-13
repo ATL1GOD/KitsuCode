@@ -114,7 +114,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    
+
+    ref.watch(mapStructureRealtimeProvider);
+    ref.read(progressRealtimeProvider);
     // --- FUSIÓN: Se mantiene TODA tu lógica de refresco (dxniel7) ---
     // Esta es la clave para que "se vea bien"
     final shouldRefresh = ref.watch(shouldRefreshStatsProvider);

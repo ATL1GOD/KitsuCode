@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:overlay_support/overlay_support.dart';
-import 'package:kitsucode/features/home/provider/home_provider.dart'; 
 import 'package:kitsucode/core/providers/theme_provider.dart';
+import 'package:kitsucode/core/providers/app_init_provider.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -14,9 +14,10 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
     
-    // INICIALIZAR EL LISTENER DE REALTIME AQUÍ 
-    ref.read(progressRealtimeProvider);
-    ref.watch(mapStructureRealtimeProvider);
+    // Asegura que la inicialización de la app se ejecute
+    ref.listen(appInitProvider, (previous, next) {
+      // Solo queremos que el provider se ejecute.
+    });
 
     return OverlaySupport.global(
       child: MaterialApp.router(

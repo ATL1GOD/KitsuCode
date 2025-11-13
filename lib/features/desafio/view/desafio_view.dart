@@ -1,5 +1,5 @@
-// features/desafio/presentation/views/desafio_view.dart
-// ¡VISTA FUSIONADA!
+// features/desafio/presentation/views/desafio_busqueda_view.dart
+// (Este es el nuevo archivo fusionado)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,30 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event_card.dart';
 
-// --- Importaciones de BÚSQUEDA ---
-import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/amigos/model/search_model.dart';
-
-// --- ¡Importamos los widgets de la otra vista! ---
-// (Asegúrate de haber hecho públicas SearchField y EmptyState en este archivo)
+// ¡Importamos el archivo que contiene los widgets de búsqueda!
 import 'package:kitsucode/features/amigos/view/search_view.dart';
-
 // -------------------------------------------------------------------
-// PROVIDERS DE BÚSQUEDA (Los definimos aquí)
+// PROVIDERS DE BÚSQUEDA
+// (Los definimos aquí para que esta vista los controle)
 // -------------------------------------------------------------------
-
-final userSearchQueryProvider = StateProvider<String>((ref) => '');
-
-final userSearchResultsProvider = FutureProvider<List<UserSearchPreviewModel>>((
-  ref,
-) async {
-  final query = ref.watch(userSearchQueryProvider);
-  if (query.trim().isEmpty) {
-    return [];
-  }
-  final repository = ref.watch(profileRepositoryProvider);
-  return repository.searchUsers(query);
-});
 
 // -------------------------------------------------------------------
 // VISTA FUSIONADA
@@ -42,13 +24,14 @@ class DesafioBusquedaView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Observamos los providers de AMBAS vistas
+    // 1. Observamos los providers de AMBAS vistas
     final desafiosAsync = ref.watch(desafiosProvider);
     final searchResults = ref.watch(userSearchResultsProvider);
     final currentQuery = ref.watch(userSearchQueryProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Desafíos y Usuarios')),
+      // 2. Usamos CustomScrollView para combinar todo
       body: CustomScrollView(
         slivers: [
           // --- SECCIÓN 1: DESAFÍO (Arriba) ---
@@ -56,6 +39,7 @@ class DesafioBusquedaView extends ConsumerWidget {
             padding: const EdgeInsets.only(top: 8),
             sliver: desafiosAsync.when(
               data: (data) {
+                // Si hay reto, muestra la tarjeta
                 if (data.agrupador != null) {
                   return SliverToBoxAdapter(
                     child: ExpandableSpecialEventCard(
@@ -66,12 +50,13 @@ class DesafioBusquedaView extends ConsumerWidget {
                     ),
                   );
                 }
+                // Mensaje si no hay reto
                 return const SliverToBoxAdapter(
                   child: Center(
                     child: Padding(
                       padding: EdgeInsets.all(32.0),
                       child: Text(
-                        '🎉 No hay un evento especial mensual activo en este momento.',
+                        '🎉 No hay un evento especial mensual activo.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
@@ -134,7 +119,7 @@ class DesafioBusquedaView extends ConsumerWidget {
                   );
                 }
 
-                // La cuadrícula usa el widget 'UserSearchCard' importado
+                // 3. Convertimos el GridView en un SliverGrid
                 return SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,

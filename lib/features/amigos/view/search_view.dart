@@ -1,3 +1,4 @@
+// lib/features/amigos/view/search_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
@@ -218,25 +219,31 @@ class UserSearchCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias, // Para que la imagen no se salga
       child: InkWell(
         onTap: () {
+          // --- INICIO DE PRUEBA DE DEBUG ---
+          print('=================================');
+          print('ABRIENDO MODAL PARA: ${user.nombreUsuario}');
+          print('RANK: ${user.rank}');
+          print('IDs DE LENGUAJE: ${user.rankLanguageIds}');
+          print('TIPO DE DATO: ${user.rankLanguageIds.runtimeType}');
+          print('=================================');
+          // --- FIN DE PRUEBA DE DEBUG ---
+
           // Llama al modal que ya tenías hecho.
-          // Solo necesita el userId, que nuestro modelo SÍ tiene.
           showDialog(
             context: context,
-            // --- ADVERTENCIA CORREGIDA ---
-            barrierColor: Colors.black.withAlpha(128), // (era withOpacity(0.5))
-            builder: (context) =>
-                UserProfileModal(userId: user.userId, rank: user.rank),
+            barrierColor: Colors.black.withAlpha(128),
+            builder: (context) => UserProfileModal(
+              userId: user.userId,
+              rank: user.rank,
+              rankLanguageIds: user.rankLanguageIds, // <-- ¡AÑADIDO!
+            ),
           );
         },
         child: Stack(
           fit: StackFit.expand,
           children: [
             // 1. Fondo: La imagen de la carta
-            SvgPicture.asset(
-              // <-- 2. REEMPLAZA Image.asset
-              'images/mensual/fondo.svg', // <-- Asegúrate que la ruta termine en .svg
-              fit: BoxFit.cover,
-            ),
+            SvgPicture.asset('images/mensual/fondo.svg', fit: BoxFit.cover),
 
             // 2. Capa de oscurecimiento para legibilidad
             Container(

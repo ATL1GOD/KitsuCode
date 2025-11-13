@@ -6,40 +6,89 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 
-// --- NUEVA FUNCIÓN HELPER ---
+// --- NUEVO: Mapa de IDs de Lenguaje a sus assets ---
+// Basado en el JSON que me diste: [{"id_lenguaje":1,"nombre":"c"}, ...]
+// ¡Asegúrate de que estas rutas de assets sean correctas!
+const Map<int, String> _languageAssets = {
+  1: 'assets/images/logo_c.png',
+  2: 'assets/images/logo_java.png', // <-- Corregí una errata (decía assetss)
+  3: 'assets/images/logo_python.png',
+};
+
 /// Devuelve un color específico basado en el string del rango.
 Color _getRankColor(String rank) {
   switch (rank.toLowerCase()) {
     case 'diamante':
       return const Color(0xFFb9f2ff); // Azul Diamante
+    case 'oro':
+      return const Color(0xFFFFD700); // Oro (Dorado)
     case 'plata':
       return const Color(0xFFC0C0C0); // Plata
     case 'bronce':
       return const Color(0xFFCD7F32); // Bronce
     default:
-      // Devuelve un color neutro si el rango no se reconoce
       return Colors.grey.shade500;
   }
 }
 
+// --- ¡NUEVO! ---
+/// Devuelve un IconData específico basado en el string del rango.
+/// ¡Puedes cambiar estos iconos por los que prefieras!
+IconData _getRankIcon(String rank) {
+  switch (rank.toLowerCase()) {
+    case 'diamante':
+      return Icons.diamond_outlined; // Icono de diamante
+    case 'oro':
+      return Icons.emoji_events_outlined; // Icono de trofeo
+    case 'plata':
+      return Icons.shield_outlined; // Icono de escudo
+    case 'bronce':
+      return Icons.star_border_outlined; // Icono de estrella
+    default:
+      return Icons.bookmark_border; // Un icono por defecto
+  }
+}
+// --- FIN NUEVO ---
+
 class UserProfileModal extends ConsumerWidget {
   final String userId;
-  // --- CAMBIO 1: Recibir el rango del usuario ---
   final String rank;
+  final List<int>? rankLanguageIds;
 
   const UserProfileModal({
     super.key,
     required this.userId,
-    required this.rank, // Añadido al constructor
+    required this.rank,
+    this.rankLanguageIds,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final userProfileAsync = ref.watch(userProfileByIdProvider(userId));
-
-    // --- CAMBIO 2: Obtener el color del rango ---
     final rankColor = _getRankColor(rank);
+    final rankIcon = _getRankIcon(rank); // <-- ¡NUEVO! Obtenemos el icono
+
+    // --- ¡CAMBIO! Construye la LISTA de iconos ---
+    List<Widget> languageIcons = [];
+    if (rankLanguageIds != null && rankLanguageIds!.isNotEmpty) {
+      for (var langId in rankLanguageIds!) {
+        if (_languageAssets.containsKey(langId)) {
+          languageIcons.add(
+            Padding(
+              // Separación entre iconos
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
+              child: Image.asset(
+                _languageAssets[langId]!,
+                width: 20, // <-- ¡MÁS PEQUEÑO!
+                height: 20, // <-- ¡MÁS PEQUEÑO!
+              ),
+            ),
+          );
+        }
+      }
+    }
+    // --- FIN CAMBIO ---
 
     return ZoomIn(
       duration: const Duration(milliseconds: 300),
@@ -58,25 +107,21 @@ class UserProfileModal extends ConsumerWidget {
                 Container(
                   margin: const EdgeInsets.only(top: 60),
                   padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
-                  // --- CAMBIO 3: Añadir borde y aura de color ---
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(24),
-                    // Borde con el color del rango
                     border: Border.all(
-                      color: rankColor.withOpacity(0.8),
+                      color: rankColor.withAlpha(204), // 0.8 opacity
                       width: 2.5,
                     ),
-                    // Aura con el color del rango
                     boxShadow: [
                       BoxShadow(
-                        color: rankColor.withOpacity(0.5),
+                        color: rankColor.withAlpha(128), // 0.5 opacity
                         blurRadius: 15,
                         spreadRadius: 2,
                       ),
                     ],
                   ),
-                  // --- FIN CAMBIO 3 ---
                   child: Stack(
                     children: [
                       const Positioned.fill(child: _DecorativeBackground()),
@@ -115,13 +160,12 @@ class UserProfileModal extends ConsumerWidget {
                                 context.push(
                                     '/profile/${user.userId}'); // Navega al perfil del usuario
                               },
-                              // --- AJUSTE DE ESTILO AQUÍ ---
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: colors.primary,
                                 side: BorderSide(
                                     color: colors.primary.withAlpha(128)),
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 13), // Aumentamos la altura
+                                    const EdgeInsets.symmetric(vertical: 13),
                                 textStyle: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold),
                                 shape: RoundedRectangleBorder(
@@ -129,7 +173,6 @@ class UserProfileModal extends ConsumerWidget {
                                       30), // Bordes más redondeados
                                 ),
                               ),
-                              // --- FIN DEL AJUSTE ---
                               child: const Text('Ver Perfil'),
                             ),
                           ),
@@ -143,11 +186,10 @@ class UserProfileModal extends ConsumerWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      // --- CAMBIO 4: El borde del avatar también usa el color del rango ---
                       border: Border.all(color: rankColor, width: 5),
                       boxShadow: [
                         BoxShadow(
-                          color: rankColor.withAlpha(100), // Sombra/Aura del avatar
+                          color: rankColor.withAlpha(100),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         )
@@ -162,7 +204,8 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                   ),
                 ),
-                // --- CAMBIO 5: Añadir la "esquinita" (el badge) ---
+                
+                // --- ¡CAMBIO! Badge de Rango (Superior Derecha) ---
                 Positioned(
                   top: 70, // 60 (margen) + 10
                   right: 15, // En la esquina derecha
@@ -176,26 +219,71 @@ class UserProfileModal extends ConsumerWidget {
                           color: colors.surface, width: 1.5), // Borde blanco
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withAlpha(38), // 0.15 opacity
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         )
                       ],
                     ),
-                    child: Text(
-                      rank.toUpperCase(),
-                      style: TextStyle(
-                        // El color del texto debe ser oscuro para que contraste
-                        color: colors.brightness == Brightness.light
-                            ? Colors.black
-                            : Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
+                    // ¡CAMBIO! Reemplazamos el Text por un Row
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // ¡NUEVO! El icono del rango
+                        Icon(
+                          rankIcon,
+                          color: Colors.black, // Color del icono
+                          size: 14, // Tamaño pequeño, ajusta si es necesario
+                        ),
+                        const SizedBox(width: 4), // Un pequeño espacio
+                        // El texto original
+                        Text(
+                          rank[0].toUpperCase() +
+                              rank.substring(1).toLowerCase(),
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                // --- FIN CAMBIO 5 ---
+                // --- FIN CAMBIO ---
+
+                // --- ¡CAMBIO! Iconos de Lenguaje (Superior Izquierda) ---
+                if (languageIcons.isNotEmpty)
+                  Positioned(
+                    top: 70, // Misma altura que el badge de rango
+                    left: 15, // En la esquina izquierda
+                    child: Container(
+                      // Limita el ancho en caso de que haya DEMASIADOS iconos
+                      constraints: const BoxConstraints(maxWidth: 100),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: rankColor, // Color de fondo del rango
+                        borderRadius:
+                            BorderRadius.circular(20), // Forma de "píldora"
+                        border: Border.all(
+                            color: colors.surface, width: 1.5), // Borde blanco
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(38), // 0.15 opacity
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      // Usamos una Fila para poner los iconos uno al lado del otro
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: languageIcons, // <-- La lista de iconos
+                      ),
+                    ),
+                  ),
+                // --- FIN CAMBIO ---
               ],
             );
           },
@@ -263,7 +351,6 @@ class FollowButton extends ConsumerWidget {
                         .read(followControllerProvider.notifier)
                         .toggleFollow(userId);
                   },
-            // --- AJUSTE DE ESTILO AQUÍ ---
             style: ElevatedButton.styleFrom(
               backgroundColor: isFollowing
                   ? colors.surfaceContainerHighest
@@ -280,7 +367,6 @@ class FollowButton extends ConsumerWidget {
               ),
               elevation: 2, // Le damos una pequeña sombra
             ),
-            // --- FIN DEL AJUSTE ---
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (child, animation) {

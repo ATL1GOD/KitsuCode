@@ -1,9 +1,11 @@
+// lib/features/amigos/model/search_model.dart
 class UserSearchPreviewModel {
   final String userId;
   final String nombrePerfil;
   final String nombreUsuario;
   final int idAvatarSeleccionado;
   final String rank;
+  final List<int> rankLanguageIds; 
 
   UserSearchPreviewModel({
     required this.userId,
@@ -11,17 +13,28 @@ class UserSearchPreviewModel {
     required this.nombreUsuario,
     required this.idAvatarSeleccionado,
     required this.rank,
+    required this.rankLanguageIds, 
   });
 
   factory UserSearchPreviewModel.fromJson(Map<String, dynamic> json) {
+    // Helper para parsear la lista de IDs de forma segura
+    List<int> _parseLanguageIds(dynamic ids) {
+      if (ids is List) {
+        // Convierte 'dynamic' a 'int' de forma segura
+        return ids.map((id) => (id as num).toInt()).toList();
+      }
+      return [];
+    }
+
     return UserSearchPreviewModel(
       // Los nombres coinciden con los 'RETURNS TABLE' de la función SQL
-      userId: json['userId'],
-      nombrePerfil: json['nombrePerfil'],
-      nombreUsuario: json['nombreUsuario'],
+      userId: json['userId'] ?? '',
+      nombrePerfil: json['nombrePerfil'] ?? 'Usuario',
+      nombreUsuario: json['nombreUsuario'] ?? 'N/A',
       idAvatarSeleccionado:
-          json['idAvatarSeleccionado'] ?? 1, // '?? 1' como fallback
-      rank: json['rank'] ?? 'Bronce', // Añadido el campo rank con fallback
+          (json['idAvatarSeleccionado'] as num?)?.toInt() ?? 1, // '?? 1' como fallback
+      rank: json['rank'] ?? 'Bronce',
+      rankLanguageIds: _parseLanguageIds(json['rankLanguageIds']), 
     );
   }
 }

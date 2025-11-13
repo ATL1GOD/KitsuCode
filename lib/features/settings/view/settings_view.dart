@@ -9,7 +9,7 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:kitsucode/features/settings/provider/settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
+import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';

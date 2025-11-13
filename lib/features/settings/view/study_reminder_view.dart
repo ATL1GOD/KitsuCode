@@ -10,7 +10,7 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
+import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
 
 // --- Helpers para convertir (los movimos de tu versión anterior) ---

@@ -44,7 +44,7 @@ import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
 // ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
-
+import 'package:kitsucode/features/amigos/view/search_view.dart';
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -138,7 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AllStatsView(),
       ),
 
-      // --- RUTA DE SETTINGS 
+      // --- RUTA DE SETTINGS
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsView(),
@@ -167,16 +167,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) {
                   // Obtenemos los datos del 'extra'
                   final extra = state.extra as Map<String, dynamic>?;
-                  
-                  if (extra == null || extra['title'] == null || extra['settings'] == null) {
+
+                  if (extra == null ||
+                      extra['title'] == null ||
+                      extra['settings'] == null) {
                     return const Scaffold(
-                      body: Center(child: Text('Error: Faltan datos de categoría')),
+                      body: Center(
+                        child: Text('Error: Faltan datos de categoría'),
+                      ),
                     );
                   }
-                  
+
                   final title = extra['title'] as String;
-                  final settings = extra['settings'] as List<NotificationSetting>;
-                  
+                  final settings =
+                      extra['settings'] as List<NotificationSetting>;
+
                   return NotificationCategoryView(
                     title: title,
                     settings: settings,
@@ -289,7 +294,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/desafiomensual', // <-- Nueva ruta
                 builder: (context, state) =>
-                    const DesafiosView(), // <-- Nueva vista
+                    // const DesafiosView(), // <-- Nueva vista
+                    const UserSearchView(),
               ),
             ],
           ),

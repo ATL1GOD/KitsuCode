@@ -7,6 +7,7 @@ import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/profile/model/follow_list_model.dart';
+import 'package:kitsucode/features/amigos/model/search_model.dart';
 
 class ProfileRepository {
   final SupabaseClient _supabase;
@@ -43,10 +44,7 @@ class ProfileRepository {
     try {
       final data = await _supabase.rpc(
         'get_follow_list', // La función RPC definida en el backend
-        params: {
-          'p_user_id': userId,
-          'p_type': type,
-        },
+        params: {'p_user_id': userId, 'p_type': type},
       );
 
       final list = data as List;
@@ -57,7 +55,6 @@ class ProfileRepository {
       throw Exception('Error al cargar la lista de seguimiento.');
     }
   }
-
 
   // Consulta si el usuario actual sigue a otro usuario
   Future<bool> isFollowing(String followedUserId) async {
@@ -79,17 +76,17 @@ class ProfileRepository {
       'toggle_follow',
       params: {'p_followed_user_id': followedUserId},
     );
-    
+
     final isNowFollowing = response as bool;
-    
+
     // Si ahora está siguiendo (true), enviar notificación
     if (isNowFollowing) {
       _sendFollowerNotification(followedUserId);
     }
-    
+
     return isNowFollowing;
   }
-  
+
   /// Enviar notificación de nuevo seguidor (sin esperar respuesta)
   void _sendFollowerNotification(String followedUserId) async {
     try {
@@ -99,10 +96,7 @@ class ProfileRepository {
       // Llamar Edge Function de forma asíncrona y loguear resultado para debug
       final res = await _supabase.functions.invoke(
         'new-follower',
-        body: {
-          'follower_id': currentUserId,
-          'followed_id': followedUserId,
-        },
+        body: {'follower_id': currentUserId, 'followed_id': followedUserId},
       );
 
       // Supabase Functions.invoke puede devolver null o un objeto; imprimimos para diagnosticar
@@ -135,7 +129,11 @@ class ProfileRepository {
     }
   }
 
-  Future<void> updateUserProfile({required String userId, String? newName, int? newAvatarId}) async {
+  Future<void> updateUserProfile({
+    required String userId,
+    String? newName,
+    int? newAvatarId,
+  }) async {
     try {
       final updates = <String, dynamic>{};
       if (newName != null) {
@@ -146,10 +144,7 @@ class ProfileRepository {
       }
 
       if (updates.isNotEmpty) {
-        await _supabase
-            .from('usuarios')
-            .update(updates)
-            .eq('id', userId);
+        await _supabase.from('usuarios').update(updates).eq('id', userId);
       }
     } catch (e) {
       throw Exception('Error al actualizar el perfil: $e');
@@ -159,24 +154,25 @@ class ProfileRepository {
   Future<UserStatsModel> fetchUserStatsById(String userId) async {
     try {
       final response = await _supabase.rpc(
-        'get_user_stats', 
+        'get_user_stats',
         params: {'p_user_id': userId},
       );
 
       if (response == null) {
         return UserStatsModel.empty();
       }
-      
-      return UserStatsModel.fromJson(response);
 
+      return UserStatsModel.fromJson(response);
     } catch (e) {
       // ignore: avoid_print
       print('Error en fetchUserStatsById (RPC): $e');
       return UserStatsModel.empty();
     }
   }
-  
-  Future<List<UserAchievementModel>> fetchUserAchievementsById(String userId) async {
+
+  Future<List<UserAchievementModel>> fetchUserAchievementsById(
+    String userId,
+  ) async {
     try {
       final data = await _supabase.rpc(
         'get_achievements_for_user',
@@ -185,7 +181,6 @@ class ProfileRepository {
 
       final list = data as List;
       return list.map((json) => UserAchievementModel.fromJson(json)).toList();
-
     } catch (e) {
       // ignore: avoid_print
       print('Error fetching achievements: $e');
@@ -229,7 +224,7 @@ class ProfileRepository {
   }
 
   // ==================== MÉTODOS PARA AVATARES ====================
-  
+
   /// Obtiene todos los avatares disponibles para un usuario específico
   /// Incluye el campo 'desbloqueado' que indica si el usuario tiene acceso
   Future<List<AvatarModel>> fetchUserAvatars(String userId) async {
@@ -257,10 +252,7 @@ class ProfileRepository {
     try {
       final result = await _supabase.rpc(
         'unlock_avatar_for_user',
-        params: {
-          'p_user_id': userId,
-          'p_avatar_id': avatarId,
-        },
+        params: {'p_user_id': userId, 'p_avatar_id': avatarId},
       );
       return result as bool? ?? false;
     } catch (e) {
@@ -269,4 +261,32 @@ class ProfileRepository {
       return false;
     }
   }
-} 
+
+  /// Busca usuarios por nombre de perfil o nombre de usuario
+  Future<List<UserSearchPreviewModel>> searchUsers(String query) async {
+    // 1. Obtener el ID del usuario actual
+    final currentUserId = _supabase.auth.currentUser?.id;
+
+    // No buscamos si el query está vacío o si el usuario no está logueado
+    if (query.trim().isEmpty || currentUserId == null) {
+      return [];
+    }
+
+    try {
+      final data = await _supabase.rpc(
+        'busqueda_amigos', // <-- 2. Asegúrate que el nombre coincida
+        params: {
+          'p_query': query.trim(),
+          'p_user_id': currentUserId, // <-- 3. Envía el ID del usuario
+        },
+      );
+
+      final list = data as List;
+      return list.map((json) => UserSearchPreviewModel.fromJson(json)).toList();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error al buscar usuarios: $e');
+      throw Exception('Error al buscar usuarios.');
+    }
+  }
+}

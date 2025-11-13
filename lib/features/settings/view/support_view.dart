@@ -1,5 +1,3 @@
-// lib/features/settings/view/support_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +5,8 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-// import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart'; // Eliminado por optimización
+// import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart'; // ELIMINADO
+import 'package:kitsucode/shared/widgets/static_settings_background.dart'; // <-- USADO
 import 'package:animate_do/animate_do.dart'; // MANTENIDO: Para las animaciones de entrada FadeInDown
 import 'package:kitsucode/features/settings/repository/support_repository.dart'; 
 import 'package:kitsucode/shared/snackbar/snackbar.dart'; 
@@ -98,19 +97,10 @@ class _SupportViewState extends ConsumerState<SupportView> {
           
           return Stack(
             children: [
-              // --- FONDO ESTÁTICO (Sin AnimatedSettingsBackground/Lottie) ---
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha(100),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.7]
-                  ),
-                ),
+              // --- FONDO ESTÁTICO (USANDO EL WIDGET COMPARTIDO) ---
+              StaticSettingsBackground(
+                profile: profile,
+                colors: colors,
               ),
               
               // --- CONTENIDO ---

@@ -221,7 +221,7 @@ class SpecialEventCardHeader extends StatelessWidget {
               ],
             ),
             child: SvgPicture.asset(
-              '/images/mensual/navidad1.svg', // <-- ¡CAMBIA ESTO POR TU RUTA!
+              '/images/mensual/navidad2.svg', // <-- ¡CAMBIA ESTO POR TU RUTA!
               fit: BoxFit.cover,
             ),
           ),

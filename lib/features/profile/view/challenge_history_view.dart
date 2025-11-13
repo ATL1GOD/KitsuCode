@@ -1,5 +1,3 @@
-// lib/features/profile/view/challenge_history_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +5,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // Importa
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart'; // Importa los providers de perfil
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-import 'package:lottie/lottie.dart';
+// import 'package:lottie/lottie.dart'; // <-- YA NO SE USA
 
 // Importa el nuevo modelo y el tile que crearemos
 import 'package:kitsucode/features/profile/model/challenge_history_model.dart';
@@ -15,6 +13,10 @@ import 'widgets/challenge_history_tile.dart';
 
 // --- 1. ¡IMPORTA EL PAQUETE DE ANIMACIÓN! ---
 import 'package:flutter_animate/flutter_animate.dart';
+
+// --- ¡IMPORTA EL NUEVO FONDO ESTÁTICO! ---
+// (Asegúrate de que esta ruta sea correcta para tu proyecto)
+import 'package:kitsucode/shared/widgets/static_settings_background.dart';
 
 class ChallengeHistoryView extends ConsumerWidget {
   const ChallengeHistoryView({super.key});
@@ -52,34 +54,45 @@ class ChallengeHistoryView extends ConsumerWidget {
 
           return Stack(
             children: [
-              // Gradiente de fondo (copiado de AllStatsView)
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha(100),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.7],
-                  ),
-                ),
+              // --- REEMPLAZO DE FONDO ---
+              // Eliminamos el Container(gradient...) y el ColorFiltered(Lottie.asset...)
+              // y los reemplazamos por el nuevo widget estático.
+              StaticSettingsBackground(
+                profile: profile,
+                colors: colors,
               ),
+              // --- FIN DEL REEMPLAZO ---
 
-              // Animación Lottie de fondo (copiada de AllStatsView)
-              ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  colors.secondaryFixedDim.withOpacity(0.8),
-                  BlendMode.srcIn,
-                ),
-                child: Lottie.asset(
-                  'assets/animations/spring.json',
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              /* --- CÓDIGO ELIMINADO ---
+               // Gradiente de fondo (copiado de AllStatsView)
+               Container(
+                 decoration: BoxDecoration(
+                   gradient: LinearGradient(
+                     begin: Alignment.topCenter,
+                     end: Alignment.bottomCenter,
+                     colors: [
+                       dynamicColor.withAlpha(100),
+                       colors.surfaceContainerLowest,
+                     ],
+                     stops: const [0.0, 0.7],
+                   ),
+                 ),
+               ),
+
+               // Animación Lottie de fondo (copiada de AllStatsView)
+               ColorFiltered(
+                 colorFilter: ColorFilter.mode(
+                   colors.secondaryFixedDim.withOpacity(0.8),
+                   BlendMode.srcIn,
+                 ),
+                 child: Lottie.asset(
+                   'assets/animations/spring.json',
+                   width: double.infinity,
+                   height: double.infinity,
+                   fit: BoxFit.cover,
+                 ),
+               ),
+               --- FIN CÓDIGO ELIMINADO --- */
 
               // Contenido principal
               SafeArea(
@@ -147,7 +160,8 @@ class ChallengeHistoryView extends ConsumerWidget {
                           if (history.isEmpty) {
                             return const Center(
                               child: Text(
-                                'Sin retos completados en este rango de fechas.', // Texto actualizado
+                                'Sin retos completados en este rango de fechas, unicamente puedes ver tus retos completados en un rango de 30 días.',
+                                textAlign: TextAlign.center, // Centrar el texto
                                 style: TextStyle(fontSize: 16),
                               ),
                             );

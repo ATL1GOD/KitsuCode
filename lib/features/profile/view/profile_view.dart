@@ -9,7 +9,7 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_achievements_section.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart';
-import 'package:animate_do/animate_do.dart';
+import 'package:animate_do/animate_do.dart'; // <--- ¡ANIMACIÓN RE-IMPORTADA!
 import 'package:lottie/lottie.dart';
 
 class ProfileView extends ConsumerWidget {
@@ -27,7 +27,7 @@ class ProfileView extends ConsumerWidget {
     final targetUserId = userId ?? currentAuthUserId;
     final isCurrentUserProfile = targetUserId == currentAuthUserId;
 
-    // Activar listeners de Realtime
+    // Activar listeners de Realtime (esto está perfecto)
     ref.watch(profileRealtimeProvider);
     ref.watch(achievementRealtimeProvider);
     ref.watch(followRealtimeProvider);
@@ -39,24 +39,16 @@ class ProfileView extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // --- ¡OPTIMIZACIÓN! ---
-    // ProfileView ya NO observa (ref.watch) los providers de datos.
-    // Solo se encarga de armar el esqueleto.
-    // Los hijos (ProfileHeader, ProfileProgressSection, etc.)
-    // se encargarán de sus propios datos y estados de carga.
-
     return Scaffold(
       body: Stack(
         children: [
-          // --- NUEVO WIDGET ---
-          // Este widget SÍ observa el avatarId para el color de fondo.
-          // Si el avatar cambia, SOLO esto se reconstruirá, no toda la vista.
+          // Fondo dinámico (esto está perfecto)
           _ProfileBackground(
             userId: targetUserId,
             colors: colors,
           ),
 
-          // Contenido principal (el esqueleto)
+          // Contenido principal
           Column(
             children: [
               // --- PARTE FIJA (NO SCROLLEABLE) ---
@@ -66,12 +58,10 @@ class ProfileView extends ConsumerWidget {
                   children: [
                     const SizedBox(height: 56), // Espacio para la barra de botones
 
-                    // ProfileHeader ahora pide sus propios datos usando el userId
+                    // ProfileHeader (perfecto, pide sus propios datos)
                     ProfileHeader(
                       userId: targetUserId,
                       isCurrentUserProfile: isCurrentUserProfile,
-                      // ⛔ YA NO PASAMOS EL COLOR ⛔
-                      // dynamicColor: colors.primary,
                     ),
 
                     if (!isCurrentUserProfile)
@@ -87,64 +77,62 @@ class ProfileView extends ConsumerWidget {
                 ),
               ),
 
-              // --- PARTE CON SCROLL ---
+              // --- PARTE CON SCROLL (REFACTORIZADA) ---
               Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding:
-                        EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
-                    child: Stack(
+                child: Stack(
+                  children: [
+                    // --- 1. FONDO LOTTIE (FIJO) ---
+                    Positioned.fill(
+                      child: ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          isDarkMode
+                              ? colors.secondaryFixedDim.withOpacity(0.3)
+                              : colors.secondary.withOpacity(0.4),
+                          BlendMode.srcIn,
+                        ),
+                        child: Lottie.asset(
+                          'assets/animations/particles.json',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+
+                    // --- 2. LISTVIEW (LAZY LOADING) ---
+                    ListView(
+                      // Añadimos padding aquí para el contenido
+                      padding: EdgeInsets.only(
+                        top: isCurrentUserProfile ? 20.0 : 0,
+                        bottom: 70.0, // Espacio para el final del scroll
+                      ),
                       children: [
-                        // --- Animación de fondo ---
-                        Positioned.fill(
-                          child: ColorFiltered(
-                            colorFilter: ColorFilter.mode(
-                              isDarkMode
-                                  ? colors.secondaryFixedDim.withOpacity(0.3)
-                                  : colors.secondary.withOpacity(0.4),
-                              BlendMode.srcIn,
-                            ),
-                            child: Lottie.asset(
-                              'assets/animations/particles.json',
-                              fit: BoxFit.cover,
-                            ),
+                        // --- ¡ANIMACIÓN DEVUELTA! ---
+                        FadeInUp(
+                          from: 30,
+                          delay: const Duration(milliseconds: 300),
+                          child: ProfileProgressSection(
+                            userId: targetUserId,
+                            showViewAllButton: isCurrentUserProfile,
                           ),
                         ),
-                        // --- Contenido del scroll ---
-                        Column(
-                          children: [
-                            FadeInUp(
-                              from: 30,
-                              delay: const Duration(milliseconds: 300),
-                              // ProfileProgressSection ya es un ConsumerWidget
-                              // y pide sus propios datos. ¡Perfecto!
-                              child: ProfileProgressSection(
-                                userId: targetUserId,
-                                showViewAllButton: isCurrentUserProfile,
-                              ),
-                            ),
-                            FadeInUp(
-                              from: 30,
-                              delay: const Duration(milliseconds: 400),
-                              // ProfileAchievementsSection ahora pide sus
-                              // propios datos usando el userId
-                              child: ProfileAchievementsSection(
-                                userId: targetUserId,
-                                isCurrentUserProfile: isCurrentUserProfile,
-                              ),
-                            ),
-                            const SizedBox(height: 70),
-                          ],
+                        
+                        // --- ¡ANIMACIÓN DEVUELTA! ---
+                        FadeInUp(
+                          from: 30,
+                          delay: const Duration(milliseconds: 400),
+                          child: ProfileAchievementsSection(
+                            userId: targetUserId,
+                            isCurrentUserProfile: isCurrentUserProfile,
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
           ),
 
-          // Barra de botones posicionada absolutamente (sin cambios)
+          // Barra de botones posicionada (perfecto)
           Positioned(
             top: 0,
             left: 0,
@@ -165,6 +153,7 @@ class ProfileView extends ConsumerWidget {
 
 // --- WIDGET NUEVO Y PRIVADO ---
 // Este widget solo se encarga de construir el fondo dinámico
+// (Sin cambios, esto está perfecto)
 class _ProfileBackground extends ConsumerWidget {
   final String userId;
   final ColorScheme colors;

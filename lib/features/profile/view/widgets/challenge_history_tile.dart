@@ -35,46 +35,59 @@ class ChallengeHistoryTile extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final DateFormat formatter = DateFormat('dd/MM/yyyy - hh:mm a');
 
-    return Card(
-      elevation: 2,
+    // Determinamos si fue éxito o fallo y logica del aura
+    final bool isSuccess = item.resultado.toLowerCase() == 'completado';
+    final Color auraColor = (isSuccess ? Colors.green : Colors.red).withOpacity(0.7);
+    final Color cardColor = isSuccess 
+      ? colorScheme.surface.withOpacity(0.9)
+      : colorScheme.errorContainer.withOpacity(0.5); // Un fondo rojo claro para fallos
+
+    // Construcción del Tile
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: colorScheme.surface.withOpacity(0.9),
+      decoration: BoxDecoration(
+        color: cardColor, // <-- Color de fondo
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          // Esta es el "aura"
+          BoxShadow(
+            color: auraColor,
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+        border: Border.all(
+          color: auraColor.withOpacity(0.8),
+          width: 1.5,
+        ),
+      ),
       child: ListTile(
-        // --- CAMBIO DE ICONO LEADING ---
         leading: Icon(
-          _getIconForDinamica(item.dinamicaNombre), // <-- USA LA NUEVA FUNCIÓN
+          _getIconForDinamica(item.dinamicaNombre),
           color: colorScheme.primary,
           size: 30,
         ),
-
-        // --- TÍTULO (SIN CAMBIOS) ---
         title: Text(
           item.challengeTitle,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-
-        // --- SUBTÍTULO (SIN CAMBIOS) ---
-        // Sigue mostrando la sección (Pilas, Colas) y la fecha
         subtitle: Text(
-          // Añade ".toLocal()" justo después de "item.completedAt"
           '${item.sectionTitle}  •  ${formatter.format(item.completedAt.toLocal())}',
           style: TextStyle(color: theme.textTheme.bodySmall?.color),
         ),
-
-        // --- TRAILING (SIN CAMBIOS) ---
-        // Mantenemos el icono de trofeo y la XP
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.emoji_events_outlined,
-              color: Colors.amber[700],
+              // Si falló, no mostramos trofeo
+              isSuccess ? Icons.emoji_events_outlined : Icons.cancel_outlined,
+              color: isSuccess ? Colors.amber[700] : Colors.red[700],
               size: 20,
             ),
             const SizedBox(width: 4),
             Text(
-              '+${item.xpGained}',
+              // Si falló, no sumó XP
+              isSuccess ? '+${item.xpGained}' : '0',
               style: TextStyle(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.bold,

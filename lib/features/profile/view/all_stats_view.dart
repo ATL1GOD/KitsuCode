@@ -274,12 +274,16 @@ class _StatRow extends StatelessWidget {
                       ),
                     ),
                     FractionallySizedBox(
-                      widthFactor: 0.75,
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: color.withAlpha(130),
-                          borderRadius: BorderRadius.circular(4),
+                          // Si es porcentaje, usa el valor (dividido por 100)
+                          // Si no, usa un valor fijo (como 0.75)
+                          widthFactor: isPercentage 
+                              ? (value.clamp(0, 100) / 100) // .clamp() asegura que esté entre 0 y 100
+                              : 0.75, // Valor por defecto para "Retos" y "Racha"
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: color.withAlpha(130),
+                              borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),

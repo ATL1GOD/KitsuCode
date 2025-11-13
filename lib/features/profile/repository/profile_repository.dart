@@ -21,7 +21,7 @@ Future<List<ChallengeHistoryModel>> getChallengeHistory(
 }) async {
   try {
     
-    // Arreglo de la fecha (esto ya estaba bien)
+    // Lógica de fechas (esta estaba bien)
     final endOfDay = DateTime(
       endDate.year,
       endDate.month,
@@ -33,8 +33,8 @@ Future<List<ChallengeHistoryModel>> getChallengeHistory(
     final startString = startDate.toUtc().toIso8601String();
     final endString = endOfDay.toUtc().toIso8601String();
     
-    // --- ¡AQUÍ ESTÁ EL ARREGLO DEL ERROR! ---
-    // Quitamos el ".client" de "_supabase.client"
+    // --- CONSULTA LIMPIA ---
+    // (Sin comentarios de Dart adentro)
     final response = await _supabase 
         .from('intento_reto')
         .select('''
@@ -54,11 +54,11 @@ Future<List<ChallengeHistoryModel>> getChallengeHistory(
           )
         ''')
         .eq('id_usuario', userId)
-        .eq('resultado', 'completado')
+        // La línea de "completado" ya la habíamos quitado, está bien
         .gte('fecha_intento', startString)
         .lte('fecha_intento', endString)
         .order('fecha_intento', ascending: false);
-    // --- FIN DEL ARREGLO ---
+    // --- FIN DE LA CONSULTA ---
 
     final List<dynamic> data = response;
     return data

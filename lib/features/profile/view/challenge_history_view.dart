@@ -13,6 +13,9 @@ import 'package:lottie/lottie.dart';
 import 'package:kitsucode/features/profile/model/challenge_history_model.dart';
 import 'widgets/challenge_history_tile.dart';
 
+// --- 1. ¡IMPORTA EL PAQUETE DE ANIMACIÓN! ---
+import 'package:flutter_animate/flutter_animate.dart';
+
 class ChallengeHistoryView extends ConsumerWidget {
   const ChallengeHistoryView({super.key});
 
@@ -144,7 +147,7 @@ class ChallengeHistoryView extends ConsumerWidget {
                           if (history.isEmpty) {
                             return const Center(
                               child: Text(
-                                'Sin retos completados en los últimos 30 días.',
+                                'Sin retos completados en este rango de fechas.', // Texto actualizado
                                 style: TextStyle(fontSize: 16),
                               ),
                             );
@@ -161,7 +164,20 @@ class ChallengeHistoryView extends ConsumerWidget {
                             itemCount: history.length,
                             itemBuilder: (context, index) {
                               final item = history[index];
-                              return ChallengeHistoryTile(item: item); // Usamos el Tile del Paso 5
+                              
+                              // --- 2. ¡AQUÍ ESTÁ LA ANIMACIÓN! ---
+                              return ChallengeHistoryTile(item: item)
+                                  .animate()
+                                  .fadeIn(
+                                    delay: (100 * (index % 10)).ms, 
+                                    duration: 500.ms,
+                                  )
+                                  .slideY(
+                                    begin: 0.2,
+                                    end: 0,
+                                    curve: Curves.easeOutCubic,
+                                  );
+                              // --- FIN DE LA ANIMACIÓN ---
                             },
                           );
                         },

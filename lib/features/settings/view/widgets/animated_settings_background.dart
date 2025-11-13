@@ -4,23 +4,22 @@ import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
 /// Widget reutilizable para el fondo animado de las vistas de Settings
-/// 
-/// Mantiene la animación Lottie activa usando [RepaintBoundary] para 
-/// optimizar el rendimiento y evitar "freezes" al navegar entre sub-vistas.
+/// La animación Lottie se oculta mediante un fade out/colapso cuando se
+/// abre el teclado virtual para optimizar el rendimiento del formulario.
 class AnimatedSettingsBackground extends StatelessWidget {
   final UserProfileModel profile;
   final ColorScheme colors;
-
+  final bool isKeyboardVisible; // <-- NUEVA PROPIEDAD
   const AnimatedSettingsBackground({
     super.key,
     required this.profile,
     required this.colors,
+    required this.isKeyboardVisible, // <-- REQUERIDO
   });
 
   @override
   Widget build(BuildContext context) {
     final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
-
     return RepaintBoundary(
       child: Stack(
         children: [
@@ -38,10 +37,12 @@ class AnimatedSettingsBackground extends StatelessWidget {
               ),
             ),
           ),
-          
-          // --- ANIMACIÓN LOTTIE OPTIMIZADA ---
-          Opacity(
-            opacity: 0.85, // Ligeramente más transparente para reducir carga visual
+
+          // --- ANIMACIÓN LOTTIE CONTROLADA (Usa AnimatedOpacity) ---
+          AnimatedOpacity( // <-- ANIMACIÓN PARA OCULTAR
+            opacity: isKeyboardVisible ? 0.0 : 0.85, // Si el teclado está visible, opacidad 0
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
             child: ColorFiltered(
               colorFilter: ColorFilter.mode(
                 colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
@@ -54,7 +55,6 @@ class AnimatedSettingsBackground extends StatelessWidget {
                   height: double.infinity,
                   fit: BoxFit.cover,
                   repeat: true,
-                  // Renderiza frames más espaciados para mejor performance
                   frameRate: FrameRate.max,
                 ),
               ),

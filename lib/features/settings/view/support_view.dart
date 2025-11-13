@@ -1,4 +1,5 @@
 // lib/features/settings/view/support_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,10 +7,11 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
-import 'package:animate_do/animate_do.dart';
+// import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart'; // Eliminado por optimización
+import 'package:animate_do/animate_do.dart'; // MANTENIDO: Para las animaciones de entrada FadeInDown
 import 'package:kitsucode/features/settings/repository/support_repository.dart'; 
 import 'package:kitsucode/shared/snackbar/snackbar.dart'; 
+import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // Para getHeaderColor
 
 // Tipos de reporte para el selector
 enum ReportType { bug, suggestion, other }
@@ -33,26 +35,20 @@ class _SupportViewState extends ConsumerState<SupportView> {
     super.dispose();
   }
 
-  // Helper para obtener el color dinámico
   Color _getDynamicColor(UserProfileModel profile) {
     return getAvatarColorById(profile.idAvatarSeleccionado);
   }
 
-  // --- LÓGICA DE SUBMIT CON SNACKBARS Y NAVEGACIÓN ---
   void _submitReport(String userId, String type) async {
-    // 1. Validar el campo de descripción
     if (!_formKey.currentState!.validate()) {
       showWarningSnackbar(context, 'Campos incompletos', 'Por favor, describe tu reporte.');
       return;
     }
     
     setState(() => _isLoading = true);
-
-    // Muestra "Procesando..." antes del llamado a la red
     showHelpSnackbar(context, 'Enviando...', 'Estamos procesando tu reporte. No cierres la app.');
 
     try {
-      // Llamada al repositorio
       await ref.read(supportRepositoryProvider).submitReport(
             userId: userId,
             type: type,
@@ -60,13 +56,11 @@ class _SupportViewState extends ConsumerState<SupportView> {
           );
 
       if (mounted) {
-        // 2. Muestra éxito y navega
         showSuccessSnackbar(
             context, '¡Enviado!', 'Gracias por tu feedback. Lo revisaremos pronto.');
         
-        context.pop(); // <-- NAVEGACIÓN A CONFIGURACIÓN
+        context.pop(); 
         
-        // 3. Limpiar estado
         _descriptionController.clear();
         setState(() {
           _selectedReportType = ReportType.bug;
@@ -75,7 +69,6 @@ class _SupportViewState extends ConsumerState<SupportView> {
       }
     } catch (e) {
       if (mounted) {
-        // Muestra error
         showErrorSnackbar(
             context, 'Error de Conexión', 'No se pudo enviar el reporte. Verifica tu conexión o intenta más tarde.');
         setState(() => _isLoading = false);
@@ -105,17 +98,26 @@ class _SupportViewState extends ConsumerState<SupportView> {
           
           return Stack(
             children: [
-              // --- FONDO ANIMADO OPTIMIZADO ---
-              AnimatedSettingsBackground(
-                profile: profile,
-                colors: colors,
+              // --- FONDO ESTÁTICO (Sin AnimatedSettingsBackground/Lottie) ---
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      dynamicColor.withAlpha(100),
+                      colors.surfaceContainerLowest,
+                    ],
+                    stops: const [0.0, 0.7]
+                  ),
+                ),
               ),
               
               // --- CONTENIDO ---
               SafeArea(
                 child: Column(
                   children: [
-                    // --- BARRA SUPERIOR ---
+                    // --- BARRA SUPERIOR (Sin FadeInDown) ---
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Row(
@@ -166,7 +168,7 @@ class _SupportViewState extends ConsumerState<SupportView> {
                               delay: const Duration(milliseconds: 200),
                               child: Text(
                                 '¡Cuéntanos! Tu feedback nos ayuda a mejorar KitsuCode.',
-                                style: textTheme.bodyMedium?.copyWith( // <-- ESTILO CORREGIDO
+                                style: textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w500, 
                                   color: colors.onSurfaceVariant,
                                 ),
@@ -202,17 +204,14 @@ class _SupportViewState extends ConsumerState<SupportView> {
                                     _selectedReportType = newSelection.first;
                                   });
                                 },
-                                style: SegmentedButton.styleFrom( // <-- ESTILO SÓLIDO
-                                  // Estilo general (unselected)
+                                style: SegmentedButton.styleFrom(
                                   backgroundColor: colors.surfaceContainerHigh, 
                                   foregroundColor: colors.onSurface,
                                   side: BorderSide(
                                     color: colors.outline.withAlpha(200), 
                                     width: 1.0,
                                   ),
-                                  textStyle: textTheme.labelMedium?.copyWith(fontSize: 12.5), // Ajustado a un tamaño intermedio personalizado
-                                  
-                                  // Estilo seleccionado (dynamic)
+                                  textStyle: textTheme.labelMedium?.copyWith(fontSize: 12.5),
                                   selectedForegroundColor: colors.onPrimary,
                                   selectedBackgroundColor: dynamicColor,
                                 ),
@@ -224,7 +223,7 @@ class _SupportViewState extends ConsumerState<SupportView> {
                             // 2. Campo de Texto (con aura)
                             FadeInDown(
                               delay: const Duration(milliseconds: 400),
-                              child: _AuraTextFieldWrapper( // <-- Wrapper con Aura
+                              child: _AuraTextFieldWrapper( 
                                 dynamicColor: dynamicColor,
                                 child: TextFormField(
                                   controller: _descriptionController,
@@ -239,7 +238,7 @@ class _SupportViewState extends ConsumerState<SupportView> {
                                       color: colors.onSurfaceVariant.withOpacity(0.5),
                                     ),
                                     filled: true,
-                                    fillColor: Colors.transparent, // Transparente para ver el fondo del wrapper
+                                    fillColor: Colors.transparent,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
@@ -290,7 +289,7 @@ class _SupportViewState extends ConsumerState<SupportView> {
   }
 }
 
-// --- WIDGET WRAPPER CON AURA ---
+// --- WIDGET WRAPPER CON AURA (Sin cambios) ---
 class _AuraTextFieldWrapper extends StatelessWidget {
   final Widget child;
   final Color dynamicColor;
@@ -304,14 +303,13 @@ class _AuraTextFieldWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
     return Container(
-      // Aplicar decoración de Aura
       decoration: BoxDecoration(
-        color: c.surface.withAlpha(242), // Fondo (.95 opacidad)
+        color: c.surface.withAlpha(242),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: dynamicColor.withAlpha(153)), // Borde (.6 opacidad)
+        border: Border.all(color: dynamicColor.withAlpha(153)),
         boxShadow: [
           BoxShadow(
-            color: dynamicColor.withAlpha(64), // Sombra (.25 opacidad)
+            color: dynamicColor.withAlpha(64),
             blurRadius: 12,
             offset: const Offset(0, 5),
           )
@@ -320,7 +318,7 @@ class _AuraTextFieldWrapper extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Padding interno
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: child,
         ),
       ),

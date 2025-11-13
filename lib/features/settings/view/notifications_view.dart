@@ -89,6 +89,7 @@ class NotificationsView extends ConsumerWidget {
     final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
     final notificationSettingsState = ref.watch(notificationSettingsProvider);
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
@@ -105,6 +106,7 @@ class NotificationsView extends ConsumerWidget {
               AnimatedSettingsBackground(
                 profile: profile,
                 colors: colors,
+                isKeyboardVisible: isKeyboardVisible,
               ),
               
               // --- CONTENIDO ---

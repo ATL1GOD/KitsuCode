@@ -93,6 +93,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
 
     final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Formatear la hora para mostrarla en el tile
     String timeSubtitle;
@@ -119,6 +120,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
               AnimatedSettingsBackground(
                 profile: profile,
                 colors: colors,
+                isKeyboardVisible: isKeyboardVisible,
               ),
 
               // --- CONTENIDO ---

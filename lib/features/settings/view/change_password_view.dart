@@ -1,17 +1,14 @@
 // lib/features/settings/view/change_password_view.dart
+
 import 'package:flutter/material.dart';
-// import 'package:flutter/widgets.dart'; // <-- ELIMINADO
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-// import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // <-- ELIMINADO
-// import 'package:kitsucode/features/profile/model/user_profile_model.dart'; // <-- ELIMINADO
-import 'package:animate_do/animate_do.dart';
-import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
+import 'package:animate_do/animate_do.dart'; // <--- REINSTALADO
+import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // Para getHeaderColor
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart'; // Importa SectionHeader
-import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 class ChangePasswordView extends ConsumerStatefulWidget {
   const ChangePasswordView({super.key});
@@ -108,7 +105,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    // --- 1. DETECTOR DE TECLADO ---
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
@@ -127,14 +123,25 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
 
           return Stack(
             children: [
-              AnimatedSettingsBackground(
-                profile: profile,
-                colors: colors,
+              // --- FONDO (Estático) ---
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      dynamicColor.withAlpha(100),
+                      colors.surfaceContainerLowest,
+                    ],
+                    stops: const [0.0, 0.7]
+                  ),
+                ),
               ),
+              
               SafeArea(
                 child: Column(
                   children: [
-                    // --- CABECERA (Sin cambios) ---
+                    // --- CABECERA ---
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16.0, vertical: 8.0),
@@ -168,7 +175,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                       ),
                     ),
 
-                    // --- LISTVIEW ---
+                    // --- LISTVIEW (Formulario) ---
                     Expanded(
                       child: Form(
                         key: _formKey,
@@ -177,45 +184,48 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               horizontal: 16.0, vertical: 12.0),
                           children: [
                             
-                            // --- ¡CAMBIO A ANIMATEDSWITCHER! ---
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
-                              // Define la animación de Fade (difuminado)
-                              transitionBuilder: (Widget child, Animation<double> animation) {
-                                return FadeTransition(opacity: animation, child: child);
-                              },
-                              child: !isKeyboardVisible
-                                  // 1. Si el teclado NO está visible, muestra el Zorro
-                                  ? FadeInDown(
-                                      // Usamos una Key para que AnimatedSwitcher sepa qué widget es
-                                      key: const ValueKey('fox-image'),
-                                      delay: const Duration(milliseconds: 100),
-                                      child: Padding(
+                            // --- IMAGEN DEL ZORRO (Con FadeInDown, y colapsando con teclado) ---
+                            FadeInDown( // <--- ANIMACIÓN REINSTALADA
+                              delay: const Duration(milliseconds: 100),
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 250),
+                                transitionBuilder: (Widget child, Animation<double> animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: SizeTransition(
+                                      sizeFactor: animation,
+                                      axisAlignment: -1.0,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: !isKeyboardVisible
+                                    ? Padding(
+                                        key: const ValueKey('fox-image'), 
                                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                                         child: Image.asset(
                                           'assets/images/auth/fox_login.png',
                                           height: 180,
                                         ),
-                                      ),
-                                    )
-                                  // 2. Si el teclado SÍ está visible, muestra un widget vacío
-                                  : const SizedBox.shrink(key: ValueKey('fox-gone')),
+                                      )
+                                    : const SizedBox.shrink(key: ValueKey('fox-gone')),
+                              ),
                             ),
 
-                            // --- Sección de Credenciales (Sin cambios) ---
-                            FadeInDown(
+                            // --- Sección de Credenciales (Con FadeInDown) ---
+                            FadeInDown( // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 200),
-                              child: SectionHeader(
+                              child: SectionHeader( 
                                 title: 'Credenciales',
                                 icon: Icons.lock_outline,
                                 colors: colors,
                               ),
                             ),
 
-                            // --- CAMPOS (Sin cambios) ---
-                            FadeInDown(
+                            // --- CAMPO 1 (Con FadeInDown) ---
+                            FadeInDown( // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 300),
-                              child: _TextFieldWrapper(
+                              child: _TextFieldWrapper( 
                                 dynamicColor: dynamicColor,
                                 child: TextFormField(
                                   controller: _currentPasswordController,
@@ -243,9 +253,10 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
                             
-                            FadeInDown(
+                            // --- CAMPO 2 (Con FadeInDown) ---
+                            FadeInDown( // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 400),
-                              child: _TextFieldWrapper(
+                              child: _TextFieldWrapper( 
                                 dynamicColor: dynamicColor,
                                 child: TextFormField(
                                   controller: _newPasswordController,
@@ -270,9 +281,10 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            FadeInDown(
+                            // --- CAMPO 3 (Con FadeInDown) ---
+                            FadeInDown( // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 500),
-                              child: _TextFieldWrapper(
+                              child: _TextFieldWrapper( 
                                 dynamicColor: dynamicColor,
                                 child: TextFormField(
                                   controller: _confirmPasswordController,
@@ -302,27 +314,27 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
 
                             const SizedBox(height: 24),
                             
-                            // --- BOTÓN (Sin cambios) ---
-                            FadeInDown(
+                            // --- BOTÓN (Con FadeInDown) ---
+                            FadeInDown( // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 600),
                               child: _isLoading
                                   ? const Center(
-                                      child: CircularProgressIndicator())
+                                        child: CircularProgressIndicator())
                                   : FilledButton.icon(
-                                      icon: const Icon(Icons.security_update_good_outlined),
-                                      label:
-                                          const Text('Actualizar Contraseña'),
-                                      onPressed: _submitChangePassword,
-                                      style: FilledButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 16),
-                                        backgroundColor: dynamicColor,
-                                        foregroundColor: colors.onPrimary,
-                                        textStyle: textTheme.titleMedium
-                                            ?.copyWith(
-                                                fontWeight: FontWeight.bold),
+                                        icon: const Icon(Icons.security_update_good_outlined),
+                                        label:
+                                            const Text('Actualizar Contraseña'),
+                                        onPressed: _submitChangePassword,
+                                        style: FilledButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 16),
+                                          backgroundColor: dynamicColor,
+                                          foregroundColor: colors.onPrimary,
+                                          textStyle: textTheme.titleMedium
+                                              ?.copyWith(
+                                                  fontWeight: FontWeight.bold),
+                                        ),
                                       ),
-                                    ),
                             ),
                           ],
                         ),
@@ -339,7 +351,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
   }
 }
 
-// --- WRAPPER (CORREGIDO) ---
+// --- WRAPPER (Sin cambios) ---
 class _TextFieldWrapper extends StatelessWidget {
   final Widget child;
   final Color dynamicColor;
@@ -354,7 +366,7 @@ class _TextFieldWrapper extends StatelessWidget {
     final c = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      // Decoración idéntica a _BaseSettingsTile
+      // Decoración idéntica a _BaseSettingsTile (o _StatsCard en apariencia)
       decoration: BoxDecoration(
         color: c.surface.withAlpha(242), // .withOpacity(.95)
         borderRadius: BorderRadius.circular(18),
@@ -369,9 +381,8 @@ class _TextFieldWrapper extends StatelessWidget {
       ),
       child: Material(
         type: MaterialType.transparency,
-        // Eliminamos el InkWell, pero mantenemos el Padding
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // Menos padding vertical
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), 
           child: child,
         ),
       ),

@@ -1,4 +1,5 @@
 // lib/features/settings/view/settings_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -186,6 +187,10 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     final platformBrightness =
         SchedulerBinding.instance.platformDispatcher.platformBrightness;
     final isSystemDark = platformBrightness == Brightness.dark;
+    
+    // --- NUEVO: Detectar si el teclado está visible ---
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    // --- FIN NUEVO ---
 
     final authState = ref.watch(authStateProvider);
 
@@ -217,6 +222,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
               AnimatedSettingsBackground(
                 profile: profile,
                 colors: colors,
+                isKeyboardVisible: isKeyboardVisible, // <-- ¡AQUÍ SE PASA EL ESTADO!
               ),
               SafeArea(
                 child: Column(
@@ -273,9 +279,9 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           preferenciasState.when(
                             loading: () => const Center(
                                 child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: CircularProgressIndicator(),
-                            )),
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              )),
                             error: (e, s) => Center(
                                 child: Text('Error al cargar preferencias: $e')),
                             data: (prefs) {

@@ -1,12 +1,13 @@
 // lib/features/settings/view/change_password_view.dart
 import 'package:flutter/material.dart';
+// import 'package:flutter/widgets.dart'; // <-- ELIMINADO
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+// import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // <-- ELIMINADO
+// import 'package:kitsucode/features/profile/model/user_profile_model.dart'; // <-- ELIMINADO
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart'; // Importa SectionHeader
@@ -47,15 +48,10 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
     return null;
   }
   
-  // --- LÓGICA DE SUBMIT (¡CORREGIDA CON SNACKBARS!) ---
+  // --- LÓGICA DE SUBMIT (Sin cambios) ---
   void _submitChangePassword() async {
-    // 1. Validar el formulario (esto muestra los errores en rojo debajo de los campos)
     final isFormValid = _formKey.currentState!.validate();
-
-    // 2. Si el formulario NO es válido, damos snackbars específicos.
-    // Esta es la corrección al bug de "Campos incompletos"
     if (!isFormValid) {
-      // Revisa en orden de prioridad
       if (_currentPasswordController.text.isEmpty) {
         showWarningSnackbar(
             context, 'Campo Requerido', 'Debes ingresar tu contraseña actual.');
@@ -63,9 +59,8 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
         showWarningSnackbar(
             context, 'Campo Requerido', 'Debes ingresar una nueva contraseña.');
       } else if (_validatePassword(_newPasswordController.text) != null) {
-        // La nueva contraseña no cumple las reglas
         showErrorSnackbar(context, 'Contraseña Insegura',
-            _validatePassword(_newPasswordController.text)!); // Muestra el error específico
+            _validatePassword(_newPasswordController.text)!);
       } else if (_confirmPasswordController.text.isEmpty) {
         showWarningSnackbar(context, 'Campo Requerido',
             'Debes confirmar la nueva contraseña.');
@@ -74,31 +69,23 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
         showErrorSnackbar(
             context, 'Error', 'Las nuevas contraseñas no coinciden.');
       } else {
-        // Fallback por si algo más falla la validación
         showErrorSnackbar(context, 'Error', 'Por favor revisa los campos.');
       }
-      return; // Detener la ejecución
+      return; 
     }
-
-    // 3. Si la validación del form SÍ pasa, hacemos un último chequeo de 'confirm'
     if (_newPasswordController.text != _confirmPasswordController.text) {
       showErrorSnackbar(
           context, 'Error', 'Las nuevas contraseñas no coinciden.');
       return;
     }
-
-    // 4. Si todo está bien, proceder con la lógica de Supabase
     setState(() => _isLoading = true);
-
     try {
       await ref
           .read(authRepositoryProvider)
           .reauthenticate(_currentPasswordController.text);
-
       await ref
           .read(authRepositoryProvider)
           .changePassword(_newPasswordController.text);
-
       if (mounted) {
         showSuccessSnackbar(
             context, 'Éxito', 'Contraseña actualizada correctamente');
@@ -121,6 +108,8 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    // --- 1. DETECTOR DE TECLADO ---
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
     if (currentUserId == null) {
@@ -188,19 +177,32 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               horizontal: 16.0, vertical: 12.0),
                           children: [
                             
-                            // --- ¡IMAGEN DEL ZORRO AÑADIDA! ---
-                            FadeInDown(
-                              delay: const Duration(milliseconds: 100),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                child: Image.asset(
-                                  'assets/images/auth/fox_login.png',
-                                  height: 120, // Ajusta la altura
-                                ),
-                              ),
+                            // --- ¡CAMBIO A ANIMATEDSWITCHER! ---
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              // Define la animación de Fade (difuminado)
+                              transitionBuilder: (Widget child, Animation<double> animation) {
+                                return FadeTransition(opacity: animation, child: child);
+                              },
+                              child: !isKeyboardVisible
+                                  // 1. Si el teclado NO está visible, muestra el Zorro
+                                  ? FadeInDown(
+                                      // Usamos una Key para que AnimatedSwitcher sepa qué widget es
+                                      key: const ValueKey('fox-image'),
+                                      delay: const Duration(milliseconds: 100),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                        child: Image.asset(
+                                          'assets/images/auth/fox_login.png',
+                                          height: 180,
+                                        ),
+                                      ),
+                                    )
+                                  // 2. Si el teclado SÍ está visible, muestra un widget vacío
+                                  : const SizedBox.shrink(key: ValueKey('fox-gone')),
                             ),
 
-                            // --- Sección de Credenciales ---
+                            // --- Sección de Credenciales (Sin cambios) ---
                             FadeInDown(
                               delay: const Duration(milliseconds: 200),
                               child: SectionHeader(
@@ -210,10 +212,9 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // --- CAMPO 1: Contraseña Actual (CON AURA) ---
+                            // --- CAMPOS (Sin cambios) ---
                             FadeInDown(
                               delay: const Duration(milliseconds: 300),
-                              // Usamos el wrapper con el estilo de _BaseSettingsTile
                               child: _TextFieldWrapper(
                                 dynamicColor: dynamicColor,
                                 child: TextFormField(
@@ -226,7 +227,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                         ?.copyWith(color: colors.onSurfaceVariant),
                                     prefixIcon: Icon(Icons.lock_person_outlined,
                                         color: colors.onSurfaceVariant),
-                                    // --- ¡IMPORTANTE! Fondo transparente y sin bordes ---
                                     filled: true,
                                     fillColor: Colors.transparent, 
                                     border: InputBorder.none,
@@ -243,7 +243,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
                             
-                            // --- CAMPO 2: Nueva Contraseña (CON AURA) ---
                             FadeInDown(
                               delay: const Duration(milliseconds: 400),
                               child: _TextFieldWrapper(
@@ -271,7 +270,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // --- CAMPO 3: Confirmar Contraseña (CON AURA) ---
                             FadeInDown(
                               delay: const Duration(milliseconds: 500),
                               child: _TextFieldWrapper(
@@ -304,7 +302,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
 
                             const SizedBox(height: 24),
                             
-                            // --- BOTÓN DE ACCIÓN (CON ICONO Y TEXTO GRANDE) ---
+                            // --- BOTÓN (Sin cambios) ---
                             FadeInDown(
                               delay: const Duration(milliseconds: 600),
                               child: _isLoading
@@ -320,7 +318,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                             vertical: 16),
                                         backgroundColor: dynamicColor,
                                         foregroundColor: colors.onPrimary,
-                                        // --- ¡TEXTO MÁS GRANDE! ---
                                         textStyle: textTheme.titleMedium
                                             ?.copyWith(
                                                 fontWeight: FontWeight.bold),
@@ -342,8 +339,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
   }
 }
 
-// --- ¡NUEVO WIDGET WRAPPER! ---
-/// Este widget es una copia de _BaseSettingsTile para envolver los TextFormField
+// --- WRAPPER (CORREGIDO) ---
 class _TextFieldWrapper extends StatelessWidget {
   final Widget child;
   final Color dynamicColor;
@@ -354,18 +350,18 @@ class _TextFieldWrapper extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { 
     final c = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       // Decoración idéntica a _BaseSettingsTile
       decoration: BoxDecoration(
-        color: c.surface.withOpacity(.95),
+        color: c.surface.withAlpha(242), // .withOpacity(.95)
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: dynamicColor.withOpacity(.6)),
+        border: Border.all(color: dynamicColor.withAlpha(153)), // .withOpacity(.6)
         boxShadow: [
           BoxShadow(
-            color: dynamicColor.withOpacity(.25),
+            color: dynamicColor.withAlpha(64), // .withOpacity(.25)
             blurRadius: 12,
             offset: const Offset(0, 5),
           )

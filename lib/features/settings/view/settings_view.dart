@@ -23,7 +23,6 @@ class SettingsView extends ConsumerStatefulWidget {
 
 class _SettingsViewState extends ConsumerState<SettingsView> {
 
-  // --- OBTENEMOS EL dynamicColor DEL BUILD Y LO PASAMOS AQUÍ ---
   void _showSignOutDialog(BuildContext context, WidgetRef ref, Color dynamicColor) {
     final colors = Theme.of(context).colorScheme;
 
@@ -65,11 +64,10 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     );
   }
 
-  // --- USAMOS colors.error COMO EL dynamicColor PARA EL AURA ROJA ---
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final controller = TextEditingController();
-    const String confirmationText = 'QUIERO ELIMINAR MI CUENTA'; // Texto corregido
+    const String confirmationText = 'QUIERO ELIMINAR MI CUENTA';
 
     showKitsuActionModal(
       context: context,
@@ -86,7 +84,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     );
   }
 
-  // --- Helper _buildDeleteModalContent (Texto de instrucción más grande) ---
   Widget _buildDeleteModalContent(BuildContext context,
       TextEditingController controller, String confirmationText) {
     final colors = Theme.of(context).colorScheme;
@@ -97,7 +94,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       children: [
         Text(
           'Escribe la frase completa para confirmar:',
-          // --- ¡TEXTO MÁS GRANDE! (bodyMedium) ---
           style: textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
         ),
         const SizedBox(height: 8),
@@ -108,7 +104,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           style: textTheme.titleMedium
               ?.copyWith(fontWeight: FontWeight.bold, color: colors.error),
           decoration: InputDecoration(
-            hintText: confirmationText, // <-- ¡NUEVO HINT!
+            hintText: confirmationText,
             hintStyle: textTheme.titleMedium?.copyWith(
               color: colors.onSurface.withOpacity(0.3),
               fontWeight: FontWeight.bold,
@@ -133,7 +129,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     );
   }
 
-  // --- Helper _buildDeleteModalActions (Bug del botón corregido) ---
   List<Widget> _buildDeleteModalActions(
       BuildContext context,
       WidgetRef ref,
@@ -147,14 +142,9 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         child: const Text('Cancelar'),
       ),
 
-      // --- ¡CORRECCIÓN DEL BUG DEL BOTÓN! ---
-      // AnimatedBuilder escucha al `controller` (que es un Listenable)
-      // y se redibuja CADA VEZ que el texto cambia.
       AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
-          // --- ¡LÓGICA CORREGIDA! ---
-          // Usamos .trim() para asegurar que no haya espacios extra
           final bool canDelete = controller.text.trim() == confirmationText;
           
           return ElevatedButton(
@@ -265,24 +255,29 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                       ),
                     ),
 
-                    // --- LISTA DE OPCIONES ---
+                    // --- LISTA DE OPCIONES (¡AGRUPACIÓN OPTIMIZADA!) ---
                     Expanded(
                       child: ListView(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 12.0),
                         children: [
-                          // --- (Secciones 1-4 sin cambios) ---
-                          // 1. Sección: Preferencias
+                          // 1. Sección: Preferencias - HEADER
                           FadeInDown(
                             delay: const Duration(milliseconds: 100),
-                            child: SectionHeader(title: 'Preferencias', icon: Icons.palette_outlined, colors: colors)
+                            child: SectionHeader(
+                                title: 'Preferencias',
+                                icon: Icons.palette_outlined,
+                                colors: colors),
                           ),
+                          // 1. Sección: Preferencias - CONTENT (AGRUPADA)
                           preferenciasState.when(
-                            loading: () => const Center(child: Padding(
+                            loading: () => const Center(
+                                child: Padding(
                               padding: EdgeInsets.all(16.0),
                               child: CircularProgressIndicator(),
                             )),
-                            error: (e, s) => Center(child: Text('Error al cargar preferencias: $e')),
+                            error: (e, s) => Center(
+                                child: Text('Error al cargar preferencias: $e')),
                             data: (prefs) {
                               final String themeFromDB = prefs.temaVisual;
                               final bool isDarkMode;
@@ -291,148 +286,158 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                               } else {
                                 isDarkMode = (themeFromDB == 'dark');
                               }
-                              return Column(
-                                children: [
-                                  FadeInDown(
-                                    delay: const Duration(milliseconds: 200),
-                                    child: SettingsSwitchTile(
-                                      title: isDarkMode ? 'Modo Oscuro' : 'Modo Claro',
-                                      icon: isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                                      subtitle: 'Alternar entre tema claro y oscuro',
+                              // UN SOLO FadeInDown para todos los tiles de Preferencias.
+                              return FadeInDown(
+                                delay: const Duration(milliseconds: 200),
+                                child: Column(
+                                  children: [
+                                    SettingsSwitchTile(
+                                      title: isDarkMode
+                                          ? 'Modo Oscuro'
+                                          : 'Modo Claro',
+                                      icon: isDarkMode
+                                          ? Icons.dark_mode_outlined
+                                          : Icons.light_mode_outlined,
+                                      subtitle:
+                                          'Alternar entre tema claro y oscuro',
                                       dynamicColor: dynamicColor,
-                                      initialValue: isDarkMode, 
+                                      initialValue: isDarkMode,
                                       onChanged: (value) {
-                                        final newTheme = value ? 'dark' : 'light';
-                                        ref.read(settingsProvider.notifier).updateTemaVisual(newTheme);
+                                        final newTheme =
+                                            value ? 'dark' : 'light';
+                                        ref
+                                            .read(settingsProvider.notifier)
+                                            .updateTemaVisual(newTheme);
                                       },
                                     ),
-                                  ),
-                                  FadeInDown(
-                                    delay: const Duration(milliseconds: 300),
-                                    child: SettingsSwitchTile(
+                                    SettingsSwitchTile(
                                       title: 'Efectos de Sonido',
                                       subtitle: 'Activar o desactivar los sonidos',
                                       icon: Icons.volume_up_outlined,
                                       dynamicColor: dynamicColor,
-                                      initialValue: prefs.sonidoEfectos, 
+                                      initialValue: prefs.sonidoEfectos,
                                       onChanged: (value) {
-                                        ref.read(settingsProvider.notifier).updateSonidoEfectos(value);
+                                        ref
+                                            .read(settingsProvider.notifier)
+                                            .updateSonidoEfectos(value);
                                       },
                                     ),
-                                  ),
-                                  FadeInDown(
-                                    delay: const Duration(milliseconds: 400),
-                                    child: SettingsSliderTile(
+                                    SettingsSliderTile(
                                       title: 'Volumen Global',
                                       icon: Icons.music_note_outlined,
                                       dynamicColor: dynamicColor,
                                       initialValue: prefs.volumenAudio,
                                       onChanged: (value) {
-                                        ref.read(settingsProvider.notifier).updateVolumenAudio(value);
+                                        ref
+                                            .read(settingsProvider.notifier)
+                                            .updateVolumenAudio(value);
                                       },
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               );
                             },
                           ),
-                          // 2. Sección: Perfil y Seguridad
+
+                          // 2. Sección: SEGURIDAD (AGRUPADA)
                           FadeInDown(
                             delay: const Duration(milliseconds: 500),
-                            child: SectionHeader(title: 'Perfil y Seguridad', icon: Icons.security_outlined, colors: colors)
-                          ),
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 600),
-                            child: SettingsNavigationTile(
-                              title: 'Mi Información',
-                              subtitle: 'Ver tu perfil, correo e ID',
-                              icon: Icons.person_outline,
-                              dynamicColor: dynamicColor,
-                              onTap: () {
-                                context.push('/profile/$currentAuthUserId');
-                              },
-                            ),
-                          ),
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 700),
-                            child: SettingsNavigationTile(
-                              title: 'Cambiar Contraseña',
-                              subtitle: 'Actualiza tu contraseña',
-                              icon: Icons.lock_outline,
-                              dynamicColor: dynamicColor,
-                              onTap: () {
-                                context.pushNamed('change-password');
-                              },
-                            ),
-                          ),
-                          // 3. Sección: Notificaciones
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 800),
-                            child: SectionHeader(title: 'Notificaciones', icon: Icons.notifications_outlined, colors: colors)
-                          ),
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 900),
-                            child: SettingsNavigationTile(
-                              title: 'Configuración de Alertas',
-                              subtitle: 'Recordatorios, amigos y novedades',
-                              icon: Icons.campaign_outlined,
-                              dynamicColor: dynamicColor,
-                              onTap: () {
-                                context.push('/settings/notifications');
-                              },
-                            ),
-                          ),
-                          // 4. Sección: Soporte
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 1000),
-                            child: SectionHeader(title: 'Soporte', icon: Icons.help_outline_rounded, colors: colors)
-                          ),
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 1100),
-                            child: SettingsNavigationTile(
-                              title: 'Ayuda y Sugerencias',
-                              subtitle: 'Envía un reporte de error o sugerencia',
-                              icon: Icons.support_agent,
-                              dynamicColor: dynamicColor,
-                              onTap: () {
-                                context.push('/settings/support');
-                              },
+                            child: Column(
+                              children: [
+                                SectionHeader(
+                                    title: 'Seguridad', // <-- TÍTULO CAMBIADO
+                                    icon: Icons.security_outlined,
+                                    colors: colors),
+                                // ELIMINADO: SettingsNavigationTile('Mi Información')
+                                SettingsNavigationTile(
+                                  title: 'Cambiar Contraseña',
+                                  subtitle: 'Actualiza tu contraseña',
+                                  icon: Icons.lock_outline,
+                                  dynamicColor: dynamicColor,
+                                  onTap: () {
+                                    context.pushNamed('change-password');
+                                  },
+                                ),
+                              ],
                             ),
                           ),
 
-                          // 5. Sección: Zona de Riesgo
+                          // 3. Sección: Notificaciones (AGRUPADA)
+                          FadeInDown(
+                            delay: const Duration(milliseconds: 800),
+                            child: Column(
+                              children: [
+                                SectionHeader(
+                                    title: 'Notificaciones',
+                                    icon: Icons.notifications_outlined,
+                                    colors: colors),
+                                SettingsNavigationTile(
+                                  title: 'Configuración de Alertas',
+                                  subtitle:
+                                      'Recordatorios, amigos y novedades',
+                                  icon: Icons.campaign_outlined,
+                                  dynamicColor: dynamicColor,
+                                  onTap: () {
+                                    context.push('/settings/notifications');
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // 4. Sección: Soporte (AGRUPADA)
+                          FadeInDown(
+                            delay: const Duration(milliseconds: 1000),
+                            child: Column(
+                              children: [
+                                SectionHeader(
+                                    title: 'Soporte',
+                                    icon: Icons.help_outline_rounded,
+                                    colors: colors),
+                                SettingsNavigationTile(
+                                  title: 'Ayuda y Sugerencias',
+                                  subtitle: 'Envía un reporte de error o sugerencia',
+                                  icon: Icons.support_agent,
+                                  dynamicColor: dynamicColor,
+                                  onTap: () {
+                                    context.push('/settings/support');
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // 5. Sección: Zona de Riesgo (AGRUPADA)
                           FadeInDown(
                               delay: const Duration(milliseconds: 1200),
-                              child: SectionHeader(
-                                  title: 'Zona de Riesgo',
-                                  icon: Icons.warning_amber_rounded,
-                                  colors: colors)),
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 1300),
-                            child: SettingsDestructiveTile(
-                              title: 'Eliminar Cuenta',
-                              subtitle: 'Elimina tu cuenta permanentemente',
-                              icon: Icons.delete_forever_outlined,
-                              dynamicColor: dynamicColor, // Pasa el color base
-                              onTap: () {
-                                _showDeleteAccountDialog(context, ref);
-                              },
-                            ),
-                          ),
-                          FadeInDown(
-                            delay: const Duration(milliseconds: 1400),
-                            child: SettingsDestructiveTile(
-                              title: 'Cerrar Sesión',
-                              subtitle: 'Finaliza tu sesión actual',
-                              icon: Icons.logout,
-                              dynamicColor: dynamicColor, // Pasa el color base
-                              onTap: () {
-                                // --- ¡ACTUALIZACIÓN! ---
-                                // Pasa el dynamicColor al modal
-                                _showSignOutDialog(context, ref, dynamicColor);
-                              },
-                            ),
-                          ),
+                              child: Column(
+                                children: [
+                                  SectionHeader(
+                                      title: 'Zona de Riesgo',
+                                      icon: Icons.warning_amber_rounded,
+                                      colors: colors),
+                                  SettingsDestructiveTile(
+                                    title: 'Eliminar Cuenta',
+                                    subtitle:
+                                        'Elimina tu cuenta permanentemente',
+                                    icon: Icons.delete_forever_outlined,
+                                    dynamicColor: dynamicColor,
+                                    onTap: () {
+                                      _showDeleteAccountDialog(context, ref);
+                                    },
+                                  ),
+                                  SettingsDestructiveTile(
+                                    title: 'Cerrar Sesión',
+                                    subtitle: 'Finaliza tu sesión actual',
+                                    icon: Icons.logout,
+                                    dynamicColor: dynamicColor,
+                                    onTap: () {
+                                      _showSignOutDialog(
+                                          context, ref, dynamicColor);
+                                    },
+                                  ),
+                                ],
+                              )),
 
                           const SizedBox(height: 40),
                         ],

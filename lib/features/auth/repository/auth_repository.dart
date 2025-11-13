@@ -41,12 +41,8 @@ class AuthRepository {
     );
   }
   
-  // --- ¡AÑADIR ESTE MÉTODO! ---
-  /// Verifica la contraseña actual del usuario antes de un cambio sensible.
+  // Verifica la contraseña actual del usuario antes de un cambio sensible.
   Future<void> reauthenticate(String password) async {
-    // Supabase no expone un método `reauthenticate` con un parámetro `password`.
-    // Para verificar la contraseña del usuario, volvemos a iniciar sesión con
-    // el email actual y la contraseña proporcionada.
     final user = _supabaseClient.auth.currentUser;
     final email = user?.email;
     if (email == null) {
@@ -58,18 +54,41 @@ class AuthRepository {
       password: password,
     );
   }
-  // Llama a la Edge Function para eliminar todos los datos del usuario
+
+  // --- ¡FUNCIÓN CORREGIDA! ---
+  /// Llama a la Edge Function para eliminar todos los datos del usuario
   Future<void> deleteAccount() async {
-    final response = await _supabaseClient.functions.invoke('delete-user-data');
+    try {
+      // 1. Obtiene la sesión actual para enviarla (implícitamente)
+      if (_supabaseClient.auth.currentSession == null) {
+        throw const AuthException('No hay sesión activa para eliminar la cuenta');
+      }
 
-    if (response.status != 200) {
-      // Si la función falla, lanzamos una excepción
-      // que será capturada en la vista (settings_view)
-      throw Exception('Error al eliminar la cuenta: ${response.data}');
+      // 2. Invoca la Edge Function con el método POST
+      final response = await _supabaseClient.functions.invoke(
+        'Delete-accountI',
+        method: HttpMethod.post, // <-- ¡ESTO ES LO QUE FALTABA!
+      );
+
+      if (response.status != 200) {
+        // Si la función devuelve un error (500, 401, etc.)
+        final errorMsg = response.data?['error'] ?? 'Error desconocido desde la función';
+        throw AuthException('Error al eliminar la cuenta: $errorMsg');
+      }
+
+      // 3. Si todo salió bien en el backend (status 200),
+      // el usuario ya no existe, así que lo deslogueamos del cliente.
+      await _supabaseClient.auth.signOut();
+
+    } on Exception catch (e) {
+      // Captura errores específicos de la invocación de funciones
+      print('Error al invocar la función "delete-user-data": ${e.toString()}');
+      throw AuthException('Error del servidor: ${e.toString()}');
+    } catch (e) {
+      // Captura otros errores (como el AuthException que lanzamos arriba)
+      print('Error en deleteAccount: $e');
+      // Re-lanza el error para que la UI (settings_view) lo atrape
+      rethrow;
     }
-
-    // Si la función tiene éxito, deslogueamos al usuario.
-    // Esto solo limpia la sesión local y dispara el onAuthStateChange.
-    await _supabaseClient.auth.signOut();
   }
 }

@@ -8,7 +8,7 @@ Future<T?> showKitsuActionModal<T>({
   required String title,
   required String message,
   required IconData icon,
-  required Color dynamicColor, // <-- ¡AURA AÑADIDA!
+  required Color dynamicColor,
   Color? iconColor,
   Widget? customContent,
   required List<Widget> actions,
@@ -29,9 +29,9 @@ Future<T?> showKitsuActionModal<T>({
             EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
           padding: const EdgeInsets.all(24.0).copyWith(bottom: 16.0),
-          // --- ¡DECORACIÓN DE AURA IDÉNTICA A SETTINGS_TILES! ---
+          // --- ¡DECORACIÓN DE AURA USANDO DYNAMIC COLOR! ---
           decoration: BoxDecoration(
-            color: colors.surfaceContainer.withOpacity(.95), // Fondo del tile
+            color: colors.surfaceContainer, // <-- 1. ¡OPACIDAD ELIMINADA!
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(28.0),
               topRight: Radius.circular(28.0),

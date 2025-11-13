@@ -58,10 +58,16 @@ class UserSearchView extends ConsumerWidget {
               loading: () {
                 // Si el query está vacío, no es una carga, es el estado inicial
                 if (currentQuery.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.search,
+                  // --- ¡CAMBIO AQUÍ! ---
+                  return EmptyState(
+                    iconWidget: SvgPicture.asset(
+                      'images/mensual/amigos1.svg', // <-- ¡CAMBIA ESTA RUTA!
+                      width: 64,
+                      height: 64,
+                    ),
                     message: 'Busca usuarios por nombre o @usuario',
                   );
+                  // --- FIN DEL CAMBIO ---
                 }
                 // Si hay query, SÍ estamos cargando
                 return const Center(child: CircularProgressIndicator());
@@ -71,17 +77,29 @@ class UserSearchView extends ConsumerWidget {
               data: (users) {
                 // Si la búsqueda está vacía (al inicio)
                 if (currentQuery.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.search,
+                  // --- ¡CAMBIO AQUÍ! ---
+                  return EmptyState(
+                    iconWidget: SvgPicture.asset(
+                      'images/mensual/amigos1.svg', // <-- ¡CAMBIA ESTA RUTA!
+                      width: 64,
+                      height: 64,
+                    ),
                     message: 'Busca usuarios por nombre o @usuario',
                   );
+                  // --- FIN DEL CAMBIO ---
                 }
                 // Si no hay resultados
                 if (users.isEmpty) {
+                  // --- ¡CAMBIO AQUÍ! ---
                   return EmptyState(
-                    icon: Icons.person_search,
+                    iconWidget: Icon(
+                      Icons.person_search,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
                     message: 'No se encontraron usuarios para "$currentQuery"',
                   );
+                  // --- FIN DEL CAMBIO ---
                 }
 
                 // 3. La cuadrícula de "cartas"
@@ -206,7 +224,8 @@ class UserSearchCard extends StatelessWidget {
             context: context,
             // --- ADVERTENCIA CORREGIDA ---
             barrierColor: Colors.black.withAlpha(128), // (era withOpacity(0.5))
-            builder: (context) => UserProfileModal(userId: user.userId, rank: user.rank), 
+            builder: (context) =>
+                UserProfileModal(userId: user.userId, rank: user.rank),
           );
         },
         child: Stack(
@@ -222,7 +241,9 @@ class UserSearchCard extends StatelessWidget {
             // 2. Capa de oscurecimiento para legibilidad
             Container(
               // --- ADVERTENCIA CORREGIDA ---
-              decoration: BoxDecoration(color: Colors.black.withAlpha(102)), // (era withOpacity(0.40))
+              decoration: BoxDecoration(
+                color: Colors.black.withAlpha(102),
+              ), // (era withOpacity(0.40))
             ),
 
             // 3. Contenido del usuario
@@ -264,7 +285,9 @@ class UserSearchCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       // --- ADVERTENCIA CORREGIDA ---
-                      color: Colors.white.withAlpha(204), // (era withOpacity(0.8))
+                      color: Colors.white.withAlpha(
+                        204,
+                      ), // (era withOpacity(0.8))
                       fontSize: 14,
                       shadows: const [
                         Shadow(blurRadius: 2, color: Colors.black),
@@ -282,13 +305,20 @@ class UserSearchCard extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------
-// WIDGET: ESTADO VACÍO
+// WIDGET: ESTADO VACÍO (¡MODIFICADO!)
 // -------------------------------------------------------------------
 
 class EmptyState extends StatelessWidget {
-  final IconData icon;
+  // --- ¡CAMBIO AQUÍ! ---
+  // 'icon' ahora es 'iconWidget' y es de tipo Widget
+  final Widget iconWidget;
+  // --- FIN DEL CAMBIO ---
   final String message;
-  const EmptyState({super.key, required this.icon, required this.message});
+  const EmptyState({
+    super.key,
+    required this.iconWidget,
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +328,10 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: Colors.grey.shade400),
+            // --- ¡CAMBIO AQUÍ! ---
+            // Simplemente renderizamos el widget que nos pasaron
+            iconWidget,
+            // --- FIN DEL CAMBIO ---
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),

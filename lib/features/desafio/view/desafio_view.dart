@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// --- ¡NUEVA IMPORTACIÓN! ---
+import 'package:flutter_svg/flutter_svg.dart';
 
 // --- Importaciones de DESAFÍO ---
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
@@ -81,11 +83,18 @@ class DesafioBusquedaView extends ConsumerWidget {
               child: searchResults.when(
                 loading: () {
                   if (currentQuery.isEmpty) {
-                    // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
-                    return const EmptyState(
-                      icon: Icons.search,
+                    // --- ¡CAMBIO AQUÍ! ---
+                    // Usamos SvgPicture en lugar de 'icon:'
+                    return EmptyState(
+                      //
+                      iconWidget: SvgPicture.asset(
+                        'images/mensual/amigos.svg', // <-- ¡CAMBIA ESTA RUTA!
+                        width: 200,
+                        height: 200,
+                      ),
                       message: 'Busca usuarios por nombre o @usuario',
                     );
+                    // --- FIN DEL CAMBIO ---
                   }
                   // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
                   return const Center(child: CircularProgressIndicator());
@@ -95,19 +104,31 @@ class DesafioBusquedaView extends ConsumerWidget {
                     Center(child: Text('Error al buscar: $err')),
                 data: (users) {
                   if (currentQuery.isEmpty) {
-                    // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
-                    return const EmptyState(
-                      icon: Icons.search,
+                    // --- ¡CAMBIO AQUÍ! ---
+                    // Usamos SvgPicture en lugar de 'icon:'
+                    return EmptyState(
+                      iconWidget: SvgPicture.asset(
+                        'images/mensual/amigos.svg', // <-- ¡CAMBIA ESTA RUTA!
+                        width: 200,
+                        height: 200,
+                      ),
                       message: 'Busca usuarios por nombre o @usuario',
                     );
+                    // --- FIN DEL CAMBIO ---
                   }
                   if (users.isEmpty) {
-                    // ¡CAMBIO! Retornamos el widget directamente, sin SliverToBoxAdapter
+                    // --- ¡CAMBIO AQUÍ! ---
+                    // Ahora pasamos un widget Icon completo
                     return EmptyState(
-                      icon: Icons.person_search,
+                      iconWidget: Icon(
+                        Icons.person_search,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
                       message:
                           'No se encontraron usuarios para "$currentQuery"',
                     );
+                    // --- FIN DEL CAMBIO ---
                   }
 
                   // ¡CAMBIO! Convertimos SliverGrid en GridView.builder

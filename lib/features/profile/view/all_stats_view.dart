@@ -126,7 +126,17 @@ class AllStatsView extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 10),
                                     ElevatedButton.icon(
-                                      onPressed: () { /* TODO: Navegar al historial */ },
+                                      onPressed: () {
+                                          // Asegúrate de que currentUserId no sea nulo antes de navegar
+                                          if (currentUserId != null) {
+                                            context.pushNamed(
+                                              'challenge-history',
+                                              pathParameters: {
+                                                'userId': currentUserId, // <-- ¡AQUÍ ESTÁ EL ARREGLO!
+                                              },
+                                            );
+                                          }
+                                        },
                                       icon: const Icon(Icons.history, size: 20),
                                       label: const Text('Ver historial'),
                                       style: ElevatedButton.styleFrom(

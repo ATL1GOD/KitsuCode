@@ -7,11 +7,68 @@ import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/profile/model/follow_list_model.dart';
+import 'package:kitsucode/features/profile/model/challenge_history_model.dart';
 
 class ProfileRepository {
   final SupabaseClient _supabase;
 
   ProfileRepository(this._supabase);
+
+Future<List<ChallengeHistoryModel>> getChallengeHistory(
+  String userId, {
+  required DateTime startDate,
+  required DateTime endDate,
+}) async {
+  try {
+    
+    // Arreglo de la fecha (esto ya estaba bien)
+    final endOfDay = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      23,
+      59,
+      59,
+    );
+    final startString = startDate.toUtc().toIso8601String();
+    final endString = endOfDay.toUtc().toIso8601String();
+    
+    // --- ¡AQUÍ ESTÁ EL ARREGLO DEL ERROR! ---
+    // Quitamos el ".client" de "_supabase.client"
+    final response = await _supabase 
+        .from('intento_reto')
+        .select('''
+          fecha_intento,
+          experiencia_obtenida,
+          resultado,
+          reto:id_reto!inner (
+            titulo,
+            niveles!inner (
+              secciones!inner (
+                titulo
+              )
+            ),
+            dinamicas:tipo_reto!inner (
+              nombre
+            )
+          )
+        ''')
+        .eq('id_usuario', userId)
+        .eq('resultado', 'completado')
+        .gte('fecha_intento', startString)
+        .lte('fecha_intento', endString)
+        .order('fecha_intento', ascending: false);
+    // --- FIN DEL ARREGLO ---
+
+    final List<dynamic> data = response;
+    return data
+        .map((item) => ChallengeHistoryModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  } catch (e) {
+    print('Error en getChallengeHistory: $e');
+    throw Exception('Error al obtener el historial de retos: $e');
+  }
+}
 
   // Este método observa los cambios en el perfil de un usuario en tiempo real.
   Stream<UserProfileModel> watchUserProfileById(String userId) async* {

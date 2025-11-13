@@ -44,6 +44,7 @@ import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
 // ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
+import 'package:kitsucode/features/profile/view/challenge_history_view.dart';
 import 'package:kitsucode/features/splash/view/splash_view.dart';
 
 
@@ -235,6 +236,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
               return FollowListView(userId: userId, type: type);
             },
+          ),
+
+          GoRoute(
+            path: 'challenge-history',
+            name: 'challenge-history',
+            builder: (context, state) => const ChallengeHistoryView(),
           ),
         ],
       ),

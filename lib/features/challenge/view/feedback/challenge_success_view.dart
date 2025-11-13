@@ -125,32 +125,18 @@ class ChallengeSuccessView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                     ),
-                    onPressed: () async {
-                      // Los valores viejos ya están guardados en oldStatsValuesProvider
-                      // Ahora hacemos fetchStats para obtener los nuevos valores
-                      await ref.read(appBarProvider.notifier).fetchStats();
+                    onPressed: () {
+                      ref.read(appBarProvider.notifier).fetchStats();
 
-                      // Limpiar valores guardados y resetear flag
+                      // El resto de tu lógica se queda igual
                       ref.read(oldStatsValuesProvider.notifier).state = null;
-                      ref.read(shouldRefreshStatsProvider.notifier).state =
-                          false;
+                      ref.read(shouldRefreshStatsProvider.notifier).state = false;
 
                       if (!context.mounted) return;
-                      // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
 
-                      // 1. Obtenemos la ruta de retorno guardada
                       final returnPath = ref.read(navigationReturnPathProvider);
-
-                      // 2. Reseteamos el provider a su valor por defecto ('/home')
-                      //    para que el próximo reto del home funcione bien.
-                      ref.read(navigationReturnPathProvider.notifier).state =
-                          '/home';
-
-                      // 3. Navegamos a la ruta obtenida
+                      ref.read(navigationReturnPathProvider.notifier).state = '/home';
                       context.go(returnPath);
-
-                      // Línea original eliminada:
-                      // context.go('/home');
                     },
                     child: const Text(
                       'CONTINUAR',

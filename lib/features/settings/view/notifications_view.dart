@@ -7,7 +7,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/notifications/provider/notification_settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
+import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:collection/collection.dart'; 
@@ -89,6 +89,7 @@ class NotificationsView extends ConsumerWidget {
     final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
     final notificationSettingsState = ref.watch(notificationSettingsProvider);
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
@@ -105,6 +106,7 @@ class NotificationsView extends ConsumerWidget {
               AnimatedSettingsBackground(
                 profile: profile,
                 colors: colors,
+                isKeyboardVisible: isKeyboardVisible,
               ),
               
               // --- CONTENIDO ---

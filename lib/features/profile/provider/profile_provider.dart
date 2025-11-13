@@ -5,6 +5,7 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
+import 'package:kitsucode/features/profile/model/challenge_history_model.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -327,4 +328,27 @@ class AchievementNotifier extends StateNotifier<bool> {
 // --- PASO 3: El Provider que crea y mantiene vivo nuestro Notifier ---
 final achievementNotifierProvider = StateNotifierProvider<AchievementNotifier, bool>((ref) {
   return AchievementNotifier(ref);
+});
+
+// 1. Provider para ALMACENAR el rango de fechas seleccionado
+final historyDateRangeProvider = StateProvider.autoDispose<DateTimeRange>((ref) {
+  // Valor inicial: últimos 30 días
+  final now = DateTime.now();
+  final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+  return DateTimeRange(start: thirtyDaysAgo, end: now);
+});
+
+// 2. Provider que OBTIENE los datos, "escuchando" al provider del rango
+final challengeHistoryProvider = FutureProvider.autoDispose.family<List<ChallengeHistoryModel>, String>((ref, userId) {
+  final profileRepo = ref.watch(profileRepositoryProvider);
+  
+  // "watch" (observa) el rango de fechas. Si cambia, este provider se re-ejecutará
+  final dateRange = ref.watch(historyDateRangeProvider);
+  
+  // Llama al repositorio con el rango de fechas actual
+  return profileRepo.getChallengeHistory(
+    userId,
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  );
 });

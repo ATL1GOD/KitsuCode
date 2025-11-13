@@ -4,41 +4,58 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/settings/model/preferencias_usuario_model.dart';
 import 'package:kitsucode/features/settings/repository/settings_repository.dart';
 
-// --- ¡CAMBIO 1: El Provider! ---
-// Se convierte en AsyncNotifierProvider.
-// Ahora SÍ tendrá el getter ".future"
+// --- El Provider ---
+// (Esto ya estaba bien en tu código)
 final settingsProvider = AsyncNotifierProvider<SettingsNotifier, PreferenciasUsuarioModel>(() {
   return SettingsNotifier();
 });
 
-// --- ¡CAMBIO 2: El Notifier! ---
-// Se convierte de StateNotifier a AsyncNotifier
+// --- El Notifier ---
+// (Esto ya estaba bien en tu código)
 class SettingsNotifier extends AsyncNotifier<PreferenciasUsuarioModel> {
   Timer? _debounce;
 
-  // --- ¡CAMBIO 3: 'build()' reemplaza a 'loadPreferencias()' ---
-  // Esta función se llama automáticamente para obtener el estado inicial
+  // --- ¡CAMBIO 3: 'build()' REFACTORIZADO (NO BLOQUEANTE)! ---
+  // Esta es la corrección clave, ahora con formato limpio.
   @override
   Future<PreferenciasUsuarioModel> build() async {
-    // ¡NUEVO! Esperar a que la autenticación esté lista
-    final authState = await ref.watch(authStateProvider.future);
-    
-    // Si no hay sesión, lanza un error
-    if (authState.session == null) {
-      throw Exception('Usuario no autenticado');
-    }
-    
-    // Obtenemos el repositorio usando 'ref' (es parte de AsyncNotifier)
-    final repository = ref.watch(settingsRepositoryProvider);
+    // 1. OBSERVAMOS el estado de auth, sin 'await' y sin '.future'
+    final authState = ref.watch(authStateProvider);
 
     // 'ref.onDispose' es el nuevo 'dispose()'
     ref.onDispose(() {
       _debounce?.cancel();
     });
-    
-    // El 'return' de build es el estado inicial
-    return repository.getPreferencias();
+
+    // 2. Usamos 'when' para manejar los 3 casos de authState
+    // Esto se ejecuta SINCRÓNICAMENTE.
+    return authState.when(
+      data: (data) {
+        // 3. Caso 'data': Auth SÍ cargó
+        if (data.session == null) {
+          // No hay usuario, lanzamos error.
+          throw Exception('Usuario no autenticado para cargar settings');
+        }
+        
+        // Hay usuario, AHORA SÍ podemos hacer la llamada a la BD.
+        final repository = ref.read(settingsRepositoryProvider);
+        return repository.getPreferencias(); // Este 'await' (implícito) está bien.
+      },
+      loading: () {
+        // 4. Caso 'loading': Auth está cargando.
+        // Mantenemos 'settingsProvider' en 'loading'
+        // devolviendo un Futuro que nunca se completa.
+        return Completer<PreferenciasUsuarioModel>().future;
+      },
+      error: (e, s) {
+        // 5. Caso 'error': Auth falló, propagamos el error.
+        throw Exception('Error de autenticación subyacente: $e');
+      },
+    );
   }
+
+
+  // --- EL RESTO DE TU CÓDIGO PERMANECE EXACTAMENTE IGUAL ---
 
   // Método helper para no repetir código
   SettingsRepository get _repository => ref.read(settingsRepositoryProvider);

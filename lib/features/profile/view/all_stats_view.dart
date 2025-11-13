@@ -126,7 +126,17 @@ class AllStatsView extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 10),
                                     ElevatedButton.icon(
-                                      onPressed: () { /* TODO: Navegar al historial */ },
+                                      onPressed: () {
+                                          // Asegúrate de que currentUserId no sea nulo antes de navegar
+                                          if (currentUserId != null) {
+                                            context.pushNamed(
+                                              'challenge-history',
+                                              pathParameters: {
+                                                'userId': currentUserId, // <-- ¡AQUÍ ESTÁ EL ARREGLO!
+                                              },
+                                            );
+                                          }
+                                        },
                                       icon: const Icon(Icons.history, size: 20),
                                       label: const Text('Ver historial'),
                                       style: ElevatedButton.styleFrom(
@@ -264,12 +274,16 @@ class _StatRow extends StatelessWidget {
                       ),
                     ),
                     FractionallySizedBox(
-                      widthFactor: 0.75,
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: color.withAlpha(130),
-                          borderRadius: BorderRadius.circular(4),
+                          // Si es porcentaje, usa el valor (dividido por 100)
+                          // Si no, usa un valor fijo (como 0.75)
+                          widthFactor: isPercentage 
+                              ? (value.clamp(0, 100) / 100) // .clamp() asegura que esté entre 0 y 100
+                              : 0.75, // Valor por defecto para "Retos" y "Racha"
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: color.withAlpha(130),
+                              borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),

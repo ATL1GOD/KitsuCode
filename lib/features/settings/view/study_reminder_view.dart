@@ -10,7 +10,7 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:kitsucode/features/settings/view/widgets/animated_settings_background.dart';
+import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
 
 // --- Helpers para convertir (los movimos de tu versión anterior) ---
@@ -93,6 +93,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
 
     final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Formatear la hora para mostrarla en el tile
     String timeSubtitle;
@@ -119,6 +120,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView> {
               AnimatedSettingsBackground(
                 profile: profile,
                 colors: colors,
+                isKeyboardVisible: isKeyboardVisible,
               ),
 
               // --- CONTENIDO ---

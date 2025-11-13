@@ -5,23 +5,27 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-
 // Necesario para detectar la plataforma
-import 'package:flutter/foundation.dart' show kIsWeb; 
-
-import 'package:kitsucode/features/notifications/service/local_notification_service.dart'; 
-import 'package:kitsucode/features/notifications/service/fcm_service.dart';
-import 'package:kitsucode/features/notifications/provider/fcm_provider.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/settings/provider/settings_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'app.dart';
 
+// Route observer global para monitorear cambios de ruta
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
+// El handler de background DEBE ser una función de nivel superior
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Asegura que Firebase esté inicializado
+  await Firebase.initializeApp();
+}
+
 void main() async {
+  // --- INICIO: TAREAS DE INICIALIZACIÓN OBLIGATORIAS 
+
+  // 1. Asegura la inicialización de Flutter
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // esto sirrve para ver si estamos en web o movil
+
+  // 2. Inicializa Firebase (IMPORTANTE: Diferente para Web y Móvil)
   if (kIsWeb) {
     // Si estamos en la Web, usa esta configuración explícita
     await Firebase.initializeApp(
@@ -35,55 +39,36 @@ void main() async {
       ),
     );
   } else {
-    // Si estamos en móvil (Android/iOS), usa el método normal  
+    // Si estamos en móvil (Android/iOS), usa el método normal
     await Firebase.initializeApp();
   }
-  // fIN
-  
-  // Configurar handler de mensajes en background
+
+  // 3. Configura el handler de background
+  // Esto es necesario para recibir notificaciones cuando la app está en background o cerrada
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
-  // Inicializa el servicio de notificaciones locales
-  final localNotificationService = LocalNotificationService();
-  await localNotificationService.init();
-  
-  // Inicializar Supabase PRIMERO
+
+  // 4. Carga las variables de entorno
   await dotenv.load(fileName: "assets/.env");
+
+  // 5. Inicializa el *cliente* de Supabase 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-  
+
+  // 6. Configuración de UI
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // Crea un ProviderContainer para actualizar Supabase ANTES de correr la app
-  final container = ProviderContainer();
-  try {
-    // Espera a que se cargue la sesión de usuario
-    await container.read(authStateProvider.future);
-    await container.read(settingsProvider.future);
+  // --- FIN: TAREAS OBLIGATORIAS 
 
-    // AHORA SÍ ESPERAMOS a que FCM termine y guarde el token
-    final fcmService = container.read(fcmServiceProvider);
-    await fcmService.initialize(); // <-- ¡ASÍ DEBE QUEDAR!
-    // fin 
-
-  } catch (e) {
-    debugPrint('Error al cargar datos iniciales: $e');
-    // Intentar inicializar FCM incluso si hay errores anteriores
-    try {
-      final fcmService = container.read(fcmServiceProvider);
-      // porque si el primer try falla, es menos crítico.
-      fcmService.initialize();
-    } catch (fcmError) {
-      debugPrint('Error inicializando FCM: $fcmError');
-    }
-  }
-
-  runApp(ProviderScope(parent: container, child: const MyApp()));
+  // Ejecuta la app dentro de ProviderScope
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }

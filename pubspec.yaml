@@ -38,11 +38,21 @@ dependencies:
   intl: ^0.20.2
   firebase_core: ^3.8.1
   firebase_messaging: ^15.1.6
+  animated_text_kit: ^4.3.0
 
 dev_dependencies:
+  flutter_native_splash: ^2.4.7
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
+
+
+flutter_native_splash:
+  color: "#F79126"    # color de fondo del splash nativo
+  android: true
+  ios: true
+  web: false
 
 flutter:
   uses-material-design: true
@@ -59,4 +69,3 @@ flutter:
     #- assets/fonts/
     - assets/.env
     - assets/animations/
-    

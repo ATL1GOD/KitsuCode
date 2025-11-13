@@ -44,7 +44,9 @@ import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
 // ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
-import 'package:kitsucode/features/amigos/view/search_view.dart';
+import 'package:kitsucode/features/profile/view/challenge_history_view.dart';
+import 'package:kitsucode/features/settings/view/change_password_view.dart';
+import 'package:kitsucode/features/splash/view/splash_view.dart';
 
 // Claves (sin cambios)
 final _navigatorKeys = {
@@ -56,57 +58,34 @@ final _navigatorKeys = {
 };
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  //final auth = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
-    debugLogDiagnostics: true,
-    refreshListenable: GoRouterRefreshStream(ref),
-    redirect: (BuildContext context, GoRouterState state) {
-      // ... Lógica de redirección (sin cambios) ...
-      return authState.when(
-        data: (data) {
-          final isAuthenticated = data.session != null;
-          final currentLocation = state.matchedLocation;
+    initialLocation: '/',
+    refreshListenable: GoRouterRefreshStream(
+      ref,
+    ), // Permite que el router se reconstruya cuando cambia auth
+    // 🚨 LÓGICA DE REDIRECCIÓN CORREGIDA 🚨
+    redirect: (context, state) {
+      // USA ref.read PARA OBTENER EL ESTADO ACTUAL
+      final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
 
-          const authRoute = '/auth';
-          final isGoingToAuthRoute = currentLocation == authRoute;
-          final isSplashing = currentLocation == '/splash';
+      // El resto de tu lógica de redirect se queda igual
+      final loc = state.matchedLocation;
+      final inAuth = loc == '/auth';
+      final inSplash = loc == '/';
 
-          if (kDebugMode) {
-            print(
-              "Redirect: Auth state received. Authenticated: $isAuthenticated, Location: $currentLocation",
-            );
-          }
-
-          if (isSplashing) {
-            return isAuthenticated ? '/home' : authRoute;
-          }
-          if (isAuthenticated && isGoingToAuthRoute) {
-            return '/home';
-          }
-          if (!isAuthenticated && !isGoingToAuthRoute) {
-            return authRoute;
-          }
-          return null;
-        },
-        loading: () => null,
-        error: (error, stackTrace) {
-          if (kDebugMode) {
-            print("Redirect: Auth Error: $error");
-          }
-          return '/auth';
-        },
-      );
+      if (inSplash) return null;
+      if (!isLogged && !inAuth) return '/auth';
+      if (isLogged && inAuth) return '/home';
+      return null;
     },
+
     routes: [
       // --- Rutas de Nivel Superior (sin cambios) ---
-      GoRoute(
-        path: '/splash',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const SplashView()),
 
+      // Ruta de autenticación
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       GoRoute(
@@ -161,7 +140,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   return StudyReminderView(setting: setting);
                 },
               ),
-              // --- ¡AÑADE ESTA NUEVA RUTA! ---
+              // ruta de categoría
               GoRoute(
                 path: 'category', // /settings/notifications/category
                 builder: (context, state) {
@@ -194,6 +173,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'support',
             builder: (context, state) => const SupportView(),
+          ),
+          GoRoute(
+            path:
+                'change-password', // Se accederá como /settings/change-password
+            name: 'change-password',
+            builder: (context, state) => const ChangePasswordView(),
           ),
         ],
       ),
@@ -255,6 +240,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
               return FollowListView(userId: userId, type: type);
             },
+          ),
+
+          GoRoute(
+            path: 'challenge-history',
+            name: 'challenge-history',
+            builder: (context, state) => const ChallengeHistoryView(),
           ),
         ],
       ),
@@ -330,6 +321,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     notifyListeners();
+
+    // Escuchar SÓLO a Auth
     ref.listen(authStateProvider, (previous, next) {
       notifyListeners();
     });

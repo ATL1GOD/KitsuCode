@@ -45,6 +45,7 @@ import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
 import 'package:kitsucode/features/profile/view/challenge_history_view.dart';
+import 'package:kitsucode/features/settings/view/change_password_view.dart';
 import 'package:kitsucode/features/splash/view/splash_view.dart';
 
 
@@ -175,6 +176,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'support',
             builder: (context, state) => const SupportView(),
+          ),
+          GoRoute(
+            path: 'change-password', // Se accederá como /settings/change-password
+            name: 'change-password',
+            builder: (context, state) => const ChangePasswordView(),
           ),
         ],
       ),

@@ -369,7 +369,6 @@ class _ExpandableSpecialEventCardState
                             ),
 
                             // --- Capa 3: Los Hitos (Bolitas) ---
-                            // Posicionados dinámicamente
                             if (totalChallenges > 0)
                               ...List.generate(totalChallenges, (index) {
                                 final desafio = widget.desafiosMensuales[index];
@@ -403,6 +402,7 @@ class _ExpandableSpecialEventCardState
                     },
                   ),
                   // --- FIN DE LA SECCIÓN DE PROGRESO ---
+
                   // Icono para la expansión
                   const SizedBox(height: 8),
                   if (!widget

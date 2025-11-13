@@ -49,7 +49,7 @@ class UserSearchView extends ConsumerWidget {
       body: Column(
         children: [
           // 1. El campo de búsqueda
-          const _SearchField(),
+          const SearchField(),
 
           // 2. Los resultados
           Expanded(
@@ -60,7 +60,7 @@ class UserSearchView extends ConsumerWidget {
               loading: () {
                 // Si el query está vacío, no es una carga, es el estado inicial
                 if (currentQuery.isEmpty) {
-                  return const _EmptyState(
+                  return const EmptyState(
                     icon: Icons.search,
                     message: 'Busca usuarios por nombre o @usuario',
                   );
@@ -73,14 +73,14 @@ class UserSearchView extends ConsumerWidget {
               data: (users) {
                 // Si la búsqueda está vacía (al inicio)
                 if (currentQuery.isEmpty) {
-                  return const _EmptyState(
+                  return const EmptyState(
                     icon: Icons.search,
                     message: 'Busca usuarios por nombre o @usuario',
                   );
                 }
                 // Si no hay resultados
                 if (users.isEmpty) {
-                  return _EmptyState(
+                  return EmptyState(
                     icon: Icons.person_search,
                     message: 'No se encontraron usuarios para "$currentQuery"',
                   );
@@ -114,14 +114,14 @@ class UserSearchView extends ConsumerWidget {
 // WIDGET: CAMPO DE BÚSQUEDA
 // -------------------------------------------------------------------
 
-class _SearchField extends ConsumerStatefulWidget {
-  const _SearchField();
+class SearchField extends ConsumerStatefulWidget {
+  const SearchField({super.key});
 
   @override
-  ConsumerState<_SearchField> createState() => _SearchFieldState();
+  ConsumerState<SearchField> createState() => _SearchFieldState();
 }
 
-class _SearchFieldState extends ConsumerState<_SearchField> {
+class _SearchFieldState extends ConsumerState<SearchField> {
   late final TextEditingController _controller;
 
   @override
@@ -283,10 +283,10 @@ class UserSearchCard extends StatelessWidget {
 // WIDGET: ESTADO VACÍO
 // -------------------------------------------------------------------
 
-class _EmptyState extends StatelessWidget {
+class EmptyState extends StatelessWidget {
   final IconData icon;
   final String message;
-  const _EmptyState({required this.icon, required this.message});
+  const EmptyState({super.key, required this.icon, required this.message});
 
   @override
   Widget build(BuildContext context) {

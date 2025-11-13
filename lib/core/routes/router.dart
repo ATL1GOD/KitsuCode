@@ -293,9 +293,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/desafiomensual', // <-- Nueva ruta
-                builder: (context, state) =>
-                    // const DesafiosView(), // <-- Nueva vista
-                    const UserSearchView(),
+                builder: (context, state) => const DesafioBusquedaView(),
               ),
             ],
           ),

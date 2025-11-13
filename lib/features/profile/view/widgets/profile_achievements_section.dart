@@ -1,29 +1,25 @@
-// lib/features/profile/view/widgets/profile_achievements_section.dart
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
-// import 'package:animate_do/animate_do.dart'; // Import no usado
 import 'package:go_router/go_router.dart';
-
+// 1. Importar el provider que necesitamos
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-// import 'package:kitsucode/features/profile/model/user_achievement_model.dart'; // Import no usado
-
 import 'achievement_card.dart';
 import 'achievement_modal.dart';
 
 class ProfileAchievementsSection extends ConsumerWidget {
   final String userId;
   final bool isCurrentUserProfile;
-  final UserProfileModel userProfile;
+  // 2. Eliminar userProfile del constructor
+  // final UserProfileModel userProfile;
 
   const ProfileAchievementsSection({
     super.key,
     required this.userId,
     required this.isCurrentUserProfile,
-    required this.userProfile,
+    // required this.userProfile, (Eliminado)
   });
 
   @override
@@ -32,7 +28,17 @@ class ProfileAchievementsSection extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
+    // 3. Observar los datos del perfil que SÍ necesitamos
+    final nombrePerfil = ref.watch(userProfileByIdProvider(userId)
+        .select((data) => data.value?.nombrePerfil));
+
+    // 4. Observar el objeto 'userProfile' completo.
+    // Lo necesitamos para el modal.
+    final userProfileData = ref.watch(userProfileByIdProvider(userId));
+    final userProfile = userProfileData.value; // Puede ser null si está cargando
+
     Widget titleWidget(bool showButton) {
+      // (Esta función interna no cambia)
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -40,13 +46,17 @@ class ProfileAchievementsSection extends ConsumerWidget {
             children: [
               Icon(Icons.emoji_events_outlined, color: colors.secondary),
               const SizedBox(width: 8),
-              Text('Logros', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Logros',
+                  style: textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
           if (showButton)
             TextButton(
               onPressed: () => context.push('/profile/$userId/achievements'),
-              child: Text('Ver todo', style: TextStyle(color: colors.secondary, fontWeight: FontWeight.bold)),
+              child: Text('Ver todo',
+                  style: TextStyle(
+                      color: colors.secondary, fontWeight: FontWeight.bold)),
             ),
         ],
       );
@@ -64,18 +74,17 @@ class ProfileAchievementsSection extends ConsumerWidget {
                 loading: () => titleWidget(false),
                 error: (e, s) => titleWidget(false),
                 data: (achievements) {
-                  // Mostrar el botón siempre que haya logros (obtenidos o no)
                   return titleWidget(achievements.isNotEmpty);
                 },
               ),
-
               const SizedBox(height: 15),
-
               achievementsState.when(
                 loading: () => _AchievementsLoadingShimmer(colors: colors),
-                error: (error, stack) => const Center(child: Text('No se pudieron cargar los logros')),
+                error: (error, stack) =>
+                    const Center(child: Text('No se pudieron cargar los logros')),
                 data: (achievements) {
-                  final obtained = achievements.where((a) => a.obtenido).toList();
+                  final obtained =
+                      achievements.where((a) => a.obtenido).toList();
 
                   if (obtained.isEmpty) {
                     return Padding(
@@ -83,19 +92,27 @@ class ProfileAchievementsSection extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset('assets/images/zorro_oops.png', width: 60, height: 60),
+                          Image.asset('assets/images/zorro_oops.png',
+                              width: 60, height: 60),
                           const SizedBox(width: 20),
                           Expanded(
                             child: Text(
+                              // 5. Usar la variable 'nombrePerfil' observada
                               isCurrentUserProfile
                                   ? '¡Aún no has conseguido logros!'
-                                  : '¡${userProfile.nombrePerfil} aún no ha conseguido logros!',
+                                  // Usamos '??' por si 'nombrePerfil' es null
+                                  : '¡${nombrePerfil ?? '...'} aún no ha conseguido logros!',
                               style: textTheme.bodyMedium,
                             ),
                           ),
                         ],
                       ),
                     );
+                  }
+
+                  // 6. Manejar el caso donde los logros cargaron pero el perfil no
+                  if (userProfile == null) {
+                    return _AchievementsLoadingShimmer(colors: colors);
                   }
 
                   return SizedBox(
@@ -105,12 +122,11 @@ class ProfileAchievementsSection extends ConsumerWidget {
                       itemCount: obtained.length,
                       itemBuilder: (context, index) {
                         final achievement = obtained[index];
-
                         return GestureDetector(
                           onTap: () {
-                            // ✅ 1. ¡CORRECCIÓN AQUÍ!
+                            // 7. Usar el 'userProfile' observado
                             AchievementModal.show(
-                              context, 
+                              context,
                               achievement,
                               profile: userProfile,
                               isCurrentUser: isCurrentUserProfile,
@@ -124,7 +140,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
                                 achievement: achievement,
                                 colors: colors,
                                 isCompactView: true,
-                                // ✅ 2. ¡CORRECCIÓN AQUÍ!
+                                // 8. Usar el 'userProfile' observado
                                 profile: userProfile,
                                 isCurrentUser: isCurrentUserProfile,
                               ),
@@ -144,6 +160,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
   }
 }
 
+// (_GlassCard y _AchievementsLoadingShimmer sin cambios)
 class _GlassCard extends StatelessWidget {
   final Widget child;
   const _GlassCard({required this.child});
@@ -162,12 +179,12 @@ class _GlassCard extends StatelessWidget {
     if (isDarkMode) {
       // --- MODO OSCURO ---
       // Glass effect más sutil con gris oscuro
-      cardColor = colors.surfaceContainerHighest.withOpacity(0.6); 
+      cardColor = colors.surfaceContainerHighest.withOpacity(0.6);
       borderColor = colors.outline.withOpacity(0.3);
     } else {
       // --- MODO CLARO ---
       // Glass effect más transparente para ver las partículas
-      cardColor = Colors.white.withOpacity(0.2); 
+      cardColor = Colors.white.withOpacity(0.2);
       borderColor = colors.outline.withOpacity(0.2);
     }
 
@@ -180,10 +197,10 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Mantenemos el blur
           child: Container(
             decoration: BoxDecoration(
-              color: cardColor,     // <-- Color adaptativo
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: borderColor) // <-- Borde adaptativo
-            ),
+                color: cardColor, // <-- Color adaptativo
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: borderColor) // <-- Borde adaptativo
+                ),
             child: child,
           ),
         ),

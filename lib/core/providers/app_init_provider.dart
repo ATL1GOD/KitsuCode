@@ -5,9 +5,6 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/settings/provider/settings_provider.dart';
 import 'package:kitsucode/features/notifications/provider/fcm_provider.dart';
 
-// ⚠️ Elimino el import de home_provider.dart porque no existe en tu repo
-// import 'package:kitsucode/features/home/provider/home_provider.dart';
-
 /// Provider que orquesta la inicialización de servicios no esenciales.
 /// Se ejecuta en segundo plano al iniciar la app.
 final appInitProvider = AsyncNotifierProvider<AppInitNotifier, void>(() {

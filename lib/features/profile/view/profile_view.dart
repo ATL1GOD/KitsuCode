@@ -10,12 +10,13 @@ import 'package:kitsucode/features/profile/view/widgets/profile_achievements_sec
 import 'package:kitsucode/features/profile/view/widgets/profile_header.dart';
 import 'package:kitsucode/features/profile/view/widgets/profile_progress_section.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:lottie/lottie.dart'; 
+import 'package:lottie/lottie.dart';
 
 class ProfileView extends ConsumerWidget {
   final String? userId;
   const ProfileView({super.key, this.userId});
 
+  // Este método estático se queda igual
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
     return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
@@ -25,148 +26,178 @@ class ProfileView extends ConsumerWidget {
     final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
     final targetUserId = userId ?? currentAuthUserId;
     final isCurrentUserProfile = targetUserId == currentAuthUserId;
-    
+
     // Activar listeners de Realtime
     ref.watch(profileRealtimeProvider);
     ref.watch(achievementRealtimeProvider);
-    ref.watch(followRealtimeProvider); // ⬅️ ¡ESTE FALTABA!
-    
+    ref.watch(followRealtimeProvider);
+
     if (targetUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no encontrado")));
     }
 
-    final profileState = ref.watch(userProfileByIdProvider(targetUserId));
     final colors = Theme.of(context).colorScheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: profileState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(child: Text('Error: $error')),
-        data: (userProfile) {
-          final dynamicColor = getHeaderColor(userProfile, colors);
+    // --- ¡OPTIMIZACIÓN! ---
+    // ProfileView ya NO observa (ref.watch) los providers de datos.
+    // Solo se encarga de armar el esqueleto.
+    // Los hijos (ProfileHeader, ProfileProgressSection, etc.)
+    // se encargarán de sus propios datos y estados de carga.
 
-          return Stack(
+    return Scaffold(
+      body: Stack(
+        children: [
+          // --- NUEVO WIDGET ---
+          // Este widget SÍ observa el avatarId para el color de fondo.
+          // Si el avatar cambia, SOLO esto se reconstruirá, no toda la vista.
+          _ProfileBackground(
+            userId: targetUserId,
+            colors: colors,
+          ),
+
+          // Contenido principal (el esqueleto)
+          Column(
             children: [
-              // Fondo con degradado dinámico
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha((255 * 0.4).round()),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.6]
-                  ),
+              // --- PARTE FIJA (NO SCROLLEABLE) ---
+              SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 56), // Espacio para la barra de botones
+
+                    // ProfileHeader ahora pide sus propios datos usando el userId
+                    ProfileHeader(
+                      userId: targetUserId,
+                      isCurrentUserProfile: isCurrentUserProfile,
+                      // ⛔ YA NO PASAMOS EL COLOR ⛔
+                      // dynamicColor: colors.primary,
+                    ),
+
+                    if (!isCurrentUserProfile)
+                      Padding(
+                        padding:
+                            const EdgeInsets.only(top: 30.0, bottom: 20.0),
+                        child: SizedBox(
+                          width: 300,
+                          child: FollowButton(userId: targetUserId),
+                        ),
+                      ),
+                  ],
                 ),
               ),
 
-              // Contenido principal
-              Column(
-                children: [
-                  // --- PARTE FIJA (NO SCROLLEABLE) ---
-                  SafeArea(
-                    bottom: false,
-                    child: Column(
+              // --- PARTE CON SCROLL ---
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
+                    child: Stack(
                       children: [
-                        const SizedBox(height: 56), // Espacio para la barra de botones
-                        ProfileHeader(
-                          userProfile: userProfile,
-                          isCurrentUserProfile: isCurrentUserProfile,
-                          dynamicColor: dynamicColor,
-                        ),
-                        if (!isCurrentUserProfile)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 30.0, bottom: 20.0),
-                            child: SizedBox(
-                              width: 300,
-                              child: FollowButton(userId: targetUserId),
+                        // --- Animación de fondo ---
+                        Positioned.fill(
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(
+                              isDarkMode
+                                  ? colors.secondaryFixedDim.withOpacity(0.3)
+                                  : colors.secondary.withOpacity(0.4),
+                              BlendMode.srcIn,
+                            ),
+                            child: Lottie.asset(
+                              'assets/animations/particles.json',
+                              fit: BoxFit.cover,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-
-                  // --- PARTE CON SCROLL ---
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: isCurrentUserProfile ? 20.0 : 0),
-                        // se añade Stack para la animación de fondo ---
-                        child: Stack(
+                        ),
+                        // --- Contenido del scroll ---
+                        Column(
                           children: [
-                            // --- Animación de fondo ---
-                            Positioned.fill(
-                              child: ColorFiltered(
-                                colorFilter: ColorFilter.mode(
-                                  // Partículas más visibles en ambos modos
-                                  isDarkMode
-                                      ? colors.secondaryFixedDim.withOpacity(0.3)
-                                      : colors.secondary.withOpacity(0.4),
-                                  BlendMode.srcIn,
-                                ),
-                                child: Lottie.asset(
-                                  'assets/animations/particles.json',
-                                  fit: BoxFit.cover,
-                                ),
+                            FadeInUp(
+                              from: 30,
+                              delay: const Duration(milliseconds: 300),
+                              // ProfileProgressSection ya es un ConsumerWidget
+                              // y pide sus propios datos. ¡Perfecto!
+                              child: ProfileProgressSection(
+                                userId: targetUserId,
+                                showViewAllButton: isCurrentUserProfile,
                               ),
                             ),
-                            // --- Contenido del scroll ---
-                            Column(
-                              children: [
-                                FadeInUp(
-                                  from: 30,
-                                  delay: const Duration(milliseconds: 300),
-                                  child: ProfileProgressSection(
-                                    userId: targetUserId,
-                                    showViewAllButton: isCurrentUserProfile,
-                                  ),
-                                ),
-                                FadeInUp(
-                                  from: 30,
-                                  delay: const Duration(milliseconds: 400),
-                                  child: ProfileAchievementsSection(
-                                    userId: targetUserId,
-                                    isCurrentUserProfile: isCurrentUserProfile,
-                                    userProfile: userProfile,
-                                  ),
-                                ),
-                                const SizedBox(height: 70),
-                              ],
+                            FadeInUp(
+                              from: 30,
+                              delay: const Duration(milliseconds: 400),
+                              // ProfileAchievementsSection ahora pide sus
+                              // propios datos usando el userId
+                              child: ProfileAchievementsSection(
+                                userId: targetUserId,
+                                isCurrentUserProfile: isCurrentUserProfile,
+                              ),
                             ),
+                            const SizedBox(height: 70),
                           ],
                         ),
-                      ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-
-              // Barra de botones posicionada absolutamente
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SafeArea(
-                  bottom: false,
-                  child: _TopBar(
-                    isCurrentUserProfile: isCurrentUserProfile,
-                    colors: colors,
                   ),
                 ),
               ),
             ],
-          );
-        },
+          ),
+
+          // Barra de botones posicionada absolutamente (sin cambios)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: _TopBar(
+                isCurrentUserProfile: isCurrentUserProfile,
+                colors: colors,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// --- WIDGET NUEVO Y PRIVADO ---
+// Este widget solo se encarga de construir el fondo dinámico
+class _ProfileBackground extends ConsumerWidget {
+  final String userId;
+  final ColorScheme colors;
 
-// Widget _TopBar con los botones de navegación
+  const _ProfileBackground({required this.userId, required this.colors});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Observamos SÓLO el id del avatar
+    final avatarId = ref.watch(userProfileByIdProvider(userId)
+        .select((data) => data.value?.idAvatarSeleccionado));
+
+    // Si está cargando, usamos un color por defecto
+    final dynamicColor = avatarId != null
+        ? getAvatarColorById(avatarId)
+        : colors.surfaceContainerLowest;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              dynamicColor.withAlpha((255 * 0.4).round()),
+              colors.surfaceContainerLowest,
+            ],
+            stops: const [0.0, 0.6]),
+      ),
+    );
+  }
+}
+
+// Widget _TopBar con los botones de navegación (Sin cambios)
 class _TopBar extends StatelessWidget {
   final bool isCurrentUserProfile;
   final ColorScheme colors;
@@ -189,12 +220,15 @@ class _TopBar extends StatelessWidget {
                 color: colors.surface.withAlpha((255 * 0.3).round()),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
+              child:
+                  Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
             ),
           ),
           if (isCurrentUserProfile)
             InkWell(
-              onTap: () { context.push('/settings'); },
+              onTap: () {
+                context.push('/settings');
+              },
               borderRadius: BorderRadius.circular(30),
               child: Container(
                 padding: const EdgeInsets.all(8.0),

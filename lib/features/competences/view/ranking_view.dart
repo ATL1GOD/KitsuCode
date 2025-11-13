@@ -407,7 +407,7 @@ class _PodiumPlace extends StatelessWidget {
         if (isCurrentUser) return;
         showDialog(
           context: context,
-          builder: (ctx) => UserProfileModal(userId: user.userId),
+          builder: (ctx) => UserProfileModal(userId: user.userId, rank: user.rank),
         );
       },
       child: FadeInUp(

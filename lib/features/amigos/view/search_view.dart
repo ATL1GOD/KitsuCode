@@ -1,5 +1,3 @@
-// lib/features/search/view/user_search_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
@@ -196,7 +194,8 @@ class UserSearchCard extends StatelessWidget {
 
     return Card(
       elevation: 5,
-      shadowColor: Colors.black.withOpacity(0.3),
+      // --- ADVERTENCIA CORREGIDA ---
+      shadowColor: Colors.black.withAlpha(77), // (era withOpacity(0.3))
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias, // Para que la imagen no se salga
       child: InkWell(
@@ -205,8 +204,9 @@ class UserSearchCard extends StatelessWidget {
           // Solo necesita el userId, que nuestro modelo SÍ tiene.
           showDialog(
             context: context,
-            barrierColor: Colors.black.withOpacity(0.5),
-            builder: (context) => UserProfileModal(userId: user.userId),
+            // --- ADVERTENCIA CORREGIDA ---
+            barrierColor: Colors.black.withAlpha(128), // (era withOpacity(0.5))
+            builder: (context) => UserProfileModal(userId: user.userId, rank: user.rank), 
           );
         },
         child: Stack(
@@ -221,7 +221,8 @@ class UserSearchCard extends StatelessWidget {
 
             // 2. Capa de oscurecimiento para legibilidad
             Container(
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.40)),
+              // --- ADVERTENCIA CORREGIDA ---
+              decoration: BoxDecoration(color: Colors.black.withAlpha(102)), // (era withOpacity(0.40))
             ),
 
             // 3. Contenido del usuario
@@ -262,7 +263,8 @@ class UserSearchCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      // --- ADVERTENCIA CORREGIDA ---
+                      color: Colors.white.withAlpha(204), // (era withOpacity(0.8))
                       fontSize: 14,
                       shadows: const [
                         Shadow(blurRadius: 2, color: Colors.black),

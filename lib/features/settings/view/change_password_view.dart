@@ -77,12 +77,14 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
     }
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(authRepositoryProvider)
-          .reauthenticate(_currentPasswordController.text);
-      await ref
-          .read(authRepositoryProvider)
-          .changePassword(_newPasswordController.text);
+        // --- 1. OBTENER EL REPOSITORIO UNA VEZ ---
+        final authRepo = await ref.read(authRepositoryProvider.future);
+
+        // --- 2. USAR EL REPOSITORIO OBTENIDO ---
+        await authRepo.reauthenticate(_currentPasswordController.text);
+
+        // --- 3. USARLO DE NUEVO ---
+        await authRepo.changePassword(_newPasswordController.text);
       if (mounted) {
         showSuccessSnackbar(
             context, 'Éxito', 'Contraseña actualizada correctamente');

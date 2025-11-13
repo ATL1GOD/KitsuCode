@@ -1,71 +1,29 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-// Necesario para detectar la plataforma
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'app.dart';
+import 'package:kitsucode/core/providers/bootstrap_provider.dart'; // <-- Importa el handler
 
-// Route observer global para monitorear cambios de ruta
+// Route observer global (esto se queda igual)
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
-// El handler de background DEBE ser una función de nivel superior
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Asegura que Firebase esté inicializado
-  await Firebase.initializeApp();
-}
+// El handler de background ahora vive en bootstrap_provider.dart
+// pero lo importamos para que main.dart lo "conozca".
 
-void main() async {
-  // --- INICIO: TAREAS DE INICIALIZACIÓN OBLIGATORIAS 
+void main() {
+  // --- INICIO: TAREAS DE INICIALIZACIÓN MÍNIMAS ---
 
   // 1. Asegura la inicialización de Flutter
+  // Esto es lo ÚNICO que main debe 'await' (implícitamente)
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Inicializa Firebase (IMPORTANTE: Diferente para Web y Móvil)
-  if (kIsWeb) {
-    // Si estamos en la Web, usa esta configuración explícita
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: "AIzaSyB7yxHwozMQ0QVuTEO_SYliT1y9Zyn7iE4",
-        authDomain: "kitsucode-e663f.firebaseapp.com",
-        projectId: "kitsucode-e663f",
-        storageBucket: "kitsucode-e663f.firebasestorage.app",
-        messagingSenderId: "867513491057",
-        appId: "1:867513491057:web:69d5c82ab55a5ba1dc05d0"
-      ),
-    );
-  } else {
-    // Si estamos en móvil (Android/iOS), usa el método normal
-    await Firebase.initializeApp();
-  }
+  // 2. Configuración de UI MÍNIMA (opcional, si no necesita await)
+  // SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  // (Movido a bootstrapProvider para asegurar que se ejecute después de los servicios)
 
-  // 3. Configura el handler de background
-  // Esto es necesario para recibir notificaciones cuando la app está en background o cerrada
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // --- FIN: TAREAS MÍNIMAS ---
 
-  // 4. Carga las variables de entorno
-  await dotenv.load(fileName: "assets/.env");
-
-  // 5. Inicializa el *cliente* de Supabase 
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-  );
-
-  // 6. Configuración de UI
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
-  // --- FIN: TAREAS OBLIGATORIAS 
-
-  // Ejecuta la app dentro de ProviderScope
+  // Ejecuta la app (¡casi al instante!)
   runApp(
     const ProviderScope(
       child: MyApp(),

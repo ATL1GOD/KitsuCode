@@ -44,10 +44,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             backgroundColor: colors.primary,
             foregroundColor: colors.onPrimary,
           ),
-          onPressed: () {
+          onPressed: () async {
             context.pop(); 
             try {
-              ref.read(authRepositoryProvider).signOut();
+              final authRepo = await ref.read(authRepositoryProvider.future);
+              await authRepo.signOut();
               showSuccessSnackbar(
                 context,
                 '¡Sesión cerrada!',
@@ -164,7 +165,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                     showHelpSnackbar(
                         context, 'Procesando...', 'Eliminando tu cuenta...');
                     try {
-                      await ref.read(authRepositoryProvider).deleteAccount();
+                      final authRepo = await ref.read(authRepositoryProvider.future);
+                      await authRepo.deleteAccount();
                     } catch (e) {
                       if (!mounted) return;
                       showErrorSnackbar(context, 'Error', e.toString());

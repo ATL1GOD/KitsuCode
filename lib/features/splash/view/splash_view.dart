@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart'; // Mantener este import
 
-import 'package:kitsucode/core/providers/app_init_provider.dart';
+// IMPORTANTE: Importa el NUEVO provider de bootstrap
+import 'package:kitsucode/core/providers/bootstrap_provider.dart'; 
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+// appInitProvider ya no es necesario aquí, se ejecutará en segundo plano
 
 const Color _kitsuOrange = Color(0xFFf79126);
 
@@ -14,58 +15,48 @@ class SplashView extends ConsumerStatefulWidget {
   const SplashView({super.key});
 
   @override
-  // Asegúrate de que SingleTickerProviderStateMixin esté incluido
   ConsumerState<SplashView> createState() => _SplashViewState();
 }
 
-class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStateMixin{ // << AÑADIR with SingleTickerProviderStateMixin AQUÍ
+class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStateMixin {
   static const String _word = 'KITSUCODE';
   
-  late final List<AnimationController> _controllers;
-  late final List<Animation<Offset>> _animations;
+  late final AnimationController _controller;
+  late final List<Animation<double>> _fadeAnimations;
+  late final List<Animation<Offset>> _slideAnimations;
 
-  bool _initDone = false;
+  bool _bootstrapDone = false;
   bool _animationDone = false;
-  late final ProviderSubscription<AsyncValue<void>> _initSub;
+  late final ProviderSubscription<AsyncValue<void>> _bootstrapSub;
 
   void _checkAndNavigate() {
-    if (_initDone && _animationDone) {
-      // 1. Siempre remover el splash nativo
+    // La lógica sigue igual: navegar solo cuando AMBOS estén listos.
+    // Ahora _animationDone no será 'true' hasta que pasen 3 segundos.
+    if (_bootstrapDone && _animationDone) {
       FlutterNativeSplash.remove(); 
 
       final isLogged = ref.read(authStateProvider).value?.session != null;
-      print('Estado de sesión: $isLogged'); // Registro para depuración
+      print('SplashView: Navegando. Estado de sesión: $isLogged');
 
-      // 2. Navegar según el estado de autenticación
       if (isLogged) {
-        context.go('/home'); // Redirigir al Home si está autenticado
+        context.go('/home');
       } else {
-        context.go('/auth'); // Redirigir al flujo de autenticación si no está autenticado
+        context.go('/auth');
       }
     }
   }
 
-  void _startAnimation() async {
-    // ⚠️ AÑADIR ESTE CHEQUEO PARA PREVENIR EL CRASH ⚠️
-    if (!mounted) return; 
+  void _startAnimation() {
+    if (!mounted) return;
+    _controller.forward();
 
-    // 1. Inicia las animaciones de forma secuencial
-    for (int i = 0; i < _word.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 100)); 
-      
-      // CHEQUEO ADICIONAL ANTES DE LLAMAR forward
-      if (!mounted) return; 
-      _controllers[i].forward();
-    }
-
-    // 2. Espera un poco
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // 3. Marca la animación como finalizada y chequea
-    if (!mounted) return; 
-    setState(() {
-      _animationDone = true;
-      _checkAndNavigate();
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() {
+          _animationDone = true;
+          _checkAndNavigate();
+        });
+      }
     });
   }
 
@@ -73,43 +64,62 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
   void initState() {
     super.initState();
 
-    // Inicializa los controladores de animación
-    // Si la inicialización falla aquí, el crash ocurre. Asegúrate de que el mixin esté arriba.
-    _controllers = List.generate(
-      _word.length,
-      (index) => AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 400),
-      ),
+    // --- CAMBIO 1: La duración total ahora es de 3 segundos ---
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3), // <-- CAMBIADO DE 1300ms
     );
 
-    // Inicializa las animaciones de deslizamiento
-    _animations = List.generate(
-      _word.length,
-      (index) => Tween<Offset>(
-        begin: const Offset(0, 0.5), 
-        end: Offset.zero, 
-      ).animate(CurvedAnimation(
-        parent: _controllers[index],
-        curve: Curves.easeOut,
-      )),
-    );
+    _fadeAnimations = [];
+    _slideAnimations = [];
 
-    // [Ajustes de UI] ... (esto está bien)
+    for (int i = 0; i < _word.length; i++) {
+      // --- CAMBIO 2: Ajustar los intervalos para que duren más ---
+      // Cada letra empieza un 8% más tarde que la anterior
+      final double startTime = (i * 0.08); 
+      // Cada letra tarda un 25% de la duración total (750ms) en animarse
+      final double endTime = startTime + 0.25; 
+      // --- FIN CAMBIO 2 ---
 
-    // Lanza la inicialización
-    ref.read(appInitProvider);
+      final curve = CurvedAnimation(
+        parent: _controller,
+        curve: Interval(
+          startTime,
+          endTime.clamp(0.0, 1.0), // El clamp es por si acaso
+          curve: Curves.easeOut,
+        ),
+      );
+      _fadeAnimations.add(curve);
+      _slideAnimations.add(
+        Tween<Offset>(
+          begin: const Offset(0, 0.5),
+          end: Offset.zero,
+        ).animate(curve),
+      );
+    }
 
-    // Escucha la finalización del appInitProvider
-    _initSub = ref.listenManual<AsyncValue<void>>(appInitProvider, (prev, next) {
+    // Lanza la inicialización esencial
+    ref.read(bootstrapProvider.notifier);
+
+    // Escucha la finalización del bootstrapProvider
+    _bootstrapSub = ref.listenManual<AsyncValue<void>>(bootstrapProvider, (prev, next) {
       next.whenOrNull(
         data: (_) {
-          _initDone = true;
-          _checkAndNavigate();
+          if (mounted) {
+            setState(() {
+              _bootstrapDone = true;
+              _checkAndNavigate();
+            });
+          }
         },
-        error: (_, __) {
-          _initDone = true;
-          _checkAndNavigate();
+        error: (e, s) {
+          print('Error crítico en Bootstrap: $e');
+          if (mounted) {
+            setState(() {
+              _bootstrapDone = true;
+              _checkAndNavigate();
+            });
+          }
         },
       );
     });
@@ -120,17 +130,13 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
 
   @override
   void dispose() {
-    // Es crucial hacer dispose de todos los controladores de animación
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    _initSub.close(); // Cerramos la suscripción manual de Riverpod
+    _controller.dispose();
+    _bootstrapSub.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // [El código de build sigue igual]
     final letters = _word.split('');
 
     return Scaffold(
@@ -138,14 +144,12 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Imagen del zorro centrada
           Center(
             child: Image.asset(
               'assets/images/auth/fox_login.png',
               width: 150,
             ),
           ),
-          // Texto animado en la parte inferior
           Positioned(
             bottom: 60,
             left: 0,
@@ -157,16 +161,15 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
                   final index = entry.key;
                   final letter = entry.value;
 
-                  // Usa FadeTransition y SlideTransition para cada letra
                   return FadeTransition(
-                    opacity: _controllers[index],
+                    opacity: _fadeAnimations[index],
                     child: SlideTransition(
-                      position: _animations[index],
+                      position: _slideAnimations[index],
                       child: Text(
                         letter,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 32, // Un poco más grande para el efecto
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2.0,
                         ),

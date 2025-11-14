@@ -282,6 +282,22 @@ class ProfileRepository {
     }
   }
 
+  Future<Map<String, dynamic>> fetchAvatarDetails(int avatarId) async {
+    try {
+      final data = await _supabase
+          .from('avatar')
+          .select('nombre, asset_path, tipo, color_primario')
+          .eq('id_avatar', avatarId)
+          .single();
+          
+      return data;
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error fetching avatar details: $e');
+      throw Exception('Error al cargar detalles del avatar');
+    }
+  }
+
   // ==================== MÉTODOS PARA AVATARES ====================
 
   /// Obtiene todos los avatares disponibles para un usuario específico

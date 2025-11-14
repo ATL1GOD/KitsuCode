@@ -5,6 +5,8 @@ import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
+// ✅ 1. IMPORTA EL NUEVO MODAL
+import 'package:kitsucode/features/profile/view/widgets/avatar_modal.dart'; 
 
 enum AvatarCategory { comun, especial }
 
@@ -163,9 +165,16 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                             return _CircularAvatarCell(
                               avatar: avatar,
                               isSelected: isSelected,
-                              onTap: avatar.desbloqueado 
-                                ? () => setState(() => _selectedAvatarId = avatar.id)
-                                : null,
+                              // ✅ 2. LÓGICA DE ONTAP ACTUALIZADA
+                              onTap: () {
+                                if (avatar.desbloqueado) {
+                                  // Si está desbloqueado, lo selecciona
+                                  setState(() => _selectedAvatarId = avatar.id);
+                                } else {
+                                  // Si está bloqueado, muestra el modal
+                                  AvatarModal.show(context, avatar: avatar);
+                                }
+                              },
                             );
                           },
                         ),
@@ -261,7 +270,7 @@ class _CategoryIconButton extends StatelessWidget {
 class _CircularAvatarCell extends StatelessWidget {
   final AvatarModel avatar;
   final bool isSelected;
-  final VoidCallback? onTap;
+  final VoidCallback? onTap; // Ahora el onTap maneja ambas lógicas
 
   const _CircularAvatarCell({
     required this.avatar,
@@ -275,7 +284,7 @@ class _CircularAvatarCell extends StatelessWidget {
     final isLocked = !avatar.desbloqueado;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap, // ✅ 3. ONTAP AHORA ES REQUERIDO Y SE PASA AQUÍ
       child: LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.maxWidth;
@@ -302,12 +311,20 @@ class _CircularAvatarCell extends StatelessWidget {
                   ),
                   child: ClipOval(
                     child: ColorFiltered(
+                      // La celda de la cuadrícula SÍ se muestra en gris
                       colorFilter: isLocked
-                        ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                        : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                       child: Container(
                         color: Colors.transparent,
-                        child: Image.asset(avatar.assetPath, fit: BoxFit.cover),
+                        child: Image.asset(avatar.assetPath, fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: colors.surfaceContainer,
+                              child: Icon(Icons.error_outline, color: colors.outline),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

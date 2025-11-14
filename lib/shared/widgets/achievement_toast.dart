@@ -2,21 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; // ¡Ya tenemos este helper!
 
 class AchievementToast extends StatelessWidget {
-  final String nombreLogro;
+  final String title; // <-- 1. AÑADIDO: Título dinámico
+  final String nombreLogro; // Sigue siendo el subtítulo
   final String iconUrl;
-  final String raridad; 
+  final String raridad;
+  final Color? borderColor;
 
   const AchievementToast({
     super.key,
+    required this.title, // <-- 2. AÑADIDO: Título requerido
     required this.nombreLogro,
     required this.iconUrl,
     required this.raridad,
+    this.borderColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final Color rarityColor = getRarityColor(raridad); // Nuestro helper de colores
+    // El color de rareza se usa como fallback y para el "aura"
+    final Color rarityColor = getRarityColor(raridad);
     final bool isDarkMode = colors.brightness == Brightness.dark;
 
     return SafeArea(
@@ -26,40 +31,40 @@ class AchievementToast extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            // ✅ 1. FONDO CON GRADIENTE KITSU (diferente para light y dark)
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDarkMode
                   ? [
-                      // Dark mode: mantiene el gradiente 
                       colors.surfaceContainerHighest, // Gris oscuro
-                      colors.surfaceContainerLowest,  // Negro
+                      colors.surfaceContainerLowest, // Negro
                     ]
                   : [
-                      // Light mode: balance entre sutil y notorio
-                      colors.surfaceBright,           // Blanco brillante (#FDFDFD)
-                      colors.surfaceContainerHigh,    // Gris suave (#EDEDED)
+                      colors.surfaceBright, // Blanco brillante (#FDFDFD)
+                      colors.surfaceContainerHigh, // Gris suave (#EDEDED)
                     ],
             ),
             borderRadius: BorderRadius.circular(16),
-            // 2. BORDE (se queda igual)
+            // ✅ 3. BORDE ACTUALIZADO
             border: Border.all(
-              color: rarityColor.withOpacity(0.5),
-              width: 1,
+              // Usará el 'borderColor' (tu color primario) si existe.
+              // Si no, usará el color de rareza como antes.
+              color: borderColor ?? rarityColor.withOpacity(0.5),
+              width: 3, // <-- Aumentado a 3px para que se note
             ),
-            // ✅ 3. ¡EL AURA! (BoxShadow mejorado)
+            // 4. ¡EL AURA! (BoxShadow mejorado)
             boxShadow: [
               BoxShadow(
-                color: rarityColor.withOpacity(0.4), // Aura más intensa
+                // Usa el borderColor (si existe) o el color de rareza para el aura
+                color: (borderColor ?? rarityColor).withOpacity(0.4),
                 blurRadius: 15.0, // Más difuminada
-                spreadRadius: 2.0,  // Un poco más grande
+                spreadRadius: 2.0, // Un poco más grande
               )
             ],
           ),
           child: Row(
             children: [
-              // --- El Icono del Logro ---
+              // --- El Icono ---
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
@@ -72,7 +77,7 @@ class AchievementToast extends StatelessWidget {
                       width: 50,
                       height: 50,
                       color: colors.onSurface.withOpacity(0.1),
-                      child: Icon(Icons.shield, color: rarityColor), // Icono de error con color de rareza
+                      child: Icon(Icons.shield, color: rarityColor),
                     );
                   },
                 ),
@@ -85,17 +90,19 @@ class AchievementToast extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ✅ 5. TÍTULO ACTUALIZADO
                     Text(
-                      "¡Logro Desbloqueado!",
+                      title, // <-- Usa la variable 'title'
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: rarityColor, // Color Kitsu (de la rareza)
+                        // El color del título será el del borde (o el de rareza)
+                        color: borderColor ?? rarityColor,
                         fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      nombreLogro,
+                      nombreLogro, // Este es el nombre del avatar/logro
                       style: TextStyle(
                         color: colors.onSurface, // Texto normal
                         fontSize: 14,

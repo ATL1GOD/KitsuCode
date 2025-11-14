@@ -1,5 +1,3 @@
-// lib/features/profile/provider/profile_provider.dart para datos de prueba en profile
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
@@ -13,12 +11,26 @@ import 'package:kitsucode/shared/widgets/achievement_toast.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:collection';
+import 'dart:ui'; // Import para la clase Color
+
+// ✅ 1. EL CANDADO GLOBAL
+// Este provider manejará el estado de "se está mostrando un toast"
+final globalToastLockProvider = StateProvider<bool>((ref) => false);
+
+// --- Función de ayuda para parsear el color ---
+Color _safeParseColor(String colorString) {
+  try {
+    return Color(int.parse(colorString));
+  } catch (e) {
+    debugPrint('Error al parsear color "$colorString": $e');
+    return const Color(0xFF9E9E9E); // Gris
+  }
+}
 
 // Provider para el repositorio de perfil
 final profileRepositoryProvider = Provider((ref) {
   final supabaseClient = Supabase.instance.client;
   return ProfileRepository(supabaseClient);
-  //return MockProfileRepository(); 
 });
 
 // Provider para obtener el perfil de un usuario por su ID
@@ -26,13 +38,6 @@ final userProfileByIdProvider = StreamProvider.family<UserProfileModel, String>(
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.watchUserProfileById(userId);
 });
-
-// // Provider para las estadísticas
-// final userStatsProvider = FutureProvider.autoDispose.family<UserStatsModel, String>((ref, userId) {
-//     final repository = ref.watch(profileRepositoryProvider);
-//     // ¡ESTA LÍNEA ESTÁ INCORRECTA!
-//     return repository.fetchUserStats(); 
-// });
 
 // Provider para los logros
 final userAchievementsProvider = FutureProvider.family<List<UserAchievementModel>, String>((ref, userId) {
@@ -42,39 +47,30 @@ final userAchievementsProvider = FutureProvider.family<List<UserAchievementModel
 
 final userStatsByIdProvider = FutureProvider.autoDispose.family<UserStatsModel, String>((ref, userId) {
   final repository = ref.watch(profileRepositoryProvider);
-  // ¡Esta es la llamada correcta!
   return repository.fetchUserStatsById(userId);
 });
 
 // ==================== PROVIDERS PARA AVATARES ====================
-
-/// Provider para obtener todos los avatares de un usuario
-/// Con keepAlive para cachear los resultados
 final userAvatarsProvider = FutureProvider.family.autoDispose<List<AvatarModel>, String>((ref, userId) async {
-  // Mantener el provider vivo para cache
   ref.keepAlive();
-  
   final repository = ref.watch(profileRepositoryProvider);
   return repository.fetchUserAvatars(userId);
 });
 
-/// Provider para el usuario actual (shortcut)
 final currentUserAvatarsProvider = FutureProvider.autoDispose<List<AvatarModel>>((ref) async {
   final userId = ref.watch(authStateProvider).value?.session?.user.id;
   if (userId == null) {
     throw Exception('Usuario no autenticado');
   }
-  
   return ref.watch(userAvatarsProvider(userId).future);
 });
 
 // ==================== FIN PROVIDERS AVATARES ====================
 
-// Provider de Realtime para seguimiento
 final followRealtimeProvider = Provider((ref) {
   final supabase = Supabase.instance.client;
   final channel = supabase.channel('public:seguimiento_usuario');
-
+  // ... (tu código de realtime de seguimiento) ...
   channel.onPostgresChanges(
     event: PostgresChangeEvent.all,
     schema: 'public',
@@ -99,49 +95,41 @@ final followRealtimeProvider = Provider((ref) {
   return channel;
 });
 
-// --- Provider de Realtime para el Perfil ---
 final profileRealtimeProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return;
-
-  // 1. Canal para cambios en 'usuarios' (nombre_perfil, id_avatar_seleccionado)
+  // ... (tu código de realtime de perfil) ...
   final userChannel = supabase.channel('public:usuarios:profile');
   userChannel.onPostgresChanges(
     event: PostgresChangeEvent.update,
     schema: 'public',
     table: 'usuarios',
-    // --- ¡ARREGLADO! ---
     filter: PostgresChangeFilter(
       type: PostgresChangeFilterType.eq,
       column: 'id',
       value: userId,
     ),
     callback: (payload) {
-      // Invalidamos el provider de datos cuando hay cambios
       ref.invalidate(userProfileByIdProvider(userId));
     },
   ).subscribe();
 
-  // 2. Canal para cambios en 'estadistica_usuario' (retos_completados, etc.)
   final statsChannel = supabase.channel('public:estadistica_usuario:profile');
   statsChannel.onPostgresChanges(
     event: PostgresChangeEvent.update,
     schema: 'public',
     table: 'estadistica_usuario',
-    // --- ¡ARREGLADO! ---
     filter: PostgresChangeFilter(
       type: PostgresChangeFilterType.eq,
       column: 'id_usuario',
       value: userId,
     ),
     callback: (payload) {
-      // Invalidamos el provider de datos cuando hay cambios
       ref.invalidate(userStatsByIdProvider(userId));
     },
   ).subscribe();
 
-  // Limpiar canales
   ref.onDispose(() {
     supabase.removeChannel(userChannel);
     supabase.removeChannel(statsChannel);
@@ -151,13 +139,9 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
 final achievementRealtimeProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
   final currentUserId = supabase.auth.currentUser?.id;
-  
   if (currentUserId == null) return;
-
+  // ... (tu código de realtime de logros) ...
   final channelsToCleanup = <RealtimeChannel>[];
-
-  // --- 1. Listener para cuando un USUARIO GANA UN LOGRO (Tu lógica original) ---
-  // Se encarga de actualizar la lista de logros si el usuario actual (o cualquier otro que se esté viendo) gana uno.
   final earnedChannel = supabase.channel('public:usuario_logro_earned');
   channelsToCleanup.add(earnedChannel);
   
@@ -170,52 +154,44 @@ final achievementRealtimeProvider = Provider.autoDispose((ref) {
       if (newRecord.isNotEmpty) {
         final userId = newRecord['id_usuario'];
         if (userId != null) {
-          // Invalida la lista de logros para el usuario que ganó el logro
           ref.invalidate(userAchievementsProvider(userId)); 
         }
       }
     },
   ).subscribe();
 
-  // Listener para cambios GLOBALES en la tabla de logros (C/D)
   final globalAchievementChannel = supabase.channel('public:logro_definition');
   channelsToCleanup.add(globalAchievementChannel);
   
-  // Callback sin guión bajo inicial (evita el warning)
   void globalAchievementCallback(dynamic payload) {
-    // Forzamos la recarga de la lista de logros del usuario actual.
     ref.invalidate(userAchievementsProvider(currentUserId)); 
   }
   
-  // Suscribimos a INSERT y DELETE en una secuencia encadenada.
   globalAchievementChannel
       .onPostgresChanges(
-        event: PostgresChangeEvent.insert, // Evento 1: CREACIÓN
+        event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'logro',
         callback: globalAchievementCallback,
       )
       .onPostgresChanges(
-        event: PostgresChangeEvent.delete, // Evento 2: ELIMINACIÓN
+        event: PostgresChangeEvent.delete,
         schema: 'public',
         table: 'logro',
         callback: globalAchievementCallback,
       )
       .subscribe();
 
-
-  // 3. Limpieza: Eliminar todos los canales al desecharse el provider
   ref.onDispose(() {
     for (final channel in channelsToCleanup) {
       supabase.removeChannel(channel);
     }
   });
 
-  // No retornamos nada, solo usamos el side-effect
   return; 
 });
 
-// --- PASO 1: Un modelo simple para los datos de la notificación ---
+// --- PASO 1: Modelo de datos de Logros ---
 class AchievementNotificationData {
   final String nombreLogro;
   final String iconUrl;
@@ -228,22 +204,26 @@ class AchievementNotificationData {
   });
 }
 
-// --- PASO 2: El StateNotifier que maneja la fila de espera ---
+// --- PASO 2: Notifier de Logros ---
 class AchievementNotifier extends StateNotifier<bool> {
   final Ref _ref;
-  // La fila de espera para logros pendientes
   final Queue<AchievementNotificationData> _queue = Queue();
-  // Un "seguro" para saber si ya estamos mostrando una notificación
-  bool _isDisplaying = false;
+  // final bool _isDisplaying = false; // <-- ✅ 2. BORRADO
 
   AchievementNotifier(this._ref) : super(false) {
-    _initListener(); // Inicia la escucha al crearse
+    _initListener();
+    
+    // ✅ 3. AÑADIDO: Escucha el candado global
+    // Si el candado se libera (next == false), intenta procesar la fila.
+    _ref.listen(globalToastLockProvider, (previous, next) {
+      if (next == false) {
+        _processQueue();
+      }
+    });
   }
 
-  // El "Oído" que escucha Supabase
   void _initListener() {
     final supabase = Supabase.instance.client;
-
     final authState = _ref.read(authStateProvider);
     final currentUserId = authState.value?.session?.user.id;
     if (currentUserId == null) return;
@@ -257,19 +237,14 @@ class AchievementNotifier extends StateNotifier<bool> {
         try {
           final newRecord = payload.newRecord;
           if (newRecord.isEmpty) return;
-
           if (newRecord['id_usuario'] == currentUserId) {
-            // ¡Logro ganado!
             final logroId = newRecord['id_logro'] as int;
             final details = await _ref.read(profileRepositoryProvider).fetchLogroDetails(logroId);
-
             final notificationData = AchievementNotificationData(
               nombreLogro: details['nombre'] ?? 'Logro Desbloqueado',
               iconUrl: details['icono'] ?? 'assets/images/zorro_oops.png',
               raridad: details['raridad'] ?? 'Común',
             );
-
-            // ¡En lugar de mostrarla, la añadimos a la fila!
             _addToQueue(notificationData);
           }
         } catch (e) {
@@ -278,34 +253,32 @@ class AchievementNotifier extends StateNotifier<bool> {
       },
     ).subscribe();
 
-    state = true; // Marcamos que el listener está activo
+    state = true;
     _ref.onDispose(() {
       supabase.removeChannel(channel);
     });
   }
 
-  // Método público para añadir un logro a la fila
+  // ✅ 4. MODIFICADO: Llama a _processQueue
   void _addToQueue(AchievementNotificationData data) {
     _queue.add(data);
     _processQueue(); // Intenta procesar la fila
   }
 
-  // El "Cerebro" que procesa la fila uno por uno
+  // ✅ 5. MODIFICADO: Usa el candado global
   Future<void> _processQueue() async {
-    // Si la fila está vacía, o si ya estamos mostrando un logro, no hacemos nada.
-    if (_queue.isEmpty || _isDisplaying) {
+    // Si la fila está vacía O el candado global está ocupado, no hacemos nada.
+    if (_queue.isEmpty || _ref.read(globalToastLockProvider)) {
       return;
     }
 
-    // ¡Hay un logro y no estamos ocupados!
-    _isDisplaying = true; // Ponemos el "seguro"
+    // ¡Está libre! Ponemos el candado GLOBAL
+    _ref.read(globalToastLockProvider.notifier).state = true;
 
-    // 1. Sacamos el logro de la fila
     final notificationData = _queue.removeFirst();
-
-    // 2. Mostramos la notificación
     showSimpleNotification(
       AchievementToast(
+        title: "¡Logro Desbloqueado!",
         nombreLogro: notificationData.nombreLogro,
         iconUrl: notificationData.iconUrl,
         raridad: notificationData.raridad,
@@ -315,37 +288,152 @@ class AchievementNotifier extends StateNotifier<bool> {
       duration: const Duration(seconds: 4),
     );
 
-    // 3. Esperamos a que la notificación termine (4s) + 1s de animación de salida
     await Future.delayed(const Duration(seconds: 5));
 
-    _isDisplaying = false; // Quitamos el "seguro"
-    
-    // 4. Volvemos a llamar a la función por si hay más logros en la fila
-    _processQueue();
+    // Quitamos el candado GLOBAL
+    // Esto disparará el `ref.listen` para este y el otro notifier.
+    _ref.read(globalToastLockProvider.notifier).state = false;
   }
 }
 
-// --- PASO 3: El Provider que crea y mantiene vivo nuestro Notifier ---
+// --- PASO 3: Provider de Logros ---
 final achievementNotifierProvider = StateNotifierProvider<AchievementNotifier, bool>((ref) {
   return AchievementNotifier(ref);
 });
 
-// 1. Provider para ALMACENAR el rango de fechas seleccionado
+// ===================================================================
+// ¡COMIENZA LA SECCIÓN DE AVATARES!
+// ===================================================================
+
+// --- PASO 1 (AVATAR): Modelo de datos ---
+class AvatarNotificationData {
+  final String nombreAvatar;
+  final String assetPath;
+  final String tipo;
+  final String colorPrimario;
+
+  AvatarNotificationData({
+    required this.nombreAvatar,
+    required this.assetPath,
+    required this.tipo,
+    required this.colorPrimario,
+  });
+}
+
+// --- PASO 2 (AVATAR): Notifier de Avatares ---
+class AvatarNotifier extends StateNotifier<bool> {
+  final Ref _ref;
+  final Queue<AvatarNotificationData> _queue = Queue();
+  // final bool _isDisplaying = false; // <-- ✅ 2. BORRADO
+
+  AvatarNotifier(this._ref) : super(false) {
+    _initListener();
+
+    // ✅ 3. AÑADIDO: Escucha el candado global
+    // Si el candado se libera (next == false), intenta procesar la fila.
+    _ref.listen(globalToastLockProvider, (previous, next) {
+      if (next == false) {
+        _processQueue();
+      }
+    });
+  }
+
+  void _initListener() {
+    final supabase = Supabase.instance.client;
+    final authState = _ref.read(authStateProvider);
+    final currentUserId = authState.value?.session?.user.id;
+    if (currentUserId == null) return;
+
+    final channel = supabase.channel('public:usuario_avatar_toast');
+    
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'usuario_avatar',
+      callback: (payload) async {
+        try {
+          final newRecord = payload.newRecord;
+          if (newRecord.isEmpty) return;
+          if (newRecord['id_usuario'] == currentUserId) {
+            final avatarId = newRecord['id_avatar'] as int;
+            final details = await _ref.read(profileRepositoryProvider).fetchAvatarDetails(avatarId);
+            final notificationData = AvatarNotificationData(
+              nombreAvatar: details['nombre'] ?? 'Avatar Desbloqueado',
+              assetPath: details['asset_path'] ?? 'assets/images/zorro_oops.png',
+              tipo: details['tipo'] ?? 'Especial',
+              colorPrimario: details['color_primario'] ?? '0xFF9E9E9E',
+            );
+            
+            _ref.invalidate(userAvatarsProvider(currentUserId));
+            _addToQueue(notificationData);
+          }
+        } catch (e) {
+          debugPrint('Error al recibir notificación de avatar: $e');
+        }
+      },
+    ).subscribe();
+
+    state = true;
+    _ref.onDispose(() {
+      supabase.removeChannel(channel);
+    });
+  }
+
+  // ✅ 4. MODIFICADO: Llama a _processQueue
+  void _addToQueue(AvatarNotificationData data) {
+    _queue.add(data);
+    _processQueue(); // Intenta procesar la fila
+  }
+
+  // ✅ 5. MODIFICADO: Usa el candado global
+  Future<void> _processQueue() async {
+    // Si la fila está vacía O el candado global está ocupado, no hacemos nada.
+    if (_queue.isEmpty || _ref.read(globalToastLockProvider)) {
+      return;
+    }
+
+    // ¡Está libre! Ponemos el candado GLOBAL
+    _ref.read(globalToastLockProvider.notifier).state = true;
+
+    final notificationData = _queue.removeFirst();
+    final Color avatarColor = _safeParseColor(notificationData.colorPrimario);
+
+    showSimpleNotification(
+      AchievementToast(
+        title: "¡Avatar Desbloqueado!",
+        nombreLogro: notificationData.nombreAvatar,
+        iconUrl: notificationData.assetPath,
+        raridad: notificationData.tipo, 
+        borderColor: avatarColor,
+      ),
+      background: Colors.transparent,
+      elevation: 0,
+      duration: const Duration(seconds: 4),
+    );
+
+    await Future.delayed(const Duration(seconds: 5));
+
+    // Quitamos el candado GLOBAL
+    // Esto disparará el `ref.listen` para este y el otro notifier.
+    _ref.read(globalToastLockProvider.notifier).state = false;
+  }
+}
+
+// --- PASO 3 (AVATAR): Provider de Avatares ---
+final avatarNotifierProvider = StateNotifierProvider<AvatarNotifier, bool>((ref) {
+  return AvatarNotifier(ref);
+});
+
+// --- Providers de Historial (sin cambios) ---
 final historyDateRangeProvider = StateProvider.autoDispose<DateTimeRange>((ref) {
-  // Valor inicial: últimos 30 días
   final now = DateTime.now();
   final thirtyDaysAgo = now.subtract(const Duration(days: 30));
   return DateTimeRange(start: thirtyDaysAgo, end: now);
 });
 
-// 2. Provider que OBTIENE los datos, "escuchando" al provider del rango
 final challengeHistoryProvider = FutureProvider.autoDispose.family<List<ChallengeHistoryModel>, String>((ref, userId) {
   final profileRepo = ref.watch(profileRepositoryProvider);
-  
-  // "watch" (observa) el rango de fechas. Si cambia, este provider se re-ejecutará
   final dateRange = ref.watch(historyDateRangeProvider);
-  
-  // Llama al repositorio con el rango de fechas actual
   return profileRepo.getChallengeHistory(
     userId,
     startDate: dateRange.start,

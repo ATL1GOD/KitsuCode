@@ -23,8 +23,8 @@ class SettingsView extends ConsumerStatefulWidget {
 }
 
 class _SettingsViewState extends ConsumerState<SettingsView> {
-
-  void _showSignOutDialog(BuildContext context, WidgetRef ref, Color dynamicColor) {
+  void _showSignOutDialog(
+      BuildContext context, WidgetRef ref, Color dynamicColor) {
     final colors = Theme.of(context).colorScheme;
 
     showKitsuActionModal(
@@ -45,15 +45,19 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             foregroundColor: colors.onPrimary,
           ),
           onPressed: () async {
-            context.pop(); 
+            context.pop();
             try {
               final authRepo = await ref.read(authRepositoryProvider.future);
               await authRepo.signOut();
-              showSuccessSnackbar(
-                context,
-                '¡Sesión cerrada!',
-                'Vuelve pronto a KitsuCode.',
-              );
+              
+              // --- CORRECCIÓN 1: Añadir el check 'mounted' ---
+              if (mounted) {
+                showSuccessSnackbar(
+                  context,
+                  '¡Sesión cerrada!',
+                  'Vuelve pronto a KitsuCode.',
+                );
+              }
             } catch (e) {
               if (mounted) {
                 showErrorSnackbar(context, 'Error', e.toString());
@@ -108,18 +112,18 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           decoration: InputDecoration(
             hintText: confirmationText,
             hintStyle: textTheme.titleMedium?.copyWith(
-              color: colors.onSurface.withOpacity(0.3),
+              color: colors.onSurface.withAlpha(77), // CORREGIDO: withOpacity(0.3)
               fontWeight: FontWeight.bold,
             ),
             filled: true,
             fillColor: colors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colors.error.withOpacity(0.5)),
+              borderSide: BorderSide(color: colors.error.withAlpha(128)), // CORREGIDO: withOpacity(0.5)
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: colors.error.withOpacity(0.5)),
+              borderSide: BorderSide(color: colors.error.withAlpha(128)), // CORREGIDO: withOpacity(0.5)
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -143,21 +147,20 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         onPressed: () => context.pop(),
         child: const Text('Cancelar'),
       ),
-
       AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
           final bool canDelete = controller.text.trim() == confirmationText;
-          
+
           return ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor:
-                  canDelete ? colors.error : colors.onSurface.withOpacity(0.12),
+                  canDelete ? colors.error : colors.onSurface.withAlpha(31), // CORREGIDO: withOpacity(0.12)
               foregroundColor: canDelete
                   ? colors.onError
-                  : colors.onSurface.withOpacity(0.38),
-              disabledBackgroundColor: colors.onSurface.withOpacity(0.12),
-              disabledForegroundColor: colors.onSurface.withOpacity(0.38),
+                  : colors.onSurface.withAlpha(97), // CORREGIDO: withOpacity(0.38)
+              disabledBackgroundColor: colors.onSurface.withAlpha(31), // CORREGIDO: withOpacity(0.12)
+              disabledForegroundColor: colors.onSurface.withAlpha(97), // CORREGIDO: withOpacity(0.38)
             ),
             onPressed: canDelete
                 ? () async {
@@ -165,7 +168,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                     showHelpSnackbar(
                         context, 'Procesando...', 'Eliminando tu cuenta...');
                     try {
-                      final authRepo = await ref.read(authRepositoryProvider.future);
+                      final authRepo =
+                          await ref.read(authRepositoryProvider.future);
                       await authRepo.deleteAccount();
                     } catch (e) {
                       if (!mounted) return;
@@ -180,7 +184,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     ];
   }
 
-
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -189,7 +192,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     final platformBrightness =
         SchedulerBinding.instance.platformDispatcher.platformBrightness;
     final isSystemDark = platformBrightness == Brightness.dark;
-    
+
     // --- NUEVO: Detectar si el teclado está visible ---
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     // --- FIN NUEVO ---
@@ -224,7 +227,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
               AnimatedSettingsBackground(
                 profile: profile,
                 colors: colors,
-                isKeyboardVisible: isKeyboardVisible, // <-- ¡AQUÍ SE PASA EL ESTADO!
+                isKeyboardVisible:
+                    isKeyboardVisible, // <-- ¡AQUÍ SE PASA EL ESTADO!
               ),
               SafeArea(
                 child: Column(
@@ -241,11 +245,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                             child: Container(
                               padding: const EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
-                                  color: colors.surface.withAlpha(50),
+                                  color: colors.surface.withAlpha(50), // CORREGIDO: withOpacity(0.2) -> 51
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color:
-                                          colors.outlineVariant.withAlpha(130))),
+                                      color: colors.outlineVariant
+                                          .withAlpha(130))), // CORREGIDO: withOpacity(0.5) -> 128 (aprox)
                               child: Icon(Icons.arrow_back_ios_new_rounded,
                                   color: colors.onSurface),
                             ),
@@ -281,11 +285,12 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           preferenciasState.when(
                             loading: () => const Center(
                                 child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(),
-                              )),
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            )),
                             error: (e, s) => Center(
-                                child: Text('Error al cargar preferencias: $e')),
+                                child:
+                                    Text('Error al cargar preferencias: $e')),
                             data: (prefs) {
                               final String themeFromDB = prefs.temaVisual;
                               final bool isDarkMode;
@@ -320,7 +325,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                                     ),
                                     SettingsSwitchTile(
                                       title: 'Efectos de Sonido',
-                                      subtitle: 'Activar o desactivar los sonidos',
+                                      subtitle:
+                                          'Activar o desactivar los sonidos',
                                       icon: Icons.volume_up_outlined,
                                       dynamicColor: dynamicColor,
                                       initialValue: prefs.sonidoEfectos,
@@ -404,7 +410,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                                     colors: colors),
                                 SettingsNavigationTile(
                                   title: 'Ayuda y Sugerencias',
-                                  subtitle: 'Envía un reporte de error o sugerencia',
+                                  subtitle:
+                                      'Envía un reporte de error o sugerencia',
                                   icon: Icons.support_agent,
                                   dynamicColor: dynamicColor,
                                   onTap: () {

@@ -1,8 +1,26 @@
 // [COMIENZO DEL ARCHIVO desafio_provider.dart]
-
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// --- Helper para convertir Hex a Color ---
+// Colócalo fuera de las clases, al inicio del archivo.
+Color _colorFromHex(String hexString, {String fallback = '#808080'}) {
+  final buffer = StringBuffer();
+  String hex = hexString.replaceAll('#', '');
+  if (hex.length == 6) {
+    buffer.write('ff');
+    buffer.write(hex);
+  } else if (hex.length == 8) {
+    buffer.write(hex);
+  } else {
+    // Si el string es inválido, usa el color de fallback (Gris)
+    return _colorFromHex(fallback);
+  }
+  return Color(int.parse(buffer.toString(), radix: 16));
+}
+
+// --- Fin del Helper ---
 // --- Clases de Modelo Simples ---
 // Modelo para los datos de la tarjeta de Evento Especial (Reto Agrupador)
 class DesafioEspecial {
@@ -11,6 +29,9 @@ class DesafioEspecial {
   final String descripcion;
   final DateTime fechaInicio;
   final DateTime fechaFin;
+  final Color colorClaro; // <-- 2. CAMBIADO A TIPO Color
+  final Color colorOscuro; // <-- 3. CAMBIADO A TIPO Color
+  final String svgEspecial; // <-- 4. AÑADIDO
 
   DesafioEspecial({
     required this.idReto,
@@ -18,16 +39,33 @@ class DesafioEspecial {
     required this.descripcion,
     required this.fechaInicio,
     required this.fechaFin,
+    required this.colorClaro, // <-- 5. AÑADIDO AL CONSTRUCTOR
+    required this.colorOscuro, // <-- 6. AÑADIDO AL CONSTRUCTOR
+    required this.svgEspecial, // <-- 7. AÑADIDO AL CONSTRUCTOR
   });
 
   // Factory para crear desde el JSON de Supabase
   factory DesafioEspecial.fromMap(Map<String, dynamic> map) {
+    // 8. Obtenemos el mapa anidado de los detalles
+    final detalles = map['reto_especiales_detalles'] as Map<String, dynamic>?;
+
     return DesafioEspecial(
       idReto: map['id_reto'],
       titulo: map['titulo'],
       descripcion: map['descripcion'] ?? 'Sin descripción.',
       fechaInicio: DateTime.parse(map['fecha_inicio']),
       fechaFin: DateTime.parse(map['fecha_final']),
+
+      // 9. Usamos el helper con valores por defecto
+      colorClaro: _colorFromHex(
+        detalles?['color_claro'] ?? '#66bb6a',
+      ), // Verde claro por defecto
+      colorOscuro: _colorFromHex(
+        detalles?['color_oscuro'] ?? '#2e7d32',
+      ), // Verde oscuro por defecto
+      svgEspecial:
+          detalles?['svg_especial'] ??
+          'images/default_fallback.svg', // SVG por defecto
     );
   }
 }
@@ -93,7 +131,7 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
   final user = supabase.auth.currentUser;
   if (user == null) {
     // Manejar el caso de usuario no logueado
-    throw Exception('User not logged in');
+    throw Exception('Usuario no autenticado');
   }
   final userId = user.id;
 
@@ -103,8 +141,10 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
   // 1. Consulta el Reto Agrupador Activo
   final resultsEspeciales = await supabase
       .from('reto')
-      .select('id_reto, titulo, descripcion, fecha_inicio, fecha_final')
-      .eq('tipo_reto', 5)
+      .select(
+        // 10. MODIFICAMOS LA CONSULTA
+        'id_reto, titulo, descripcion, fecha_inicio, fecha_final, reto_especiales_detalles(color_claro, color_oscuro, svg_especial)',
+      )
       .eq('especial', true)
       .eq(
         'activo',

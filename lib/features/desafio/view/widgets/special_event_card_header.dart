@@ -66,7 +66,6 @@ class SpecialEventCardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 2. ENVUELVE TODO EN UN STACK
     return Stack(
       // 3. PERMITE QUE LOS HIJOS SE "SALGAN" DEL STACK
       clipBehavior: Clip.none,
@@ -221,8 +220,9 @@ class SpecialEventCardHeader extends StatelessWidget {
                 ),
               ],
             ),
+            // --- AQUÍ EL CAMBIO ---
             child: SvgPicture.asset(
-              '/images/mensual/navidad2.svg', // <-- ¡CAMBIA ESTO POR TU RUTA!
+              evento.svgEspecial, // <-- ¡AHORA ES DINÁMICO!
               fit: BoxFit.cover,
             ),
           ),

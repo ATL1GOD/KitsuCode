@@ -30,9 +30,15 @@ class _ExpandableSpecialEventCardState
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Colors.green.shade700;
+    // --- 1. AQUÍ ESTÁ LA MAGIA ---
+    // Detecta el brillo actual del tema (claro u oscuro)
+    final brightness = Theme.of(context).brightness;
 
-    // Lógica de progreso (se queda aquí porque es necesaria para ambos hijos)
+    // Asigna el color primario basado en el brillo
+    final primaryColor = brightness == Brightness.dark
+        ? widget.evento.colorOscuro
+        : widget.evento.colorClaro;
+    // --- Fin del cambio ---    // Lógica de progreso (se queda aquí porque es necesaria para ambos hijos)
     final totalChallenges = widget.desafiosMensuales.length;
     final completedChallenges = widget.completedRetoIds.length;
     final double progress = totalChallenges == 0

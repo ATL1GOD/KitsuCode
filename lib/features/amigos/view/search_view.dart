@@ -320,37 +320,36 @@ class EmptyState extends StatelessWidget {
   // 'icon' ahora es 'iconWidget' y es de tipo Widget
   final Widget iconWidget;
   // --- FIN DEL CAMBIO ---
-  final String message;
-  const EmptyState({
-    super.key,
-    required this.iconWidget,
-    required this.message,
-  });
+  final String? message; //
+  const EmptyState({super.key, required this.iconWidget, this.message});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        // Para evitar overflow si el teclado está abierto
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // --- ¡CAMBIO AQUÍ! ---
-            // Simplemente renderizamos el widget que nos pasaron
-            iconWidget,
-            // --- FIN DEL CAMBIO ---
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-              ),
-            ),
-          ],
+    // ¡CAMBIO! Eliminamos Center y SingleChildScrollView
+    // para permitir que el iconWidget (si es un Widget 'Expanded')
+    // ocupe el espacio disponible en el Column.
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment:
+          CrossAxisAlignment.stretch, // Asegura que el Stack llene el ancho
+      children: [
+        // --- ¡CAMBIO AQUÍ! ---
+        // Este widget ahora puede ser un 'Expanded'
+        // y controlará el espacio vertical.
+        iconWidget,
+        // --- FIN DEL CAMBIO ---
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Text(
+            message ?? '',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
         ),
-      ),
+        // Añadimos un Sizedbox para que el mensaje no quede pegado abajo
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

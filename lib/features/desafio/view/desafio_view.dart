@@ -77,36 +77,15 @@ class DesafioBusquedaView extends ConsumerWidget {
                 loading: () {
                   if (currentQuery.isEmpty) {
                     //si no hay búsqueda activa
-                    // --- ¡CAMBIO SOLICITADO (1 de 2)! ---
-                    // Usamos un Column para apilar verticalmente
+                    // (Dejamos este como estaba, puedes aplicar el mismo
+                    // cambio que en el bloque 'data' si lo deseas)
                     // return EmptyState(
                     //   iconWidget: SizedBox(
                     //     width: 250,
-                    //     height: 250,
-                    //     child: Column(
-                    //       mainAxisAlignment: MainAxisAlignment.center,
-                    //       children: [
-                    //         // SVG 1 (Tu Título)
-                    //         SvgPicture.asset(
-                    //           'images/mensual/tu_titulo_svg.svg', // <-- ¡RUTA A TU TÍTULO!
-                    //           width: 220,
-                    //           height: 50,
-                    //           fit: BoxFit.contain,
-                    //         ),
-                    //         const SizedBox(height: 16),
-                    //         // SVG 2 (Tu Imagen)
-                    //         SvgPicture.asset(
-                    //           'images/mensual/amigos.svg', // <-- Tu imagen principal
-                    //           width: 180,
-                    //           height: 180,
-                    //           fit: BoxFit.contain,
-                    //         ),
-                    //       ],
-                    //     ),
+                    // ...
                     //   ),
                     //   message: 'Busca usuarios por nombre o @usuario',
                     // );
-                    // --- FIN DEL CAMBIO ---
                   }
                   return const Center(child: CircularProgressIndicator());
                 },
@@ -116,32 +95,43 @@ class DesafioBusquedaView extends ConsumerWidget {
                   if (currentQuery.isEmpty) {
                     //si no hay búsqueda activa
                     // --- ¡CAMBIO SOLICITADO (2 de 2)! ---
-                    // Usamos un Column para apilar verticalmente
+                    // Usamos Expanded y Stack para que el SVG llene el espacio.
                     return EmptyState(
-                      iconWidget: SizedBox(
-                        width: 500,
-                        height: 500,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // // SVG 1 (Tu Título)
-                            // SvgPicture.asset(
-                            //   'images/mensual/amigos2.svg', // <-- ¡RUTA A TU TÍTULO!
-                            //   width: 300,
-                            //   fit: BoxFit.contain,
-                            // ),
-                            // const SizedBox(height: 5),
-                            // SVG 2 (Tu Imagen)
-                            SvgPicture.asset(
-                              'images/mensual/amigos4.svg', // <-- Tu imagen principal
-                              width: 200,
-                              height: 200,
-                              fit: BoxFit.contain,
-                            ),
-                          ],
+                      iconWidget: Expanded(
+                        // <-- CAMBIO: De SizedBox a Expanded
+                        child: Padding(
+                          // Añadimos padding para que el SVG no toque los bordes
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 8.0,
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // // SVG 1 (Título - puedes descomentar y ajustar)
+                              // Positioned(
+                              //   top: 20, // Ajusta la posición
+                              //   child: SvgPicture.asset(
+                              //     'images/mensual/amigos2.svg', // <-- ¡RUTA A TU TÍTULO!
+                              //     width: 300,
+                              //     fit: BoxFit.contain,
+                              //   ),
+                              // ),
+
+                              // SVG 2 (Imagen Principal - llenará el espacio)
+                              // Usamos Positioned.fill para que ocupe todo el Stack
+                              // 'fit: BoxFit.contain' asegura que no se corte
+                              Positioned.fill(
+                                child: SvgPicture.asset(
+                                  'images/mensual/amigos4.svg', // <-- Tu imagen principal
+                                  fit: BoxFit
+                                      .contain, // BoxFit.contain para que no se distorsione
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      message: 'Busca usuarios por nombre o @usuario',
                     );
                     // --- FIN DEL CAMBIO ---
                   }

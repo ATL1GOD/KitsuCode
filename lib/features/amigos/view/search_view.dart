@@ -175,13 +175,6 @@ class UserSearchCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias, // Para que la imagen no se salga
       child: InkWell(
         onTap: () {
-          print('=================================');
-          print('ABRIENDO MODAL PARA: ${user.nombreUsuario}');
-          print('RANK: ${user.rank}');
-          print('IDs DE LENGUAJE: ${user.rankLanguageIds}');
-          print('TIPO DE DATO: ${user.rankLanguageIds.runtimeType}');
-          print('=================================');
-
           showDialog(
             context: context,
             barrierColor: Colors.black.withAlpha(128),
@@ -195,7 +188,7 @@ class UserSearchCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            SvgPicture.asset('images/mensual/fondo.svg', fit: BoxFit.cover),
+            SvgPicture.asset('assets/images/mensual/fondo.svg', fit: BoxFit.cover),
 
             Container(
               decoration: BoxDecoration(

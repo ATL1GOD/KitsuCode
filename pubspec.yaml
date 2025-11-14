@@ -63,6 +63,8 @@ flutter:
     - assets/images/home/
     - assets/images/logros/
     - assets/images/auth/
+    - assets/images/mensual/
+    - assets/images/challenge/
     - assets/lottie/
 
     #- assets/icons/

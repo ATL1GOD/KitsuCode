@@ -65,7 +65,7 @@ class DesafioEspecial {
       ), // Verde oscuro por defecto
       svgEspecial:
           detalles?['svg_especial'] ??
-          'images/default_fallback.svg', // SVG por defecto
+          'assets/images/default_fallback.svg', // SVG por defecto
     );
   }
 }

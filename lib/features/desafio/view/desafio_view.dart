@@ -71,7 +71,7 @@ class DesafioBusquedaView extends ConsumerWidget {
                             children: [
                               Positioned.fill(
                                 child: SvgPicture.asset(
-                                  'images/mensual/amigos4.svg',
+                                  'assets/images/mensual/amigos4.svg',
                                   fit: BoxFit.contain,
                                 ),
                               ),

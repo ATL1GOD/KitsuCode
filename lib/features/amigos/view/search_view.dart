@@ -97,7 +97,11 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                   controller: _controller,
                   decoration: InputDecoration(
                     hintText: 'Encuentra nuevos amigos...',
-
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? colors.surface.withOpacity(0.9) // Color más visible en tema oscuro
+                          : colors.onSurface.withOpacity(0.6), // Color en tema claro
+                    ),
                     // Aquí tu lógica de 'X' funciona perfectamente
                     suffixIcon: _controller.text.isNotEmpty
                         ? IconButton(

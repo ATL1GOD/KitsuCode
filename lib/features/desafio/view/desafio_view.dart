@@ -29,13 +29,17 @@ class DesafioBusquedaView extends ConsumerWidget {
     final currentQuery = ref.watch(userSearchQueryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Desafíos y Usuarios')),
       // 2. ¡CAMBIO! Usamos Column en lugar de CustomScrollView
       body: Column(
         children: [
           // --- SECCIÓN 1: DESAFÍO (Arriba) ---
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(
+              left: 10,
+              top: 50,
+              right: 10,
+              bottom: 8,
+            ),
             child: desafiosAsync.when(
               data: (data) {
                 if (data.agrupador != null) {
@@ -115,21 +119,21 @@ class DesafioBusquedaView extends ConsumerWidget {
                     // Usamos un Column para apilar verticalmente
                     return EmptyState(
                       iconWidget: SizedBox(
-                        width: 400,
-                        height: 400,
+                        width: 500,
+                        height: 500,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // SVG 1 (Tu Título)
-                            SvgPicture.asset(
-                              'images/mensual/amigos2.svg', // <-- ¡RUTA A TU TÍTULO!
-                              width: 300,
-                              fit: BoxFit.contain,
-                            ),
-                            const SizedBox(height: 5),
+                            // // SVG 1 (Tu Título)
+                            // SvgPicture.asset(
+                            //   'images/mensual/amigos2.svg', // <-- ¡RUTA A TU TÍTULO!
+                            //   width: 300,
+                            //   fit: BoxFit.contain,
+                            // ),
+                            // const SizedBox(height: 5),
                             // SVG 2 (Tu Imagen)
                             SvgPicture.asset(
-                              'images/mensual/amigos.svg', // <-- Tu imagen principal
+                              'images/mensual/amigos4.svg', // <-- Tu imagen principal
                               width: 200,
                               height: 200,
                               fit: BoxFit.contain,

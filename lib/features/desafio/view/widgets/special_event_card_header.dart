@@ -1,7 +1,7 @@
 // features/desafio/presentation/widgets/special_event_card_header.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // <-- 1. IMPORTA EL PAQUETE
+import 'package:flutter_svg/flutter_svg.dart'; // 1. IMPORTA EL PAQUETE
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 import 'segmented_event_progress_bar.dart';
 
@@ -113,33 +113,12 @@ class SpecialEventCardHeader extends StatelessWidget {
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
+                          // No necesitas maxLines, al estar en un Expanded
+                          // se ajustará automáticamente.
                         ),
                         const SizedBox(height: 4),
                         // TIEMPO RESTANTE
-                        Row(
-                          children: [
-                            Icon(
-                              isParentCompleted
-                                  ? Icons.check_circle
-                                  : Icons.timer,
-                              color: isParentCompleted
-                                  ? Colors.white
-                                  : Colors.white70,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isParentCompleted
-                                  ? "¡EVENTO COMPLETADO!"
-                                  : _formatTiempoRestante(evento.fechaFin),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                        // (Lo moviste abajo, así que esta sección está bien)
                       ],
                     ),
                   ),
@@ -147,10 +126,19 @@ class SpecialEventCardHeader extends StatelessWidget {
                   // 4. DEJA UN ESPACIO PARA LA ESTAMPA
                   //    Esto evita que el texto se ponga debajo de ella.
                   //    Ajusta el 'width' al tamaño de tu estampa.
-                  const SizedBox(width: 60),
+
+                  // ==========================================================
+                  //                 ¡¡¡ CAMBIO CLAVE AQUÍ !!!
+                  //
+                  // Aumentamos el espacio de 60 a 120. Esto le da menos
+                  // espacio al 'Expanded' del título, forzando a los
+                  // títulos largos a ajustarse (wrap) a la siguiente línea
+                  // ANTES de que lleguen a la estampa.
+                  // ==========================================================
+                  const SizedBox(width: 120),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 50),
 
               // -----------------------------------------------------
               // --- SECCIÓN DE PROGRESO (Sin cambios) ---
@@ -158,13 +146,27 @@ class SpecialEventCardHeader extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    progressTitle, // "Completa X desafíos"
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        isParentCompleted ? Icons.check_circle : Icons.timer,
+                        color: isParentCompleted
+                            ? Colors.white
+                            : Colors.white70,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isParentCompleted
+                            ? "¡EVENTO COMPLETADO!"
+                            : _formatTiempoRestante(evento.fechaFin),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     '$completedChallenges / $totalChallenges', // "1 / X"
@@ -186,7 +188,6 @@ class SpecialEventCardHeader extends StatelessWidget {
                 completedRetoIds: completedRetoIds,
               ),
 
-              // Icono para la expansión
               const SizedBox(height: 8),
               if (!isParentCompleted)
                 Center(
@@ -204,11 +205,11 @@ class SpecialEventCardHeader extends StatelessWidget {
 
         // 5. AQUÍ VA LA ESTAMPA SVG SUPERPUESTA
         Positioned(
-          top: 20, // <-- Ajusta para que "flote" hacia arriba
-          right: 40, // <-- Ajusta la posición horizontal
+          top: 10, // <-- Ajusta para que "flote" hacia arriba
+          right: 30, // <-- Ajusta la posición horizontal
           child: Container(
             width: 150, // Tamaño de la estampa
-            height: 130, // Tamaño de la estampa
+            height: 150, // Tamaño de la estampa
             decoration: BoxDecoration(
               // Opcional: Añade una sombra para el efecto "resaltado"
               shape: BoxShape.circle, // Asumiendo que tu estampa es redonda

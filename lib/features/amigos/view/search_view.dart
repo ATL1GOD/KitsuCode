@@ -55,33 +55,105 @@ class _SearchFieldState extends ConsumerState<SearchField> {
       }
     });
 
+    final colors = Theme.of(context).colorScheme;
+    // Colores inspirados en tu imagen
+    final Color colorVerdeOscuro =
+        Colors.green.shade800; // O el color que prefieras
+    final Color colorCrema = const Color(0xFFF5F3E5);
+    final Color colorAmarillo = Colors.yellow.shade700;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: TextField(
-        controller: _controller,
-        decoration: InputDecoration(
-          hintText: 'Buscar por @usuario o nombre...',
-          prefixIcon: const Icon(Icons.search),
-          // Botón para limpiar
-          suffixIcon: _controller.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    _controller.clear();
-                    ref.read(userSearchQueryProvider.notifier).state = '';
+      // 1. Contenedor principal (fondo crema, bordes redondeados)
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorCrema,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        // 2. Usamos ClipRRect para forzar a los hijos a tener bordes redondeados
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 3. Parte 1: El contenedor del icono
+              // (La versión con ángulo es muy compleja, usamos un rectángulo)
+              Container(
+                color: colorVerdeOscuro,
+                padding: const EdgeInsets.all(12.0),
+                child: Icon(Icons.search, color: Colors.white),
+              ),
+
+              // 4. Parte 2: El campo de texto (expandido)
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: 'Encuentra nuevos amigos...',
+
+                    // Aquí tu lógica de 'X' funciona perfectamente
+                    suffixIcon: _controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.close, color: Colors.grey[600]),
+                            onPressed: () {
+                              _controller.clear();
+                              ref.read(userSearchQueryProvider.notifier).state =
+                                  '';
+                            },
+                          )
+                        : null,
+
+                    // Quitamos todos los bordes y el fondo
+                    filled: false,
+                    border: InputBorder.none, //
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+
+                    // Ajustamos el padding interno
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16.0,
+                      horizontal: 16.0,
+                    ),
+                  ),
+                  onChanged: (query) {
+                    ref.read(userSearchQueryProvider.notifier).state = query;
+                    setState(() {});
                   },
-                )
-              : null,
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
+                ),
+              ),
+
+              // 5. Parte 3: El botón de "Search"
+              SizedBox(
+                height: 56, // Ajusta a la altura del TextField
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Opcional: puedes forzar la búsqueda aquí si lo deseas
+                    // o simplemente dejar que sea decorativo.
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorAmarillo,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero, // Sin bordes
+                    ),
+                  ),
+                  child: const Text(
+                    'Amigos',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        onChanged: (query) {
-          ref.read(userSearchQueryProvider.notifier).state = query;
-        },
       ),
     );
   }
@@ -187,10 +259,7 @@ class UserSearchCard extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  // --- ¡CAMBIO AQUÍ! ---
-  // 'icon' ahora es 'iconWidget' y es de tipo Widget
   final Widget iconWidget;
-  // --- FIN DEL CAMBIO ---
   final String? message; //
   const EmptyState({super.key, required this.iconWidget, this.message});
 

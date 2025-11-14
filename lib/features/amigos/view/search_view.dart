@@ -1,135 +1,27 @@
-// lib/features/amigos/view/search_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-// ¡Importamos el nuevo modelo!
 import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// -------------------------------------------------------------------
-// PROVIDERS DE BÚSQUEDA (CONECTADOS)
-// -------------------------------------------------------------------
 
-// 1. Provider para el término de búsqueda (lo que el usuario escribe)
+// Provider para el término de búsqueda (lo que el usuario escribe)
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// 2. Provider que "ejecuta" la búsqueda
-//    (¡Ahora llama al repositorio real!)
+// Provider que "ejecuta" la búsqueda
 final userSearchResultsProvider = FutureProvider<List<UserSearchPreviewModel>>((
   ref,
 ) async {
   final query = ref.watch(userSearchQueryProvider);
 
-  // Si no hay búsqueda, no devolvemos nada
   if (query.trim().isEmpty) {
     return [];
   }
 
-  // ¡Llamada real al repositorio!
   final repository = ref.watch(profileRepositoryProvider);
   return repository.searchUsers(query);
 });
-
-// -------------------------------------------------------------------
-// VISTA DE BÚSQUEDA
-// -------------------------------------------------------------------
-
-class UserSearchView extends ConsumerWidget {
-  const UserSearchView({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final searchResults = ref.watch(userSearchResultsProvider);
-    final currentQuery = ref.watch(userSearchQueryProvider);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Buscar Usuarios')),
-      body: Column(
-        children: [
-          // 1. El campo de búsqueda
-          const SearchField(),
-
-          // 2. Los resultados
-          Expanded(
-            child: searchResults.when(
-              // ¡Añadimos un estado para refrescar!
-              // Cuando el query está vacío, FutureProvider está en 'data' (lista vacía)
-              // pero cuando escribes, pasa a 'loading'
-              loading: () {
-                // Si el query está vacío, no es una carga, es el estado inicial
-                if (currentQuery.isEmpty) {
-                  // --- ¡CAMBIO AQUÍ! ---
-                  return EmptyState(
-                    iconWidget: SvgPicture.asset(
-                      'images/mensual/amigos1.svg', // <-- ¡CAMBIA ESTA RUTA!
-                      width: 64,
-                      height: 64,
-                    ),
-                    message: 'Busca usuarios por nombre o @usuario',
-                  );
-                  // --- FIN DEL CAMBIO ---
-                }
-                // Si hay query, SÍ estamos cargando
-                return const Center(child: CircularProgressIndicator());
-              },
-              error: (err, stack) =>
-                  Center(child: Text('Error al buscar: $err')),
-              data: (users) {
-                // Si la búsqueda está vacía (al inicio)
-                if (currentQuery.isEmpty) {
-                  // --- ¡CAMBIO AQUÍ! ---
-                  return EmptyState(
-                    iconWidget: SvgPicture.asset(
-                      'images/mensual/amigos1.svg', // <-- ¡CAMBIA ESTA RUTA!
-                      width: 64,
-                      height: 64,
-                    ),
-                    message: 'Busca usuarios por nombre o @usuario',
-                  );
-                  // --- FIN DEL CAMBIO ---
-                }
-                // Si no hay resultados
-                if (users.isEmpty) {
-                  // --- ¡CAMBIO AQUÍ! ---
-                  return EmptyState(
-                    iconWidget: Icon(
-                      Icons.person_search,
-                      size: 64,
-                      color: Colors.grey.shade400,
-                    ),
-                    message: 'No se encontraron usuarios para "$currentQuery"',
-                  );
-                  // --- FIN DEL CAMBIO ---
-                }
-
-                // 3. La cuadrícula de "cartas"
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // Dos columnas
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.7, // Ratio similar a una carta de tarot
-                  ),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    // ¡Usamos el nuevo modelo!
-                    return UserSearchCard(user: users[index]);
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// -------------------------------------------------------------------
-// WIDGET: CAMPO DE BÚSQUEDA
-// -------------------------------------------------------------------
 
 class SearchField extends ConsumerStatefulWidget {
   const SearchField({super.key});
@@ -157,7 +49,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchamos el provider para resetear el texto si se limpia desde otro lugar
     ref.listen(userSearchQueryProvider, (prev, next) {
       if (next.isEmpty && _controller.text.isNotEmpty) {
         _controller.clear();
@@ -176,7 +67,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
               ? IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () {
-                    // Limpia el controlador y el provider
                     _controller.clear();
                     ref.read(userSearchQueryProvider.notifier).state = '';
                   },
@@ -189,7 +79,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
             borderSide: BorderSide.none,
           ),
         ),
-        // Actualiza el provider "en vivo" mientras escribes
         onChanged: (query) {
           ref.read(userSearchQueryProvider.notifier).state = query;
         },
@@ -197,10 +86,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
     );
   }
 }
-
-// -------------------------------------------------------------------
-// WIDGET: CARTA DE USUARIO (EL DISEÑO DE TARJETA)
-// -------------------------------------------------------------------
 
 class UserSearchCard extends StatelessWidget {
   // ¡Actualizado para usar el modelo ligero!
@@ -213,22 +98,18 @@ class UserSearchCard extends StatelessWidget {
 
     return Card(
       elevation: 5,
-      // --- ADVERTENCIA CORREGIDA ---
       shadowColor: Colors.black.withAlpha(77), // (era withOpacity(0.3))
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias, // Para que la imagen no se salga
       child: InkWell(
         onTap: () {
-          // --- INICIO DE PRUEBA DE DEBUG ---
           print('=================================');
           print('ABRIENDO MODAL PARA: ${user.nombreUsuario}');
           print('RANK: ${user.rank}');
           print('IDs DE LENGUAJE: ${user.rankLanguageIds}');
           print('TIPO DE DATO: ${user.rankLanguageIds.runtimeType}');
           print('=================================');
-          // --- FIN DE PRUEBA DE DEBUG ---
 
-          // Llama al modal que ya tenías hecho.
           showDialog(
             context: context,
             barrierColor: Colors.black.withAlpha(128),
@@ -242,18 +123,14 @@ class UserSearchCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // 1. Fondo: La imagen de la carta
             SvgPicture.asset('images/mensual/fondo.svg', fit: BoxFit.cover),
 
-            // 2. Capa de oscurecimiento para legibilidad
             Container(
-              // --- ADVERTENCIA CORREGIDA ---
               decoration: BoxDecoration(
                 color: Colors.black.withAlpha(102),
               ), // (era withOpacity(0.40))
             ),
 
-            // 3. Contenido del usuario
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -269,7 +146,6 @@ class UserSearchCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Nombre de Perfil
                   Text(
                     user.nombrePerfil,
                     textAlign: TextAlign.center,
@@ -284,7 +160,6 @@ class UserSearchCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  // Nombre de Usuario
                   Text(
                     '@${user.nombreUsuario}',
                     textAlign: TextAlign.center,
@@ -311,10 +186,6 @@ class UserSearchCard extends StatelessWidget {
   }
 }
 
-// -------------------------------------------------------------------
-// WIDGET: ESTADO VACÍO (¡MODIFICADO!)
-// -------------------------------------------------------------------
-
 class EmptyState extends StatelessWidget {
   // --- ¡CAMBIO AQUÍ! ---
   // 'icon' ahora es 'iconWidget' y es de tipo Widget
@@ -325,19 +196,11 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ¡CAMBIO! Eliminamos Center y SingleChildScrollView
-    // para permitir que el iconWidget (si es un Widget 'Expanded')
-    // ocupe el espacio disponible en el Column.
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment:
-          CrossAxisAlignment.stretch, // Asegura que el Stack llene el ancho
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // --- ¡CAMBIO AQUÍ! ---
-        // Este widget ahora puede ser un 'Expanded'
-        // y controlará el espacio vertical.
         iconWidget,
-        // --- FIN DEL CAMBIO ---
         const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -347,7 +210,6 @@ class EmptyState extends StatelessWidget {
             style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
           ),
         ),
-        // Añadimos un Sizedbox para que el mensaje no quede pegado abajo
         const SizedBox(height: 16),
       ],
     );

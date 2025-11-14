@@ -11,18 +11,9 @@ final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<v
 // pero lo importamos para que main.dart lo "conozca".
 
 void main() {
-  // --- INICIO: TAREAS DE INICIALIZACIÓN MÍNIMAS ---
-
   // 1. Asegura la inicialización de Flutter
   // Esto es lo ÚNICO que main debe 'await' (implícitamente)
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Configuración de UI MÍNIMA (opcional, si no necesita await)
-  // SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  // (Movido a bootstrapProvider para asegurar que se ejecute después de los servicios)
-
-  // --- FIN: TAREAS MÍNIMAS ---
-
   // Ejecuta la app (¡casi al instante!)
   runApp(
     const ProviderScope(

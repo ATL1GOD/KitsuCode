@@ -2,12 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart'; // Mantener este import
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-// IMPORTANTE: Importa el NUEVO provider de bootstrap
-import 'package:kitsucode/core/providers/bootstrap_provider.dart'; 
+import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-// appInitProvider ya no es necesario aquí, se ejecutará en segundo plano
 
 const Color _kitsuOrange = Color(0xFFf79126);
 
@@ -18,45 +16,92 @@ class SplashView extends ConsumerStatefulWidget {
   ConsumerState<SplashView> createState() => _SplashViewState();
 }
 
-class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStateMixin {
+class _SplashViewState extends ConsumerState<SplashView>
+    with TickerProviderStateMixin {
+
   static const String _word = 'KITSUCODE';
-  
-  late final AnimationController _controller;
-  late final List<Animation<double>> _fadeAnimations;
-  late final List<Animation<Offset>> _slideAnimations;
+
+  late AnimationController _controller;
+  late List<Animation<double>> _fadeAnimations;
+  late List<Animation<Offset>> _slideAnimations;
 
   bool _bootstrapDone = false;
   bool _animationDone = false;
-  late final ProviderSubscription<AsyncValue<void>> _bootstrapSub;
+  bool _navigated = false;
 
-  void _checkAndNavigate() {
-    // La lógica sigue igual: navegar solo cuando AMBOS estén listos.
-    // Ahora _animationDone no será 'true' hasta que pasen 3 segundos.
-    if (_bootstrapDone && _animationDone) {
-      FlutterNativeSplash.remove(); 
+  late ProviderSubscription<AsyncValue<void>> _bootstrapSub;
 
-      final isLogged = ref.read(authStateProvider).value?.session != null;
-      print('SplashView: Navegando. Estado de sesión: $isLogged');
+  void _tryNavigate() {
+    if (_navigated) return;
+    if (!_bootstrapDone || !_animationDone) return;
 
-      if (isLogged) {
-        context.go('/home');
-      } else {
-        context.go('/auth');
-      }
+    _navigated = true;
+    FlutterNativeSplash.remove();
+
+    final isLogged = ref.read(authStateProvider).value?.session != null;
+
+    if (isLogged) {
+      context.go('/home');
+    } else {
+      context.go('/auth');
     }
   }
 
-  void _startAnimation() {
-    if (!mounted) return;
-    _controller.forward();
+  void _setupAnimation() {
+    const double totalDuration = 3.0; 
+    const double letterDuration = 0.25;
+    const double letterDelay = 0.10;
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+
+    _fadeAnimations = [];
+    _slideAnimations = [];
+
+    for (int i = 0; i < _word.length; i++) {
+      final start = (i * letterDelay) / totalDuration;
+      final end = ((i * letterDelay) + letterDuration) / totalDuration;
+
+      final curved = CurvedAnimation(
+        parent: _controller,
+        curve: Interval(start, end.clamp(0.0, 1.0), curve: Curves.easeOut),
+      );
+
+      _fadeAnimations.add(curved);
+
+      _slideAnimations.add(
+        Tween<Offset>(
+          begin: const Offset(0, 0.35),
+          end: Offset.zero,
+        ).animate(curved),
+      );
+    }
 
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed && mounted) {
-        setState(() {
-          _animationDone = true;
-          _checkAndNavigate();
-        });
+      if (status == AnimationStatus.completed) {
+        _animationDone = true;
+        _tryNavigate();
       }
+    });
+  }
+
+  void _listenBootstrap() {
+    ref.read(bootstrapProvider);
+
+    _bootstrapSub =
+        ref.listenManual<AsyncValue<void>>(bootstrapProvider, (_, next) {
+      next.whenOrNull(
+        data: (_) {
+          _bootstrapDone = true;
+          _tryNavigate();
+        },
+        error: (_, __) {
+          _bootstrapDone = true;
+          _tryNavigate();
+        },
+      );
     });
   }
 
@@ -64,68 +109,15 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
   void initState() {
     super.initState();
 
-    // --- CAMBIO 1: La duración total ahora es de 3 segundos ---
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3), // <-- CAMBIADO DE 1300ms
-    );
+    _setupAnimation();
+    _listenBootstrap();
 
-    _fadeAnimations = [];
-    _slideAnimations = [];
-
-    for (int i = 0; i < _word.length; i++) {
-      // --- CAMBIO 2: Ajustar los intervalos para que duren más ---
-      // Cada letra empieza un 8% más tarde que la anterior
-      final double startTime = (i * 0.08); 
-      // Cada letra tarda un 25% de la duración total (750ms) en animarse
-      final double endTime = startTime + 0.25; 
-      // --- FIN CAMBIO 2 ---
-
-      final curve = CurvedAnimation(
-        parent: _controller,
-        curve: Interval(
-          startTime,
-          endTime.clamp(0.0, 1.0), // El clamp es por si acaso
-          curve: Curves.easeOut,
-        ),
-      );
-      _fadeAnimations.add(curve);
-      _slideAnimations.add(
-        Tween<Offset>(
-          begin: const Offset(0, 0.5),
-          end: Offset.zero,
-        ).animate(curve),
-      );
-    }
-
-    // Lanza la inicialización esencial
-    ref.read(bootstrapProvider.notifier);
-
-    // Escucha la finalización del bootstrapProvider
-    _bootstrapSub = ref.listenManual<AsyncValue<void>>(bootstrapProvider, (prev, next) {
-      next.whenOrNull(
-        data: (_) {
-          if (mounted) {
-            setState(() {
-              _bootstrapDone = true;
-              _checkAndNavigate();
-            });
-          }
-        },
-        error: (e, s) {
-          print('Error crítico en Bootstrap: $e');
-          if (mounted) {
-            setState(() {
-              _bootstrapDone = true;
-              _checkAndNavigate();
-            });
-          }
-        },
-      );
+    // 🔥 LA CLAVE: ESPERAR A QUE LA SPLASH NATIVA SE HAYA IDO COMPLETAMENTE
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 120)); 
+      // ⬆ Pequeño delay para asegurar que ya no está la splash nativa
+      _controller.forward();
     });
-
-    // Inicia la animación de las letras
-    _startAnimation();
   }
 
   @override
@@ -150,6 +142,7 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
               width: 150,
             ),
           ),
+
           Positioned(
             bottom: 60,
             left: 0,
@@ -157,16 +150,13 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
             child: Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: letters.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final letter = entry.value;
-
+                children: List.generate(letters.length, (i) {
                   return FadeTransition(
-                    opacity: _fadeAnimations[index],
+                    opacity: _fadeAnimations[i],
                     child: SlideTransition(
-                      position: _slideAnimations[index],
+                      position: _slideAnimations[i],
                       child: Text(
-                        letter,
+                        letters[i],
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 32,
@@ -176,7 +166,7 @@ class _SplashViewState extends ConsumerState<SplashView> with TickerProviderStat
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ),
             ),
           ),

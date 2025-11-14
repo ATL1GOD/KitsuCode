@@ -1,4 +1,5 @@
 // lib/core/providers/bootstrap_provider.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,19 +9,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-// El handler de background DEBE estar aquí o en main.dart (nivel superior)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Asegura que Firebase esté inicializado
-  // Nota: Es posible que necesites la configuración web aquí también si usas web
   await Firebase.initializeApp();
 }
 
-///
-/// Provider para las tareas de inicialización ESENCIALES y BLOQUEANTES.
-/// La app no puede funcionar sin que esto se complete.
-/// La SplashView DEBE esperar a este provider.
-///
 final bootstrapProvider = AsyncNotifierProvider<BootstrapNotifier, void>(() {
   return BootstrapNotifier();
 });
@@ -28,9 +21,9 @@ final bootstrapProvider = AsyncNotifierProvider<BootstrapNotifier, void>(() {
 class BootstrapNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {
-    debugPrint('BootstrapProvider: Inicia carga esencial...');
+    debugPrint('Bootstrap: INICIO');
 
-    // 1. Inicializa Firebase
+    // 1) Firebase (ÚNICO BLOQUEANTE)
     if (kIsWeb) {
       await Firebase.initializeApp(
         options: const FirebaseOptions(
@@ -45,34 +38,31 @@ class BootstrapNotifier extends AsyncNotifier<void> {
     } else {
       await Firebase.initializeApp();
     }
-    debugPrint('BootstrapProvider: Firebase listo.');
+    debugPrint('Bootstrap: Firebase listo');
 
-    // 2. Configura el handler de background
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    debugPrint('BootstrapProvider: Handler de background listo.');
-
-    // 3. Carga las variables de entorno
+    // 2) dotenv DEBE CARGARSE ANTES DE Supabase
     await dotenv.load(fileName: "assets/.env");
-    debugPrint('BootstrapProvider: .env listo.');
+    debugPrint('Bootstrap: .env listo');
 
-    // 4. Inicializa Supabase
+    // 3) Supabase (YA CON .env cargado)
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL']!,
       anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
-    debugPrint('BootstrapProvider: Supabase listo.');
+    debugPrint('Bootstrap: Supabase listo');
 
-    // 5. Configuración de UI
+    // 4) UI
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    debugPrint('BootstrapProvider: UI (orientación) lista.');
-    
-    debugPrint('BootstrapProvider: Carga esencial completada.');
-    
-    // NOTA: Tu appInitProvider (no esencial) ahora puede empezar
-    // si lo hacemos depender de este.
+    debugPrint('Bootstrap: UI lista');
+
+    // 5) Handler FCM
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    debugPrint('Bootstrap: Handler de background listo');
+
+    debugPrint('Bootstrap: COMPLETADO ✓ (Firebase + dotenv + Supabase + UI)');
   }
 }

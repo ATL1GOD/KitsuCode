@@ -1,5 +1,3 @@
-// lib/core/widgets/no_internet_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +5,9 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:kitsucode/core/providers/retry_connection_provider.dart';
+
+// 🔥 1. IMPORTAR EL SNACKBAR PERSONALIZADO
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 /// Un widget genérico para mostrar cuando no hay conexión a Internet
 class NoInternetView extends ConsumerStatefulWidget {
@@ -21,28 +22,31 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
 
   Future<void> _handleRetry() async {
     if (_isRetrying) return; // Prevenir múltiples clicks
-    
+
     setState(() => _isRetrying = true);
-    
+
     try {
       // Ejecutar la función de reintento que devuelve la ruta destino
       final retryFunction = ref.read(retryConnectionProvider);
       final destinationRoute = await retryFunction();
-      
+
       // Si llegamos aquí, la conexión se recuperó
       // Redirigir según autenticación
       if (mounted) {
         context.go(destinationRoute);
       }
     } catch (e) {
-      // Si falla, mostramos un mensaje pero mantenemos la vista
+      // Si falla, mostramos el snackbar personalizado
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No se pudo conectar. Intenta de nuevo.'),
-            backgroundColor: Colors.red,
-          ),
+        // --- 🔥 2. REEMPLAZAR EL SNACKBAR ---
+        // Usamos el 'showErrorSnackbar' (rojo) que es más apropiado
+        // que el 'showWarningSnackbar' (amarillo) para un fallo.
+        showErrorSnackbar(
+          context,
+          'Sin conexión', // Título
+          'No se pudo conectar. Revisa tu conexión e intenta de nuevo.', // Mensaje
         );
+        // --- FIN DEL REEMPLAZO ---
       }
     } finally {
       if (mounted) {
@@ -57,7 +61,8 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
     final textTheme = Theme.of(context).textTheme;
 
     // --- Lógica para obtener el color dinámico ---
-    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    final currentAuthUserId =
+        ref.watch(authStateProvider).value?.session?.user.id;
     final profileState = (currentAuthUserId != null)
         ? ref.watch(userProfileByIdProvider(currentAuthUserId))
         : null;

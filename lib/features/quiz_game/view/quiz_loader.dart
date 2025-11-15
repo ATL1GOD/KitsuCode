@@ -1,9 +1,9 @@
 // lib/features/quiz_game/view/quiz_loader.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/quiz_view.dart';
-import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
-    show RecursoModel;
+import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 
 // --- REFACTOR (PASO 1): Usar un 'factory constructor' ---
 // Esto encapsula la lógica de "cómo crear un QuizData desde JSON"

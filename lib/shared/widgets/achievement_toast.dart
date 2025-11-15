@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; // ¡Ya tenemos este helper!
+import 'package:kitsucode/shared/widgets/smart_image.dart';
 
 class AchievementToast extends StatelessWidget {
   final String title; // <-- 1. AÑADIDO: Título dinámico
@@ -67,19 +68,11 @@ class AchievementToast extends StatelessWidget {
               // --- El Icono ---
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  iconUrl,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 50,
-                      height: 50,
-                      color: colors.onSurface.withOpacity(0.1),
-                      child: Icon(Icons.shield, color: rarityColor),
-                    );
-                  },
+                child: SmartImage(
+                path: iconUrl,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
                 ),
               ),
               const SizedBox(width: 16),

@@ -335,10 +335,8 @@ class _CircularAvatarCell extends StatelessWidget {
                       child: Container(
                         color: Colors.transparent,
                         
-                        // --- ⬇️ AQUÍ ESTÁ EL CAMBIO ⬇️ ---
                         // Antes era Image.asset(...)
                         child: SmartImage(path: avatar.assetPath, fit: BoxFit.cover),
-                        // --- ⬆️ FIN DEL CAMBIO ⬆️ ---
 
                       ),
                     ),

@@ -73,7 +73,7 @@ class ProfileHeader extends ConsumerWidget {
                         height: 220,
                         width: size.width,
                         connectDots: false,
-                        numberOfParticles: 20,
+                        numberOfParticles: 10, // Optimizado: 10 partículas en lugar de 20
                         particleColor: Colors.white.withOpacity(0.5),
                         speedOfParticles: 0.5,
                         isRandomColor: false,

@@ -1,18 +1,20 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:kitsucode/shared/widgets/optimized_glass_card.dart';
 
 class ProfileProgressSection extends ConsumerWidget {
   final String userId;
   final bool showViewAllButton;
+  final bool enableGlassEffect;
 
   const ProfileProgressSection({
     super.key,
     required this.userId,
     this.showViewAllButton = true,
+    this.enableGlassEffect = true,
   });
 
   @override
@@ -21,7 +23,8 @@ class ProfileProgressSection extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final statsState = ref.watch(userStatsByIdProvider(userId));
 
-    return _GlassCard(
+    return OptimizedGlassCard(
+      enableGlassEffect: enableGlassEffect,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
         child: Column(
@@ -104,53 +107,7 @@ class _CompactStat extends StatelessWidget {
   }
 }
 
-class _GlassCard extends StatelessWidget {
-  final Widget child;
-  const _GlassCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    // 1. Obtenemos el tema y el brillo
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    // 2. Definimos los colores adaptativos
-    final Color cardColor;
-    final Color borderColor;
-
-    if (isDarkMode) {
-      // --- MODO OSCURO ---
-      // Glass effect más sutil con gris oscuro
-      cardColor = colors.surfaceContainerHighest.withOpacity(0.6); 
-      borderColor = colors.outline.withOpacity(0.3);
-    } else {
-      // --- MODO CLARO ---
-      // Glass effect más transparente para ver las partículas
-      cardColor = Colors.white.withOpacity(0.2); 
-      borderColor = colors.outline.withOpacity(0.2);
-    }
-
-    // 3. Construimos el widget
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Mantenemos el blur
-          child: Container(
-            decoration: BoxDecoration(
-              color: cardColor,     // <-- Color adaptativo
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: borderColor) // <-- Borde adaptativo
-            ),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}
+// _GlassCard removido - ahora usamos OptimizedGlassCard compartido
 
 class _ProgressLoadingShimmer extends StatelessWidget {
   const _ProgressLoadingShimmer();

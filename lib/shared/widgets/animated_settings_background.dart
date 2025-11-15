@@ -55,7 +55,7 @@ class AnimatedSettingsBackground extends StatelessWidget {
                   height: double.infinity,
                   fit: BoxFit.cover,
                   repeat: true,
-                  frameRate: FrameRate.max,
+                  frameRate: FrameRate(30), // Optimizado: 30fps en lugar de max
                 ),
               ),
             ),

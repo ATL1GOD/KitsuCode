@@ -180,6 +180,7 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                             child: ProfileProgressSection(
                               userId: targetUserId,
                               showViewAllButton: isCurrentUserProfile,
+                              enableGlassEffect: _isTabVisible && _isAppActive,
                             ),
                           ),
                           FadeInUp(
@@ -188,6 +189,7 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                             child: ProfileAchievementsSection(
                               userId: targetUserId,
                               isCurrentUserProfile: isCurrentUserProfile,
+                              enableGlassEffect: _isTabVisible && _isAppActive,
                             ),
                           ),
                         ],

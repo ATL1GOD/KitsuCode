@@ -275,8 +275,8 @@ class FCMService {
         _router.go('/home');
         break;
       case 'streak_reminder':
-        // Navegar a perfil para ver racha
-        _router.go('/navbar/profile');
+        // Navegar a HOME para ver racha
+        _router.go('/home');
         break;
       case 'inactivity_reminder':
         // Navegar a home

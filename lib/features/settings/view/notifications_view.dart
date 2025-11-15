@@ -215,7 +215,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                 ? false
                                 : settings.any((s) => s.habilitado);
                             const tiposOcultos = {
-                              'Recordatorio de Racha',
                               'Recordatorio de Inactividad',
                             };
                             final visibleSettings = settings
@@ -228,6 +227,13 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                   s.nombreTipo.trim() ==
                                   'Recordatorio de Estudio',
                             );
+
+                            final streakReminderSetting =
+                              visibleSettings.firstWhereOrNull(
+                            (s) =>
+                                s.nombreTipo.trim() ==
+                                'Recordatorio de Racha',
+                          );
                             final amigosSettings = visibleSettings
                                 .where(
                                   (s) =>
@@ -297,6 +303,25 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       },
                                     ),
                                   ),
+                                  if (streakReminderSetting != null)
+                              FadeInDown(
+                                delay: const Duration(milliseconds: 350),
+                                child: SettingsSwitchTile(
+                                  title: 'Recordatorio de Racha',
+                                  subtitle: 'Alertas para no perder tu racha',
+                                  icon: Icons.local_fire_department_outlined, // Icono de fuego
+                                  dynamicColor: dynamicColor,
+                                  initialValue: streakReminderSetting.habilitado,
+                                  onChanged: (newValue) {
+                                    ref
+                                        .read(notificationSettingsProvider.notifier)
+                                        .updateEnabled(
+                                          streakReminderSetting.preferenciaId,
+                                          newValue,
+                                        );
+                                  },
+                                ),
+                              ),
                                 ],
                                 FadeInDown(
                                   delay: const Duration(milliseconds: 400),

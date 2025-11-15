@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
 import 'package:kitsucode/features/notifications/service/fcm_service.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 /// Provider del servicio FCM
 /// (Este es tu provider. Está perfecto)

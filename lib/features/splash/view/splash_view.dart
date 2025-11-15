@@ -138,10 +138,8 @@ class _SplashViewState extends ConsumerState<SplashView>
     _setupAnimation();
     _listenBootstrap();
 
-    // 🔥 LA CLAVE: ESPERAR A QUE LA SPLASH NATIVA SE HAYA IDO COMPLETAMENTE
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(const Duration(milliseconds: 120)); 
-      // ⬆ Pequeño delay para asegurar que ya no está la splash nativa
+    // Optimizado: Removido delay innecesario, iniciar inmediatamente
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller.forward();
     });
   }

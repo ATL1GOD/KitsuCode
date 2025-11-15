@@ -9,6 +9,7 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
 // 🔥 1. IMPORTAR EL CONNECTIVITY PROVIDER
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 
 // --- Filtros (Sin cambios) ---

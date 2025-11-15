@@ -1,6 +1,7 @@
 // lib/core/providers/connectivity_provider.dart
 
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -86,7 +87,7 @@ Future<bool> _checkSupabaseConnection() async {
 
     return true;
   } catch (e) {
-    debugPrint('❌ Verificación de Supabase falló: $e');
+    if (kDebugMode) debugPrint('❌ Verificación de Supabase falló: $e');
     return false;
   }
 }

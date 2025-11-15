@@ -3,6 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert'; // Importante para decodificar el JSON de recursos
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 // 1. CLASE AUXILIAR (MODIFICADA)
 class ChallengeData {
@@ -21,7 +22,7 @@ class ChallengeData {
 final supabase = Supabase.instance.client;
 
 // 3. EL PROVIDER PRINCIPAL (CORREGIDO)
-final challengeProvider = FutureProvider.family<ChallengeData, int>((
+final challengeProvider = FutureProvider.autoDispose.family<ChallengeData, int>((
   ref,
   retoId,
 ) async {

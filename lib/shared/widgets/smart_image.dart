@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Un widget "inteligente" que muestra una imagen desde un 'asset' local
-/// o desde una URL de 'network' (http).
+/// o desde una URL de 'network' (http) usando caché.
 class SmartImage extends StatelessWidget {
   final String path;
   final BoxFit fit;
@@ -18,31 +19,21 @@ class SmartImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Revisamos si el path es una URL de internet
     final bool esUrlDeRed = path.startsWith('http');
 
     if (esUrlDeRed) {
-      // 2. Si es URL, usamos Image.network
-      return Image.network(
-        path,
+      // 2. Si es URL, usamos CachedNetworkImage
+      return CachedNetworkImage(
+        imageUrl: path,
         width: width,
         height: height,
         fit: fit,
         // Muestra un 'cargando...'
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          );
-        },
-        // Muestra un ícono de error si falla la descarga
-        errorBuilder: (context, error, stackTrace) {
+        placeholder: (context, url) => const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        // Muestra un ícono de error
+        errorWidget: (context, url, error) {
           return Container(
             width: width,
             height: height,

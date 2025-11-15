@@ -162,12 +162,12 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                 child: Lottie.asset(
                   'assets/animations/background_train.json',
                   fit: BoxFit.cover,
+                  frameRate: FrameRate(30), // Optimizado: 30fps
                   controller: _lottieController,
-                  // --- 🔥 8. ASIGNAR DURACIÓN AL CONTROLADOR ---
                   onLoaded: (composition) {
                     _lottieController.duration = composition.duration;
                     _isLottieLoaded = true;
-                    _updateAnimationState(); // Iniciar si debe
+                    _updateAnimationState();
                   },
                 ),
               ),

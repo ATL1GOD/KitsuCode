@@ -1,25 +1,23 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
-// 1. Importar el provider que necesitamos
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/shared/widgets/optimized_glass_card.dart';
 import 'achievement_card.dart';
 import 'achievement_modal.dart';
 
 class ProfileAchievementsSection extends ConsumerWidget {
   final String userId;
   final bool isCurrentUserProfile;
-  // 2. Eliminar userProfile del constructor
-  // final UserProfileModel userProfile;
+  final bool enableGlassEffect;
 
   const ProfileAchievementsSection({
     super.key,
     required this.userId,
     required this.isCurrentUserProfile,
-    // required this.userProfile, (Eliminado)
+    this.enableGlassEffect = true,
   });
 
   @override
@@ -64,7 +62,8 @@ class ProfileAchievementsSection extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.only(top: 20.0),
-      child: _GlassCard(
+      child: OptimizedGlassCard(
+        enableGlassEffect: enableGlassEffect,
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -160,54 +159,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
   }
 }
 
-// (_GlassCard y _AchievementsLoadingShimmer sin cambios)
-class _GlassCard extends StatelessWidget {
-  final Widget child;
-  const _GlassCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    // 1. Obtenemos el tema y el brillo
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    // 2. Definimos los colores adaptativos
-    final Color cardColor;
-    final Color borderColor;
-
-    if (isDarkMode) {
-      // --- MODO OSCURO ---
-      // Glass effect más sutil con gris oscuro
-      cardColor = colors.surfaceContainerHighest.withOpacity(0.6);
-      borderColor = colors.outline.withOpacity(0.3);
-    } else {
-      // --- MODO CLARO ---
-      // Glass effect más transparente para ver las partículas
-      cardColor = Colors.white.withOpacity(0.2);
-      borderColor = colors.outline.withOpacity(0.2);
-    }
-
-    // 3. Construimos el widget
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Mantenemos el blur
-          child: Container(
-            decoration: BoxDecoration(
-                color: cardColor, // <-- Color adaptativo
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: borderColor) // <-- Borde adaptativo
-                ),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}
+// _GlassCard removido - ahora usamos OptimizedGlassCard compartido
 
 class _AchievementsLoadingShimmer extends StatelessWidget {
   final ColorScheme colors;

@@ -5,8 +5,8 @@ import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
-// ✅ 1. IMPORTA EL NUEVO MODAL
 import 'package:kitsucode/features/profile/view/widgets/avatar_modal.dart'; 
+import 'package:kitsucode/shared/widgets/smart_image.dart';
 
 enum AvatarCategory { comun, especial }
 
@@ -200,7 +200,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
 
 // --- WIDGETS DE UI ---
 
-class _SelectedAvatarDisplay extends StatelessWidget {
+class _SelectedAvatarDisplay extends ConsumerWidget { // 1. Cambia a ConsumerWidget
   final int avatarId;
   final double size;
   final Color dynamicColor;
@@ -212,10 +212,25 @@ class _SelectedAvatarDisplay extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // 2. Añade WidgetRef
     final colors = Theme.of(context).colorScheme;
-    final avatarPath = getAvatarAssetPathById(avatarId);
     
+    // 3. Obtén el path REAL desde el provider
+    final String avatarPath = ref.watch(currentUserAvatarsProvider).when(
+          data: (avatars) {
+            // Busca el avatar por ID en la lista cargada
+            final avatar = avatars.firstWhere(
+              (a) => a.id == avatarId,
+              // Si no lo encuentra (raro), usa el primer avatar por defecto
+              orElse: () => avatars.first, 
+            );
+            return avatar.assetPath;
+          },
+          // Mientras carga o hay error, muestra una ruta vacía
+          loading: () => '', 
+          error: (e, s) => '',
+        );
+
     return Container(
       width: size,
       height: size,
@@ -230,7 +245,10 @@ class _SelectedAvatarDisplay extends StatelessWidget {
       child: ClipOval(
         child: Container(
           color: Colors.transparent,
-          child: Image.asset(avatarPath, fit: BoxFit.cover),
+          // 4. Usa el nuevo widget con el path correcto
+          child: (avatarPath.isEmpty)
+              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+              : SmartImage(path: avatarPath, fit: BoxFit.cover),
         ),
       ),
     );
@@ -270,7 +288,7 @@ class _CategoryIconButton extends StatelessWidget {
 class _CircularAvatarCell extends StatelessWidget {
   final AvatarModel avatar;
   final bool isSelected;
-  final VoidCallback? onTap; // Ahora el onTap maneja ambas lógicas
+  final VoidCallback? onTap;
 
   const _CircularAvatarCell({
     required this.avatar,
@@ -284,7 +302,7 @@ class _CircularAvatarCell extends StatelessWidget {
     final isLocked = !avatar.desbloqueado;
 
     return GestureDetector(
-      onTap: onTap, // ✅ 3. ONTAP AHORA ES REQUERIDO Y SE PASA AQUÍ
+      onTap: onTap,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.maxWidth;
@@ -311,20 +329,17 @@ class _CircularAvatarCell extends StatelessWidget {
                   ),
                   child: ClipOval(
                     child: ColorFiltered(
-                      // La celda de la cuadrícula SÍ se muestra en gris
                       colorFilter: isLocked
                           ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
                           : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                       child: Container(
                         color: Colors.transparent,
-                        child: Image.asset(avatar.assetPath, fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: colors.surfaceContainer,
-                              child: Icon(Icons.error_outline, color: colors.outline),
-                            );
-                          },
-                        ),
+                        
+                        // --- ⬇️ AQUÍ ESTÁ EL CAMBIO ⬇️ ---
+                        // Antes era Image.asset(...)
+                        child: SmartImage(path: avatar.assetPath, fit: BoxFit.cover),
+                        // --- ⬆️ FIN DEL CAMBIO ⬆️ ---
+
                       ),
                     ),
                   ),

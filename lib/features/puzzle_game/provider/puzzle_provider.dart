@@ -148,7 +148,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         error: null,
       );
     } catch (e) {
-      if (kDebugMode) debugPrint('Error al cargar reto de puzzle: $e');
+      debugPrint('Error al cargar reto de puzzle: $e');
       state = state.copyWith(
         isLoading: false,
         error: "Error al parsear el reto: $e", // <-- Corregido

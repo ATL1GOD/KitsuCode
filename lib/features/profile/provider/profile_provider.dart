@@ -16,7 +16,6 @@ import 'dart:ui'; // Import para la clase Color
 
 // 🔥 1. IMPORTAR EL CONNECTIVITY PROVIDER
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 // ✅ 1. EL CANDADO GLOBAL
 // (Tu código de candado y notifiers está perfecto, no se toca)
@@ -25,7 +24,7 @@ Color _safeParseColor(String colorString) {
   try {
     return Color(int.parse(colorString));
   } catch (e) {
-    if (kDebugMode) debugPrint('Error al parsear color "$colorString": $e');
+    debugPrint('Error al parsear color "$colorString": $e');
     return const Color(0xFF9E9E9E); // Gris
   }
 }
@@ -39,7 +38,7 @@ final profileRepositoryProvider = Provider((ref) {
 // Provider para obtener el perfil de un usuario por su ID
 // 🔥 MODIFICADO: Ahora reacciona a la conexión
 final userProfileByIdProvider =
-    StreamProvider.autoDispose.family<UserProfileModel, String>((ref, userId) {
+    StreamProvider.family<UserProfileModel, String>((ref, userId) {
   // "Escuchar" la conexión
   final connectivity = ref.watch(connectivityProvider);
 
@@ -65,7 +64,7 @@ final userProfileByIdProvider =
 // Provider para los logros
 // 🔥 MODIFICADO: Ahora reacciona a la conexión
 final userAchievementsProvider =
-    FutureProvider.autoDispose.family<List<UserAchievementModel>, String>(
+    FutureProvider.family<List<UserAchievementModel>, String>(
         (ref, userId) async {
   // Esperar a que la conexión esté confirmada
   final connectivityStatus = await ref.watch(connectivityProvider.future);
@@ -311,7 +310,7 @@ class AchievementNotifier extends StateNotifier<bool> {
             _addToQueue(notificationData);
           }
         } catch (e) {
-          if (kDebugMode) debugPrint('Error al recibir notificación de logro: $e');
+          debugPrint('Error al recibir notificación de logro: $e');
         }
       },
     ).subscribe();
@@ -428,7 +427,7 @@ class AvatarNotifier extends StateNotifier<bool> {
             _addToQueue(notificationData);
           }
         } catch (e) {
-          if (kDebugMode) debugPrint('Error al recibir notificación de avatar: $e');
+          debugPrint('Error al recibir notificación de avatar: $e');
         }
       },
     ).subscribe();

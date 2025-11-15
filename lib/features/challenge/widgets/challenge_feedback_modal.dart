@@ -44,11 +44,7 @@ class ChallengeFeedbackModal extends StatelessWidget {
           SizedBox(
             width: 120,
             height: 120,
-            child: Lottie.asset(
-              lottieAsset,
-              repeat: true,
-              frameRate: FrameRate(30), // Optimizado: 30fps
-            ),
+            child: Lottie.asset(lottieAsset, repeat: true), // La dejamos en bucle
           ),
           const SizedBox(height: 20),
           // Título

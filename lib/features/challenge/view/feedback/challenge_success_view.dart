@@ -65,7 +65,6 @@ class ChallengeSuccessView extends ConsumerWidget {
                     child: Lottie.asset(
                       'assets/animations/fox_run.json',
                       repeat: true,
-                      frameRate: FrameRate(30), // Optimizado: 30fps
                     ),
                   ),
                   const SizedBox(height: 32),

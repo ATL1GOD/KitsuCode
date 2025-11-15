@@ -66,7 +66,7 @@ final mapStructureRealtimeProvider = Provider((ref) { // <-- ¡CAMBIO AQUÍ!
   final channel = supabase.channel('public:map_structure_changes');
 
   void reloadMap(dynamic payload) {
-    if (kDebugMode) debugPrint("--- Realtime: ¡Cambio ESTRUCTURAL detectado en el mapa! Recargando... ---");
+    debugPrint("--- Realtime: ¡Cambio ESTRUCTURAL detectado en el mapa! Recargando... ---");
     // Invalidamos el provider principal del mapa.
     ref.invalidate(homeViewModelProvider);
   }

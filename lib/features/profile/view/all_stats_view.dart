@@ -126,7 +126,7 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
-                    frameRate: FrameRate(30), // Optimizado: 30fps
+                    // --- 🔥 5. ASIGNAR CONTROLADOR Y onLoaded ---
                     controller: _lottieController,
                     onLoaded: (composition) {
                       if (_lottieController.duration != composition.duration) {

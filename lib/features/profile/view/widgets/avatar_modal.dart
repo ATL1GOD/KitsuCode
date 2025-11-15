@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui'; // Para la clase Color
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 // --- Función de ayuda para el color ---
 Color _safeParseColor(String colorString) {
   try {
     return Color(int.parse(colorString));
   } catch (e) {
-    if (kDebugMode) debugPrint('Error al parsear color "$colorString": $e');
+    debugPrint('Error al parsear color "$colorString": $e');
     return const Color(0xFF9E9E9E); // Gris
   }
 }

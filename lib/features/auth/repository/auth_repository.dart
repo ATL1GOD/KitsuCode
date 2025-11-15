@@ -1,6 +1,5 @@
 // lib/features/auth/repository/auth_repository.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 class AuthRepository {
   final SupabaseClient _supabaseClient;

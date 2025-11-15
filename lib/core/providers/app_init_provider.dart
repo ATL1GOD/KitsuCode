@@ -1,7 +1,6 @@
 // lib/core/providers/app_init_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/settings/provider/settings_provider.dart';
@@ -19,7 +18,7 @@ class AppInitNotifier extends AsyncNotifier<void> {
     // Simplemente lo leemos para que empiece, pero NO lo esperamos.
     ref.read(bootstrapProvider);
 
-    if (kDebugMode) debugPrint('AppInit: inicio');
+    debugPrint('AppInit: inicio');
 
     final session = ref.read(authStateProvider).value?.session;
 
@@ -39,15 +38,15 @@ class AppInitNotifier extends AsyncNotifier<void> {
         ]).timeout(
           const Duration(seconds: 5),
           onTimeout: () {
-            if (kDebugMode) debugPrint('AppInit Timeout');
+            debugPrint('AppInit Timeout');
             return <void>[]; // FIX CORRECTO
           },
         );
       } catch (e) {
-        if (kDebugMode) debugPrint('AppInit ERROR: $e');
+        debugPrint('AppInit ERROR: $e');
       }
 
-      if (kDebugMode) debugPrint('AppInit: fin');
+      debugPrint('AppInit: fin');
     });
 
     // El build() retorna 'void' inmediatamente.

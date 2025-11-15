@@ -307,7 +307,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
                       'assets/lottie/streak_fire.json',
                       repeat: false,
                       fit: BoxFit.contain,
-                      frameRate: FrameRate(30), // Optimizado: 30fps
                       errorBuilder: (_, __, ___) => const SizedBox(),
                     ),
                   ),

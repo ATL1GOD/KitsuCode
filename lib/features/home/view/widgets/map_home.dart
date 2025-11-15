@@ -9,7 +9,6 @@ import 'package:kitsucode/features/home/view/widgets/animated_level_node.dart';
 
 // --- ¡AÑADE ESTA IMPORTACIÓN! ---
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 // --- FIN DE LA IMPORTACIÓN ---
 
 class Section extends ConsumerWidget {
@@ -33,7 +32,7 @@ class Section extends ConsumerWidget {
 
     // 1. Si no hay retoId, es una lección (sin cambios)
     if (level.retoId == null) {
-      if (kDebugMode) debugPrint(
+      debugPrint(
         "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
       );
       // context.push('/leccion/${level.idNivel}');

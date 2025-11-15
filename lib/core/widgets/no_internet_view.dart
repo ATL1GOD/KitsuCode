@@ -107,7 +107,6 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
                     Image.asset(
                       'assets/images/challenge/alerta7.png',
                       width: 200,
-                      cacheWidth: 400, // Optimizado: 2x para retina displays
                     ),
                     const SizedBox(height: 24),
 

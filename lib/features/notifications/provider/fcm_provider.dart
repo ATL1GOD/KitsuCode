@@ -23,22 +23,22 @@ final fcmInitializationProvider = Provider<void>((ref) {
   
   // Escucha los cambios en el estado de autenticación
   ref.listen(authStateProvider, (previous, next) {
-
+    
     // Reacciona solo cuando el estado tenga datos
     next.whenData((authState) {
       if (authState.session != null) {
         // ✅ Usuario autenticado
-        if (kDebugMode) debugPrint("FCM: Usuario autenticado. Inicializando FCM Service...");
+        debugPrint("FCM: Usuario autenticado. Inicializando FCM Service...");
         try {
           // Obtenemos el servicio (del provider de arriba) y lo inicializamos.
           // NO usamos 'await' para no bloquear.
           ref.read(fcmServiceProvider).initialize();
         } catch (e) {
-          if (kDebugMode) debugPrint('Error al inicializar FCM Service: $e');
+          debugPrint('Error al inicializar FCM Service: $e');
         }
       } else {
         // ❔ Usuario cerró sesión
-        if (kDebugMode) debugPrint("FCM: Usuario cerró sesión. Eliminando token.");
+        debugPrint("FCM: Usuario cerró sesión. Eliminando token.");
         // Llamamos a deleteToken() para limpiar el token de la BD
         ref.read(fcmServiceProvider).deleteToken();
       }

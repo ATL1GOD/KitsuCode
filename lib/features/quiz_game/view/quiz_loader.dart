@@ -37,7 +37,7 @@ class QuizData {
         mapaRespuestas[key] = pregunta['respuesta'] as String;
         mapaOpciones[key] = Map<String, dynamic>.from(pregunta['opciones']);
       } catch (e) {
-        if (kDebugMode) debugPrint("Error parseando pregunta: $e");
+        debugPrint("Error parseando pregunta: $e");
       }
     }
 
@@ -77,7 +77,7 @@ class QuizLoaderPage extends ConsumerWidget {
     try {
       mydata = QuizData.fromChallengeContent(challengeContent);
     } catch (e) {
-      if (kDebugMode) debugPrint("Error creando QuizData: $e");
+      debugPrint("Error creando QuizData: $e");
       // Si falla la creación, mostramos la pantalla de error genérica.
       return Scaffold(
         appBar: AppBar(title: const Text('Error')),

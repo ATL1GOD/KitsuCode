@@ -9,7 +9,6 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:url_launcher/url_launcher.dart'; // Para abrir los enlaces
 import 'package:kitsucode/core/providers/app_provider.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 // --- Modelo Temporal de Recursos ---
 class RecursoModel {
@@ -52,7 +51,7 @@ class ChallengeFailureView extends ConsumerWidget {
   Future<void> _launchURL(String urlString) async {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      if (kDebugMode) debugPrint('No se pudo lanzar $urlString');
+      debugPrint('No se pudo lanzar $urlString');
     }
   }
 

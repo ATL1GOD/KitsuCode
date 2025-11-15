@@ -6,6 +6,8 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/core/providers/connectivity_provider.dart';
+
 
 const Color _kitsuOrange = Color(0xFFf79126);
 
@@ -32,20 +34,44 @@ class _SplashViewState extends ConsumerState<SplashView>
   late ProviderSubscription<AsyncValue<void>> _bootstrapSub;
 
   void _tryNavigate() {
-    if (_navigated) return;
-    if (!_bootstrapDone || !_animationDone) return;
+  if (_navigated) return;
+  if (!_bootstrapDone || !_animationDone) return;
 
-    _navigated = true;
-    FlutterNativeSplash.remove();
+  _navigated = true;
+  FlutterNativeSplash.remove();
 
-    final isLogged = ref.read(authStateProvider).value?.session != null;
-
-    if (isLogged) {
-      context.go('/home');
-    } else {
-      context.go('/auth');
-    }
-  }
+  // 🔥 VERIFICAR CONECTIVIDAD ANTES DE NAVEGAR
+  final connectivityState = ref.read(initialConnectivityProvider);
+  
+  connectivityState.when(
+    data: (status) {
+      if (status == ConnectivityStatus.offline) {
+        // Si no hay internet, ir a NoInternetView
+        context.go('/no-internet');
+        return;
+      }
+      
+      // Si hay internet, navegación normal según autenticación
+      final isLogged = ref.read(authStateProvider).value?.session != null;
+      if (isLogged) {
+        context.go('/home');
+      } else {
+        context.go('/auth');
+      }
+    },
+    loading: () {
+      // Mientras verifica conectividad, esperar un poco
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!mounted) return;
+        _tryNavigate(); // Reintentar
+      });
+    },
+    error: (_, __) {
+      // Si hay error verificando, asumir sin internet
+      context.go('/no-internet');
+    },
+  );
+}
 
   void _setupAnimation() {
     const double totalDuration = 3.0; 

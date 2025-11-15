@@ -1,3 +1,5 @@
+// lib/features/profile/view/widgets/profile_header.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,48 +11,44 @@ import 'package:particles_fly/particles_fly.dart';
 class ProfileHeader extends ConsumerWidget {
   final String userId;
   final bool isCurrentUserProfile;
+  // --- 🔥 1. AÑADIR NUEVAS PROPIEDADES ---
+  final bool isAppActive;
+  final bool isTabVisible;
 
   const ProfileHeader({
     super.key,
     required this.userId,
     required this.isCurrentUserProfile,
+    // --- 🔥 2. AÑADIR AL CONSTRUCTOR (requeridas) ---
+    this.isAppActive = true, // Valor por defecto por si se usa en otro lado
+    this.isTabVisible = true, // Valor por defecto
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Observamos el provider de perfil COMPLETO
     final profileState = ref.watch(userProfileByIdProvider(userId));
-
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
 
-    // 2. Usamos .when() para manejar los 3 estados: carga, error, y datos
-    //    ¡ESTA ES LA MAGIA!
     return profileState.when(
-      // 3. ¡LA CLAVE! No mostrar loader si solo estamos refrescando
-      skipLoadingOnRefresh: true, 
-      
+      skipLoadingOnRefresh: true,
       loading: () {
-        // Estado de carga INICIAL (la primera vez que entras)
         return const SizedBox(height: 365); // Placeholder
       },
       error: (error, stack) {
-        // Estado de error
         return SizedBox(
           height: 365,
           child: Center(child: Text('Error: $error')),
         );
       },
       data: (userProfile) {
-        // 4. Estado de DATOS (¡éxito!)
-        // Ahora tenemos el 'userProfile' y lo usamos como antes
-        final dynamicColor = getAvatarColorById(userProfile.idAvatarSeleccionado);
+        final dynamicColor =
+            getAvatarColorById(userProfile.idAvatarSeleccionado);
         final avatarAssetPath =
             getAvatarAssetPathById(userProfile.idAvatarSeleccionado);
         Widget avatarImage = Image.asset(avatarAssetPath, fit: BoxFit.cover);
 
-        // (El resto de tu widget se queda 100% igual)
         return Stack(
           alignment: Alignment.topCenter,
           children: [
@@ -69,17 +67,21 @@ class ProfileHeader extends ConsumerWidget {
                     ],
                   ),
                 ),
-                child: ParticlesFly(
-                  height: 220,
-                  width: size.width,
-                  connectDots: false,
-                  numberOfParticles: 20,
-                  particleColor: Colors.white.withOpacity(0.5),
-                  speedOfParticles: 0.5,
-                  isRandomColor: false,
-                ),
+                // --- 🔥 3. APLICAR LÓGICA DE VISIBILIDAD ---
+                child: (isAppActive && isTabVisible) // <-- ¡LA CONDICIÓN!
+                    ? ParticlesFly(
+                        height: 220,
+                        width: size.width,
+                        connectDots: false,
+                        numberOfParticles: 20,
+                        particleColor: Colors.white.withOpacity(0.5),
+                        speedOfParticles: 0.5,
+                        isRandomColor: false,
+                      )
+                    : const SizedBox.shrink(), // <-- Si no, no renderizar nada
               ),
             ),
+            // ... (El resto de tu widget no cambia) ...
             Padding(
               padding: const EdgeInsets.only(top: 70.0),
               child: Column(

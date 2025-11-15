@@ -1,3 +1,5 @@
+// lib/features/profile/view/all_stats_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,16 +12,67 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 
-class AllStatsView extends ConsumerWidget {
+// 🔥 1. IMPORTAR VISIBILITY DETECTOR
+import 'package:visibility_detector/visibility_detector.dart';
+
+
+// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
+class AllStatsView extends ConsumerStatefulWidget {
   const AllStatsView({super.key});
 
-  // Lógica para el color dinámico
+  // (El método estático se queda igual)
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
     return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AllStatsView> createState() => _AllStatsViewState();
+}
+
+// --- 🔥 3. AÑADIR ESTADO, TickerProviderStateMixin y WidgetsBindingObserver ---
+class _AllStatsViewState extends ConsumerState<AllStatsView>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+      
+  late final AnimationController _lottieController;
+
+  // Banderas de estado
+  bool _isPageVisible = true;
+  bool _isAppActive = true;
+  bool _isLottieLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lottieController = AnimationController(vsync: this);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _lottieController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    setState(() {
+      _isAppActive = state == AppLifecycleState.resumed;
+      _updateAnimationState();
+    });
+  }
+
+  void _updateAnimationState() {
+    if (_isAppActive && _isPageVisible && _isLottieLoaded) {
+      _lottieController.repeat();
+    } else {
+      _lottieController.stop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -32,176 +85,199 @@ class AllStatsView extends ConsumerWidget {
     final statsState = ref.watch(userStatsByIdProvider(currentUserId));
     final profileState = ref.watch(userProfileByIdProvider(currentUserId));
 
-    return Scaffold(
-      backgroundColor: colors.surfaceContainerLowest,
-      body: profileState.when(
-        loading: () => const _StatsLoadingShimmer(),
-        error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
-        data: (profile) {
-          final dynamicColor = getHeaderColor(profile, colors);
+    // --- 🔥 4. ENVOLVER EL SCAFFOLD CON VISIBILITYDETECTOR ---
+    return VisibilityDetector(
+      key: const Key('all-stats-detector'),
+      onVisibilityChanged: (visibilityInfo) {
+        setState(() {
+          _isPageVisible = visibilityInfo.visibleFraction > 0.1;
+          _updateAnimationState();
+        });
+      },
+      child: Scaffold(
+        backgroundColor: colors.surfaceContainerLowest,
+        body: profileState.when(
+          loading: () => const _StatsLoadingShimmer(),
+          error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
+          data: (profile) {
+            final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
 
-          return Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha(100),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.7]
+            return Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          dynamicColor.withAlpha(100),
+                          colors.surfaceContainerLowest,
+                        ],
+                        stops: const [0.0, 0.7]),
                   ),
                 ),
-              ),
-
-              // ANIMACIÓN DE FONDO CON LOTTIE
-              ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  // colors.primary o colors.secondary los estoy considerando jaja
-                  colors.secondaryFixedDim.withOpacity(0.8), 
-                  
-                  // Este modo de fusión tiñe la imagen original.
-                  BlendMode.srcIn, 
+                ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    colors.secondaryFixedDim.withOpacity(0.8),
+                    BlendMode.srcIn,
+                  ),
+                  child: Lottie.asset(
+                    'assets/animations/spring.json',
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    // --- 🔥 5. ASIGNAR CONTROLADOR Y onLoaded ---
+                    controller: _lottieController,
+                    onLoaded: (composition) {
+                      if (_lottieController.duration != composition.duration) {
+                        _lottieController.duration = composition.duration;
+                      }
+                      _isLottieLoaded = true;
+                      _updateAnimationState();
+                    },
+                  ),
                 ),
-                child: Lottie.asset(
-                  'assets/animations/spring.json', 
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-
-
-              SafeArea(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Row(
-                        children: [
-                          InkWell(
-                            onTap: () => context.pop(),
-                            borderRadius: BorderRadius.circular(30),
-                            child: Container(
-                              padding: const EdgeInsets.all(8.0),
-                              decoration: BoxDecoration(
-                                color: colors.surface.withAlpha(50),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: colors.outlineVariant.withAlpha(130))
+                SafeArea(
+                  child: Column(
+                    children: [
+                      // ... (Tu barra superior no cambia) ...
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () => context.pop(),
+                              borderRadius: BorderRadius.circular(30),
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                    color: colors.surface.withAlpha(50),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: colors.outlineVariant
+                                            .withAlpha(130))),
+                                child: Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: colors.onSurface),
                               ),
-                              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
                             ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Estadísticas',
-                              textAlign: TextAlign.center,
-                              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            Expanded(
+                              child: Text(
+                                'Estadísticas',
+                                textAlign: TextAlign.center,
+                                style: textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
+                            const SizedBox(width: 48),
+                          ],
+                        ),
                       ),
-                    ),
-
-                    Expanded(
-                      child: statsState.when(
-                        loading: () => const _StatsLoadingShimmer(),
-                        error: (e, s) => Center(child: Text('Error al cargar estadísticas: $e')),
-                        data: (stats) {
-                          return ListView(
-                            padding: const EdgeInsets.all(20.0),
-                            children: [
-                              FadeInDown(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      profile.nombrePerfil,
-                                      style: textTheme.headlineMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: colors.onSurface,
-                                      )
-                                    ),
-                                    const SizedBox(height: 10),
-                                    ElevatedButton.icon(
-                                      onPressed: () {
-                                          // Asegúrate de que currentUserId no sea nulo antes de navegar
+                      Expanded(
+                        child: statsState.when(
+                          loading: () => const _StatsLoadingShimmer(),
+                          error: (e, s) => Center(
+                              child: Text('Error al cargar estadísticas: $e')),
+                          data: (stats) {
+                            // ... (Tu ListView no cambia) ...
+                            return ListView(
+                              padding: const EdgeInsets.all(20.0),
+                              children: [
+                                FadeInDown(
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                          profile.nombrePerfil,
+                                          style: textTheme.headlineMedium
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: colors.onSurface,
+                                          )),
+                                      const SizedBox(height: 10),
+                                      ElevatedButton.icon(
+                                        onPressed: () {
                                           if (currentUserId != null) {
                                             context.pushNamed(
                                               'challenge-history',
                                               pathParameters: {
-                                                'userId': currentUserId, // <-- ¡AQUÍ ESTÁ EL ARREGLO!
+                                                'userId': currentUserId, 
                                               },
                                             );
                                           }
                                         },
-                                      icon: const Icon(Icons.history, size: 20),
-                                      label: const Text('Ver historial'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: colors.primary,
-                                        foregroundColor: colors.onPrimary,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                        icon:
+                                            const Icon(Icons.history, size: 20),
+                                        label: const Text('Ver historial'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: colors.primary,
+                                          foregroundColor: colors.onPrimary,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20)),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 30),
-
-                              _StatsCard(
-                                child: Column(
-                                  children: [
-                                    _StatRow(
-                                      icon: Icons.shield_outlined,
-                                      title: 'Retos Completados',
-                                      value: stats.retosCompletados,
-                                      color: colors.secondary,
-                                      delay: 200.ms,
-                                    ),
-                                    _StatRow(
-                                      icon: Icons.local_fire_department,
-                                      title: 'Racha de Días',
-                                      value: stats.rachaDias,
-                                      color: colors.primary,
-                                      delay: 300.ms,
-                                    ),
-                                    _StatRow(
-                                      icon: Icons.check_circle_outline,
-                                      title: 'Aciertos',
-                                      value: stats.porcentajeAciertos,
-                                      isPercentage: true,
-                                      color: const Color(0xFF2E7D32),
-                                      delay: 400.ms,
-                                    ),
-                                    _StatRow(
-                                      icon: Icons.cancel_outlined,
-                                      title: 'Errores',
-                                      value: stats.porcentajeFallos,
-                                      isPercentage: true,
-                                      color: colors.error,
-                                      delay: 500.ms,
-                                    ),
-                                  ],
-                                ),
-                              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
-                            ],
-                          );
-                        },
+                                const SizedBox(height: 30),
+                                _StatsCard(
+                                  child: Column(
+                                    children: [
+                                      _StatRow(
+                                        icon: Icons.shield_outlined,
+                                        title: 'Retos Completados',
+                                        value: stats.retosCompletados,
+                                        color: colors.secondary,
+                                        delay: 200.ms,
+                                      ),
+                                      _StatRow(
+                                        icon: Icons.local_fire_department,
+                                        title: 'Racha de Días',
+                                        value: stats.rachaDias,
+                                        color: colors.primary,
+                                        delay: 300.ms,
+                                      ),
+                                      _StatRow(
+                                        icon: Icons.check_circle_outline,
+                                        title: 'Aciertos',
+                                        value: stats.porcentajeAciertos,
+                                        isPercentage: true,
+                                        color: const Color(0xFF2E7D32),
+                                        delay: 400.ms,
+                                      ),
+                                      _StatRow(
+                                        icon: Icons.cancel_outlined,
+                                        title: 'Errores',
+                                        value: stats.porcentajeFallos,
+                                        isPercentage: true,
+                                        color: colors.error,
+                                        delay: 500.ms,
+                                      ),
+                                    ],
+                                  ),
+                                ).animate().fadeIn(duration: 400.ms).slideY(
+                                    begin: 0.2, end: 0),
+                              ],
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                )
-              ),
-            ],
-          );
-        },
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
+// --- (Los widgets _StatsCard, _StatRow, y _StatsLoadingShimmer no cambian) ---
+// ... (código de _StatsCard) ...
+// ... (código de _StatRow) ...
+// ... (código de _StatsLoadingShimmer) ...
 class _StatsCard extends StatelessWidget {
   final Widget child;
   const _StatsCard({required this.child});
@@ -211,17 +287,17 @@ class _StatsCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: colors.surfaceContainer.withAlpha(200),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outlineVariant.withAlpha(180), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: colors.shadow.withAlpha(25),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ]
-      ),
+          color: colors.surfaceContainer.withAlpha(200),
+          borderRadius: BorderRadius.circular(24),
+          border:
+              Border.all(color: colors.outlineVariant.withAlpha(180), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: colors.shadow.withAlpha(25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ]),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         child: child,
@@ -262,7 +338,9 @@ class _StatRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: colors.onSurface)),
+                Text(title,
+                    style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, color: colors.onSurface)),
                 const SizedBox(height: 4),
                 Stack(
                   children: [
@@ -274,16 +352,14 @@ class _StatRow extends StatelessWidget {
                       ),
                     ),
                     FractionallySizedBox(
-                          // Si es porcentaje, usa el valor (dividido por 100)
-                          // Si no, usa un valor fijo (como 0.75)
-                          widthFactor: isPercentage 
-                              ? (value.clamp(0, 100) / 100) // .clamp() asegura que esté entre 0 y 100
-                              : 0.75, // Valor por defecto para "Retos" y "Racha"
-                          child: Container(
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: color.withAlpha(130),
-                              borderRadius: BorderRadius.circular(4),
+                      widthFactor: isPercentage
+                          ? (value.clamp(0, 100) / 100)
+                          : 0.75, 
+                      child: Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(130),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
@@ -295,15 +371,17 @@ class _StatRow extends StatelessWidget {
           const SizedBox(width: 16),
           SizedBox(
             width: 90,
-            // Animación de número usando TweenAnimationBuilder
             child: TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0, end: value.toDouble()),
               duration: const Duration(milliseconds: 1200),
               curve: Curves.easeOutCubic,
               builder: (context, animatedValue, child) => Text(
-                isPercentage ? '${animatedValue.toStringAsFixed(1)}%' : animatedValue.toInt().toString(),
+                isPercentage
+                    ? '${animatedValue.toStringAsFixed(1)}%'
+                    : animatedValue.toInt().toString(),
                 textAlign: TextAlign.right,
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: color),
+                style: textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold, color: color),
               ),
             ),
           ),
@@ -313,33 +391,43 @@ class _StatRow extends StatelessWidget {
   }
 }
 
-
 class _StatsLoadingShimmer extends StatelessWidget {
   const _StatsLoadingShimmer();
 
   @override
   Widget build(BuildContext context) {
-     final colors = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
     return Shimmer.fromColors(
-       baseColor: colors.surfaceContainerHigh,
-       highlightColor: colors.surfaceContainerHighest,
+      baseColor: colors.surfaceContainerHigh,
+      highlightColor: colors.surfaceContainerHighest,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             const SizedBox(height: 60),
-             Column(
-               children: [
-                 Container(width: 180, height: 30, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
-                 const SizedBox(height: 15),
-                 Container(width: 140, height: 40, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
-               ],
-             ),
+            Column(
+              children: [
+                Container(
+                    width: 180,
+                    height: 30,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8))),
+                const SizedBox(height: 15),
+                Container(
+                    width: 140,
+                    height: 40,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20))),
+              ],
+            ),
             const SizedBox(height: 30),
             Container(
               height: 380,
               width: double.infinity,
-               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(24)),
             ),
           ],
         ),

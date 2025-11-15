@@ -14,7 +14,8 @@ final appInitProvider = AsyncNotifierProvider<AppInitNotifier, void>(() {
 class AppInitNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {
-    // ⭐ NO bloquear → dispara bootstrap
+    // ⭐ NO bloquear → dispara bootstrap (¡Tu lógica original estaba bien!)
+    // Simplemente lo leemos para que empiece, pero NO lo esperamos.
     ref.read(bootstrapProvider);
 
     debugPrint('AppInit: inicio');
@@ -24,6 +25,13 @@ class AppInitNotifier extends AsyncNotifier<void> {
     // ⭐ Fase 2 — no esencial
     Future.microtask(() async {
       try {
+        // 🔥 ¡AQUÍ ES DONDE VA EL AWAIT! 🔥
+        // El microtask (que corre en segundo plano) espera a que
+        // bootstrap termine antes de continuar.
+        // El build() de AppInitNotifier ya se completó y no bloqueó nada.
+        await ref.read(bootstrapProvider.future);
+
+        // Ahora esta línea es segura y no dará el error [core/no-app]
         await Future.wait([
           ref.read(fcmServiceProvider).initialize(),
           if (session != null) ref.read(settingsProvider.future),
@@ -41,6 +49,7 @@ class AppInitNotifier extends AsyncNotifier<void> {
       debugPrint('AppInit: fin');
     });
 
+    // El build() retorna 'void' inmediatamente.
     return;
   }
 }

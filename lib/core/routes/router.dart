@@ -1,5 +1,4 @@
 // [COMIENZO DEL ARCHIVO router.dart]
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,76 +25,92 @@ import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_success_view.dart';
 import 'package:kitsucode/features/profile/view/all_achievements_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart';
-import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
-    show RecursoModel;
 
 // --- TUS VISTAS (dxniel7) ---
 import 'package:kitsucode/features/profile/view/follow_list_view.dart';
-import 'package:kitsucode/main.dart'; //
+import 'package:kitsucode/main.dart';
 
 // --- VISTAS DEL EQUIPO (atl1god) ---
-import 'package:kitsucode/features/desafio/view/desafio_view.dart'; // <-- FUSIÓN: Importado de la rama (atl1god)
+import 'package:kitsucode/features/desafio/view/desafio_view.dart';
 
 // --- ¡NUEVAS VISTAS DE SETTINGS! ---
 import 'package:kitsucode/features/settings/view/settings_view.dart';
 import 'package:kitsucode/features/settings/view/notifications_view.dart';
 import 'package:kitsucode/features/settings/view/support_view.dart';
 import 'package:kitsucode/features/settings/view/study_reminder_view.dart';
-// ¡IMPORTA EL MODELO PARA PASARLO COMO EXTRA!
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:kitsucode/features/settings/view/widgets/notification_category_view.dart';
 import 'package:kitsucode/features/profile/view/challenge_history_view.dart';
 import 'package:kitsucode/features/settings/view/change_password_view.dart';
 import 'package:kitsucode/features/splash/view/splash_view.dart';
 
-// Claves (sin cambios)
+// 🔥 Conectividad
+import 'package:kitsucode/core/providers/connectivity_provider.dart';
+import 'package:kitsucode/core/widgets/no_internet_view.dart';
+
+// Claves
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
   'ranking': GlobalKey<NavigatorState>(debugLabel: 'rankingNav'),
-  // --- FUSIÓN: Cambiado 'directory' por 'desafiomensual' para que coincida con la nueva pestaña
   'desafiomensual': GlobalKey<NavigatorState>(debugLabel: 'desafioNav'),
   'profile': GlobalKey<NavigatorState>(debugLabel: 'profileNav'),
 };
 
+// 🔥 SOLUCIÓN: Crear un StateProvider para el router actual
+//final _routerInstanceProvider = StateProvider<GoRouter?>((ref) => null);
+
 final routerProvider = Provider<GoRouter>((ref) {
-  //final auth = ref.watch(authStateProvider);
-
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(
-      ref,
-    ), // Permite que el router se reconstruya cuando cambia auth
-    // 🚨 LÓGICA DE REDIRECCIÓN CORREGIDA 🚨
+    refreshListenable: GoRouterRefreshStream(ref),
+    
     redirect: (context, state) {
-      // USA ref.read PARA OBTENER EL ESTADO ACTUAL
       final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
-
-      // El resto de tu lógica de redirect se queda igual
       final loc = state.matchedLocation;
       final inAuth = loc == '/auth';
       final inSplash = loc == '/';
+      final inNoInternet = loc == '/no-internet';
 
+      // Si estamos en splash, dejar que termine
       if (inSplash) return null;
+      
+      // Si estamos en NoInternet, no redirigir
+      if (inNoInternet) return null;
+      
+      // Lógica normal de auth
       if (!isLogged && !inAuth) return '/auth';
       if (isLogged && inAuth) return '/home';
+      
       return null;
     },
 
     routes: [
-      // --- Rutas de Nivel Superior (sin cambios) ---
-      GoRoute(path: '/', builder: (context, state) => const SplashView()),
+      // Splash
+      GoRoute(
+        path: '/', 
+        builder: (context, state) => const SplashView()
+      ),
 
-      // Ruta de autenticación
-      GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
+      // Auth
+      GoRoute(
+        path: '/auth', 
+        builder: (context, state) => const AuthView(),
+      ),
+
+      // 🔥 NUEVA RUTA: Vista de sin internet
+      GoRoute(
+        path: '/no-internet',
+        builder: (context, state) => const NoInternetView(),
+      ),
 
       GoRoute(
-        path: '/reto/:retoId/:nivelId', // ← ¡MODIFICADO!
+        path: '/reto/:retoId/:nivelId',
         builder: (context, state) {
           final retoId = state.pathParameters['retoId']!;
-          final nivelId = state.pathParameters['nivelId']!; // ← ¡AÑADIDO!
+          final nivelId = state.pathParameters['nivelId']!;
           return RetoDistribuidorPage(
             retoId: retoId,
-            nivelId: nivelId, // ← ¡AÑADIDO!
+            nivelId: nivelId,
           );
         },
       ),
@@ -104,6 +119,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
       ),
+      
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
@@ -123,16 +139,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SettingsView(),
         routes: [
           GoRoute(
-            path: 'notifications', // /settings/notifications
+            path: 'notifications',
             builder: (context, state) => const NotificationsView(),
             routes: [
               GoRoute(
-                path: 'reminder', // /settings/notifications/reminder
+                path: 'reminder',
                 builder: (context, state) {
-                  // Pasamos el setting al constructor
                   final setting = state.extra as NotificationSetting?;
                   if (setting == null) {
-                    // Manejo de error si no se pasa el setting
                     return const Scaffold(
                       body: Center(child: Text('Error: Falta setting')),
                     );
@@ -140,11 +154,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                   return StudyReminderView(setting: setting);
                 },
               ),
-              // ruta de categoría
               GoRoute(
-                path: 'category', // /settings/notifications/category
+                path: 'category',
                 builder: (context, state) {
-                  // Obtenemos los datos del 'extra'
                   final extra = state.extra as Map<String, dynamic>?;
 
                   if (extra == null ||
@@ -169,22 +181,19 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // /settings/support
           GoRoute(
             path: 'support',
             builder: (context, state) => const SupportView(),
           ),
           GoRoute(
-            path:
-                'change-password', // Se accederá como /settings/change-password
+            path: 'change-password',
             name: 'change-password',
             builder: (context, state) => const ChangePasswordView(),
           ),
         ],
       ),
-      // --- FIN DE NUEVAS RUTAS ---
 
-      // --- RUTA PARA FEEDBACK DE ÉXITO (sin cambios) ---
+      // --- RUTA PARA FEEDBACK DE ÉXITO
       GoRoute(
         path: '/challenge_success',
         name: 'challenge_success',
@@ -194,7 +203,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // --- RUTA PARA FEEDBACK DE FRACASO (sin cambios) ---
+      // --- RUTA PARA FEEDBACK DE FRACASO
       GoRoute(
         path: '/challenge_failure',
         name: 'challenge_failure',
@@ -207,8 +216,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // --- FUSIÓN: Se usa TUS rutas de perfil anidadas (dxniel7) ---
-      // Son más completas que las del equipo.
+      // --- Rutas de perfil anidadas
       GoRoute(
         path: '/profile/:userId',
         builder: (context, state) {
@@ -216,7 +224,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ProfileView(userId: userId);
         },
         routes: [
-          // ✅ RUTA ANIDADA 1: /profile/:userId/achievements
           GoRoute(
             path: 'achievements',
             builder: (context, state) {
@@ -225,9 +232,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
 
-          // ✅ RUTA ANIDADA 2: /profile/:userId/follow/:type
           GoRoute(
-            path: 'follow/:type', // 'following' o 'followers'
+            path: 'follow/:type',
             builder: (context, state) {
               final userId = state.pathParameters['userId']!;
               final type = state.pathParameters['type']!;
@@ -250,13 +256,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // --- NAVBAR PRINCIPAL ---
+      // --- NAVBAR PRINCIPAL
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
         },
         branches: [
-          // 1️⃣ HOME
+          // HOME
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['home'],
             routes: [
@@ -267,7 +273,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // 2️⃣ RANKING
+          // RANKING
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['ranking'],
             routes: [
@@ -278,18 +284,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // 3️⃣ --- FUSIÓN: Se usa la nueva pestaña del equipo (atl1god) ---
+          // DESAFÍO MENSUAL
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['desafiomensual'],
             routes: [
               GoRoute(
-                path: '/desafiomensual', // <-- Nueva ruta
+                path: '/desafiomensual',
                 builder: (context, state) => const DesafioBusquedaView(),
               ),
             ],
           ),
 
-          // 4️⃣ PERFIL
+          // PERFIL
           StatefulShellBranch(
             navigatorKey: _navigatorKeys['profile'],
             routes: [
@@ -297,9 +303,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/profile',
                 builder: (context, state) => const ProfileView(),
                 routes: [
-                  // Esta ruta es para que /profile/un-id-especifico
-                  // también funcione DENTRO de la pestaña de perfil.
-                  // La versión /profile/:userId de arriba es para links EXTERNOS.
                   GoRoute(
                     path: ':userId',
                     builder: (context, state) =>
@@ -312,12 +315,33 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    // --- FUSIÓN: Se usa tu observer (dxniel7) ---
     observers: [routeObserver],
   );
+
+  // 🔥 GUARDAR la instancia del router para usarla en el listener
+  //ref.read(_routerInstanceProvider.notifier).state = router;
+
+  // 🔥 LISTENER DE CONECTIVIDAD (ahora sin ciclo)
+  ref.listen<AsyncValue<ConnectivityStatus>>(
+    connectivityProvider,
+    (previous, next) {
+      next.whenData((status) {
+        if (status == ConnectivityStatus.offline) {
+          // 🔥 Usamos la variable 'router' local directamente
+          Future.microtask(() {
+            final currentLocation = router.routerDelegate.currentConfiguration.uri.toString();
+            if (currentLocation != '/no-internet') {
+              router.go('/no-internet');
+            }
+          });
+        }
+      });
+    },
+  );
+
+  return router;
 });
 
-// (Sin cambios)
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Ref ref) {
     notifyListeners();

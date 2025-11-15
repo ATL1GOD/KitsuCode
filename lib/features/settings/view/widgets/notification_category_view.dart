@@ -9,20 +9,56 @@ import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/notifications/provider/notification_settings_provider.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
-import 'package:kitsucode/shared/widgets/animated_settings_background.dart'; 
-import 'package:kitsucode/features/notifications/model/notification_settings_model.dart'; 
+import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
+import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:animate_do/animate_do.dart';
+// 🔥 1. IMPORTAR
+import 'package:visibility_detector/visibility_detector.dart';
 
-// Esta vista es genérica. Recibe un título y una lista de settings.
-class NotificationCategoryView extends ConsumerWidget {
+// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
+class NotificationCategoryView extends ConsumerStatefulWidget {
   final String title;
   final List<NotificationSetting> settings;
 
-  const NotificationCategoryView({
-    super.key, 
-    required this.title,
-    required this.settings
-  });
+  const NotificationCategoryView(
+      {super.key, required this.title, required this.settings});
+
+  @override
+  ConsumerState<NotificationCategoryView> createState() =>
+      _NotificationCategoryViewState();
+}
+
+// --- 🔥 3. AÑADIR ESTADO Y WidgetsBindingObserver ---
+class _NotificationCategoryViewState
+    extends ConsumerState<NotificationCategoryView> with WidgetsBindingObserver {
+      
+  // --- 🔥 4. BANDERAS DE ESTADO ---
+  bool _isPageVisible = true;
+  bool _isAppActive = true;
+
+  // --- 🔥 5. MANEJO DE CICLO DE VIDA ---
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!mounted) return;
+    setState(() {
+      _isAppActive = state == AppLifecycleState.resumed;
+    });
+  }
+  // --- FIN MANEJO DE CICLO DE VIDA ---
+
 
   // Helper para obtener el color dinámico
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
@@ -30,18 +66,16 @@ class NotificationCategoryView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // Obtenemos el perfil solo para el color dinámico del fondo
-    final currentAuthUserId = ref.watch(authStateProvider).value!.session!.user.id;
+    final currentAuthUserId =
+        ref.watch(authStateProvider).value!.session!.user.id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-    
-    // --- 1. OBTENER EL ESTADO DE NOTIFICACIONES EN VIVO (ASYNC) ---
-    // Esto fuerza a que la vista se reconstruya cuando el provider cambia.
-    final asyncLiveSettings = ref.watch(notificationSettingsProvider); 
+
+    final asyncLiveSettings = ref.watch(notificationSettingsProvider);
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
@@ -50,103 +84,131 @@ class NotificationCategoryView extends ConsumerWidget {
         error: (e, s) => Center(child: Text('Error: $e')),
         data: (profile) {
           final dynamicColor = _getDynamicColor(profile, colors);
-          
-          // Manejar el estado de carga/error del provider de notificaciones
+
           if (asyncLiveSettings.isLoading) {
-             return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           if (asyncLiveSettings.hasError) {
-             return Center(child: Text('Error al cargar configuración de notificaciones: ${asyncLiveSettings.error}'));
+            return Center(
+                child: Text(
+                    'Error al cargar configuración de notificaciones: ${asyncLiveSettings.error}'));
           }
-          
+
           final liveSettingsList = asyncLiveSettings.value ?? [];
 
-          return Stack(
-            children: [
-              // --- FONDO ANIMADO OPTIMIZADO ---
-              // (Mantienes la animación según tu solicitud, aunque es costosa)
-              AnimatedSettingsBackground(
-                profile: profile,
-                colors: colors,
-                isKeyboardVisible: isKeyboardVisible,
-              ),
-            
-              // --- CONTENIDO ---
-              SafeArea(
-            child: Column(
+          // --- 🔥 6. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
+          return VisibilityDetector(
+            key: Key('notification-category-detector-${widget.title}'),
+            onVisibilityChanged: (visibilityInfo) {
+              if (!mounted) return;
+              setState(() {
+                _isPageVisible = visibilityInfo.visibleFraction > 0.1;
+              });
+            },
+            child: Stack(
               children: [
-                // --- BARRA SUPERIOR (Idéntica) ---
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      InkWell(
-                        onTap: () => context.pop(),
-                        borderRadius: BorderRadius.circular(30),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: colors.surface.withAlpha(50),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: colors.outlineVariant.withAlpha(130))
-                          ),
-                          child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          title, // <-- Usamos el título que nos pasaron
-                          textAlign: TextAlign.center,
-                          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
+                // --- 🔥 7. LÓGICA CONDICIONAL ---
+                if (_isAppActive && _isPageVisible)
+                  AnimatedSettingsBackground(
+                    profile: profile,
+                    colors: colors,
+                    isKeyboardVisible: isKeyboardVisible,
+                  )
+                else
+                  // Fondo estático
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            dynamicColor.withAlpha(100),
+                            colors.surfaceContainerLowest,
+                          ],
+                          stops: const [0.0, 0.7]),
+                    ),
                   ),
-                ),
+                // --- FIN LÓGICA CONDICIONAL ---
 
-                // --- LISTA DE SWITCHES ---
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                SafeArea(
+                  child: Column(
                     children: [
-                      // Usamos la lista pasada en el constructor para iterar (la lista fija)
-                      // Pero usamos la lista VIVA (liveSettingsList) para obtener el estado.
-                      ...List.generate(settings.length, (index) {
-                        final setting = settings[index];
-                        
-                        // --- 2. ENCONTRAR EL VALOR HABILITADO EN VIVO ---
-                        final liveSetting = liveSettingsList.firstWhere(
-                            (s) => s.preferenciaId == setting.preferenciaId,
-                            // Fallback al valor inicial si no se encuentra (seguridad)
-                            orElse: () => setting, 
-                        );
+                      // --- (BARRA SUPERIOR SIN CAMBIOS) ---
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () => context.pop(),
+                              borderRadius: BorderRadius.circular(30),
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                    color: colors.surface.withAlpha(50),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: colors.outlineVariant
+                                            .withAlpha(130))),
+                                child: Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: colors.onSurface),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                widget.title, // <-- Usar widget.title
+                                textAlign: TextAlign.center,
+                                style: textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 48),
+                          ],
+                        ),
+                      ),
 
-                        return FadeInDown(
-                          delay: Duration(milliseconds: 100 + (index * 100)),
-                          child: SettingsSwitchTile(
-                            title: liveSetting.nombreTipo,
-                            subtitle: liveSetting.descripcion ?? 'Activar o desactivar esta alerta',
-                            // TODO: Mapear un ícono basado en setting.nombreTipo
-                            icon: Icons.notifications_active_outlined, 
-                            dynamicColor: dynamicColor,
-                            initialValue: liveSetting.habilitado, // <-- USA EL VALOR EN VIVO
-                            onChanged: (newValue) {
-                              // Esto dispara la actualización del provider, lo que fuerza
-                              // un rebuild de esta vista y actualiza el switch.
-                              ref.read(notificationSettingsProvider.notifier)
-                                  .updateEnabled(liveSetting.preferenciaId, newValue);
-                            },
-                          ),
-                        );
-                      }),
+                      // --- (LISTVIEW SIN CAMBIOS) ---
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 12.0),
+                          children: [
+                            ...List.generate(widget.settings.length, (index) {
+                              final setting = widget.settings[index];
+                              final liveSetting = liveSettingsList.firstWhere(
+                                (s) => s.preferenciaId == setting.preferenciaId,
+                                orElse: () => setting,
+                              );
+
+                              return FadeInDown(
+                                delay:
+                                    Duration(milliseconds: 100 + (index * 100)),
+                                child: SettingsSwitchTile(
+                                  title: liveSetting.nombreTipo,
+                                  subtitle: liveSetting.descripcion ??
+                                      'Activar o desactivar esta alerta',
+                                  icon: Icons.notifications_active_outlined,
+                                  dynamicColor: dynamicColor,
+                                  initialValue: liveSetting.habilitado,
+                                  onChanged: (newValue) {
+                                    ref
+                                        .read(notificationSettingsProvider
+                                            .notifier)
+                                        .updateEnabled(
+                                            liveSetting.preferenciaId,
+                                            newValue);
+                                  },
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-            ],
           );
         },
       ),

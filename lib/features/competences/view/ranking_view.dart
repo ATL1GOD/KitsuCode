@@ -12,14 +12,17 @@ import 'package:kitsucode/features/competences/view/widgets/ranking_error_widget
 import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
-import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ AGREGADO
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; 
 import 'package:lottie/lottie.dart';
 
-// --- WIDGET PRINCIPAL: RankingView ---
+import 'package:visibility_detector/visibility_detector.dart';
+
+// --- WIDGET PRINCIPAL: RankingView (Sin cambios) ---
 class RankingView extends ConsumerWidget {
   const RankingView({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ... (sin cambios) ...
     ref.watch(followRealtimeProvider);
     ref.watch(realtimeUpdateProvider);
     final authState = ref.watch(authStateProvider);
@@ -35,7 +38,7 @@ class RankingView extends ConsumerWidget {
   }
 
   Widget _buildNotAuthenticatedScreen(BuildContext context) {
-    // Pantalla para usuarios no autenticados
+    // ... (sin cambios) ...
     final colors = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
@@ -62,179 +65,262 @@ class RankingView extends ConsumerWidget {
   }
 }
 
-// --- WIDGET PRIVADO: _RankingContent ---
-class _RankingContent extends ConsumerWidget {
+// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
+class _RankingContent extends ConsumerStatefulWidget {
   const _RankingContent();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_RankingContent> createState() => _RankingContentState();
+}
+
+// --- 🔥 3. AÑADIR ESTADO, TickerProviderStateMixin y WidgetsBindingObserver ---
+class _RankingContentState extends ConsumerState<_RankingContent>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  
+  late final AnimationController _lottieController;
+  late final AnimationController _decorativeBgController;
+
+  // Banderas de estado
+  bool _isTabVisible = true;
+  bool _isAppActive = true;
+  bool _isLottieLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // --- 🔥 4. INICIALIZAR SIN DURACIÓN (Lottie) ---
+    _lottieController = AnimationController(vsync: this);
+    
+    // --- (Esta animación sí tiene duración, tu código original estaba bien) ---
+    _decorativeBgController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 8));
+        
+    // Registrar el observador
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _lottieController.dispose();
+    _decorativeBgController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // --- 🔥 5. MÉTODO QUE REACCIONA A LA BARRA DE NOTIFICACIONES ---
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    setState(() {
+      _isAppActive = state == AppLifecycleState.resumed;
+      _updateAnimationState();
+    });
+  }
+
+  // --- 🔥 6. LÓGICA CENTRAL PARA CONTROLAR AMBAS ANIMACIONES ---
+  void _updateAnimationState() {
+    // Lógica para Lottie
+    if (_isAppActive && _isTabVisible && _isLottieLoaded) {
+      _lottieController.repeat();
+    } else {
+      _lottieController.stop();
+    }
+
+    // Lógica para el fondo decorativo
+    if (_isAppActive && _isTabVisible) {
+      _decorativeBgController.repeat(reverse: true);
+    } else {
+      _decorativeBgController.stop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // ... (Tu lógica de providers se queda igual) ...
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final rankingAsync = ref.watch(globalRankingProvider);
     final authUser = ref.watch(authStateProvider).value?.session?.user;
     final String? currentUserId = authUser?.id;
 
-    return Scaffold(
-      // Fondo principal con color de acento muy suave
-      backgroundColor: colors.primaryContainer.withOpacity(0.05),
-      body: Stack(
-        children: [
-          // --- CAPA 1: ANIMACIÓN DE FONDO ---
-          Positioned.fill(
-            child: Opacity(
-              // Opacidad baja para que sea un fondo muy sutil
-              opacity: 0.4,
-              child: Lottie.asset(
-                'assets/animations/background_train.json',
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-          // --- CAPA 2: CONTENIDO PRINCIPAL ---
-          Column(
-            children: [
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0, vertical: 8.0),
-                      child: Row(
-                        children: [
-                          InkWell(
-                            onTap: () => context.pop(),
-                            borderRadius: BorderRadius.circular(30),
-                            child: Container(
-                              padding: const EdgeInsets.all(8.0),
-                              decoration: BoxDecoration(
-                                  color: colors.surface.withAlpha(50),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color:
-                                          colors.outlineVariant.withAlpha(130))),
-                              child: Icon(Icons.arrow_back_ios_new_rounded,
-                                  color: colors.onSurface),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Tabla de Clasificación',
-                              textAlign: TextAlign.center,
-                              style: textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(width: 44),
-                        ],
-                      ),
-                    ),
-                    const RankingFiltersWidget(),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: rankingAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: RankingErrorWidget(error: e)),
-                  data: (ranking) {
-                    if (ranking.isEmpty) return const _EmptyRankingWidget();
-
-                    final top3 =
-                        ranking.length >= 3 ? ranking.sublist(0, 3) : ranking;
-                    final restOfRanking = ranking.length > 3
-                        ? ranking.sublist(3)
-                        : <RankingModel>[];
-                    final currentUserData = (currentUserId == null)
-                        ? null
-                        : ranking
-                            .where((user) => user.userId == currentUserId)
-                            .firstOrNull;
-
-                    return Stack(
-                      children: [
-                        Column(
-                          children: [
-                            Stack(
-                              children: [
-                                Container(
-                                  margin:
-                                      const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                                  height: 280,
-                                  decoration: BoxDecoration(
-                                    color: colors.surface.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: const _DecorativeBackground(),
-                                ),
-                                if (top3.isNotEmpty)
-                                  _PodiumWidget(
-                                      users: top3,
-                                      colors: colors,
-                                      currentUserId: currentUserId),
-                              ],
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 12.0),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.leaderboard_outlined,
-                                      color: colors.primary),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Clasificación General',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                            color: colors.onSurfaceVariant),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: ListView.builder(
-                                // --- ¡¡¡AQUÍ ESTÁ EL ARREGLO!!! ---
-                                // Aumentamos el padding de 90 a 130 para dar
-                                // espacio al banner de "Tu Posición" Y al
-                                // "safe area" (la barra de navegación de abajo).
-                                padding: const EdgeInsets.only(
-                                    top: 4, bottom: 160), // <-- ¡CAMBIO AQUÍ!
-                                itemCount: restOfRanking.length,
-                                itemBuilder: (context, index) {
-                                  final user = restOfRanking[index];
-                                  return FadeInUp(
-                                    delay: Duration(milliseconds: index * 30),
-                                    child: RankingTile(
-                                      user: user,
-                                      isCurrentUser:
-                                          user.userId == currentUserId,
-                                      colors: colors,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (currentUserData != null)
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: _CurrentUserBanner(
-                                user: currentUserData, colors: colors),
-                          ),
-                      ],
-                    );
+    // --- 🔥 7. VISIBILITYDETECTOR ---
+    return VisibilityDetector(
+      key: const Key('ranking-view-detector'),
+      onVisibilityChanged: (visibilityInfo) {
+        setState(() {
+          _isTabVisible = visibilityInfo.visibleFraction > 0.1;
+          _updateAnimationState();
+        });
+      },
+      child: Scaffold(
+        backgroundColor: colors.primaryContainer.withOpacity(0.05),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.4,
+                child: Lottie.asset(
+                  'assets/animations/background_train.json',
+                  fit: BoxFit.cover,
+                  controller: _lottieController,
+                  // --- 🔥 8. ASIGNAR DURACIÓN AL CONTROLADOR ---
+                  onLoaded: (composition) {
+                    _lottieController.duration = composition.duration;
+                    _isLottieLoaded = true;
+                    _updateAnimationState(); // Iniciar si debe
                   },
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+            Column(
+              children: [
+                // ... (Tu SafeArea no cambia) ...
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Row(
+                          // ... (El Row del título no cambia) ...
+                          children: [
+                            InkWell(
+                              onTap: () => context.pop(),
+                              borderRadius: BorderRadius.circular(30),
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                    color: colors.surface.withAlpha(50),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: colors.outlineVariant
+                                            .withAlpha(130))),
+                                child: Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: colors.onSurface),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Tabla de Clasificación',
+                                textAlign: TextAlign.center,
+                                style: textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 44),
+                          ],
+                        ),
+                      ),
+                      const RankingFiltersWidget(),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: rankingAsync.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, s) =>
+                        Center(child: RankingErrorWidget(error: e)),
+                    data: (ranking) {
+                      // ... (Tu lógica de 'data' no cambia) ...
+                      if (ranking.isEmpty) return const _EmptyRankingWidget();
+                      final top3 =
+                          ranking.length >= 3 ? ranking.sublist(0, 3) : ranking;
+                      final restOfRanking =
+                          ranking.length > 3 ? ranking.sublist(3) : <RankingModel>[];
+                      final currentUserData = (currentUserId == null)
+                          ? null
+                          : ranking
+                              .where((user) => user.userId == currentUserId)
+                              .firstOrNull;
+
+                      return Stack(
+                        children: [
+                          Column(
+                            children: [
+                              Stack(
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.fromLTRB(
+                                        16, 8, 16, 0),
+                                    height: 280,
+                                    decoration: BoxDecoration(
+                                      color: colors.surface.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    // --- 🔥 9. PASAR EL CONTROLADOR AL HIJO ---
+                                    child: _DecorativeBackground(
+                                      controller: _decorativeBgController,
+                                    ),
+                                  ),
+                                  if (top3.isNotEmpty)
+                                    _PodiumWidget(
+                                        // ... (sin cambios)
+                                        users: top3,
+                                        colors: colors,
+                                        currentUserId: currentUserId
+                                    ),
+                                ],
+                              ),
+                              // ... (El resto de tu vista no cambia) ...
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 12.0),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.leaderboard_outlined,
+                                        color: colors.primary),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Clasificación General',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                              color: colors.onSurfaceVariant),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.only(
+                                      top: 4, bottom: 160),
+                                  itemCount: restOfRanking.length,
+                                  itemBuilder: (context, index) {
+                                    final user = restOfRanking[index];
+                                    return FadeInUp(
+                                      delay: Duration(milliseconds: index * 30),
+                                      child: RankingTile(
+                                        user: user,
+                                        isCurrentUser:
+                                            user.userId == currentUserId,
+                                        colors: colors,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (currentUserData != null)
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: _CurrentUserBanner(
+                                  user: currentUserData, colors: colors),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -242,6 +328,7 @@ class _RankingContent extends ConsumerWidget {
 
 // --- WIDGETS AUXILIARES ---
 class _EmptyRankingWidget extends StatelessWidget {
+  // ... (Sin cambios)
   const _EmptyRankingWidget();
   @override
   Widget build(BuildContext context) {
@@ -269,22 +356,28 @@ class _EmptyRankingWidget extends StatelessWidget {
   }
 }
 
+// --- 🔥 10. MODIFICAR _DecorativeBackground ---
 class _DecorativeBackground extends StatefulWidget {
-  const _DecorativeBackground();
+  // Aceptar el controlador como parámetro
+  final AnimationController controller;
+  const _DecorativeBackground({required this.controller}); // <--- Modificado
+
   @override
   State<_DecorativeBackground> createState() => _DecorativeBackgroundState();
 }
 
-class _DecorativeBackgroundState extends State<_DecorativeBackground>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+class _DecorativeBackgroundState extends State<_DecorativeBackground> {
+  // --- 🔥 11. YA NO NECESITA SingleTickerProviderStateMixin ---
+  
+  // El controlador ahora viene del widget padre
+  // late final AnimationController _controller; // <-- Ya no se crea aquí
   late final List<Animation<Alignment>> _animations;
+
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 8))
-          ..repeat(reverse: true);
+    
+    // --- 🔥 12. USAR EL CONTROLADOR DEL PADRE ('widget.controller') ---
     _animations = [
       _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
           .animate(_createCurve(0.0, 0.5)),
@@ -303,17 +396,19 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       AlignmentTween(begin: begin, end: end);
   CurvedAnimation _createCurve(double begin, double end) =>
       CurvedAnimation(
-          parent: _controller, curve: Interval(begin, end, curve: Curves.easeInOutSine));
+          parent: widget.controller, // <--- Usar widget.controller
+          curve: Interval(begin, end, curve: Curves.easeInOutSine));
+
   @override
   void dispose() {
-    _controller.dispose();
+    // El controlador se 'dispose' en el widget padre, no aquí
     super.dispose();
   }
 
   Widget _buildIcon(
       String assetPath, Animation<Alignment> animation, double size) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: widget.controller, // <--- Usar widget.controller
       builder: (context, child) =>
           Align(alignment: animation.value, child: child),
       child: Opacity(
@@ -326,6 +421,7 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
 
   @override
   Widget build(BuildContext context) {
+    // ... (El build se queda igual)
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: Stack(
@@ -341,7 +437,11 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
   }
 }
 
+// --- (El resto de widgets, _PodiumWidget, _PodiumPlace, _CurrentUserBanner, 
+//      se quedan exactamente igual) ---
+
 class _PodiumWidget extends StatelessWidget {
+// ... (Sin cambios)
   final List<RankingModel> users;
   final ColorScheme colors;
   final String? currentUserId;
@@ -386,6 +486,7 @@ class _PodiumWidget extends StatelessWidget {
 }
 
 class _PodiumPlace extends StatelessWidget {
+// ... (Sin cambios)
   final RankingModel user;
   final int place;
   final Color color;
@@ -407,7 +508,8 @@ class _PodiumPlace extends StatelessWidget {
         if (isCurrentUser) return;
         showDialog(
           context: context,
-          builder: (ctx) => UserProfileModal(userId: user.userId, rank: user.rank),
+          builder: (ctx) =>
+              UserProfileModal(userId: user.userId, rank: user.rank),
         );
       },
       child: FadeInUp(
@@ -428,7 +530,8 @@ class _PodiumPlace extends StatelessWidget {
                       backgroundColor: color,
                       child: CircleAvatar(
                           radius: (size / 2) - 4,
-                          backgroundImage: AssetImage(getAvatarAssetPathById(user.idAvatarSeleccionado)))), // ✅ CAMBIADO
+                          backgroundImage: AssetImage(getAvatarAssetPathById(
+                              user.idAvatarSeleccionado)))),
                   Positioned(
                     bottom: -10,
                     left: 0,
@@ -464,6 +567,7 @@ class _PodiumPlace extends StatelessWidget {
 }
 
 class _CurrentUserBanner extends StatelessWidget {
+// ... (Sin cambios)
   final RankingModel user;
   final ColorScheme colors;
   const _CurrentUserBanner({required this.user, required this.colors});

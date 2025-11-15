@@ -157,12 +157,12 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                           child: Lottie.asset(
                             'assets/animations/particles.json',
                             fit: BoxFit.cover,
+                            frameRate: FrameRate(30), // Optimizado: 30fps
                             controller: _lottieController,
-                            // --- 🔥 11. DEJAR QUE LOTTIE PONGA LA DURACIÓN ---
                             onLoaded: (composition) {
                               _lottieController.duration = composition.duration;
                               _isLottieLoaded = true;
-                              _updateAnimationState(); // Iniciar si debe
+                              _updateAnimationState();
                             },
                           ),
                         ),

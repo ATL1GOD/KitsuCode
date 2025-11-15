@@ -72,6 +72,8 @@ class AchievementToast extends StatelessWidget {
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
+                  cacheWidth: 100, // Optimizado: 2x para retina
+                  cacheHeight: 100,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       width: 50,

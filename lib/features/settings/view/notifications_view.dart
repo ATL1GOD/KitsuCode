@@ -16,6 +16,7 @@ import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 // 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 // --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class NotificationsView extends ConsumerStatefulWidget {

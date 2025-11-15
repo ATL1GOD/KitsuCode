@@ -28,9 +28,9 @@ class FollowListArgs {
 }
 
 // Provider que carga la lista de seguidores/siguiendo.
-final followListProvider = FutureProvider.family<List<FollowListModel>, FollowListArgs>((ref, args) {
+final followListProvider = FutureProvider.autoDispose.family<List<FollowListModel>, FollowListArgs>((ref, args) {
   final profileRepository = ref.watch(profileRepositoryProvider);
-  
+
   return profileRepository.getFollowList(
     userId: args.userId,
     type: args.type,
@@ -38,7 +38,7 @@ final followListProvider = FutureProvider.family<List<FollowListModel>, FollowLi
 });
 
 
-final isFollowingProvider = FutureProvider.family<bool, String>((ref, userId) {
+final isFollowingProvider = FutureProvider.autoDispose.family<bool, String>((ref, userId) {
   final profileRepository = ref.watch(profileRepositoryProvider);
   return profileRepository.isFollowing(userId);
 });

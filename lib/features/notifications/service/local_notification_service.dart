@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -10,8 +11,8 @@ class LocalNotificationService {
 
   /// Inicialización básica del servicio de notificaciones
   Future<void> init() async {
-    debugPrint(' [NOTIFICACIÓN] Inicializando servicio de notificaciones...');
-    
+    if (kDebugMode) debugPrint(' [NOTIFICACIÓN] Inicializando servicio de notificaciones...');
+
     // Usa el ícono de la app por defecto
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_stat_kitsu');
@@ -29,7 +30,7 @@ class LocalNotificationService {
     );
 
     await _notificationsPlugin.initialize(settings);
-    
+
     // Crear canal de notificaciones
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'study_reminder_channel',
@@ -44,8 +45,8 @@ class LocalNotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
-    
-    debugPrint(' [NOTIFICACIÓN] Canal de notificaciones creado: study_reminder_channel');
-    debugPrint(' [NOTIFICACIÓN] Servicio inicializado correctamente');
+
+    if (kDebugMode) debugPrint(' [NOTIFICACIÓN] Canal de notificaciones creado: study_reminder_channel');
+    if (kDebugMode) debugPrint(' [NOTIFICACIÓN] Servicio inicializado correctamente');
   }
 }

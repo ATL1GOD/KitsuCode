@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/quiz_view.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart'
+import 'package:flutter/foundation.dart' show kDebugMode;
     show RecursoModel;
 
 // --- REFACTOR (PASO 1): Usar un 'factory constructor' ---
@@ -37,7 +38,7 @@ class QuizData {
         mapaRespuestas[key] = pregunta['respuesta'] as String;
         mapaOpciones[key] = Map<String, dynamic>.from(pregunta['opciones']);
       } catch (e) {
-        debugPrint("Error parseando pregunta: $e");
+        if (kDebugMode) debugPrint("Error parseando pregunta: $e");
       }
     }
 
@@ -77,7 +78,7 @@ class QuizLoaderPage extends ConsumerWidget {
     try {
       mydata = QuizData.fromChallengeContent(challengeContent);
     } catch (e) {
-      debugPrint("Error creando QuizData: $e");
+      if (kDebugMode) debugPrint("Error creando QuizData: $e");
       // Si falla la creación, mostramos la pantalla de error genérica.
       return Scaffold(
         appBar: AppBar(title: const Text('Error')),

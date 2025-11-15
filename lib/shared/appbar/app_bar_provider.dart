@@ -73,13 +73,13 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
 
   Future<void> fetchStats() async {
     // --- ¡DEBUG! ---
-    debugPrint("--- AppBarNotifier: fetchStats() COMENZÓ ---");
+    if (kDebugMode) debugPrint("--- AppBarNotifier: fetchStats() COMENZÓ ---");
 
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) {
         // --- ¡DEBUG! ---
-        debugPrint(
+        if (kDebugMode) debugPrint(
             "AppBarNotifier: No hay usuario. Forzando languageId: 1 (Invitado)");
         state = state.copyWith(
           isLoading: false,
@@ -103,7 +103,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
           .maybeSingle();
 
       final langId = (userData?['lenguaje_favorito'] ?? 1) as int;
-      debugPrint("AppBarNotifier: 'lenguaje_favorito' leído es: $langId");
+      if (kDebugMode) debugPrint("AppBarNotifier: 'lenguaje_favorito' leído es: $langId");
 
 
       // --- CAMBIO: PASO 2 ---
@@ -144,7 +144,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
       final langAsset = _getAssetForLanguage(langName);
 
       // --- ¡DEBUG! ---
-      debugPrint(
+      if (kDebugMode) debugPrint(
           "AppBarNotifier: PONIENDO ESTADO FINAL -> languageId: $langId, trofeos: $totalTrofeos, isLoading: false");
 
       state = state.copyWith(
@@ -158,10 +158,10 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
       );
     } catch (e, stackTrace) {
       // --- ¡DEBUG! ---
-      debugPrint(
+      if (kDebugMode) debugPrint(
           "--- AppBarNotifier: ¡ERROR! CAYÓ EN CATCH. Forzando languageId: 1 ---");
-      debugPrint('Error en AppBarNotifier: $e');
-      debugPrint('Stacktrace: $stackTrace');
+      if (kDebugMode) debugPrint('Error en AppBarNotifier: $e');
+      if (kDebugMode) debugPrint('Stacktrace: $stackTrace');
 
       state = state.copyWith(
         isLoading: false,
@@ -200,7 +200,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
             .update({'lenguaje_favorito': newId})
             .eq('id', user.id);
       } catch (e) {
-          debugPrint("Error al actualizar lenguaje_favorito: $e");
+          if (kDebugMode) debugPrint("Error al actualizar lenguaje_favorito: $e");
           // Manejar error si es necesario
       }
     }
@@ -308,9 +308,9 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
       value: userId,
     ),
     callback: (payload) {
-      debugPrint("--- CAMBIO DETECTADO EN TABLA 'usuarios' ---");
-      debugPrint("Payload (new): ${payload.newRecord}");
-      debugPrint("Refrescando AppBar AHORA.");
+      if (kDebugMode) debugPrint("--- CAMBIO DETECTADO EN TABLA 'usuarios' ---");
+      if (kDebugMode) debugPrint("Payload (new): ${payload.newRecord}");
+      if (kDebugMode) debugPrint("Refrescando AppBar AHORA.");
 
       ref.read(appBarProvider.notifier).fetchStats();
     },

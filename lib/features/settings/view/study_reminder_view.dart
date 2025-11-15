@@ -15,6 +15,7 @@ import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
 // 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 // --- Helpers (Sin cambios) ---
 TimeOfDay? _stringToTimeOfDay(String? hora) {
@@ -25,7 +26,7 @@ TimeOfDay? _stringToTimeOfDay(String? hora) {
     final minute = int.parse(parts[1]);
     return TimeOfDay(hour: hour, minute: minute);
   } catch (e) {
-    debugPrint('Error parseando hora: $e');
+    if (kDebugMode) debugPrint('Error parseando hora: $e');
     return const TimeOfDay(hour: 19, minute: 0);
   }
 }
@@ -100,7 +101,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
       ref
           .read(notificationSettingsProvider.notifier)
           .updateTime(widget.setting.preferenciaId, newTimeString);
-      debugPrint('Hora de recordatorio actualizada para las $newTimeString');
+      if (kDebugMode) debugPrint('Hora de recordatorio actualizada para las $newTimeString');
     }
   }
 
@@ -225,7 +226,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                                           widget.setting.preferenciaId,
                                           newValue);
                                   if (newValue) {
-                                    debugPrint(
+                                    if (kDebugMode) debugPrint(
                                         'Recordatorio activado para las ${_timeOfDayToString(_selectedTime)}');
                                     ref
                                         .read(notificationSettingsProvider
@@ -234,7 +235,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                                             widget.setting.preferenciaId,
                                             _timeOfDayToString(_selectedTime));
                                   } else {
-                                    debugPrint('Recordatorio desactivado');
+                                    if (kDebugMode) debugPrint('Recordatorio desactivado');
                                     ref
                                         .read(notificationSettingsProvider
                                             .notifier)

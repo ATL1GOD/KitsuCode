@@ -23,8 +23,6 @@ class NavBar extends StatelessWidget {
             'assets/images/navbar/home_navbar.png',
             width: 30,
             height: 30,
-            cacheWidth: 60, // Optimizado: 2x para retina
-            cacheHeight: 60,
           ),
         ),
         Transform.scale(
@@ -33,8 +31,6 @@ class NavBar extends StatelessWidget {
             'assets/images/navbar/social_navbar.png',
             width: 30,
             height: 30,
-            cacheWidth: 60, // Optimizado: 2x para retina
-            cacheHeight: 60,
           ),
         ),
         Transform.scale(
@@ -43,8 +39,6 @@ class NavBar extends StatelessWidget {
             'assets/images/navbar/social_navbar.png',
             width: 30,
             height: 30,
-            cacheWidth: 60, // Optimizado: 2x para retina
-            cacheHeight: 60,
           ),
         ),
         Transform.scale(
@@ -53,8 +47,6 @@ class NavBar extends StatelessWidget {
             'assets/images/navbar/social_navbar.png',
             width: 30,
             height: 30,
-            cacheWidth: 60, // Optimizado: 2x para retina
-            cacheHeight: 60,
           ),
         ),
       ],

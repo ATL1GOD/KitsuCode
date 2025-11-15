@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/auth/view/widgets/login_form.dart';
 import 'package:kitsucode/features/auth/view/widgets/register_form.dart';
@@ -18,22 +19,17 @@ class AuthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Optimizado: Reemplazado BackdropFilter por Container con sombra
-    // para evitar costo GPU innecesario
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(100),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withAlpha(51)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withAlpha(100),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withAlpha(51)),
           ),
-        ],
-      ),
-      child: Padding(
+          child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,

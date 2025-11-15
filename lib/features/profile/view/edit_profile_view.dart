@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,8 +9,8 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:lottie/lottie.dart';
+// 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:kitsucode/shared/widgets/optimized_glass_card.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
   const EditProfileView({super.key});
@@ -257,7 +258,8 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                             child: Lottie.asset(
                               'assets/animations/spring.json',
                               fit: BoxFit.cover,
-                              frameRate: FrameRate(30), // Optimizado: 30fps
+                              frameRate: FrameRate(40),
+                              // --- 🔥 7. ASIGNAR CONTROLADOR Y onLoaded ---
                               controller: _lottieController,
                               onLoaded: (composition) {
                                 if (!mounted) return;
@@ -417,8 +419,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                           duration: const Duration(milliseconds: 450),
                           delay: const Duration(milliseconds: 120),
                           from: 20,
-                          child: OptimizedGlassCard(
-                            enableGlassEffect: !isKeyboardVisible && _isPageVisible && _isAppActive,
+                          child: _GlassCard(
                             child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Column(
@@ -583,4 +584,29 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
   }
 }
 
-// _GlassCard removido - ahora usamos OptimizedGlassCard compartido
+// --- (El widget _GlassCard no cambia) ---
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  const _GlassCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            decoration: BoxDecoration(
+                color: Colors.white.withAlpha((255 * 0.4).round()),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                    color: Colors.white.withAlpha((255 * 0.5).round()))),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}

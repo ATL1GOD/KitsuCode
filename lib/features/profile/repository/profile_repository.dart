@@ -9,7 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/profile/model/follow_list_model.dart';
 import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:kitsucode/features/profile/model/challenge_history_model.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 class ProfileRepository {
   final SupabaseClient _supabase;

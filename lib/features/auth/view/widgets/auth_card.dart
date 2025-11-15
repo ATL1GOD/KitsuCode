@@ -29,49 +29,49 @@ class AuthCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withAlpha(51)),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withAlpha(51),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: TabBar(
-                dividerHeight: 0,
-                controller: tabController,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: colorScheme.primary,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(51),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: TabBar(
+                    dividerHeight: 0,
+                    controller: tabController,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white70,
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: colorScheme.primary,
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    tabs: const [
+                      Tab(text: 'INICIAR SESIÓN'),
+                      Tab(text: 'REGISTRARSE'),
+                    ],
+                  ),
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                tabs: const [
-                  Tab(text: 'INICIAR SESIÓN'),
-                  Tab(text: 'REGISTRARSE'),
-                ],
-              ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 450,
+                  child: TabBarView(
+                    controller: tabController,
+                    children: [
+                      LoginForm(onSwitchToRegister: onSwitchToRegister),
+                      RegisterForm(onSwitchToLogin: onSwitchToLogin),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 450,
-              child: TabBarView(
-                controller: tabController,
-                children: [
-                  LoginForm(onSwitchToRegister: onSwitchToRegister),
-                  RegisterForm(onSwitchToLogin: onSwitchToLogin),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
-  }
+    }
 }

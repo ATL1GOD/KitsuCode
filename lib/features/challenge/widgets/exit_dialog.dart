@@ -47,7 +47,7 @@ void showExitDialog(BuildContext context) {
           children: [
             // Tu imagen
             Image.asset(
-              "assets/images/challenge/alerta4.png",
+              "assets/images/home/alerta.webp",
               height: 220, // Ajusta esta altura como veas necesario
               fit: BoxFit.cover,
             ),

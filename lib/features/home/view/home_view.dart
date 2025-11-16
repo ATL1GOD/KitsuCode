@@ -101,13 +101,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
   String _getMapBackgroundForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
-        return 'assets/images/home/camino_python.png';
+        return 'assets/images/home/camino_python.webp';
       case 'java':
-        return 'assets/images/home/camino_java.png';
-      // return 'assets/images/home/camino.png';
+        return 'assets/images/home/camino_java.webp';
       case 'c':
-        return 'assets/images/home/camino_c.png';
-      // return 'assets/images/home/camino4.png';
+        return 'assets/images/home/camino_c.webp';
 
       default:
         return 'assets/images/home/camino.png';
@@ -195,7 +193,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   image: DecorationImage(
                     image: AssetImage(mapAssetPath), // <-- Usamos la variable
                     fit: BoxFit.cover,
-                    repeat: ImageRepeat.repeatY,
+                    repeat: ImageRepeat.noRepeat,
                   ),
                 ),
               ),

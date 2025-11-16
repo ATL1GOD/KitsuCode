@@ -61,8 +61,12 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
     final textTheme = Theme.of(context).textTheme;
 
     // --- Lógica para obtener el color dinámico ---
-    final currentAuthUserId =
-        ref.watch(authStateProvider).value?.session?.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value
+        ?.session
+        ?.user
+        .id;
     final profileState = (currentAuthUserId != null)
         ? ref.watch(userProfileByIdProvider(currentAuthUserId))
         : null;
@@ -104,10 +108,7 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // 1. La imagen del zorro
-                    Image.asset(
-                      'assets/images/challenge/alerta7.png',
-                      width: 200,
-                    ),
+                    Image.asset('assets/images/home/alerta.webp', width: 200),
                     const SizedBox(height: 24),
 
                     // 2. Mensaje de Título
@@ -141,7 +142,9 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
                               backgroundColor: dynamicColor,
                               foregroundColor: colors.onPrimary,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 12),
+                                horizontal: 32,
+                                vertical: 12,
+                              ),
                               textStyle: textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),

@@ -5,17 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
-// --- FUSIÓN: Se mantiene TU import de navigation_tracker_provider ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
-import 'package:lottie/lottie.dart'; // Necesitarás Lottie para la animación
+import 'package:lottie/lottie.dart';
 import 'package:kitsucode/core/providers/app_provider.dart';
+
+// 🎉 Imports para verificación de lenguaje
+import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 class ChallengeSuccessView extends ConsumerWidget {
   final int trofeosObtenidos;
 
   const ChallengeSuccessView({super.key, required this.trofeosObtenidos});
 
-  // --- Función helper para obtener el Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -27,14 +29,12 @@ class ChallengeSuccessView extends ConsumerWidget {
       case 'java':
         return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
       default:
-        // Fallback al tema principal
         return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Obtenemos el tema del lenguaje actual
     final appBarState = ref.watch(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -43,13 +43,12 @@ class ChallengeSuccessView extends ConsumerWidget {
     final colorScheme = challengeTheme.colorScheme;
     final textTheme = challengeTheme.textTheme;
 
-    // 2. Envolvemos el Scaffold en el Tema del lenguaje
     return PopScope(
-      canPop: false, // Bloquear el botón de retroceso y el gesto de swipe back
+      canPop: false,
       child: Theme(
         data: challengeTheme,
         child: Scaffold(
-          backgroundColor: colorScheme.surface, // Fondo con el color del tema
+          backgroundColor: colorScheme.surface,
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -59,7 +58,6 @@ class ChallengeSuccessView extends ConsumerWidget {
                 children: [
                   const Spacer(),
 
-                  // --- Animación o Ilustración ---
                   SizedBox(
                     height: 250,
                     child: Lottie.asset(
@@ -69,26 +67,23 @@ class ChallengeSuccessView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // --- Mensaje de Felicitación ---
                   Text(
                     '¡Eres todo un programador!',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color:
-                          colorScheme.primary, // Color principal del lenguaje
+                      color: colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // --- Trofeos Ganados ---
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.5),
+                      color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -114,8 +109,6 @@ class ChallengeSuccessView extends ConsumerWidget {
 
                   const Spacer(),
 
-                  // --- Botón de Continuar ---
-                  // --- FUSIÓN: Se usa TU 'onPressed' (dxniel7) ---
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
@@ -126,17 +119,49 @@ class ChallengeSuccessView extends ConsumerWidget {
                       ),
                     ),
                     onPressed: () {
+                      // 1. Actualizar estadísticas
                       ref.read(appBarProvider.notifier).fetchStats();
-
-                      // El resto de tu lógica se queda igual
                       ref.read(oldStatsValuesProvider.notifier).state = null;
                       ref.read(shouldRefreshStatsProvider.notifier).state = false;
 
                       if (!context.mounted) return;
 
+                      // 2. Preparar navegación
                       final returnPath = ref.read(navigationReturnPathProvider);
                       ref.read(navigationReturnPathProvider.notifier).state = '/home';
+
+                      // 3. 🚀 OPTIMIZADO: Navegar INMEDIATAMENTE al home
                       context.go(returnPath);
+
+                      // 4. 🎉 Verificar lenguaje en background (NO BLOQUEANTE)
+                      final userId = ref.read(authStateProvider).value?.session?.user.id;
+                      
+                      if (userId != null) {
+                        // Delay para que la navegación termine primero
+                        Future.delayed(const Duration(milliseconds: 500), () async {
+                          try {
+                            await ref.read(languageCompletionProvider.notifier)
+                                .checkLanguageCompletion(userId);
+                            
+                            if (!context.mounted) return;
+                            
+                            final languageState = ref.read(languageCompletionProvider);
+                            
+                            // Si completó Y tiene más de 1 lenguaje
+                            if (languageState.isLanguageCompleted && 
+                                languageState.unlockedLanguages.length > 1) {
+                              
+                              // Navegar a celebración desde el home
+                              context.push('/language-completion', extra: {
+                                'completedLanguage': languageState.currentLanguage,
+                                'unlockedLanguages': languageState.unlockedLanguages,
+                              });
+                            }
+                          } catch (e) {
+                            debugPrint('Error verificando lenguaje: $e');
+                          }
+                        });
+                      }
                     },
                     child: const Text(
                       'CONTINUAR',
@@ -149,9 +174,9 @@ class ChallengeSuccessView extends ConsumerWidget {
                 ],
               ),
             ),
-          ), // Cierra SafeArea
-        ), // Cierra Scaffold
-      ), // Cierra Theme
-    ); // Cierra PopScope
+          ),
+        ),
+      ),
+    );
   }
 }

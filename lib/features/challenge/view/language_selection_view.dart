@@ -1,0 +1,492 @@
+// lib/features/challenge/view/language_selection_view.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+
+// 🔥 NUEVOS IMPORTS
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+
+// Modelo para representar un lenguaje
+class Language {
+  final String name;
+  final String displayName;
+  final IconData icon;
+  final Color color;
+  final Color darkColor;
+  final String description;
+  final bool isLocked;
+
+  Language({
+    required this.name,
+    required this.displayName,
+    required this.icon,
+    required this.color,
+    required this.darkColor,
+    required this.description,
+    this.isLocked = false,
+  });
+}
+
+class LanguageSelectionView extends ConsumerStatefulWidget {
+  final List<String> unlockedLanguages; // ["Python", "Java"] por ejemplo
+  final String currentLanguage; // El que acaba de completar
+
+  const LanguageSelectionView({
+    super.key,
+    required this.unlockedLanguages,
+    required this.currentLanguage,
+  });
+
+  @override
+  ConsumerState<LanguageSelectionView> createState() =>
+      _LanguageSelectionViewState();
+}
+
+class _LanguageSelectionViewState
+    extends ConsumerState<LanguageSelectionView> {
+  String? _selectedLanguage;
+  bool _isLoading = false;
+
+  // Definición de todos los lenguajes disponibles
+  late final List<Language> _allLanguages;
+
+  @override
+  void initState() {
+    super.initState();
+    _allLanguages = [
+      Language(
+        name: 'python',
+        displayName: 'Python',
+        icon: Icons.code,
+        color: const Color(0xFF3776AB),
+        darkColor: const Color(0xFF2D5F8D),
+        description: 'Lenguaje versátil y fácil de aprender',
+        isLocked: !widget.unlockedLanguages
+            .map((l) => l.toLowerCase())
+            .contains('python'),
+      ),
+      Language(
+        name: 'java',
+        displayName: 'Java',
+        icon: Icons.coffee,
+        color: const Color(0xFFF89820),
+        darkColor: const Color(0xFFD17B1A),
+        description: 'Programación orientada a objetos',
+        isLocked: !widget.unlockedLanguages
+            .map((l) => l.toLowerCase())
+            .contains('java'),
+      ),
+      Language(
+        name: 'c',
+        displayName: 'C',
+        icon: Icons.memory,
+        color: const Color(0xFF00599C),
+        darkColor: const Color(0xFF004578),
+        description: 'El lenguaje de los sistemas',
+        isLocked:
+            !widget.unlockedLanguages.map((l) => l.toLowerCase()).contains('c'),
+      ),
+    ];
+  }
+
+  Future<void> _selectLanguage(Language language) async {
+    if (language.isLocked || _isLoading) return;
+
+    setState(() {
+      _selectedLanguage = language.name;
+      _isLoading = true;
+    });
+
+    try {
+      // Obtener el userId
+      final userId = ref.read(authStateProvider).value?.session?.user.id;
+      
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Actualizar el lenguaje favorito en Supabase
+      await ref.read(languageCompletionProvider.notifier)
+          .updateFavoriteLanguage(userId, language.name);
+
+      // 🔥 CRÍTICO: Resetear el estado de completitud
+      ref.read(languageCompletionProvider.notifier).resetCompletionState();
+
+      // 🔥 NUEVO: Actualizar el appBarProvider para reflejar el cambio
+      await ref.read(appBarProvider.notifier).fetchStats();
+
+      if (mounted) {
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cambiado a ${language.displayName}'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Pequeño delay para que el usuario vea el mensaje
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Navegar al home
+        if (mounted) {
+          context.go('/home');
+        }
+      }
+    } catch (e) {
+      // Manejar error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cambiar de lenguaje: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+          _selectedLanguage = null;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0E27),
+      body: Stack(
+        children: [
+          // Fondo con gradiente
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0A0E27),
+                  Color(0xFF1A1E3F),
+                ],
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Encabezado
+                  Column(
+                    children: [
+                      // Ícono de estrella
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange.shade400,
+                              Colors.orange.shade700,
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withValues(alpha: 0.5),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.star,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      )
+                          .animate()
+                          .fadeIn(duration: 600.ms)
+                          .scale(delay: 200.ms)
+                          .then()
+                          .shimmer(
+                              duration: 2000.ms,
+                              color: Colors.white.withValues(alpha: 0.5)),
+
+                      const SizedBox(height: 24),
+
+                      // Título
+                      const Text(
+                        '¡Nuevo Lenguaje Disponible!',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      )
+                          .animate()
+                          .fadeIn(duration: 600.ms, delay: 300.ms)
+                          .slideY(begin: -0.2, end: 0, delay: 300.ms),
+
+                      const SizedBox(height: 12),
+
+                      // Subtítulo
+                      const Text(
+                        'Selecciona el próximo lenguaje que quieres dominar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white70,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      )
+                          .animate()
+                          .fadeIn(duration: 600.ms, delay: 500.ms)
+                          .slideY(begin: -0.1, end: 0, delay: 500.ms),
+                    ],
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Lista de lenguajes
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _allLanguages.length,
+                      itemBuilder: (context, index) {
+                        final language = _allLanguages[index];
+                        final isSelected = _selectedLanguage == language.name;
+                        final delay = (700 + (index * 150)).toDouble();
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _LanguageCard(
+                            language: language,
+                            isSelected: isSelected,
+                            isLoading: _isLoading && isSelected,
+                            onTap: () => _selectLanguage(language),
+                          ),
+                        )
+                            .animate()
+                            .fadeIn(duration: 600.ms, delay: delay.ms)
+                            .slideX(
+                              begin: -0.2,
+                              end: 0,
+                              delay: delay.ms,
+                              curve: Curves.easeOutCubic,
+                            );
+                      },
+                    ),
+                  ),
+
+                  // Nota informativa
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.orange.shade300,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Podrás cambiar entre lenguajes desbloqueados en cualquier momento',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white60,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 600.ms, delay: 1200.ms)
+                      .slideY(begin: 0.2, end: 0, delay: 1200.ms),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LanguageCard extends StatelessWidget {
+  final Language language;
+  final bool isSelected;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _LanguageCard({
+    required this.language,
+    required this.isSelected,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: language.isLocked ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: language.isLocked
+              ? LinearGradient(
+                  colors: [
+                    Colors.grey.shade800,
+                    Colors.grey.shade900,
+                  ],
+                )
+              : LinearGradient(
+                  colors: [
+                    language.color.withValues(alpha: isSelected ? 0.3 : 0.15),
+                    language.darkColor.withValues(alpha: isSelected ? 0.3 : 0.15),
+                  ],
+                ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: language.isLocked
+                ? Colors.grey.shade700
+                : isSelected
+                    ? language.color
+                    : language.color.withValues(alpha: 0.3),
+            width: isSelected ? 3 : 2,
+          ),
+          boxShadow: language.isLocked
+              ? []
+              : [
+                  BoxShadow(
+                    color: language.color
+                        .withValues(alpha: isSelected ? 0.4 : 0.2),
+                    blurRadius: isSelected ? 20 : 10,
+                    spreadRadius: isSelected ? 2 : 0,
+                  ),
+                ],
+        ),
+        child: Stack(
+          children: [
+            Row(
+              children: [
+                // Ícono del lenguaje
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: language.isLocked
+                        ? Colors.grey.shade700
+                        : language.color.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: language.isLocked
+                          ? Colors.grey.shade600
+                          : language.color,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    language.icon,
+                    size: 30,
+                    color: language.isLocked
+                        ? Colors.grey.shade500
+                        : language.color,
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                // Información del lenguaje
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            language.displayName,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: language.isLocked
+                                  ? Colors.grey.shade500
+                                  : Colors.white,
+                            ),
+                          ),
+                          if (language.isLocked) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.lock,
+                              size: 18,
+                              color: Colors.grey.shade500,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        language.isLocked
+                            ? 'Completa los lenguajes anteriores'
+                            : language.description,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: language.isLocked
+                              ? Colors.grey.shade600
+                              : Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Indicador de selección o loading
+                if (!language.isLocked)
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: isLoading
+                        ? CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(language.color),
+                          )
+                        : isSelected
+                            ? Icon(
+                                Icons.check_circle,
+                                size: 32,
+                                color: language.color,
+                              )
+                            : Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 24,
+                                color: language.color.withValues(alpha: 0.5),
+                              ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

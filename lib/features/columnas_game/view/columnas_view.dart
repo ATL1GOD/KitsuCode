@@ -188,6 +188,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         return Theme(
           data: challengeTheme,
           child: ChallengeFeedbackModal(
+            challengeId: int.parse(widget.retoId),
             isCorrect: esCorrecto,
             // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {

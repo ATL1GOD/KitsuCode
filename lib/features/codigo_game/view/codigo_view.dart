@@ -187,6 +187,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
         return Theme(
           data: challengeTheme,
           child: ChallengeFeedbackModal(
+            challengeId: int.parse(widget.retoId),
             isCorrect: esCorrecto,
             onContinue: () async {
               Navigator.of(

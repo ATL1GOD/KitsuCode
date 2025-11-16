@@ -186,6 +186,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         return Theme(
           data: challengeTheme,
           child: ChallengeFeedbackModal(
+            challengeId: int.parse(widget.retoId),
             isCorrect: esCorrecto,
             // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {

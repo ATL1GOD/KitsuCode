@@ -186,6 +186,7 @@ class PuzzleView extends ConsumerWidget {
                 return Theme(
                   data: challengeTheme,
                   child: ChallengeFeedbackModal(
+                    challengeId: puzzleState.challengeId,
                     isCorrect: esCorrecto,
                     // --- MODIFICADO: Lógica de onContinue ---
                     onContinue: () async {
@@ -218,7 +219,7 @@ class PuzzleView extends ConsumerWidget {
                                 retoId: currentState.challengeId,
                                 nivelId: currentState.nivelId, // ← ¡AÑADIDO!
                                 fueExitoso: true,
-                                tiempoQueTardo: 0, // TODO: Implementar timer
+                                tiempoQueTardo: 0, // No medimos tiempo en puzzles 
                               );
 
                           // 2. Refrescar Ranking (NO refrescamos stats aquí - se hará al regresar al Home)

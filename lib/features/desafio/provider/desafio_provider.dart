@@ -21,6 +21,7 @@ Color _colorFromHex(String hexString, {String fallback = '#808080'}) {
   }
   return Color(int.parse(buffer.toString(), radix: 16));
 }
+
 // --- Fin del Helper ---
 // --- Clases de Modelo Simples ---
 class DesafioEspecial {
@@ -29,9 +30,9 @@ class DesafioEspecial {
   final String descripcion;
   final DateTime fechaInicio;
   final DateTime fechaFin;
-  final Color colorClaro; 
-  final Color colorOscuro; 
-  final String svgEspecial; 
+  final Color colorClaro;
+  final Color colorOscuro;
+  final String webpEspecial;
 
   DesafioEspecial({
     required this.idReto,
@@ -39,9 +40,9 @@ class DesafioEspecial {
     required this.descripcion,
     required this.fechaInicio,
     required this.fechaFin,
-    required this.colorClaro, 
-    required this.colorOscuro, 
-    required this.svgEspecial, 
+    required this.colorClaro,
+    required this.colorOscuro,
+    required this.webpEspecial,
   });
 
   factory DesafioEspecial.fromMap(Map<String, dynamic> map) {
@@ -53,27 +54,23 @@ class DesafioEspecial {
       descripcion: map['descripcion'] ?? 'Sin descripción.',
       fechaInicio: DateTime.parse(map['fecha_inicio']),
       fechaFin: DateTime.parse(map['fecha_final']),
-      colorClaro: _colorFromHex(
-        detalles?['color_claro'] ?? '#66bb6a',
-      ), 
-      colorOscuro: _colorFromHex(
-        detalles?['color_oscuro'] ?? '#2e7d32',
-      ),
-      svgEspecial:
-          detalles?['svg_especial'] ??
-          'assets/images/default_fallback.svg', 
+      colorClaro: _colorFromHex(detalles?['color_claro'] ?? '#66bb6a'),
+      colorOscuro: _colorFromHex(detalles?['color_oscuro'] ?? '#2e7d32'),
+      webpEspecial:
+          detalles?['asset_especial'] ?? 'assets/images/default_fallback.webp',
     );
   }
 }
+
 class RetoIndividual {
   final int idReto;
   final String titulo;
-  final int nivelId; 
+  final int nivelId;
 
   RetoIndividual({
     required this.idReto,
     required this.titulo,
-    required this.nivelId, 
+    required this.nivelId,
   });
 
   factory RetoIndividual.fromMap(Map<String, dynamic> map) {
@@ -84,20 +81,21 @@ class RetoIndividual {
       idNivelEncontrado =
           (niveles.first as Map<String, dynamic>)['id_nivel'] as int? ?? 0;
     } else {
-      idNivelEncontrado = 0; 
+      idNivelEncontrado = 0;
     }
 
     return RetoIndividual(
       idReto: map['id_reto'],
       titulo: map['titulo'],
-      nivelId: idNivelEncontrado, 
+      nivelId: idNivelEncontrado,
     );
   }
 }
+
 class DesafioMensualData {
-  final DesafioEspecial? agrupador; 
-  final List<RetoIndividual> individuales; 
-  final Set<int> completedRetoIds; 
+  final DesafioEspecial? agrupador;
+  final List<RetoIndividual> individuales;
+  final Set<int> completedRetoIds;
   final bool isParentCompleted;
 
   DesafioMensualData({
@@ -114,7 +112,6 @@ final supabase = Supabase.instance.client;
 
 // 🔥 MODIFICADO: Ahora reacciona a la conexión
 final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
-  
   // 🔥 2. AÑADIR ESTE BLOQUE
   // Esperar a que la conexión esté confirmada
   final connectivityStatus = await ref.watch(connectivityProvider.future);
@@ -125,7 +122,7 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
   }
 
   // --- LÓGICA ORIGINAL ---
-  
+
   // 0. Obtener el ID del usuario.
   final user = supabase.auth.currentUser;
   if (user == null) {
@@ -140,12 +137,12 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
   final resultsEspeciales = await supabase
       .from('reto')
       .select(
-        'id_reto, titulo, descripcion, fecha_inicio, fecha_final, reto_especiales_detalles(color_claro, color_oscuro, svg_especial)',
+        'id_reto, titulo, descripcion, fecha_inicio, fecha_final, reto_especiales_detalles(color_claro, color_oscuro, asset_especial)',
       )
       .eq('especial', true)
-      .eq('activo', true) 
-      .lte('fecha_inicio', now) 
-      .gte('fecha_final', now) 
+      .eq('activo', true)
+      .lte('fecha_inicio', now)
+      .gte('fecha_final', now)
       .limit(1);
 
   final List<DesafioEspecial> especiales = (resultsEspeciales as List)
@@ -182,8 +179,9 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
           .toList();
 
   // 3. Obtener el progreso del usuario
-  final List<int> retosIndividualesIds =
-      retosIndividuales.map((r) => r.idReto).toList();
+  final List<int> retosIndividualesIds = retosIndividuales
+      .map((r) => r.idReto)
+      .toList();
 
   final resultsCompleted = await supabase
       .from('intento_reto')
@@ -200,7 +198,7 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
       .from('intento_reto')
       .select('id_reto')
       .eq('id_usuario', userId)
-      .eq('id_reto', event.idReto) 
+      .eq('id_reto', event.idReto)
       .eq('resultado', 'completado')
       .limit(1);
 

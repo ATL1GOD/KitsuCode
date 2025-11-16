@@ -1,7 +1,6 @@
 // features/desafio/presentation/widgets/special_event_card_header.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // 1. IMPORTA EL PAQUETE
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 import 'segmented_event_progress_bar.dart';
 
@@ -221,8 +220,8 @@ class SpecialEventCardHeader extends StatelessWidget {
               ],
             ),
             // --- AQUÍ EL CAMBIO ---
-            child: SvgPicture.asset(
-              evento.svgEspecial, // <-- ¡AHORA ES DINÁMICO!
+            child: Image.network(
+              evento.webpEspecial, // <-- DEBE SER LA URL COMPLETA AL WEBP
               fit: BoxFit.cover,
             ),
           ),

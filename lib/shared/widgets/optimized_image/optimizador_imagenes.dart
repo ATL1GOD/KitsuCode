@@ -86,7 +86,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
   Widget build(BuildContext context) {
     final bool isNetworkImage = _optimizedUrl.startsWith('http');
 
-    // ✅ OPTIMIZACIÓN: Container inicial mínimo hasta que se decida cargar
     if (!_shouldLoad || !_isInitialized) {
       return _buildSkeletonWidget();
     }
@@ -96,7 +95,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
       return _buildLocalImage();
     }
 
-    // ✅ OPTIMIZACIÓN: Usar Image.network si el cache está desactivado
     if (!widget.enableCache) {
       return _buildNetworkImageWithoutCache();
     }

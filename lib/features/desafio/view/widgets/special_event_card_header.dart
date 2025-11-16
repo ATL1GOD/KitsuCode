@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
-import 'package:kitsucode/shared/widgets/optimized_image/optimizador_imagenes.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'segmented_event_progress_bar.dart';
 
 class SpecialEventCardHeader extends StatelessWidget {

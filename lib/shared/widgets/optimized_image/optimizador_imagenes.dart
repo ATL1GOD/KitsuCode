@@ -26,16 +26,24 @@ class OptimizedImage extends StatefulWidget {
 }
 
 class _OptimizedImageState extends State<OptimizedImage> {
-  late final String _optimizedUrl;
+  late String _optimizedUrl;
   bool _shouldLoad = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _optimizedUrl = _getOptimizedUrl();
-
-    // ✅ OPTIMIZACIÓN: Carga diferida para mejorar rendimiento
     _scheduleLoad();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_isInitialized) {
+      _optimizedUrl = _getOptimizedUrl();
+      _isInitialized = true;
+    }
   }
 
   void _scheduleLoad() {
@@ -79,7 +87,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
     final bool isNetworkImage = _optimizedUrl.startsWith('http');
 
     // ✅ OPTIMIZACIÓN: Container inicial mínimo hasta que se decida cargar
-    if (!_shouldLoad) {
+    if (!_shouldLoad || !_isInitialized) {
       return _buildSkeletonWidget();
     }
 
@@ -114,7 +122,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
       height: widget.height,
       fit: widget.fit,
 
-      // ✅ OPTIMIZACIONES DE RENDIMIENTO:
       fadeInDuration: const Duration(milliseconds: 300),
       fadeOutDuration: const Duration(milliseconds: 200),
 
@@ -137,7 +144,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
       height: widget.height,
       fit: widget.fit,
 
-      // ✅ OPTIMIZACIONES:
       cacheWidth: (widget.width * 2).round(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded) return child;
@@ -156,7 +162,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
     );
   }
 
-  // ✅ Widget de carga eficiente
   Widget _buildSkeletonWidget() {
     return Container(
       width: widget.width,
@@ -174,6 +179,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
   }
 
   Widget _buildErrorWidget() {
+    final minSize = widget.width < widget.height ? widget.width : widget.height;
     return Container(
       width: widget.width,
       height: widget.height,
@@ -181,8 +187,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
       child: Icon(
         Icons.broken_image,
         color: Theme.of(context).colorScheme.outline,
-        size:
-            (widget.width < widget.height ? widget.width : widget.height) * 0.3,
+        size: minSize * 0.3,
       ),
     );
   }
@@ -193,7 +198,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
   }
 }
 
-// ✅ VERSIÓN OPTIMIZADA para listas
 class OptimizedImageListTile extends StatelessWidget {
   final String imagePath;
   final double width;

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
+import 'package:kitsucode/shared/widgets/optimized_image/optimizador_imagenes.dart';
 import 'segmented_event_progress_bar.dart';
 
 class SpecialEventCardHeader extends StatelessWidget {
@@ -124,15 +125,6 @@ class SpecialEventCardHeader extends StatelessWidget {
                   // 4. DEJA UN ESPACIO PARA LA ESTAMPA
                   //    Esto evita que el texto se ponga debajo de ella.
                   //    Ajusta el 'width' al tamaño de tu estampa.
-
-                  // ==========================================================
-                  //                 ¡¡¡ CAMBIO CLAVE AQUÍ !!!
-                  //
-                  // Aumentamos el espacio de 60 a 120. Esto le da menos
-                  // espacio al 'Expanded' del título, forzando a los
-                  // títulos largos a ajustarse (wrap) a la siguiente línea
-                  // ANTES de que lleguen a la estampa.
-                  // ==========================================================
                   const SizedBox(width: 120),
                 ],
               ),
@@ -201,7 +193,7 @@ class SpecialEventCardHeader extends StatelessWidget {
           ),
         ),
 
-        // 5. AQUÍ VA LA ESTAMPA SVG SUPERPUESTA
+        // 5. AQUÍ VA LA ESTAMPA SVG SUPERPUESTA - CON OPTIMIZEDIMAGE
         Positioned(
           top: 10, // <-- Ajusta para que "flote" hacia arriba
           right: 30, // <-- Ajusta la posición horizontal
@@ -219,10 +211,14 @@ class SpecialEventCardHeader extends StatelessWidget {
                 ),
               ],
             ),
-            // --- AQUÍ EL CAMBIO ---
-            child: Image.network(
-              evento.webpEspecial, // <-- DEBE SER LA URL COMPLETA AL WEBP
+            // --- AQUÍ EL CAMBIO PRINCIPAL ---
+            child: OptimizedImage(
+              imagePath: evento.webpEspecial, // "home/alerta.webp"
+              width: 150,
+              height: 150,
               fit: BoxFit.cover,
+              enableCache: true, // Cache activado para mejor rendimiento
+              isLocalAsset: false, // Es una imagen de red desde Supabase
             ),
           ),
         ),

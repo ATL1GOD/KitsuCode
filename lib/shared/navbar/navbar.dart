@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes_local.dart';
 
 class NavBar extends StatelessWidget {
   final int currentIndex;
@@ -14,35 +15,28 @@ class NavBar extends StatelessWidget {
       index: currentIndex,
       height: 65.0,
       items: <Widget>[
-        // Transform.scale(
-        //   scale: 1.5,
-        //   child:
-        Image.asset(
-          'assets/images/home/icon_home.webp',
+        OptimizedLocalImage(
+          assetPath: 'assets/images/home/icon_home.webp',
           width: 60,
           height: 60,
-          // ),
         ),
-        Image.asset('assets/images/home/icon_rank4.png', width: 60, height: 60),
+        OptimizedLocalImage(
+          assetPath: 'assets/images/home/icon_rank.webp',
+          width: 50,
+          height: 50,
+        ),
 
-        // Transform.scale(
-        //   scale: 1.5,
-        // child:
-        Image.asset(
-          'assets/images/home/icon_amigos.webp',
+        OptimizedLocalImage(
+          assetPath: 'assets/images/home/icon_amigos.webp',
           width: 55,
           height: 55,
         ),
-        // ),
-        // Transform.scale(
-        //   scale: 1.5,
-        //   child:
-        Image.asset(
-          'assets/images/home/icon_perfil.webp',
+
+        OptimizedLocalImage(
+          assetPath: 'assets/images/home/icon_perfil.webp',
           width: 60,
           height: 60,
         ),
-        // ),
       ],
       color: colorScheme.secondary,
 
@@ -51,7 +45,7 @@ class NavBar extends StatelessWidget {
       backgroundColor: colorScheme.secondaryContainer,
 
       animationCurve: Curves.easeOutCubic, //
-      animationDuration: const Duration(milliseconds: 900),
+      animationDuration: const Duration(milliseconds: 400),
       onTap: onTap,
       letIndexChange: (index) => true,
     );

@@ -2,10 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // <-- ¡IMPORTADO!
 
 // Providers
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_resetpassword.dart';
+// --- ¡NUEVA IMPORTACIÓN! ---
+import 'package:kitsucode/features/auth/view/widgets/auth_update_password.dart';
 
 // Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
@@ -64,11 +67,16 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(ref),
-
     redirect: (context, state) {
       final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
       final loc = state.matchedLocation;
-      final inAuth = loc == '/auth' || loc == '/forgot-password';
+
+      // --- ¡MODIFICADO! Añadida la nueva ruta ---
+      final inAuth =
+          loc == '/auth' ||
+          loc == '/forgot-password' ||
+          loc == '/update-password';
+
       final inSplash = loc == '/';
       final inNoInternet = loc == '/no-internet';
 
@@ -78,13 +86,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Si estamos en NoInternet, no redirigir
       if (inNoInternet) return null;
 
+      // --- ¡MODIFICADO! ---
+      // Si el usuario está en la pantalla de /update-password, déjalo estar
+      if (loc == '/update-password') return null;
+
       // Lógica normal de auth
       if (!isLogged && !inAuth) return '/auth';
       if (isLogged && inAuth) return '/home';
 
       return null;
     },
-
     routes: [
       // Splash
       GoRoute(path: '/', builder: (context, state) => const SplashView()),
@@ -95,6 +106,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/forgot-password',
         builder: (context, state) => const ForgotPasswordView(),
+      ),
+
+      // --- ¡NUEVA RUTA AÑADIDA! ---
+      GoRoute(
+        path: '/update-password',
+        builder: (context, state) => const UpdatePasswordView(),
       ),
 
       // 🔥 NUEVA RUTA: Vista de sin internet
@@ -228,7 +245,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               return AllAchievementsView(userId: userId);
             },
           ),
-
           GoRoute(
             path: 'follow/:type',
             builder: (context, state) {
@@ -244,7 +260,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               return FollowListView(userId: userId, type: type);
             },
           ),
-
           GoRoute(
             path: 'challenge-history',
             name: 'challenge-history',
@@ -336,6 +351,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
     });
   });
+
+  // --- 🔥 ¡LA SOLUCIÓN! AÑADIR ESTE LISTENER DE AUTH 🔥 ---
+  ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
+    next.whenData((authState) {
+      // Si el evento es de "PasswordRecovery"
+      if (authState.event == AuthChangeEvent.passwordRecovery) {
+        // No importa dónde esté el usuario, ¡lo forzamos
+        // a la pantalla de actualizar contraseña!
+        Future.microtask(() {
+          router.go('/update-password');
+        });
+      }
+    });
+  });
+  // --- FIN DEL BLOQUE AÑADIDO ---
 
   return router;
 });

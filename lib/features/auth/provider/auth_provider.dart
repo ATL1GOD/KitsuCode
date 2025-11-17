@@ -217,3 +217,39 @@ class ResetPasswordState extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
+
+// --- ¡¡BLOQUE 100% NUEVO!! ---
+// --- Provider para ACTUALIZAR contraseña (sin re-autenticación) ---
+final updatePasswordProvider =
+    StateNotifierProvider<UpdatePasswordState, AsyncValue<void>>((ref) {
+      return UpdatePasswordState(ref);
+    });
+
+class UpdatePasswordState extends StateNotifier<AsyncValue<void>> {
+  final Ref _ref;
+  UpdatePasswordState(this._ref) : super(const AsyncValue.data(null));
+
+  Future<void> updatePassword(String newPassword) async {
+    state = const AsyncValue.loading();
+    try {
+      final authRepository = await _ref.read(authRepositoryProvider.future);
+
+      // ¡Importante! Solo llamamos a changePassword (updateUser)
+      // Supabase lo permite porque el usuario está en el estado
+      // de "passwordRecovery"
+      await authRepository.changePassword(newPassword);
+
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow; // Re-lanza el error para que la UI lo atrape
+    }
+  }
+
+  // --- Método para limpiar estado de error ---
+  void clearError() {
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
+    }
+  }
+}

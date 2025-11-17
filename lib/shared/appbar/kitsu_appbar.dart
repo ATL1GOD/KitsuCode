@@ -65,11 +65,14 @@ class _StaggerItemState extends State<_StaggerItem>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
+    // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints en cascada
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
+          child: widget.child,
+        ),
       ),
     );
   }

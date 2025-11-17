@@ -169,6 +169,8 @@ class ChallengeHistoryView extends ConsumerWidget {
 
                           // La lista
                           return ListView.builder(
+                            // 🎯 OPTIMIZACIÓN: cacheExtent para mejor scrolling
+                            cacheExtent: 200.0,
                             padding: EdgeInsets.only(
                               top: 20, // Espacio desde el appbar
                               bottom: MediaQuery.of(context).padding.bottom + 20,

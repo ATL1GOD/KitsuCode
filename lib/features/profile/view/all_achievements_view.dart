@@ -314,6 +314,8 @@ class _AchievementsGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
+      // 🎯 OPTIMIZACIÓN: Añadir cacheExtent para pre-renderizar elementos
+      cacheExtent: 100.0, // Pre-renderiza ~100px fuera de viewport
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 0.75,

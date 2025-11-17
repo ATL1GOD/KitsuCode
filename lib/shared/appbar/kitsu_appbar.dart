@@ -226,7 +226,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildLanguageSelector(context, ref, stats),
+            _buildLanguageSelector(context, ref, stats, languageTheme),
             AnimatedStatBadge(
               value: stats.streak,
               icon: Icons.local_fire_department,
@@ -254,11 +254,12 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  Widget _buildLanguageSelector(
-    BuildContext context,
-    WidgetRef ref,
-    AppBarState stats,
-  ) {
+    Widget _buildLanguageSelector(
+      BuildContext context,
+      WidgetRef ref,
+      AppBarState stats,
+      ThemeData languageTheme,
+    ) {
     return CompositedTransformTarget(
       link: _layerLink,
       child: OverlayPortal(
@@ -275,39 +276,30 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                   child: Container(color: Colors.transparent),
                 ),
                 CompositedTransformFollower(
-  link: _layerLink,
-  offset: const Offset(0, 52),
-  child: Builder(
-    builder: (overlayContext) {
-      final brightness = MediaQuery.of(overlayContext).platformBrightness;
-      final languageTheme = _getLanguageTheme(stats.languageName, brightness);
-
-      return Theme(
-        data: languageTheme,
-        child: Material(
-          type: MaterialType.transparency,
-                      child: IntrinsicWidth(
-                        child: IntrinsicHeight(
-                          child: GestureDetector(
-                            onTap: () {},
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 260),
-                              switchInCurve: Curves.easeOutBack,
-                              switchOutCurve: Curves.easeInBack,
-                              child: _isMenuOpen
-                                  ? _buildLanguageMenu(
-                                      context,
-                                      ref,
-                                      stats.languageId,
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
+                  link: _layerLink,
+                  offset: const Offset(0, 52),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: IntrinsicWidth(
+                      child: IntrinsicHeight(
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 260),
+                            switchInCurve: Curves.easeOutBack,
+                            switchOutCurve: Curves.easeInBack,
+                            child: _isMenuOpen
+                                ? _buildLanguageMenu(
+                                    context,
+                                    ref,
+                                    stats.languageId,
+                                    languageTheme,
+                                  )
+                                : const SizedBox.shrink(),
                           ),
                         ),
                       ),
                     ),
-                    );
-                  },  
                   ),
                 ),
               ],
@@ -342,12 +334,11 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     BuildContext context,
     WidgetRef ref,
     int currentLangId,
+    ThemeData languageTheme,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = languageTheme.colorScheme;
+    final textTheme = languageTheme.textTheme;
     final isDark = colorScheme.brightness == Brightness.dark;
-    
-    
     final languageListAsync = ref.watch(languageListProvider);
 
     

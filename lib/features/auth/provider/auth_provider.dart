@@ -187,3 +187,33 @@ class ChangePasswordState extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
+
+// --- BLOQUE AÑADIDO: Provider para el restablecimiento de contraseña ---
+final resetPasswordProvider =
+    StateNotifierProvider<ResetPasswordState, AsyncValue<void>>((ref) {
+      return ResetPasswordState(ref);
+    });
+
+class ResetPasswordState extends StateNotifier<AsyncValue<void>> {
+  final Ref _ref;
+  ResetPasswordState(this._ref) : super(const AsyncValue.data(null));
+
+  Future<void> sendResetEmail(String email) async {
+    state = const AsyncValue.loading();
+    try {
+      final authRepository = await _ref.read(authRepositoryProvider.future);
+      await authRepository.resetPasswordForEmail(email);
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow;
+    }
+  }
+
+  // --- Método para limpiar estado de error ---
+  void clearError() {
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
+    }
+  }
+}

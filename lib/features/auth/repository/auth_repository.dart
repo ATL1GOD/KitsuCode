@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart'; // <-- AÑADIDO
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
@@ -41,6 +42,26 @@ class AuthRepository {
       OAuthProvider.google,
       // --- MEJORA: Parámetros adicionales para mejor UX ---
       redirectTo: 'kitsucode://auth-done',
+    );
+  }
+
+  // --- CORREGIDO: Eliminada la función duplicada ---
+  Future<void> resetPasswordForEmail(String email) async {
+    // Validación básica
+    if (!_isValidEmail(email)) {
+      throw AuthException('Formato de email inválido');
+    }
+
+    // Define a dónde debe redirigir Supabase al usuario DESPUÉS
+    // de que haya creado su nueva contraseña en el enlace del correo.
+    // Lo mandamos de vuelta a la pantalla de login.
+    final String redirectUrl = kIsWeb
+        ? 'http://localhost:3000/auth' // Para Web
+        : 'kitsucode://auth-done'; // Para Móvil
+
+    await _supabaseClient.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo: redirectUrl,
     );
   }
 

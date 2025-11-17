@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // <-- AÑADIDO
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
 
@@ -187,13 +188,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           AnimatedFadeIn(
             delay: 700,
             child: TextButton(
+              // --- CAMBIO AQUÍ ---
               onPressed: () {
-                // TODO: Implementar recuperación de contraseña
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Función de recuperación en desarrollo'),
-                  ),
-                );
+                context.go('/forgot-password');
               },
               child: Text(
                 '¿Olvidaste tu contraseña?',

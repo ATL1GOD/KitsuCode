@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Providers
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/auth/view/widgets/auth_resetpassword.dart';
 
 // Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
@@ -63,38 +64,37 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(ref),
-    
+
     redirect: (context, state) {
       final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
       final loc = state.matchedLocation;
-      final inAuth = loc == '/auth';
+      final inAuth = loc == '/auth' || loc == '/forgot-password';
       final inSplash = loc == '/';
       final inNoInternet = loc == '/no-internet';
 
       // Si estamos en splash, dejar que termine
       if (inSplash) return null;
-      
+
       // Si estamos en NoInternet, no redirigir
       if (inNoInternet) return null;
-      
+
       // Lógica normal de auth
       if (!isLogged && !inAuth) return '/auth';
       if (isLogged && inAuth) return '/home';
-      
+
       return null;
     },
 
     routes: [
       // Splash
-      GoRoute(
-        path: '/', 
-        builder: (context, state) => const SplashView()
-      ),
+      GoRoute(path: '/', builder: (context, state) => const SplashView()),
 
       // Auth
+      GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
+
       GoRoute(
-        path: '/auth', 
-        builder: (context, state) => const AuthView(),
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordView(),
       ),
 
       // 🔥 NUEVA RUTA: Vista de sin internet
@@ -108,10 +108,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final retoId = state.pathParameters['retoId']!;
           final nivelId = state.pathParameters['nivelId']!;
-          return RetoDistribuidorPage(
-            retoId: retoId,
-            nivelId: nivelId,
-          );
+          return RetoDistribuidorPage(retoId: retoId, nivelId: nivelId);
         },
       ),
 
@@ -119,7 +116,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
       ),
-      
+
       GoRoute(
         path: '/edit-avatar',
         builder: (context, state) {
@@ -322,22 +319,23 @@ final routerProvider = Provider<GoRouter>((ref) {
   //ref.read(_routerInstanceProvider.notifier).state = router;
 
   // 🔥 LISTENER DE CONECTIVIDAD (ahora sin ciclo)
-  ref.listen<AsyncValue<ConnectivityStatus>>(
-    connectivityProvider,
-    (previous, next) {
-      next.whenData((status) {
-        if (status == ConnectivityStatus.offline) {
-          // 🔥 Usamos la variable 'router' local directamente
-          Future.microtask(() {
-            final currentLocation = router.routerDelegate.currentConfiguration.uri.toString();
-            if (currentLocation != '/no-internet') {
-              router.go('/no-internet');
-            }
-          });
-        }
-      });
-    },
-  );
+  ref.listen<AsyncValue<ConnectivityStatus>>(connectivityProvider, (
+    previous,
+    next,
+  ) {
+    next.whenData((status) {
+      if (status == ConnectivityStatus.offline) {
+        // 🔥 Usamos la variable 'router' local directamente
+        Future.microtask(() {
+          final currentLocation = router.routerDelegate.currentConfiguration.uri
+              .toString();
+          if (currentLocation != '/no-internet') {
+            router.go('/no-internet');
+          }
+        });
+      }
+    });
+  });
 
   return router;
 });

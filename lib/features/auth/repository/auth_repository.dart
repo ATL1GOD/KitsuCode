@@ -40,7 +40,7 @@ class AuthRepository {
     await _supabaseClient.auth.signInWithOAuth(
       OAuthProvider.google,
       // --- MEJORA: Parámetros adicionales para mejor UX ---
-      redirectTo: 'kitsucode://login-callback',
+      redirectTo: 'kitsucode://auth-done',
     );
   }
 

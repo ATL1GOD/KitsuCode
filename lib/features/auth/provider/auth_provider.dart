@@ -146,3 +146,44 @@ class RegisterState extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
+
+// [En auth_provider.dart]
+
+// --- NUEVO: Provider para el cambio de contraseña ---
+final changePasswordProvider =
+    StateNotifierProvider<ChangePasswordState, AsyncValue<void>>((ref) {
+      return ChangePasswordState(ref);
+    });
+
+class ChangePasswordState extends StateNotifier<AsyncValue<void>> {
+  final Ref _ref;
+  ChangePasswordState(this._ref) : super(const AsyncValue.data(null));
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final authRepository = await _ref.read(authRepositoryProvider.future);
+
+      // 1. RE-AUTENTICAR: El usuario prueba que es él
+      await authRepository.reauthenticate(currentPassword);
+
+      // 2. CAMBIAR CONTRASEÑA: Si lo anterior fue exitoso, actualiza
+      await authRepository.changePassword(newPassword);
+
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow; // Re-lanza el error para que la UI lo atrape
+    }
+  }
+
+  // --- NUEVO: Método para limpiar estado de error (opcional) ---
+  void clearError() {
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
+    }
+  }
+}

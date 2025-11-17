@@ -34,7 +34,7 @@ import 'package:kitsucode/main.dart';
 // --- VISTAS DEL EQUIPO (atl1god) ---
 import 'package:kitsucode/features/desafio/view/desafio_view.dart';
 
-// --- ¡NUEVAS VISTAS DE SETTINGS! ---
+// --- VISTAS DE SETTINGS ---
 import 'package:kitsucode/features/settings/view/settings_view.dart';
 import 'package:kitsucode/features/settings/view/notifications_view.dart';
 import 'package:kitsucode/features/settings/view/support_view.dart';
@@ -44,6 +44,9 @@ import 'package:kitsucode/features/settings/view/widgets/notification_category_v
 import 'package:kitsucode/features/profile/view/challenge_history_view.dart';
 import 'package:kitsucode/features/settings/view/change_password_view.dart';
 import 'package:kitsucode/features/splash/view/splash_view.dart';
+
+// 🎉 NUEVO: Vista de celebración de lenguaje completado
+import 'package:kitsucode/features/challenge/view/language_completion_flow.dart';
 
 // 🔥 Conectividad
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
@@ -56,9 +59,6 @@ final _navigatorKeys = {
   'desafiomensual': GlobalKey<NavigatorState>(debugLabel: 'desafioNav'),
   'profile': GlobalKey<NavigatorState>(debugLabel: 'profileNav'),
 };
-
-// 🔥 SOLUCIÓN: Crear un StateProvider para el router actual
-//final _routerInstanceProvider = StateProvider<GoRouter?>((ref) => null);
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -97,12 +97,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForgotPasswordView(),
       ),
 
-      // 🔥 NUEVA RUTA: Vista de sin internet
+      // 🔥 Vista de sin internet
       GoRoute(
         path: '/no-internet',
         builder: (context, state) => const NoInternetView(),
       ),
 
+      // Reto
       GoRoute(
         path: '/reto/:retoId/:nivelId',
         builder: (context, state) {
@@ -112,6 +113,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Perfil
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
@@ -210,6 +212,35 @@ final routerProvider = Provider<GoRouter>((ref) {
               ? state.extra as List<RecursoModel>
               : <RecursoModel>[];
           return ChallengeFailureView(recursos: recursos);
+        },
+      ),
+
+      // 🎉 NUEVA RUTA: Celebración de lenguaje completado
+      GoRoute(
+        path: '/language-completion',
+        name: 'language-completion',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          
+          // Validar que tengamos los datos necesarios
+          if (extra == null || 
+              extra['completedLanguage'] == null || 
+              extra['unlockedLanguages'] == null) {
+            // Si no hay data, redirigir al home
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                context.go('/home');
+              }
+            });
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          return LanguageCompletionFlow(
+            completedLanguage: extra['completedLanguage'] as String,
+            unlockedLanguages: List<String>.from(extra['unlockedLanguages']),
+          );
         },
       ),
 

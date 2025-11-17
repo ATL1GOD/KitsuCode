@@ -21,7 +21,7 @@ import 'package:kitsucode/features/profile/view/profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_profile_view.dart';
 import 'package:kitsucode/features/profile/view/edit_avatar_view.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
-
+import 'package:kitsucode/features/auth/view/widgets/privacy_policy.dart';
 // --- DISTRIBUIDOR DE RETOS ---
 import 'package:kitsucode/features/challenge/provider/reto_distribuidor.dart';
 
@@ -77,7 +77,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final inAuthRoute =
           loc == '/auth' ||
           loc == '/forgot-password' ||
-          loc == '/update-password';
+          loc == '/update-password' ||
+          loc == '/privacy-policy';
       final inSplash = loc == '/';
       final inNoInternet = loc == '/no-internet';
 
@@ -86,6 +87,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // 2. Permitir siempre la pantalla de actualizar contraseña (para el flujo de reseteo)
       if (loc == '/update-password') return null;
+      // 3. Permitir siempre la política de privacidad
+      if (loc == '/privacy-policy') return null;
 
       // 3. Lógica del Splash (¡LA CORRECCIÓN!)
       if (inSplash) {
@@ -132,6 +135,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/update-password',
         builder: (context, state) => const UpdatePasswordView(),
+      ),
+      GoRoute(
+        path: '/privacy-policy',
+        builder: (context, state) => const PrivacyPolicyView(),
       ),
 
       // 🔥 NUEVA RUTA: Vista de sin internet

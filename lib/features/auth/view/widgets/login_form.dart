@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart'; // <-- AÑADIDO
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -196,6 +197,23 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 '¿Olvidaste tu contraseña?',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+            ),
+          ),
+          // --- ¡NUEVO BOTÓN AÑADIDO AQUÍ! ---
+          const SizedBox(height: 4),
+          AnimatedFadeIn(
+            delay: 800,
+            child: TextButton(
+              onPressed: () {
+                context.push('/privacy-policy'); // Nueva ruta
+              },
+              child: Text(
+                'Política de Privacidad y Términos',
+                style: TextStyle(
+                  color: Colors.white.withAlpha(150),
+                  fontSize: 12,
                 ),
               ),
             ),

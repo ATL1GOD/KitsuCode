@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 
 class AuthBackground extends StatefulWidget {
   final Widget child;
+  final bool isScrollable; // <-- AÑADE ESTO
+  final bool showFox; // <-- AÑADE ESTO
 
-  const AuthBackground({super.key, required this.child});
+  const AuthBackground({
+    super.key,
+    required this.child,
+    this.isScrollable = true,
+    this.showFox = true,
+  });
 
   @override
   State<AuthBackground> createState() => _AuthBackgroundState();
@@ -95,26 +102,39 @@ class _AuthBackgroundState extends State<AuthBackground>
           }),
           // Contenido principal centrado
           Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!isSmallScreen) ...[
-                      Image.asset(
-                        'assets/images/auth/fox_login.png', // Asegúrate de que esta ruta sea correcta
-                        height: 280,
+            // --- ### INICIO DE LA MODIFICACIÓN ### ---
+            child: widget.isScrollable
+                // 1. VERSIÓN CON SCROLL (Para Login/Registro)
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (!isSmallScreen && widget.showFox) ...[
+                            // <-- Check
+                            Image.asset(
+                              'assets/images/auth/fox_login.png',
+                              height: 280,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                          widget.child,
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                    widget.child,
-                  ],
-                ),
-              ),
-            ),
+                    ),
+                  )
+                // 2. VERSIÓN SIN SCROLL (Para Política de Privacidad)
+                : Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: widget.child, // <-- Solo renderiza el hijo
+                    ),
+                  ),
+            // --- ### FIN DE LA MODIFICACIÓN ### ---
           ),
         ],
       ),

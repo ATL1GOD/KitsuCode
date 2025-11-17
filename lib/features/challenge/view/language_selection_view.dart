@@ -5,11 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// 🔥 NUEVOS IMPORTS
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
+
+import 'package:kitsucode/core/utils/app_themes.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart'; 
 
 // Modelo para representar un lenguaje
 class Language {
@@ -54,6 +55,24 @@ class _LanguageSelectionViewState
 
   // Definición de todos los lenguajes disponibles
   late final List<Language> _allLanguages;
+
+  // funcion helper para obtener el tema del lenguaje
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        // Fallback al tema principal
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    }
+  }
+  // ------------------------------------
 
   @override
   void initState() {
@@ -123,9 +142,6 @@ class _LanguageSelectionViewState
       if (userId == null) {
         throw Exception('Usuario no autenticado');
       }
-
-      debugPrint('🎯 Seleccionando lenguaje: ${language.name}');
-
       // Actualizar el lenguaje favorito en Supabase
       // Pasar el lenguaje anterior (el que completaste) para marcarlo como "usado"
       await ref.read(languageCompletionProvider.notifier).updateFavoriteLanguage(
@@ -134,24 +150,22 @@ class _LanguageSelectionViewState
         previousLanguage: widget.currentLanguage, // 🆕 El lenguaje que completaste
       );
 
-      // 🔥 CRÍTICO: Volver a verificar lenguajes completados
+      // CRÍTICO: Volver a verificar lenguajes completados
       await ref.read(languageCompletionProvider.notifier)
           .checkLanguageCompletion(userId);
 
-      // 🔥 CRÍTICO: Resetear el estado de completitud
+      // CRÍTICO: Resetear el estado de completitud
       ref.read(languageCompletionProvider.notifier).resetCompletionState();
 
-      // 🔥 NUEVO: Actualizar el appBarProvider para reflejar el cambio
+      // NUEVO: Actualizar el appBarProvider para reflejar el cambio
       await ref.read(appBarProvider.notifier).fetchStats();
 
       if (mounted) {
-        // Mostrar mensaje de éxito
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Cambiado a ${language.displayName}'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        //Usando AwesomeSnackbar
+        showSuccessSnackbar(
+          context,
+          '¡Éxito!',
+          'Cambiado a ${language.displayName}',
         );
 
         // Pequeño delay para que el usuario vea el mensaje
@@ -162,17 +176,13 @@ class _LanguageSelectionViewState
           context.go('/home');
         }
       }
-    } catch (e) {
-      debugPrint('❌ Error en _selectLanguage: $e');
-      
+    } catch (e) { 
       // Manejar error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cambiar de lenguaje: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        showErrorSnackbar(
+          context,
+          '¡Oops! Hubo un error',
+          e.toString(),
         );
         setState(() {
           _isLoading = false;
@@ -184,21 +194,29 @@ class _LanguageSelectionViewState
 
   @override
   Widget build(BuildContext context) {
+    // cambios de tema basados en el lenguaje
     final size = MediaQuery.of(context).size;
+    // El tema se basa en el lenguaje que se acaba de completar
+    final challengeTheme = _getLanguageTheme(
+      widget.currentLanguage,
+      Theme.of(context).brightness,
+    );
+    final colorScheme = challengeTheme.colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: colorScheme.surface, 
       body: Stack(
         children: [
           // Fondo con gradiente
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration( 
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF0A0E27),
-                  Color(0xFF1A1E3F),
+                  colorScheme.surface,
+                  colorScheme.surfaceContainerLowest,
                 ],
               ),
             ),
@@ -213,7 +231,7 @@ class _LanguageSelectionViewState
                   // Encabezado
                   Column(
                     children: [
-                      // Ícono de estrella
+                      // Ícono de estrella (Naranja intencional para recompensa)
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -226,7 +244,7 @@ class _LanguageSelectionViewState
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withValues(alpha: 0.5),
+                              color: Colors.orange.withOpacity(0.5),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -244,17 +262,16 @@ class _LanguageSelectionViewState
                           .then()
                           .shimmer(
                               duration: 2000.ms,
-                              color: Colors.white.withValues(alpha: 0.5)),
+                              color: Colors.white.withOpacity(0.5)),
 
                       const SizedBox(height: 24),
 
                       // Título
-                      const Text(
+                      Text(
                         '¡Nuevo Lenguaje Disponible!',
-                        style: TextStyle(
-                          fontSize: 28,
+                        style: textTheme.displaySmall?.copyWith( 
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colorScheme.onSurface, 
                           letterSpacing: 0.5,
                         ),
                         textAlign: TextAlign.center,
@@ -266,11 +283,10 @@ class _LanguageSelectionViewState
                       const SizedBox(height: 12),
 
                       // Subtítulo
-                      const Text(
+                      Text(
                         'Selecciona el próximo lenguaje que quieres dominar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
+                        style: textTheme.bodyLarge?.copyWith( 
+                          color: colorScheme.onSurfaceVariant, 
                           height: 1.5,
                         ),
                         textAlign: TextAlign.center,
@@ -298,7 +314,7 @@ class _LanguageSelectionViewState
                             language: language,
                             isSelected: isSelected,
                             isLoading: _isLoading && isSelected,
-                            onTap: () => _selectLanguage(language),
+                            onTap: () => _selectLanguage(language), 
                           ),
                         )
                             .animate()
@@ -317,26 +333,25 @@ class _LanguageSelectionViewState
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: colorScheme.onSurface.withOpacity(0.05), 
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: colorScheme.onSurface.withOpacity(0.1), 
                       ),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.orange.shade300,
+                          color: Colors.orange.shade300, // OK
                           size: 20,
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Podrás cambiar entre lenguajes desbloqueados en cualquier momento',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white60,
+                            style: textTheme.bodySmall?.copyWith( 
+                              color: colorScheme.onSurfaceVariant, 
                               height: 1.4,
                             ),
                           ),
@@ -372,6 +387,10 @@ class _LanguageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tema y estilos
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: language.isLocked ? null : onTap,
       child: AnimatedContainer(
@@ -379,6 +398,7 @@ class _LanguageCard extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
+          // Los colores del lenguaje (azul, naranja) son intencionales
           gradient: language.isLocked
               ? LinearGradient(
                   colors: [
@@ -388,8 +408,8 @@ class _LanguageCard extends StatelessWidget {
                 )
               : LinearGradient(
                   colors: [
-                    language.color.withValues(alpha: isSelected ? 0.3 : 0.15),
-                    language.darkColor.withValues(alpha: isSelected ? 0.3 : 0.15),
+                    language.color.withOpacity(isSelected ? 0.3 : 0.15),
+                    language.darkColor.withOpacity(isSelected ? 0.3 : 0.15),
                   ],
                 ),
           borderRadius: BorderRadius.circular(20),
@@ -398,7 +418,7 @@ class _LanguageCard extends StatelessWidget {
                 ? Colors.grey.shade700
                 : isSelected
                     ? language.color
-                    : language.color.withValues(alpha: 0.3),
+                    : language.color.withOpacity(0.3),
             width: isSelected ? 3 : 2,
           ),
           boxShadow: language.isLocked
@@ -406,7 +426,7 @@ class _LanguageCard extends StatelessWidget {
               : [
                   BoxShadow(
                     color: language.color
-                        .withValues(alpha: isSelected ? 0.4 : 0.2),
+                        .withOpacity(isSelected ? 0.4 : 0.2),
                     blurRadius: isSelected ? 20 : 10,
                     spreadRadius: isSelected ? 2 : 0,
                   ),
@@ -416,14 +436,14 @@ class _LanguageCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                // Ícono del lenguaje
+                // Ícono del lenguaje (colores intencionales)
                 Container(
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
                     color: language.isLocked
                         ? Colors.grey.shade700
-                        : language.color.withValues(alpha: 0.2),
+                        : language.color.withOpacity(0.2),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: language.isLocked
@@ -452,12 +472,11 @@ class _LanguageCard extends StatelessWidget {
                         children: [
                           Text(
                             language.displayName,
-                            style: TextStyle(
-                              fontSize: 22,
+                            style: textTheme.headlineSmall?.copyWith( 
                               fontWeight: FontWeight.bold,
                               color: language.isLocked
                                   ? Colors.grey.shade500
-                                  : Colors.white,
+                                  : colorScheme.onSurface, 
                             ),
                           ),
                           if (language.isLocked) ...[
@@ -465,28 +484,25 @@ class _LanguageCard extends StatelessWidget {
                             Icon(
                               Icons.check_circle,
                               size: 20,
-                              color: Colors.green.shade400,
+                              color: Colors.green.shade400, 
                             ),
                           ],
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        language.isLocked
-                            ? 'Ya dominaste este lenguaje'
-                            : language.description,
-                        style: TextStyle(
-                          fontSize: 14,
+                        language.description,
+                        style: textTheme.bodyMedium?.copyWith( 
                           color: language.isLocked
                               ? Colors.grey.shade600
-                              : Colors.white70,
+                              : colorScheme.onSurfaceVariant, 
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // Indicador de selección o loading
+                // Indicador de selección o loading (colores intencionales)
                 if (!language.isLocked)
                   SizedBox(
                     width: 40,
@@ -506,7 +522,7 @@ class _LanguageCard extends StatelessWidget {
                             : Icon(
                                 Icons.arrow_forward_ios_rounded,
                                 size: 24,
-                                color: language.color.withValues(alpha: 0.5),
+                                color: language.color.withOpacity(0.5),
                               ),
                   ),
               ],

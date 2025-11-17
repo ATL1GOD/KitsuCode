@@ -9,9 +9,10 @@ import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:kitsucode/core/providers/app_provider.dart';
 
-// 🎉 Imports para verificación de lenguaje
+//Imports para verificación de lenguaje
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChallengeSuccessView extends ConsumerStatefulWidget {
   final int trofeosObtenidos;
@@ -40,6 +41,7 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
     }
   }
 
+  // inicio de metodo para manejar la navegacion despues del exito
   Future<void> _handleContinue() async {
     if (_isNavigating) return;
     
@@ -51,7 +53,12 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
       ref.read(oldStatsValuesProvider.notifier).state = null;
       ref.read(shouldRefreshStatsProvider.notifier).state = false;
 
-      // 2. 🎉 Verificar si completó el lenguaje
+      // Obtener total de lenguajes en la app 
+      final int totalLanguagesInApp = await Supabase.instance.client
+          .rpc('get_total_languages_count');
+      // Guardar en el provider
+
+      // 2. Verificar si completó el lenguaje
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       bool shouldShowCelebration = false;
       String completedLanguage = '';
@@ -65,30 +72,71 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
         
         final languageState = ref.read(languageCompletionProvider);
         
-        // 🔥 CRÍTICO: Mostrar celebración solo si PUEDE desbloquear
+        // Lógica para 1 solo lenguaje (esto está perfecto)
         shouldShowCelebration = languageState.hasCompletedLanguage && 
-                               languageState.canUnlockNewLanguage &&
-                               languageState.unlockedLanguages.length < 3;
+                                 languageState.canUnlockNewLanguage &&
+                                 languageState.unlockedLanguages.length < totalLanguagesInApp;
         
         if (shouldShowCelebration) {
           completedLanguage = languageState.currentLanguage;
           unlockedLanguages = languageState.unlockedLanguages;
           canUnlock = languageState.canUnlockNewLanguage;
           
-          debugPrint('🎉 ¡Lenguaje completado! $completedLanguage');
-          debugPrint('📚 Lenguajes desbloqueados: $unlockedLanguages');
-          debugPrint('🎁 Puede desbloquear: $canUnlock');
         } else if (languageState.hasCompletedLanguage && 
                    !languageState.canUnlockNewLanguage) {
-          // 🆕 Si completó pero ya no puede desbloquear, ir al home normalmente
-          debugPrint('🏠 Lenguaje completado pero ya fue usado, volver al home');
+          // Si completó pero ya no puede desbloquear (ya fue usado), ir al home
+        
         } else if (languageState.hasCompletedLanguage && 
-                   languageState.unlockedLanguages.length >= 3) {
-          debugPrint('🏆 ¡TODOS LOS LENGUAJES COMPLETADOS!');
-          shouldShowCelebration = true;
-          completedLanguage = 'ALL';
-          unlockedLanguages = languageState.unlockedLanguages;
-          canUnlock = false; // No hay más lenguajes para desbloquear
+                   languageState.unlockedLanguages.length >= totalLanguagesInApp) {
+          
+          // solución para el caso de que complete TODOS los lenguajes
+          
+          // El 'languageState.currentLanguage' tiene el 3er lenguaje (ej. 'Python')
+          final String lenguajeActual = languageState.currentLanguage;
+
+          // ¿Este lenguaje 'canUnlockNewLanguage'?
+          // Si es 'true', es la primera vez que completamos este 3er lenguaje.
+          final bool esLaPrimeraVez = languageState.canUnlockNewLanguage;
+
+          if (esLaPrimeraVez && lenguajeActual.isNotEmpty) {
+            // ¡Es la primera vez!
+            
+            // 1. Marcamos el 3er lenguaje como "usado" en la BD
+            try {
+              final supabase = Supabase.instance.client;
+              // Obtener array actual
+              final userResponse = await supabase
+                  .from('usuarios')
+                  .select('lenguajes_usados_desbloqueo')
+                  .eq('id', userId)
+                  .single();
+
+              final currentList = userResponse['lenguajes_usados_desbloqueo'] as List?;
+              final usados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
+              
+              usados.add(lenguajeActual.trim().toLowerCase());
+              
+              await supabase
+                  .from('usuarios')
+                  .update({'lenguajes_usados_desbloqueo': usados.toList()})
+                  .eq('id', userId);
+              
+            } catch (e) {
+              // Silencioso en producción
+            }
+
+            // 2. Configuramos la navegación a la pantalla final
+            shouldShowCelebration = true;
+            completedLanguage = 'ALL';
+            unlockedLanguages = languageState.unlockedLanguages;
+            canUnlock = false; // No hay más lenguajes para desbloquear
+
+          } else {
+            // No es la primera vez (canUnlock es false porque ya lo marcamos)
+            // No hacemos nada, 'shouldShowCelebration' queda 'false'
+          }
+          
+          // fin de la solución
         }
       }
 
@@ -96,23 +144,19 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
 
       // 3. Decidir la navegación basado en el resultado
       if (shouldShowCelebration) {
-        // 🎊 Ir a la celebración
-        debugPrint('🎊 Navegando a celebración...');
+        // Ir a la celebración (sea de 1 o de TODOS)
         context.go('/language-completion', extra: {
           'completedLanguage': completedLanguage,
           'unlockedLanguages': unlockedLanguages,
-          'canUnlockNewLanguage': canUnlock, // 🆕 PASAR ESTE FLAG
+          'canUnlockNewLanguage': canUnlock,
         });
       } else {
-        // 🏠 Ir al home normalmente
-        debugPrint('🏠 Navegando al home...');
+        // Ir al home normalmente
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
         context.go(returnPath);
       }
     } catch (e) {
-      debugPrint('❌ Error en navegación: $e');
-      
       if (mounted) {
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
@@ -124,6 +168,7 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
       }
     }
   }
+  // fin de metodo 
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +220,7 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                      color: colorScheme.primaryContainer.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(

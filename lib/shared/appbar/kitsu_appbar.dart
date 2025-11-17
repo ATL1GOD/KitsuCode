@@ -1,13 +1,13 @@
-// lib/shared/appbar/kitsu_appbar.dart
-import 'package:flutter/material.dart';
+import 'package'
+    ':flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
-// 🆕 NUEVO: Importar providers necesarios
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 class KitsuAppBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
@@ -27,7 +27,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
   @override
   void initState() {
     super.initState();
-    // 🔥 NUEVO: Verificar lenguajes completados al cargar
+    //Verificar lenguajes completados al cargar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId != null) {
@@ -66,6 +66,27 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
   Widget build(BuildContext context) {
     ref.watch(appBarRealtimeProvider);
     final stats = ref.watch(appBarProvider);
+
+    // Escuchamos el provider de la AppBar para reaccionar a los cambios
+    ref.listen<AppBarState>(appBarProvider, (previous, next) {
+      
+      // Verificamos si hay un estado previo, si no estamos cargando,
+      // y si el ID del lenguaje realmente cambió.
+      if (previous != null &&
+          !previous.isLoading &&
+          !next.isLoading &&
+          previous.languageId != next.languageId) {
+            
+        // ¡El estado cambió con éxito!
+        // Usamos el 'context' estable del 'build' de la AppBar
+        showSuccessSnackbar(
+          context,
+          '¡Lenguaje Cambiado!',
+          'Ahora estás en el mundo de ${next.languageName.toUpperCase()}.',
+        );
+      }
+    });
+    // fin del ref.listen
 
     if (stats.isLoading) {
       return Container(
@@ -134,7 +155,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  Widget _buildLanguageSelector(
+Widget _buildLanguageSelector(
     BuildContext context,
     WidgetRef ref,
     AppBarState stats,
@@ -144,24 +165,44 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
       child: OverlayPortal(
         controller: _portalController,
         overlayChildBuilder: (BuildContext context) {
-          return CompositedTransformFollower(
-            link: _layerLink,
-            offset: const Offset(0, 52.0),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: _buildLanguageMenu(context, ref, stats.languageId),
+          return GestureDetector(
+            onTap: () {
+              // Cierra al hacer clic en cualquier lugar fuera del menú
+              _portalController.hide();
+            },
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(color: Colors.transparent), // El barrier transparente
+                ),
+                CompositedTransformFollower(
+                  link: _layerLink,
+                  offset: const Offset(0, 52.0),
+                  child: Material( // IMPORTANTE: Agregamos Material aquí para que el Stack interno se renderice correctamente
+                    type: MaterialType.transparency,
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      // Envolvemos el menú en un ConstrainedBox o IntrinsicWidth/Height
+                      // para asegurar que el menú no intente ocupar todo el espacio vertical.
+                      child: IntrinsicWidth( // Esto le dice al Column que use el tamaño intrínseco de sus hijos
+                        child: IntrinsicHeight( // Limita la altura a la de sus hijos también
+                          child: GestureDetector(
+                            onTap: () {
+                              // Absorbe el clic para que no cierre el menú si se pulsa en la lista
+                            },
+                            child: _buildLanguageMenu(context, ref, stats.languageId),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
         child: InkWell(
-          onTap: () async {
-            // 🔥 NUEVO: Verificar lenguajes antes de abrir el menú
-            final userId = ref.read(authStateProvider).value?.session?.user.id;
-            if (userId != null) {
-              await ref.read(languageCompletionProvider.notifier)
-                  .checkLanguageCompletion(userId);
-            }
-            
+          onTap: () {
             _portalController.toggle();
           },
           child: CircleAvatar(
@@ -178,7 +219,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  Widget _buildLanguageMenu(
+Widget _buildLanguageMenu(
     BuildContext context,
     WidgetRef ref,
     int currentLangId,
@@ -186,68 +227,87 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchLanguages(currentLangId),
-      builder: (context, snapshot) {
-        List<Widget> children;
-        if (snapshot.hasData) {
-          children = snapshot.data!.map((lang) {
-            final langName = lang['nombre'] as String;
-            final langAsset = _getAssetForLanguage(langName);
-            final langId = lang['id_lenguaje'] as int;
+    //Estamos observando el provider (Pre-fetch).
+    final languageListAsync = ref.watch(languageListProvider);
 
-            return _buildLanguageMenuItem(
-              langName,
-              langAsset,
-              langId,
-              textTheme,
-              colorScheme,
-            );
-          }).toList();
-        } else if (snapshot.hasError) {
-          children = [
-            Text("Error", style: TextStyle(color: colorScheme.onError)),
-          ];
-        } else {
-          children = [
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator()),
+    //REEMPLAZAMOS el FutureBuilder por languageListAsync.when
+    return languageListAsync.when(
+      // 1. Caso de Error
+      error: (e, st) {
+        return Material(
+          type: MaterialType.transparency,
+          child: Container(
+            width: 250,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(16.0),
             ),
-          ];
-        }
+            child: Text("Error al cargar lenguajes.", style: TextStyle(color: colorScheme.onError)),
+          ),
+        );
+      },
+      // 2. Caso de Carga (Sólo si es la primera vez que se accede)
+      loading: () {
+        return Material(
+          type: MaterialType.transparency,
+          child: Container(
+            width: 250,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        );
+      },
+      // 3. Caso de Datos Listos (¡Lo que se ejecutará instantáneamente si ya cargó!)
+      data: (allLangs) {
+        // Filtramos la lista ya cargada en memoria, OMITIENDO el lenguaje actual.
+        final otherLangs = allLangs.where((lang) {
+          return lang['id_lenguaje'] != currentLangId;
+        }).toList();
+
+        final children = otherLangs.map((lang) {
+          final langName = lang['nombre'] as String;
+          final langAsset = _getAssetForLanguage(langName);
+          final langId = lang['id_lenguaje'] as int;
+
+          return _buildLanguageMenuItem(
+            langName,
+            langAsset,
+            langId,
+            textTheme,
+            colorScheme,
+          );
+        }).toList();
 
         return Material(
           type: MaterialType.transparency,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            child: Container(
-              key: ValueKey(snapshot.connectionState),
-              width: 250,
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                border: Border.all(
-                  color: colorScheme.primaryContainer,
-                  width: 2.0,
+          child: Container(
+            key: const ValueKey('menu_loaded'), // Mantenemos el key para AnimatedSwitcher
+            width: 250,
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              border: Border.all(
+                color: colorScheme.primaryContainer,
+                width: 2.0,
+              ),
+              borderRadius: BorderRadius.circular(16.0),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black45,
+                  blurRadius: 20.0,
+                  offset: Offset(0, 8),
                 ),
-                borderRadius: BorderRadius.circular(16.0),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black45,
-                    blurRadius: 20.0,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: children,
-              ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
             ),
           ),
         );
@@ -264,7 +324,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     return otherLangs;
   }
 
-  // 🔥 MÉTODO CORREGIDO - Ahora verifica si el lenguaje está completado
+  //Ahora verifica si el lenguaje está completado
   Widget _buildLanguageMenuItem(
     String langName,
     String langAsset,
@@ -289,57 +349,34 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
       onTap: () async {
         _portalController.hide();
         
-        // ✅ LÓGICA CORREGIDA
+        // Capturamos el context ANTES de los await
+        final stableContext = context; 
+        
+        // Lógica de restricción (sin cambios)
         if (!isCompleted) {
-          // 🔒 Lenguaje NO completado - Mostrar error
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  "Debes completar ${langName.toUpperCase()} primero"
-                ),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
+            showWarningSnackbar(stableContext, '¡Aún no!', 'No puedes cambiar de lenguaje hasta terminar el actual.');
           }
           return;
         }
         
-        // ✅ Lenguaje completado - Permitir cambio
+        // Lenguaje completado - Permitir cambio
         try {
           final userId = ref.read(authStateProvider).value?.session?.user.id;
           if (userId == null) {
             throw Exception('Usuario no autenticado');
           }
 
-          // Cambiar el lenguaje
-          await ref.read(languageCompletionProvider.notifier)
-              .updateFavoriteLanguage(userId, normalizedLangName);
+          // 1. Cambiar el lenguaje
+          await ref.read(languageCompletionProvider.notifier).updateFavoriteLanguage(userId, normalizedLangName);
 
-          // 🔥 CRÍTICO: Volver a verificar lenguajes completados
-          // Esto actualiza la lista de unlockedLanguages
-          await ref.read(languageCompletionProvider.notifier)
-              .checkLanguageCompletion(userId);
-
-          // Actualizar el appBar
-          await ref.read(appBarProvider.notifier).fetchStats();
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Cambiado a ${langName.toUpperCase()}'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
+          // 2. Volver a verificar y actualizar AppBar
+          await ref.read(languageCompletionProvider.notifier).checkLanguageCompletion(userId);
+          await ref.read(appBarProvider.notifier).fetchStats();       
+          
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
+            showErrorSnackbar(stableContext, '¡Error!', 'No se pudo cambiar de lenguaje: ${e.toString()}');
           }
         }
       },
@@ -382,7 +419,8 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             else
               Icon(
                 Icons.lock,
-                color: colorScheme.onPrimary.withValues(alpha: 0.5),
+                // Corregido el 'withOpacity' obsoleto
+                color: colorScheme.onPrimary.withAlpha((255 * 0.5).round()), 
                 size: 18,
               ),
           ],

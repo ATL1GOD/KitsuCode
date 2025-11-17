@@ -5,6 +5,8 @@ import 'package:lottie/lottie.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math';
+import 'package:kitsucode/core/utils/app_themes.dart';
+
 
 class LanguageCompletionCelebration extends StatefulWidget {
   final String languageName; // "Python", "Java", "C"
@@ -48,16 +50,19 @@ class _LanguageCompletionCelebrationState
     super.dispose();
   }
 
-  Color _getLanguageColor() {
-    switch (widget.languageName.toLowerCase()) {
+  // función helper para obtener el Tema del lenguaje
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
+    switch (langName.toLowerCase().trim()) {
       case 'python':
-        return const Color(0xFF3776AB);
-      case 'java':
-        return const Color(0xFFF89820);
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
       case 'c':
-        return const Color(0xFF00599C);
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
       default:
-        return Colors.orange;
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
     }
   }
 
@@ -76,11 +81,19 @@ class _LanguageCompletionCelebrationState
 
   @override
   Widget build(BuildContext context) {
+    // Tema y estilos
     final size = MediaQuery.of(context).size;
-    final languageColor = _getLanguageColor();
+    
+    // Obtenemos el tema y colores del lenguaje actual
+    final challengeTheme = _getLanguageTheme(
+      widget.languageName,
+      Theme.of(context).brightness,
+    );
+    final colorScheme = challengeTheme.colorScheme;
+    final textTheme = challengeTheme.textTheme;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.surface, 
       body: Stack(
         children: [
           // Fondo con gradiente
@@ -90,8 +103,8 @@ class _LanguageCompletionCelebrationState
                 center: Alignment.center,
                 radius: 1.0,
                 colors: [
-                  languageColor.withValues(alpha: 0.3),
-                  Colors.black,
+                  colorScheme.primary.withOpacity(0.3), 
+                  colorScheme.surface,                   
                 ],
               ),
             ),
@@ -109,12 +122,12 @@ class _LanguageCompletionCelebrationState
               gravity: 0.1,
               shouldLoop: false,
               colors: [
-                languageColor,
+                colorScheme.primary,    
+                colorScheme.secondary, 
+                colorScheme.tertiary,  
                 Colors.yellow,
                 Colors.green,
                 Colors.blue,
-                Colors.red,
-                Colors.purple,
               ],
             ),
           ),
@@ -139,13 +152,13 @@ class _LanguageCompletionCelebrationState
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            languageColor.withValues(alpha: 0.6),
-                            languageColor,
+                            colorScheme.primary.withOpacity(0.6), 
+                            colorScheme.primary,                   
                           ],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: languageColor.withValues(alpha: 0.5),
+                            color: colorScheme.primary.withOpacity(0.5), 
                             blurRadius: 40,
                             spreadRadius: 10,
                           ),
@@ -154,11 +167,11 @@ class _LanguageCompletionCelebrationState
                       child: Icon(
                         Icons.emoji_events,
                         size: 120,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary, 
                       ),
                     )
                         .animate(onPlay: (controller) => controller.repeat())
-                        .shimmer(duration: 2000.ms, color: Colors.white.withValues(alpha: 0.5))
+                        .shimmer(duration: 2000.ms, color: Colors.white.withOpacity(0.5))
                         .then()
                         .shake(hz: 0.5, duration: 1000.ms),
 
@@ -167,14 +180,13 @@ class _LanguageCompletionCelebrationState
                     // Título principal
                     Text(
                       '¡LENGUAJE DOMINADO!',
-                      style: TextStyle(
-                        fontSize: 32,
+                      style: textTheme.displaySmall?.copyWith( 
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colorScheme.onSurface, 
                         letterSpacing: 2,
                         shadows: [
                           Shadow(
-                            color: languageColor,
+                            color: colorScheme.primary, 
                             blurRadius: 20,
                           ),
                         ],
@@ -185,7 +197,7 @@ class _LanguageCompletionCelebrationState
                         .fadeIn(duration: 600.ms, delay: 300.ms)
                         .scale(delay: 300.ms)
                         .then()
-                        .shimmer(duration: 1500.ms, color: languageColor),
+                        .shimmer(duration: 1500.ms, color: colorScheme.primary), 
 
                     const SizedBox(height: 16),
 
@@ -196,10 +208,10 @@ class _LanguageCompletionCelebrationState
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: languageColor.withValues(alpha: 0.2),
+                        color: colorScheme.primary.withOpacity(0.2), 
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: languageColor,
+                          color: colorScheme.primary, 
                           width: 2,
                         ),
                       ),
@@ -208,16 +220,15 @@ class _LanguageCompletionCelebrationState
                         children: [
                           Icon(
                             _getLanguageIcon(),
-                            color: languageColor,
+                            color: colorScheme.primary, 
                             size: 28,
                           ),
                           const SizedBox(width: 12),
                           Text(
                             widget.languageName.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 28,
+                            style: textTheme.headlineSmall?.copyWith( 
                               fontWeight: FontWeight.bold,
-                              color: languageColor,
+                              color: colorScheme.primary, 
                               letterSpacing: 1.5,
                             ),
                           ),
@@ -233,9 +244,8 @@ class _LanguageCompletionCelebrationState
                     // Mensaje motivador
                     Text(
                       '¡Eres todo un programador!\n¡Sigue así! 🦊',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: Colors.white70,
+                      style: textTheme.bodyLarge?.copyWith( 
+                        color: colorScheme.onSurface.withOpacity(0.7), 
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
@@ -253,27 +263,25 @@ class _LanguageCompletionCelebrationState
                       child: ElevatedButton(
                         onPressed: widget.onContinue,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: languageColor,
-                          foregroundColor: Colors.white,
+                          backgroundColor: colorScheme.primary, 
+                          foregroundColor: colorScheme.onPrimary, 
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 8,
-                          shadowColor: languageColor,
+                          shadowColor: colorScheme.primary, 
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               'CONTINUAR',
-                              style: TextStyle(
-                                fontSize: 18,
+                              style: textTheme.labelLarge?.copyWith( 
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 24),
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
@@ -282,7 +290,7 @@ class _LanguageCompletionCelebrationState
                         .fadeIn(duration: 600.ms, delay: 1200.ms)
                         .slideY(begin: 0.3, end: 0, delay: 1200.ms)
                         .then(delay: 600.ms)
-                        .shimmer(duration: 2000.ms, color: Colors.white.withValues(alpha: 0.3)),
+                        .shimmer(duration: 2000.ms, color: Colors.white.withOpacity(0.3)),
                   ],
                 ),
               ),

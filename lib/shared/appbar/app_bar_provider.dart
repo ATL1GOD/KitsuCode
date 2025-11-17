@@ -323,3 +323,16 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
     supabase.removeChannel(userChannel);
   });
 });
+
+final languageListProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final supabase = Supabase.instance.client;
+  
+  // Realiza la llamada a la DB para obtener toda la lista de lenguajes
+  // Especificamos las columnas necesarias para mayor eficiencia
+  final langs = await supabase
+      .from('lenguaje')
+      .select('id_lenguaje, nombre'); 
+  
+  // Devuelve la lista completa de lenguajes
+  return langs;
+});

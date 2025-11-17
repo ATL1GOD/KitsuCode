@@ -9,7 +9,7 @@ class LanguageCompletionState {
   final String currentLanguage;
   final List<String> unlockedLanguages;
   final bool hasCompletedLanguage;
-  final bool canUnlockNewLanguage; // 🆕 Si este lenguaje puede desbloquear otro
+  final bool canUnlockNewLanguage; // Si este lenguaje puede desbloquear otro
   final int totalLevelsInLanguage;
   final int completedLevelsInLanguage;
 
@@ -62,8 +62,6 @@ class LanguageCompletionNotifier
   /// Verifica si el usuario completó un lenguaje
   Future<void> checkLanguageCompletion(String userId) async {
     try {
-      debugPrint('🔍 Verificando completitud de lenguaje para user: $userId');
-      
       // 1. Obtener el lenguaje favorito actual del usuario
       final userResponse = await _supabase
           .from('usuarios')
@@ -73,12 +71,10 @@ class LanguageCompletionNotifier
 
       final currentLanguageId = userResponse['lenguaje_favorito'] as int?;
       if (currentLanguageId == null) {
-        debugPrint('⚠️ Usuario no tiene lenguaje favorito');
         return;
       }
 
       final currentLanguageName = userResponse['lenguaje']['nombre'] as String;
-      debugPrint('📚 Lenguaje actual: $currentLanguageName (ID: $currentLanguageId)');
 
       // 2. Obtener todas las secciones del lenguaje
       final sectionsResponse = await _supabase
@@ -87,10 +83,8 @@ class LanguageCompletionNotifier
           .eq('id_lenguaje', currentLanguageId);
 
       final sectionIds = sectionsResponse.map((s) => s['id_seccion'] as int).toList();
-      debugPrint('📂 Secciones encontradas: ${sectionIds.length}');
 
       if (sectionIds.isEmpty) {
-        debugPrint('⚠️ No hay secciones para este lenguaje');
         return;
       }
 
@@ -102,10 +96,8 @@ class LanguageCompletionNotifier
 
       final totalLevels = levelsResponse.length;
       final levelIds = levelsResponse.map((l) => l['id_nivel'] as int).toList();
-      debugPrint('📊 Total de niveles: $totalLevels');
 
       if (totalLevels == 0) {
-        debugPrint('⚠️ No hay niveles en este lenguaje');
         return;
       }
 
@@ -117,33 +109,26 @@ class LanguageCompletionNotifier
           .inFilter('id_nivel', levelIds);
 
       final completedLevels = completedResponse.length;
-      debugPrint('✅ Niveles completados: $completedLevels/$totalLevels');
 
       // 5. Verificar si completó todos los niveles
       final hasCompleted = completedLevels >= totalLevels && totalLevels > 0;
-      debugPrint(hasCompleted ? '🎉 ¡LENGUAJE COMPLETADO!' : '📖 Lenguaje en progreso');
-
-      // 🆕 Verificar si este lenguaje ya fue usado para desbloquear otro
-      final canUnlock = await _canLanguageUnlockAnother(userId, currentLanguageName.trim().toLowerCase());
-      debugPrint(canUnlock 
-        ? '🎁 Este lenguaje PUEDE desbloquear otro' 
-        : '🚫 Este lenguaje YA desbloqueó otro lenguaje');
-
-      // 🔥 CRÍTICO: Solo mostrar celebración si PUEDE desbloquear
-      // Si ya usó este lenguaje, NO mostrar celebración aunque complete niveles
-      final shouldCelebrate = hasCompleted && canUnlock;
-      debugPrint(shouldCelebrate 
-        ? '🎊 Mostrar celebración y selección' 
-        : '🏠 Volver al home normalmente');
-
-      // 🆕 Si completó el lenguaje, agregarlo a lenguajes_completados
+      
+      // Si completó el lenguaje, agregarlo a lenguajes_completados
+      // Si YA NO está completo (ej. se añadieron niveles), ¡quitarlo!
       if (hasCompleted) {
         await _addToCompletedLanguages(userId, currentLanguageName.trim().toLowerCase());
+      } else {
+        await _removeFromCompletedLanguages(userId, currentLanguageName.trim().toLowerCase());
       }
+
+      // Verificar si este lenguaje ya fue usado para desbloquear otro
+      final canUnlock = await _canLanguageUnlockAnother(userId, currentLanguageName.trim().toLowerCase());
+
+      // CRÍTICO: Solo mostrar celebración si PUEDE desbloquear
+      final shouldCelebrate = hasCompleted && canUnlock;
 
       // 6. Obtener lenguajes desbloqueados
       final unlockedLanguages = await _getUnlockedLanguages(userId);
-      debugPrint('🔓 Lenguajes desbloqueados: ${unlockedLanguages.join(", ")}');
 
       state = state.copyWith(
         currentLanguage: currentLanguageName.trim(), // Limpiar espacios
@@ -154,19 +139,14 @@ class LanguageCompletionNotifier
         completedLevelsInLanguage: completedLevels,
       );
       
-      debugPrint('✨ Estado actualizado correctamente');
     } catch (e) {
-      debugPrint('❌ Error checking language completion: $e');
       rethrow;
     }
   }
 
   /// Verifica si un lenguaje puede desbloquear otro lenguaje
-  /// Retorna false si el lenguaje ya fue usado para desbloquear
   Future<bool> _canLanguageUnlockAnother(String userId, String languageName) async {
     try {
-      debugPrint('🔍 Verificando si $languageName puede desbloquear...');
-      
       final userResponse = await _supabase
           .from('usuarios')
           .select('lenguajes_usados_desbloqueo')
@@ -174,7 +154,6 @@ class LanguageCompletionNotifier
           .maybeSingle();
 
       if (userResponse == null) {
-        debugPrint('❌ Usuario no encontrado');
         return false;
       }
 
@@ -182,13 +161,9 @@ class LanguageCompletionNotifier
       final usados = usadosList?.map((e) => e.toString().trim().toLowerCase()).toList() ?? [];
       
       final canUnlock = !usados.contains(languageName.trim().toLowerCase());
-      debugPrint(canUnlock 
-        ? '✅ $languageName NO ha sido usado para desbloquear'
-        : '🚫 $languageName YA fue usado para desbloquear');
       
       return canUnlock;
     } catch (e) {
-      debugPrint('❌ Error verificando si puede desbloquear: $e');
       return true; // Por defecto permitir
     }
   }
@@ -196,8 +171,6 @@ class LanguageCompletionNotifier
   /// Agrega un lenguaje al array lenguajes_completados del usuario
   Future<void> _addToCompletedLanguages(String userId, String languageName) async {
     try {
-      debugPrint('📝 Agregando $languageName a lenguajes completados...');
-      
       // Obtener array actual
       final userResponse = await _supabase
           .from('usuarios')
@@ -206,7 +179,6 @@ class LanguageCompletionNotifier
           .maybeSingle();
 
       if (userResponse == null) {
-        debugPrint('❌ Usuario no encontrado');
         return;
       }
 
@@ -222,17 +194,46 @@ class LanguageCompletionNotifier
           .update({'lenguajes_completados': completados.toList()})
           .eq('id', userId);
 
-      debugPrint('✅ $languageName agregado a lenguajes_completados');
     } catch (e) {
-      debugPrint('❌ Error agregando lenguaje completado: $e');
+      // debugPrint('Error agregando lenguaje completado: $e'); // ELIMINADO
     }
   }
+
+  /// Quita un lenguaje del array lenguajes_completados del usuario
+  Future<void> _removeFromCompletedLanguages(String userId, String languageName) async {
+    try {
+      // Obtener array actual
+      final userResponse = await _supabase
+          .from('usuarios')
+          .select('lenguajes_completados')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (userResponse == null) {
+        return;
+      }
+
+      final currentList = userResponse['lenguajes_completados'] as List?;
+      final completados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
+      
+      // 💡 Quitar el lenguaje (normalizado)
+      completados.remove(languageName.trim().toLowerCase());
+      
+      // Actualizar en BD
+      await _supabase
+          .from('usuarios')
+          .update({'lenguajes_completados': completados.toList()})
+          .eq('id', userId);
+
+    } catch (e) {
+      // debugPrint('Error quitando lenguaje completado: $e'); // ELIMINADO
+    }
+  }
+
 
   /// Agrega un lenguaje al array lenguajes_seleccionados del usuario
   Future<void> _addToSelectedLanguages(String userId, String languageName) async {
     try {
-      debugPrint('📝 Agregando $languageName a lenguajes seleccionados...');
-      
       // Obtener array actual
       final userResponse = await _supabase
           .from('usuarios')
@@ -241,7 +242,6 @@ class LanguageCompletionNotifier
           .maybeSingle();
 
       if (userResponse == null) {
-        debugPrint('❌ Usuario no encontrado');
         return;
       }
 
@@ -257,18 +257,14 @@ class LanguageCompletionNotifier
           .update({'lenguajes_seleccionados': seleccionados.toList()})
           .eq('id', userId);
 
-      debugPrint('✅ $languageName agregado a lenguajes_seleccionados');
     } catch (e) {
-      debugPrint('❌ Error agregando lenguaje seleccionado: $e');
+      // debugPrint('Error agregando lenguaje seleccionado: $e'); // ELIMINADO
     }
   }
 
   /// Obtiene la lista de lenguajes desbloqueados para el usuario
-  /// SÚPER OPTIMIZADO: Usa RPC function (1 sola query)
   Future<List<String>> _getUnlockedLanguages(String userId) async {
     try {
-      debugPrint('🔓 Obteniendo lenguajes desbloqueados (RPC)...');
-      
       // 🚀 1 SOLA QUERY usando RPC function
       final response = await _supabase.rpc(
         'get_unlocked_languages',
@@ -279,11 +275,9 @@ class LanguageCompletionNotifier
           .map((row) => (row['language_name'] as String).trim().toLowerCase())
           .toList();
 
-      debugPrint('🎯 Lenguajes desbloqueados: ${unlocked.join(", ")}');
-      
       return unlocked;
     } catch (e) {
-      debugPrint('❌ Error getting unlocked languages: $e');
+      // debugPrint(' Error getting unlocked languages: $e'); // ELIMINADO
       return [];
     }
   }
@@ -292,14 +286,11 @@ class LanguageCompletionNotifier
   Future<void> updateFavoriteLanguage(
     String userId, 
     String languageName, 
-    {String? previousLanguage} // 🆕 Lenguaje que completaste antes
+    {String? previousLanguage} // Lenguaje que completaste antes
   ) async {
     try {
-      debugPrint('🔄 Actualizando lenguaje favorito a: $languageName');
-      
       // Obtener el ID del lenguaje (normalizar nombre)
       final normalizedName = languageName.trim().toLowerCase();
-      debugPrint('🔍 Buscando lenguaje: $normalizedName');
       
       final languageResponse = await _supabase
           .from('lenguaje')
@@ -308,12 +299,10 @@ class LanguageCompletionNotifier
           .maybeSingle(); // Usar maybeSingle en lugar de single
 
       if (languageResponse == null) {
-        debugPrint('❌ No se encontró el lenguaje: $normalizedName');
         throw Exception('Lenguaje no encontrado: $languageName');
       }
 
       final languageId = languageResponse['id_lenguaje'] as int;
-      debugPrint('✅ ID del lenguaje encontrado: $languageId');
 
       // Actualizar en la BD (sin esperar resultado)
       await _supabase
@@ -321,9 +310,7 @@ class LanguageCompletionNotifier
           .update({'lenguaje_favorito': languageId})
           .eq('id', userId);
 
-      debugPrint('✅ Lenguaje actualizado correctamente en BD');
-
-      // 🆕 Si viene de completar un lenguaje, marcarlo como "usado para desbloquear"
+      // Si viene de completar un lenguaje, marcarlo como "usado para desbloquear"
       if (previousLanguage != null && previousLanguage.isNotEmpty) {
         await _markLanguageAsUsedForUnlock(userId, previousLanguage.trim().toLowerCase());
       }
@@ -333,9 +320,8 @@ class LanguageCompletionNotifier
 
       // Actualizar el estado
       state = state.copyWith(currentLanguage: languageName.trim());
-      debugPrint('✅ Estado local actualizado');
     } catch (e) {
-      debugPrint('❌ Error updating favorite language: $e');
+      // debugPrint(' Error updating favorite language: $e'); // ELIMINADO
       rethrow;
     }
   }
@@ -343,8 +329,6 @@ class LanguageCompletionNotifier
   /// Marca un lenguaje como "usado para desbloquear otro"
   Future<void> _markLanguageAsUsedForUnlock(String userId, String languageName) async {
     try {
-      debugPrint('📝 Marcando $languageName como usado para desbloquear...');
-      
       // Obtener array actual
       final userResponse = await _supabase
           .from('usuarios')
@@ -353,7 +337,6 @@ class LanguageCompletionNotifier
           .maybeSingle();
 
       if (userResponse == null) {
-        debugPrint('❌ Usuario no encontrado');
         return;
       }
 
@@ -369,9 +352,8 @@ class LanguageCompletionNotifier
           .update({'lenguajes_usados_desbloqueo': usados.toList()})
           .eq('id', userId);
 
-      debugPrint('✅ $languageName marcado como usado para desbloquear');
     } catch (e) {
-      debugPrint('❌ Error marcando lenguaje como usado: $e');
+      // debugPrint(' Error marcando lenguaje como usado: $e'); // ELIMINADO
     }
   }
 

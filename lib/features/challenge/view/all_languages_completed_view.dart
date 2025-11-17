@@ -41,10 +41,14 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
 
   @override
   Widget build(BuildContext context) {
+    //inicio de cambios de tema
     final size = MediaQuery.of(context).size;
+    // Usamos el colorScheme principal de la app
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.surface, 
       body: Stack(
         children: [
           // Fondo con gradiente animado
@@ -54,9 +58,9 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                 center: Alignment.center,
                 radius: 1.5,
                 colors: [
-                  Colors.purple.withValues(alpha: 0.4),
-                  Colors.blue.withValues(alpha: 0.3),
-                  Colors.black,
+                  colorScheme.primary.withOpacity(0.3),   
+                  colorScheme.secondary.withOpacity(0.3), 
+                  colorScheme.surface,                      
                 ],
               ),
             ),
@@ -74,14 +78,13 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
               gravity: 0.08,
               shouldLoop: true,
               colors: [
-                Colors.purple,
-                Colors.blue,
-                Colors.cyan,
-                Colors.yellow,
-                Colors.green,
-                Colors.red,
-                Colors.orange,
-                Colors.pink,
+                //Usamos colores del tema
+                colorScheme.primary,
+                colorScheme.secondary,
+                colorScheme.tertiary,
+                Colors.yellow.shade600,
+                Colors.green.shade500,
+                Colors.red.shade500,
               ],
             ),
           ),
@@ -96,7 +99,7 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                   children: [
                     const Spacer(),
 
-                    // Corona gigante
+                    // Corona gigante (Se mantienen colores ámbar por semántica de "oro")
                     Container(
                       width: 200,
                       height: 200,
@@ -112,7 +115,7 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.6),
+                            color: Colors.amber.withOpacity(0.6),
                             blurRadius: 50,
                             spreadRadius: 20,
                           ),
@@ -121,13 +124,13 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                       child: const Icon(
                         Icons.emoji_events,
                         size: 140,
-                        color: Colors.white,
+                        color: Colors.white, // Se mantiene blanco por contraste
                       ),
                     )
                         .animate(onPlay: (controller) => controller.repeat())
                         .shimmer(
                             duration: 1500.ms,
-                            color: Colors.white.withValues(alpha: 0.5))
+                            color: Colors.white.withOpacity(0.5))
                         .then()
                         .rotate(duration: 2000.ms, begin: -0.02, end: 0.02)
                         .then()
@@ -138,19 +141,18 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                     // Título épico
                     Text(
                       '¡MAESTRO DE LA\nPROGRAMACIÓN!',
-                      style: TextStyle(
-                        fontSize: 36,
+                      style: textTheme.displaySmall?.copyWith( 
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colorScheme.onSurface, 
                         letterSpacing: 2,
                         height: 1.2,
                         shadows: [
                           Shadow(
-                            color: Colors.purple.shade300,
+                            color: colorScheme.primary, 
                             blurRadius: 30,
                           ),
                           Shadow(
-                            color: Colors.blue.shade300,
+                            color: colorScheme.secondary, 
                             blurRadius: 30,
                           ),
                         ],
@@ -163,11 +165,11 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                         .then()
                         .shimmer(
                             duration: 2000.ms,
-                            color: Colors.white.withValues(alpha: 0.3)),
+                            color: Colors.white.withOpacity(0.3)),
 
                     const SizedBox(height: 30),
 
-                    // Badges de lenguajes
+                    // Badges de lenguajes (Estos se quedan con sus colores fijos)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -200,10 +202,10 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: colorScheme.onSurface.withOpacity(0.1), 
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: colorScheme.onSurface.withOpacity(0.2), 
                           width: 2,
                         ),
                       ),
@@ -211,19 +213,17 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                         children: [
                           Text(
                             '🎉 ¡FELICITACIONES! 🎉',
-                            style: const TextStyle(
-                              fontSize: 24,
+                            style: textTheme.headlineSmall?.copyWith( 
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: colorScheme.onSurface, 
                             ),
                           ),
                           const SizedBox(height: 12),
                           Text(
                             'Has dominado los 3 lenguajes de programación.\n'
                             '¡Eres un verdadero programador profesional!',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withValues(alpha: 0.9),
+                            style: textTheme.bodyLarge?.copyWith( 
+                              color: colorScheme.onSurface.withOpacity(0.9), 
                               height: 1.5,
                             ),
                             textAlign: TextAlign.center,
@@ -244,27 +244,25 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                       child: ElevatedButton(
                         onPressed: () => context.go('/home'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple.shade600,
-                          foregroundColor: Colors.white,
+                          backgroundColor: colorScheme.primary, 
+                          foregroundColor: colorScheme.onPrimary, 
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 8,
-                          shadowColor: Colors.purple,
+                          shadowColor: colorScheme.primary, 
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               'CONTINUAR',
-                              style: TextStyle(
-                                fontSize: 18,
+                              style: textTheme.labelLarge?.copyWith( 
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.5,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 24),
+                            const SizedBox(width: 8),
                           ],
                         ),
                       ),
@@ -275,7 +273,7 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                         .then(delay: 600.ms)
                         .shimmer(
                             duration: 2000.ms,
-                            color: Colors.white.withValues(alpha: 0.3)),
+                            color: Colors.white.withOpacity(0.3)),
                   ],
                 ),
               ),
@@ -283,6 +281,7 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
         ],
       ),
     );
+    // fin de cambios de tema
   }
 }
 

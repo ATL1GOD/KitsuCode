@@ -34,6 +34,7 @@ class _LanguageCompletionFlowState extends State<LanguageCompletionFlow> {
     super.initState();
     
     // Si completó TODOS los lenguajes, ir directo a la pantalla especial
+    // (Esta lógica de '3' la podríamos hacer dinámica en el futuro)
     if (widget.completedLanguage == 'ALL' || widget.unlockedLanguages.length >= 3) {
       _showingCelebration = false;
     }
@@ -48,6 +49,7 @@ class _LanguageCompletionFlowState extends State<LanguageCompletionFlow> {
   @override
   Widget build(BuildContext context) {
     // Caso especial: Completó TODOS los lenguajes
+    // (Esta lógica de '3' la podríamos hacer dinámica en el futuro)
     if (widget.completedLanguage == 'ALL' || widget.unlockedLanguages.length >= 3) {
       return const AllLanguagesCompletedView();
     }

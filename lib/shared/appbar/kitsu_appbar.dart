@@ -1,12 +1,91 @@
 // lib/shared/appbar/kitsu_appbar.dart
+
+import 'dart:ui'; // Para BackdropFilter (blur)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
-// Sigue siendo un StatefulWidget para el OverlayPortal
+
+/// WIDGET PARA ANIMACIÓN ESCALONADA (STAGGER)
+class _StaggerItem extends StatefulWidget {
+  final Widget child;
+  final int delay;
+
+  const _StaggerItem({
+    required this.child,
+    required this.delay,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_StaggerItem> createState() => _StaggerItemState();
+}
+
+class _StaggerItemState extends State<_StaggerItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+
+    _fade = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints en cascada
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+/// KITSUAPPBAR
+
 class KitsuAppBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
   const KitsuAppBar({super.key});
@@ -22,31 +101,96 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
   final OverlayPortalController _portalController = OverlayPortalController();
   final LayerLink _layerLink = LayerLink();
 
-  // Helper de asset (Corregido a 'c')
+  bool _isMenuOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = ref.read(authStateProvider).value?.session?.user.id;
+      if (userId != null) {
+        ref
+            .read(languageCompletionProvider.notifier)
+            .checkLanguageCompletion(userId);
+      }
+    });
+  }
+
+  /// Tema por lenguaje (igual que en otras vistas)
+  ThemeData _getLanguageTheme(String langName, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
+    switch (langName.toLowerCase().trim()) {
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    }
+  }
+
   String _getAssetForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
         return 'assets/images/home/logo_python.webp';
       case 'java':
         return 'assets/images/home/logo_java.webp';
-      case 'c': // <-- Tu corrección
+      case 'c':
         return 'assets/images/home/logo_c.webp';
       default:
         return 'assets/images/home/logo_python.webp';
     }
   }
 
-  // Helper para obtener el color primario del lenguaje
   Color _getColorForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
-        return const Color(0xFF19647E); // Azul de Python
+        return const Color(0xFF19647E);
       case 'java':
-        return const Color(0xFFB31900); // Rojo de Java
+        return const Color(0xFFB31900);
       case 'c':
-        return const Color(0xFF004D92); // Azul de C
+        return const Color(0xFF004D92);
       default:
-        return const Color(0xFF19647E); // Default Python
+        return const Color(0xFF19647E);
+    }
+  }
+  
+   /// Ajustar colores específicos para Java (más vibrantes)
+  ColorScheme _adjustJavaColors(ColorScheme original) {
+    final isDark = original.brightness == Brightness.dark;
+    
+    if (isDark) {
+      // Dark mode: Colores más brillantes
+      return original.copyWith(
+        primary: const Color(0xFFFF9A7F),           // Naranja pastel
+        primaryContainer: const Color(0xFFB85A40),  // Naranja oscuro
+        primaryFixed: const Color(0xFFFFD6CC),
+        
+        secondary: const Color(0xFF5FD9CC),         // Turquesa brillante
+        secondaryContainer: const Color(0xFF1F7A70),
+        secondaryFixed: const Color(0xFFB8EDE7),
+        
+        tertiary: const Color(0xFFFFB77F),          // Naranja claro
+        tertiaryContainer: const Color(0xFFB86A30),
+      );
+    } else {
+      // Light mode: Colores vibrantes
+      return original.copyWith(
+        primary: const Color(0xFFE76F51),           // Naranja coral
+        primaryContainer: const Color(0xFFFFE5DD),  // Naranja muy claro
+        primaryFixed: const Color(0xFFFFD6CC),
+        
+        secondary: const Color(0xFF2A9D8F),         // Verde agua
+        secondaryContainer: const Color(0xFFCCF5F0),
+        secondaryFixed: const Color(0xFFB8EDE7),
+        
+        tertiary: const Color(0xFFF4A261),          // Naranja suave
+        tertiaryContainer: const Color(0xFFFFE8D6),
+      );
     }
   }
 
@@ -55,109 +199,168 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     ref.watch(appBarRealtimeProvider);
     final stats = ref.watch(appBarProvider);
 
-    // Loader (sin cambios)
+    // Tema gamer por lenguaje
+    final languageTheme =
+        _getLanguageTheme(stats.languageName, Theme.of(context).brightness);
+
+    ref.listen<AppBarState>(appBarProvider, (previous, next) {
+      if (previous != null &&
+          !previous.isLoading &&
+          !next.isLoading &&
+          previous.languageId != next.languageId) {
+        showSuccessSnackbar(
+          context,
+          '¡Lenguaje Cambiado!',
+          'Ahora estás en el mundo de ${next.languageName.toUpperCase()}.',
+        );
+      }
+    });
+
     if (stats.isLoading) {
-      return Container(
-        height: widget.preferredSize.height,
-        padding: const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
-        color: Colors.transparent,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const CircleAvatar(radius: 22, backgroundColor: Colors.white24),
-            _buildStatItem(
-              icon: Icons.local_fire_department,
-              color: Colors.grey,
-              text: "...",
-            ),
-            _buildStatItem(
-              icon: Icons.emoji_events,
-              color: Colors.grey,
-              text: "...",
-            ),
-            _buildStatItem(
-              icon: Icons.favorite,
-              color: Colors.grey,
-              text: "...",
-            ),
-          ],
+      return Theme(
+        data: languageTheme,
+        child: Container(
+          height: widget.preferredSize.height,
+          padding:
+              const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
+          color: Colors.transparent,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const CircleAvatar(
+                radius: 22,
+                backgroundColor: Colors.white24,
+              ),
+              _buildStatItem(
+                icon: Icons.local_fire_department,
+                color: Colors.grey,
+                text: "...",
+              ),
+              _buildStatItem(
+                icon: Icons.emoji_events,
+                color: Colors.grey,
+                text: "...",
+              ),
+              _buildStatItem(
+                icon: Icons.favorite,
+                color: Colors.grey,
+                text: "...",
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    // Contenido Real
     final languageColor = _getColorForLanguage(stats.languageName);
 
-    return Container(
-      height: widget.preferredSize.height,
-      padding: const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
-      color: Colors.transparent,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildLanguageSelector(context, ref, stats),
-          AnimatedStatBadge(
-            value: stats.streak,
-            icon: Icons.local_fire_department,
-            color: Colors.orange,
-            type: StatType.streak,
-            borderColor: languageColor, // Color del lenguaje
-          ),
-
-          AnimatedStatBadge(
-            value: stats.trophies,
-            icon: Icons.emoji_events,
-            color: Colors.amber,
-            type: StatType.trophy,
-            borderColor: languageColor, // Color del lenguaje
-          ),
-
-          AnimatedStatBadge(
-            value: stats.lives,
-            icon: Icons.favorite,
-            color: Colors.red,
-            type: StatType.life,
-            borderColor: languageColor, // Color del lenguaje
-          ),
-        ],
+    return Theme(
+      data: languageTheme,
+      child: Container(
+        height: widget.preferredSize.height,
+        padding:
+            const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
+        color: Colors.transparent,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildLanguageSelector(context, ref, stats, languageTheme),
+            AnimatedStatBadge(
+              value: stats.streak,
+              icon: Icons.local_fire_department,
+              color: Colors.orange,
+              type: StatType.streak,
+              borderColor: languageColor,
+            ),
+            AnimatedStatBadge(
+              value: stats.trophies,
+              icon: Icons.emoji_events,
+              color: Colors.amber,
+              type: StatType.trophy,
+              borderColor: languageColor,
+            ),
+            AnimatedStatBadge(
+              value: stats.lives,
+              icon: Icons.favorite,
+              color: Colors.red,
+              type: StatType.life,
+              borderColor: languageColor,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// El OverlayPortal (sin cambios en la lógica, solo el 'builder')
-  Widget _buildLanguageSelector(
-    BuildContext context,
-    WidgetRef ref,
-    AppBarState stats,
-  ) {
+    Widget _buildLanguageSelector(
+      BuildContext context,
+      WidgetRef ref,
+      AppBarState stats,
+      ThemeData languageTheme,
+    ) {
     return CompositedTransformTarget(
       link: _layerLink,
       child: OverlayPortal(
         controller: _portalController,
         overlayChildBuilder: (BuildContext context) {
-          return CompositedTransformFollower(
-            link: _layerLink,
-            offset: const Offset(0, 52.0), // 44px avatar + 8px espacio
-            child: Align(
-              alignment: Alignment.topLeft,
-              // Construimos el NUEVO menú "cool"
-              child: _buildLanguageMenu(context, ref, stats.languageId),
+          return GestureDetector(
+            onTap: () {
+              _portalController.hide();
+              setState(() => _isMenuOpen = false);
+            },
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(color: Colors.transparent),
+                ),
+                CompositedTransformFollower(
+                  link: _layerLink,
+                  offset: const Offset(0, 52),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: IntrinsicWidth(
+                      child: IntrinsicHeight(
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 260),
+                            switchInCurve: Curves.easeOutBack,
+                            switchOutCurve: Curves.easeInBack,
+                            child: _isMenuOpen
+                                ? _buildLanguageMenu(
+                                    context,
+                                    ref,
+                                    stats.languageId,
+                                    languageTheme,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
         child: InkWell(
           onTap: () {
+            setState(() => _isMenuOpen = !_isMenuOpen);
             _portalController.toggle();
           },
-          child: CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.grey.shade400,
+          child: AnimatedScale(
+            scale: _isMenuOpen ? 0.90 : 1.0,
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutBack,
             child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.white,
-              backgroundImage: AssetImage(stats.languageAssetPath),
+              radius: 22,
+              backgroundColor: Colors.grey.shade400,
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.white,
+                backgroundImage: AssetImage(stats.languageAssetPath),
+              ),
             ),
           ),
         ),
@@ -165,84 +368,107 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  /// --- ¡CAMBIO DE ESTÉTICA! ---
-  /// Este es el NUEVO menú "cool"
   Widget _buildLanguageMenu(
     BuildContext context,
     WidgetRef ref,
     int currentLangId,
+    ThemeData languageTheme,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    // 🔥 AJUSTAR COLORES SOLO PARA JAVA
+    final stats = ref.watch(appBarProvider);
+    final isJava = stats.languageName.toLowerCase().trim() == 'java';
+    
+    var colorScheme = languageTheme.colorScheme;
+    if (isJava) {
+      colorScheme = _adjustJavaColors(colorScheme);
+    }
+    
+    final textTheme = languageTheme.textTheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
+    final languageListAsync = ref.watch(languageListProvider);
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchLanguages(currentLangId),
-      builder: (context, snapshot) {
-        List<Widget> children;
-        if (snapshot.hasData) {
-          children = snapshot.data!.map((lang) {
-            final langName = lang['nombre'] as String;
-            final langAsset = _getAssetForLanguage(langName);
-            final langId = lang['id_lenguaje'] as int;
+    
 
-            // --- CAMBIO DE ESTÉTICA (Items) ---
-            // Le quitamos el fondo de "píldora" que tenía cada item
-            return _buildLanguageMenuItem(
-              langName,
-              langAsset,
-              langId,
-              textTheme,
-              colorScheme,
-            );
-          }).toList();
-        } else if (snapshot.hasError) {
-          children = [
-            Text("Error", style: TextStyle(color: colorScheme.onError)),
-          ];
-        } else {
-          children = [
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ];
-        }
+    return languageListAsync.when(
+      error: (e, st) => _errorBox(colorScheme),
+      loading: () => _loadingBox(colorScheme),
+      data: (allLangs) {
+        final otherLangs = allLangs
+            .where((lang) => lang['id_lenguaje'] != currentLangId)
+            .toList();
 
-        // --- ESTA ES LA ESTÉTICA "COOL" / VIDEOJUEGO ---
+        final items = otherLangs.map((lang) {
+          final langName = lang['nombre'] as String;
+          final langAsset = _getAssetForLanguage(langName);
+          final langId = lang['id_lenguaje'] as int;
+
+          return _buildLanguageMenuItem(
+            langName,
+            langAsset,
+            langId,
+            textTheme,
+            colorScheme,
+          );
+        }).toList();
+
+        
+
+        // Gradiente del panel según modo
+        final List<Color> panelGradientColors = isDark
+                  ? [
+                      colorScheme.primaryContainer.withOpacity(0.90),
+                      colorScheme.tertiaryContainer.withOpacity(0.90),
+                    ]
+                  : [
+                      colorScheme.primaryFixed.withOpacity(0.90),
+                      colorScheme.secondaryFixed.withOpacity(0.90),
+                    ];
+
+        final Color panelBorderColor = colorScheme.primary;
+
+        final List<BoxShadow> panelShadows = [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.35),
+            blurRadius: 24,
+            spreadRadius: 2,
+          ),
+        ];
+
         return Material(
           type: MaterialType.transparency,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            child: Container(
-              key: ValueKey(snapshot.connectionState),
-              width: 250,
-              padding: const EdgeInsets.all(8.0), // Padding interno
-              decoration: BoxDecoration(
-                // 1. Color de fondo de 'utils' (¡SÓLIDO!)
-                color: colorScheme.primary, // <-- El color de tu tema
-                // 2. Borde de 'utils' (un tono más claro)
-                border: Border.all(
-                  color: colorScheme.primaryContainer, // Color claro del tema
-                  width: 2.0,
-                ),
-                // 3. Bordes redondeados
-                borderRadius: BorderRadius.circular(16.0),
-                // 4. Sombra para profundidad
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black45,
-                    blurRadius: 20.0,
-                    offset: Offset(0, 8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: 260,
+                padding: const EdgeInsets.all(10),
+
+                /// PANEL CARTOON / GAMER DEPENDIENDO DEL MODO
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: panelGradientColors,
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: children,
+                  border: Border.all(
+                    color: panelBorderColor,
+                    width: 3.0,
+                  ),
+                  boxShadow: panelShadows,
+                ),
+
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(items.length, (i) {
+                    return _StaggerItem(
+                      delay: i * 70,
+                      child: items[i],
+                    );
+                  }),
+                ),
               ),
             ),
           ),
@@ -251,18 +477,39 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  // Helper para el FutureBuilder (sin cambios)
-  Future<List<Map<String, dynamic>>> _fetchLanguages(int currentLangId) async {
-    final supabase = Supabase.instance.client;
-    final langs = await supabase.from('lenguaje').select();
-    final otherLangs = langs.where((lang) {
-      return lang['id_lenguaje'] != currentLangId;
-    }).toList();
-    return otherLangs;
+  Widget _errorBox(ColorScheme colorScheme) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        width: 250,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          "Error al cargar lenguajes.",
+          style: TextStyle(color: colorScheme.onError),
+        ),
+      ),
+    );
   }
 
-  // --- CAMBIO DE ESTÉTICA ---
-  // El item ahora es más simple, sin fondo propio
+  Widget _loadingBox(ColorScheme colorScheme) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        width: 250,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
   Widget _buildLanguageMenuItem(
     String langName,
     String langAsset,
@@ -270,54 +517,162 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     TextTheme textTheme,
     ColorScheme colorScheme,
   ) {
+    final languageState = ref.watch(languageCompletionProvider);
+    final unlockedLanguages = languageState.unlockedLanguages;
+
+    final normalizedLangName = langName.trim().toLowerCase();
+    final normalizedUnlocked =
+        unlockedLanguages.map((l) => l.trim().toLowerCase()).toList();
+
+    final isCompleted = normalizedUnlocked.contains(normalizedLangName);
+    final isDark = colorScheme.brightness == Brightness.dark;
+
+    // Gradiente por item según modo
+    final List<Color> itemGradientColors = isDark
+    ? [
+        colorScheme.primaryContainer.withOpacity(0.85),
+        colorScheme.secondaryContainer.withOpacity(0.85),
+      ]
+    : [
+        colorScheme.primaryFixed.withOpacity(0.85),
+        colorScheme.secondaryFixed.withOpacity(0.85),
+      ];
+    final Color itemBorderColor = isDark
+        ? colorScheme.primaryFixed
+        : colorScheme.secondaryFixedDim;
+
+    final Color titleColor = isDark
+        ? colorScheme.onSurface
+        : colorScheme.onPrimaryFixedVariant;
+
     return InkWell(
-      onTap: () {
-        _portalController.hide(); // Oculta el menú
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Debes terminar este lenguaje antes de cambiar"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+      borderRadius: BorderRadius.circular(18),
+      onTap: () async {
+        _portalController.hide();
+        setState(() => _isMenuOpen = false);
+
+        if (!isCompleted) {
+          showWarningSnackbar(
+            context,
+            '¡Aún no!',
+            'No puedes cambiar de lenguaje hasta terminar el actual.',
+          );
+          return;
+        }
+
+        try {
+          final userId = ref.read(authStateProvider).value?.session?.user.id;
+          if (userId == null) throw Exception("Usuario no autenticado");
+
+          await ref
+              .read(languageCompletionProvider.notifier)
+              .updateFavoriteLanguage(userId, normalizedLangName);
+
+          await ref
+              .read(languageCompletionProvider.notifier)
+              .checkLanguageCompletion(userId);
+
+          await ref.read(appBarProvider.notifier).fetchStats();
+        } catch (e) {
+          if (!mounted) return;
+          showErrorSnackbar(
+            context,
+            '¡Error!',
+            'No se pudo cambiar de lenguaje: ${e.toString()}',
+          );
+        }
       },
-      borderRadius: BorderRadius.circular(12.0),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0), // Más padding
+
+      /// ITEM CARTOON / GAMER HORIZONTAL
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: itemGradientColors,
+          ),
+          border: Border.all(
+            color: itemBorderColor,
+            width: 3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.35 : 0.20),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(isDark ? 0.10 : 0.18),
+              blurRadius: 6,
+              offset: const Offset(-2, -2),
+            ),
+          ],
+        ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center, // ¡Alineación!
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey.shade300,
+            // Avatar del lenguaje con backplate
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.20),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
               child: CircleAvatar(
-                radius: 14,
-                backgroundColor: Colors.white,
-                backgroundImage: AssetImage(langAsset),
+                radius: 16,
+                backgroundColor: Colors.transparent,
+                child: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.white,
+                  backgroundImage: AssetImage(langAsset),
+                ),
               ),
             ),
+
             const SizedBox(width: 12),
-            Text(
-              langName,
-              style: textTheme.bodyMedium?.copyWith(
-                // --- CAMBIO: Color de texto de 'utils' ---
-                // 'onPrimary' es el color para poner ENCIMA de 'primary'
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
+
+            Expanded(
+              child: Text(
+                langName.toUpperCase(),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: titleColor,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
+
+            if (isCompleted)
+              Icon(
+                Icons.check_circle,
+                color: Colors.green.shade300,
+                size: 22,
+              )
+            else
+              Icon(
+                Icons.lock,
+                color: colorScheme.onPrimary.withOpacity(0.55),
+                size: 20,
+              ),
           ],
         ),
       ),
     );
   }
 
-  /// Widget reutilizable para CADA estadística (sin cambios)
   Widget _buildStatItem({
     required IconData icon,
     required Color color,
     required String text,
   }) {
-    // ... (tu código sin cambios) ...
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -325,7 +680,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 32),
           const SizedBox(width: 4),
@@ -337,7 +691,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
               fontSize: 19,
               shadows: [
                 Shadow(
-                  blurRadius: 2.0,
+                  blurRadius: 2,
                   color: Colors.black54,
                   offset: Offset(0, 1),
                 ),

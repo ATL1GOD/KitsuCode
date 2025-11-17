@@ -25,14 +25,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  animated_gradient:
-    dependency: "direct main"
-    description:
-      name: animated_gradient
-      sha256: "472473a6f3b9e54979169b24bff53394e49bcad5552d79db8e2cca60f6fd086f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3"
   animated_text_kit:
     dependency: "direct main"
     description:
@@ -169,6 +161,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  confetti:
+    dependency: "direct main"
+    description:
+      name: confetti
+      sha256: "79376a99648efbc3f23582f5784ced0fe239922bd1a0fb41f582051eba750751"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.0"
   connectivity_plus:
     dependency: "direct main"
     description:
@@ -350,14 +350,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_glow:
-    dependency: "direct main"
-    description:
-      name: flutter_glow
-      sha256: d9b55bcc01eb0f0d922df837015c63732b1c7d62395c2bfa750f3d741ba2336e
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.2"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -461,14 +453,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.5.0"
-  glass_kit:
-    dependency: "direct main"
-    description:
-      name: glass_kit
-      sha256: ca071693b6b1c5ddc628aee030df0eb99a4063b55b5928cf84bb82f9bc32595f
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.2"
   go_router:
     dependency: "direct main"
     description:

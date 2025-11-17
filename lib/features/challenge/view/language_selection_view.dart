@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // 🔥 NUEVOS IMPORTS
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -57,38 +58,52 @@ class _LanguageSelectionViewState
   @override
   void initState() {
     super.initState();
+    
+    // Normalizar los nombres de los lenguajes desbloqueados (completados)
+    final normalizedUnlocked = widget.unlockedLanguages
+        .map((l) => l.trim().toLowerCase())
+        .toList();
+    
+    // Normalizar el lenguaje actual (el que acaba de completar)
+    final currentLangNormalized = widget.currentLanguage.trim().toLowerCase();
+    
+    // LÓGICA CORRECTA:
+    // - Los lenguajes COMPLETADOS están bloqueados (ya los terminaste)
+    // - Los lenguajes NO completados están desbloqueados (puedes elegirlos)
+    
     _allLanguages = [
       Language(
-        name: 'python',
-        displayName: 'Python',
-        icon: Icons.code,
-        color: const Color(0xFF3776AB),
-        darkColor: const Color(0xFF2D5F8D),
-        description: 'Lenguaje versátil y fácil de aprender',
-        isLocked: !widget.unlockedLanguages
-            .map((l) => l.toLowerCase())
-            .contains('python'),
-      ),
-      Language(
-        name: 'java',
-        displayName: 'Java',
-        icon: Icons.coffee,
-        color: const Color(0xFFF89820),
-        darkColor: const Color(0xFFD17B1A),
-        description: 'Programación orientada a objetos',
-        isLocked: !widget.unlockedLanguages
-            .map((l) => l.toLowerCase())
-            .contains('java'),
-      ),
-      Language(
-        name: 'c',
+        name: 'C',
         displayName: 'C',
         icon: Icons.memory,
         color: const Color(0xFF00599C),
         darkColor: const Color(0xFF004578),
-        description: 'El lenguaje de los sistemas',
-        isLocked:
-            !widget.unlockedLanguages.map((l) => l.toLowerCase()).contains('c'),
+        description: normalizedUnlocked.contains('c') 
+            ? 'Ya dominaste este lenguaje' 
+            : 'El lenguaje de los sistemas',
+        isLocked: normalizedUnlocked.contains('c'), // Bloqueado si ya lo completaste
+      ),
+      Language(
+        name: 'Java',
+        displayName: 'Java',
+        icon: Icons.coffee,
+        color: const Color(0xFFF89820),
+        darkColor: const Color(0xFFD17B1A),
+        description: normalizedUnlocked.contains('java')
+            ? 'Ya dominaste este lenguaje'
+            : 'Programación orientada a objetos',
+        isLocked: normalizedUnlocked.contains('java'), // Bloqueado si ya lo completaste
+      ),
+      Language(
+        name: 'Python',
+        displayName: 'Python',
+        icon: Icons.code,
+        color: const Color(0xFF3776AB),
+        darkColor: const Color(0xFF2D5F8D),
+        description: normalizedUnlocked.contains('python')
+            ? 'Ya dominaste este lenguaje'
+            : 'Lenguaje versátil y fácil de aprender',
+        isLocked: normalizedUnlocked.contains('python'), // Bloqueado si ya lo completaste
       ),
     ];
   }
@@ -109,9 +124,19 @@ class _LanguageSelectionViewState
         throw Exception('Usuario no autenticado');
       }
 
+      debugPrint('🎯 Seleccionando lenguaje: ${language.name}');
+
       // Actualizar el lenguaje favorito en Supabase
+      // Pasar el lenguaje anterior (el que completaste) para marcarlo como "usado"
+      await ref.read(languageCompletionProvider.notifier).updateFavoriteLanguage(
+        userId,
+        language.name.toLowerCase(),
+        previousLanguage: widget.currentLanguage, // 🆕 El lenguaje que completaste
+      );
+
+      // 🔥 CRÍTICO: Volver a verificar lenguajes completados
       await ref.read(languageCompletionProvider.notifier)
-          .updateFavoriteLanguage(userId, language.name);
+          .checkLanguageCompletion(userId);
 
       // 🔥 CRÍTICO: Resetear el estado de completitud
       ref.read(languageCompletionProvider.notifier).resetCompletionState();
@@ -138,6 +163,8 @@ class _LanguageSelectionViewState
         }
       }
     } catch (e) {
+      debugPrint('❌ Error en _selectLanguage: $e');
+      
       // Manejar error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -436,9 +463,9 @@ class _LanguageCard extends StatelessWidget {
                           if (language.isLocked) ...[
                             const SizedBox(width: 8),
                             Icon(
-                              Icons.lock,
-                              size: 18,
-                              color: Colors.grey.shade500,
+                              Icons.check_circle,
+                              size: 20,
+                              color: Colors.green.shade400,
                             ),
                           ],
                         ],
@@ -446,7 +473,7 @@ class _LanguageCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         language.isLocked
-                            ? 'Completa los lenguajes anteriores'
+                            ? 'Ya dominaste este lenguaje'
                             : language.description,
                         style: TextStyle(
                           fontSize: 14,

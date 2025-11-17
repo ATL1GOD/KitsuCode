@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// Widget para cambiar entre lenguajes desbloqueados
-/// Puedes colocarlo en Settings o en un Drawer
+/// Widget para cambiar entre lenguajes COMPLETADOS
+/// Muestra solo los lenguajes que el usuario ya dominó
 class LanguageSwitcherWidget extends ConsumerStatefulWidget {
   const LanguageSwitcherWidget({super.key});
 
@@ -24,7 +25,7 @@ class _LanguageSwitcherWidgetState
   @override
   void initState() {
     super.initState();
-    // Cargar los lenguajes desbloqueados al iniciar
+    // Cargar los lenguajes completados al iniciar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId != null) {
@@ -42,9 +43,18 @@ class _LanguageSwitcherWidgetState
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId == null) throw Exception('Usuario no autenticado');
 
+      // Actualizar lenguaje (normalizar a minúsculas)
       await ref
           .read(languageCompletionProvider.notifier)
-          .updateFavoriteLanguage(userId, languageName);
+          .updateFavoriteLanguage(userId, languageName.toLowerCase());
+
+      // 🔥 CRÍTICO: Volver a verificar lenguajes completados
+      await ref
+          .read(languageCompletionProvider.notifier)
+          .checkLanguageCompletion(userId);
+
+      // Actualizar el appBar
+      await ref.read(appBarProvider.notifier).fetchStats();
 
       if (mounted) {
         // Mostrar confirmación
@@ -61,9 +71,6 @@ class _LanguageSwitcherWidgetState
           _isExpanded = false;
           _isLoading = false;
         });
-
-        // TODO: Recargar la pantalla principal o actualizar el AppBar
-        // ref.read(appBarProvider.notifier).updateLanguage(languageName);
       }
     } catch (e) {
       if (mounted) {
@@ -79,7 +86,8 @@ class _LanguageSwitcherWidgetState
   }
 
   Color _getLanguageColor(String languageName) {
-    switch (languageName.toLowerCase()) {
+    final normalized = languageName.trim().toLowerCase();
+    switch (normalized) {
       case 'python':
         return const Color(0xFF3776AB);
       case 'java':
@@ -92,7 +100,8 @@ class _LanguageSwitcherWidgetState
   }
 
   IconData _getLanguageIcon(String languageName) {
-    switch (languageName.toLowerCase()) {
+    final normalized = languageName.trim().toLowerCase();
+    switch (normalized) {
       case 'python':
         return Icons.code;
       case 'java':
@@ -110,7 +119,7 @@ class _LanguageSwitcherWidgetState
     final currentLanguage = languageState.currentLanguage;
     final unlockedLanguages = languageState.unlockedLanguages;
 
-    // Si solo tiene un lenguaje desbloqueado, no mostrar el switcher
+    // Si solo tiene un lenguaje o ninguno, no mostrar el switcher
     if (unlockedLanguages.length <= 1) {
       return const SizedBox.shrink();
     }
@@ -164,7 +173,7 @@ class _LanguageSwitcherWidgetState
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          currentLanguage,
+                          currentLanguage.toUpperCase(),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -230,8 +239,8 @@ class _LanguageSwitcherWidgetState
                       const SizedBox(height: 8),
                       ...unlockedLanguages.map((language) {
                         final isCurrentLanguage =
-                            language.toLowerCase() ==
-                                currentLanguage.toLowerCase();
+                            language.trim().toLowerCase() ==
+                                currentLanguage.trim().toLowerCase();
                         final color = _getLanguageColor(language);
 
                         return Padding(
@@ -270,7 +279,7 @@ class _LanguageSwitcherWidgetState
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      language,
+                                      language.toUpperCase(),
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: isCurrentLanguage

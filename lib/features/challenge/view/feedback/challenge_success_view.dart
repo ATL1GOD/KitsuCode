@@ -13,10 +13,17 @@ import 'package:kitsucode/core/providers/app_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
-class ChallengeSuccessView extends ConsumerWidget {
+class ChallengeSuccessView extends ConsumerStatefulWidget {
   final int trofeosObtenidos;
 
   const ChallengeSuccessView({super.key, required this.trofeosObtenidos});
+
+  @override
+  ConsumerState<ChallengeSuccessView> createState() => _ChallengeSuccessViewState();
+}
+
+class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
+  bool _isNavigating = false;
 
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
@@ -33,8 +40,93 @@ class ChallengeSuccessView extends ConsumerWidget {
     }
   }
 
+  Future<void> _handleContinue() async {
+    if (_isNavigating) return;
+    
+    setState(() => _isNavigating = true);
+
+    try {
+      // 1. Actualizar estadísticas
+      ref.read(appBarProvider.notifier).fetchStats();
+      ref.read(oldStatsValuesProvider.notifier).state = null;
+      ref.read(shouldRefreshStatsProvider.notifier).state = false;
+
+      // 2. 🎉 Verificar si completó el lenguaje
+      final userId = ref.read(authStateProvider).value?.session?.user.id;
+      bool shouldShowCelebration = false;
+      String completedLanguage = '';
+      List<String> unlockedLanguages = [];
+      bool canUnlock = true;
+
+      if (userId != null) {
+        // Hacer la verificación
+        await ref.read(languageCompletionProvider.notifier)
+            .checkLanguageCompletion(userId);
+        
+        final languageState = ref.read(languageCompletionProvider);
+        
+        // 🔥 CRÍTICO: Mostrar celebración solo si PUEDE desbloquear
+        shouldShowCelebration = languageState.hasCompletedLanguage && 
+                               languageState.canUnlockNewLanguage &&
+                               languageState.unlockedLanguages.length < 3;
+        
+        if (shouldShowCelebration) {
+          completedLanguage = languageState.currentLanguage;
+          unlockedLanguages = languageState.unlockedLanguages;
+          canUnlock = languageState.canUnlockNewLanguage;
+          
+          debugPrint('🎉 ¡Lenguaje completado! $completedLanguage');
+          debugPrint('📚 Lenguajes desbloqueados: $unlockedLanguages');
+          debugPrint('🎁 Puede desbloquear: $canUnlock');
+        } else if (languageState.hasCompletedLanguage && 
+                   !languageState.canUnlockNewLanguage) {
+          // 🆕 Si completó pero ya no puede desbloquear, ir al home normalmente
+          debugPrint('🏠 Lenguaje completado pero ya fue usado, volver al home');
+        } else if (languageState.hasCompletedLanguage && 
+                   languageState.unlockedLanguages.length >= 3) {
+          debugPrint('🏆 ¡TODOS LOS LENGUAJES COMPLETADOS!');
+          shouldShowCelebration = true;
+          completedLanguage = 'ALL';
+          unlockedLanguages = languageState.unlockedLanguages;
+          canUnlock = false; // No hay más lenguajes para desbloquear
+        }
+      }
+
+      if (!mounted) return;
+
+      // 3. Decidir la navegación basado en el resultado
+      if (shouldShowCelebration) {
+        // 🎊 Ir a la celebración
+        debugPrint('🎊 Navegando a celebración...');
+        context.go('/language-completion', extra: {
+          'completedLanguage': completedLanguage,
+          'unlockedLanguages': unlockedLanguages,
+          'canUnlockNewLanguage': canUnlock, // 🆕 PASAR ESTE FLAG
+        });
+      } else {
+        // 🏠 Ir al home normalmente
+        debugPrint('🏠 Navegando al home...');
+        final returnPath = ref.read(navigationReturnPathProvider);
+        ref.read(navigationReturnPathProvider.notifier).state = '/home';
+        context.go(returnPath);
+      }
+    } catch (e) {
+      debugPrint('❌ Error en navegación: $e');
+      
+      if (mounted) {
+        final returnPath = ref.read(navigationReturnPathProvider);
+        ref.read(navigationReturnPathProvider.notifier).state = '/home';
+        context.go(returnPath);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isNavigating = false);
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final appBarState = ref.watch(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -97,7 +189,7 @@ class ChallengeSuccessView extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          '+$trofeosObtenidos Trofeos',
+                          '+${widget.trofeosObtenidos} Trofeos',
                           style: textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
@@ -109,6 +201,7 @@ class ChallengeSuccessView extends ConsumerWidget {
 
                   const Spacer(),
 
+                  // Botón con loading state
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
@@ -118,58 +211,23 @@ class ChallengeSuccessView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                     ),
-                    onPressed: () {
-                      // 1. Actualizar estadísticas
-                      ref.read(appBarProvider.notifier).fetchStats();
-                      ref.read(oldStatsValuesProvider.notifier).state = null;
-                      ref.read(shouldRefreshStatsProvider.notifier).state = false;
-
-                      if (!context.mounted) return;
-
-                      // 2. Preparar navegación
-                      final returnPath = ref.read(navigationReturnPathProvider);
-                      ref.read(navigationReturnPathProvider.notifier).state = '/home';
-
-                      // 3. 🚀 OPTIMIZADO: Navegar INMEDIATAMENTE al home
-                      context.go(returnPath);
-
-                      // 4. 🎉 Verificar lenguaje en background (NO BLOQUEANTE)
-                      final userId = ref.read(authStateProvider).value?.session?.user.id;
-                      
-                      if (userId != null) {
-                        // Delay para que la navegación termine primero
-                        Future.delayed(const Duration(milliseconds: 500), () async {
-                          try {
-                            await ref.read(languageCompletionProvider.notifier)
-                                .checkLanguageCompletion(userId);
-                            
-                            if (!context.mounted) return;
-                            
-                            final languageState = ref.read(languageCompletionProvider);
-                            
-                            // Si completó Y tiene más de 1 lenguaje
-                            if (languageState.isLanguageCompleted && 
-                                languageState.unlockedLanguages.length > 1) {
-                              
-                              // Navegar a celebración desde el home
-                              context.push('/language-completion', extra: {
-                                'completedLanguage': languageState.currentLanguage,
-                                'unlockedLanguages': languageState.unlockedLanguages,
-                              });
-                            }
-                          } catch (e) {
-                            debugPrint('Error verificando lenguaje: $e');
-                          }
-                        });
-                      }
-                    },
-                    child: const Text(
-                      'CONTINUAR',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    onPressed: _isNavigating ? null : _handleContinue,
+                    child: _isNavigating
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'CONTINUAR',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ],
               ),

@@ -5,8 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
+// 🆕 NUEVO: Importar providers necesarios
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 
-// Sigue siendo un StatefulWidget para el OverlayPortal
 class KitsuAppBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
   const KitsuAppBar({super.key});
@@ -22,31 +24,41 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
   final OverlayPortalController _portalController = OverlayPortalController();
   final LayerLink _layerLink = LayerLink();
 
-  // Helper de asset (Corregido a 'c')
+  @override
+  void initState() {
+    super.initState();
+    // 🔥 NUEVO: Verificar lenguajes completados al cargar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = ref.read(authStateProvider).value?.session?.user.id;
+      if (userId != null) {
+        ref.read(languageCompletionProvider.notifier).checkLanguageCompletion(userId);
+      }
+    });
+  }
+
   String _getAssetForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
         return 'assets/images/home/logo_python.webp';
       case 'java':
         return 'assets/images/home/logo_java.webp';
-      case 'c': // <-- Tu corrección
+      case 'c':
         return 'assets/images/home/logo_c.webp';
       default:
         return 'assets/images/home/logo_python.webp';
     }
   }
 
-  // Helper para obtener el color primario del lenguaje
   Color _getColorForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
-        return const Color(0xFF19647E); // Azul de Python
+        return const Color(0xFF19647E);
       case 'java':
-        return const Color(0xFFB31900); // Rojo de Java
+        return const Color(0xFFB31900);
       case 'c':
-        return const Color(0xFF004D92); // Azul de C
+        return const Color(0xFF004D92);
       default:
-        return const Color(0xFF19647E); // Default Python
+        return const Color(0xFF19647E);
     }
   }
 
@@ -55,7 +67,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     ref.watch(appBarRealtimeProvider);
     final stats = ref.watch(appBarProvider);
 
-    // Loader (sin cambios)
     if (stats.isLoading) {
       return Container(
         height: widget.preferredSize.height,
@@ -86,7 +97,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
       );
     }
 
-    // Contenido Real
     final languageColor = _getColorForLanguage(stats.languageName);
 
     return Container(
@@ -103,30 +113,27 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             icon: Icons.local_fire_department,
             color: Colors.orange,
             type: StatType.streak,
-            borderColor: languageColor, // Color del lenguaje
+            borderColor: languageColor,
           ),
-
           AnimatedStatBadge(
             value: stats.trophies,
             icon: Icons.emoji_events,
             color: Colors.amber,
             type: StatType.trophy,
-            borderColor: languageColor, // Color del lenguaje
+            borderColor: languageColor,
           ),
-
           AnimatedStatBadge(
             value: stats.lives,
             icon: Icons.favorite,
             color: Colors.red,
             type: StatType.life,
-            borderColor: languageColor, // Color del lenguaje
+            borderColor: languageColor,
           ),
         ],
       ),
     );
   }
 
-  /// El OverlayPortal (sin cambios en la lógica, solo el 'builder')
   Widget _buildLanguageSelector(
     BuildContext context,
     WidgetRef ref,
@@ -139,16 +146,22 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         overlayChildBuilder: (BuildContext context) {
           return CompositedTransformFollower(
             link: _layerLink,
-            offset: const Offset(0, 52.0), // 44px avatar + 8px espacio
+            offset: const Offset(0, 52.0),
             child: Align(
               alignment: Alignment.topLeft,
-              // Construimos el NUEVO menú "cool"
               child: _buildLanguageMenu(context, ref, stats.languageId),
             ),
           );
         },
         child: InkWell(
-          onTap: () {
+          onTap: () async {
+            // 🔥 NUEVO: Verificar lenguajes antes de abrir el menú
+            final userId = ref.read(authStateProvider).value?.session?.user.id;
+            if (userId != null) {
+              await ref.read(languageCompletionProvider.notifier)
+                  .checkLanguageCompletion(userId);
+            }
+            
             _portalController.toggle();
           },
           child: CircleAvatar(
@@ -165,8 +178,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  /// --- ¡CAMBIO DE ESTÉTICA! ---
-  /// Este es el NUEVO menú "cool"
   Widget _buildLanguageMenu(
     BuildContext context,
     WidgetRef ref,
@@ -185,8 +196,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             final langAsset = _getAssetForLanguage(langName);
             final langId = lang['id_lenguaje'] as int;
 
-            // --- CAMBIO DE ESTÉTICA (Items) ---
-            // Le quitamos el fondo de "píldora" que tenía cada item
             return _buildLanguageMenuItem(
               langName,
               langAsset,
@@ -208,7 +217,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           ];
         }
 
-        // --- ESTA ES LA ESTÉTICA "COOL" / VIDEOJUEGO ---
         return Material(
           type: MaterialType.transparency,
           child: AnimatedSwitcher(
@@ -219,18 +227,14 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             child: Container(
               key: ValueKey(snapshot.connectionState),
               width: 250,
-              padding: const EdgeInsets.all(8.0), // Padding interno
+              padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                // 1. Color de fondo de 'utils' (¡SÓLIDO!)
-                color: colorScheme.primary, // <-- El color de tu tema
-                // 2. Borde de 'utils' (un tono más claro)
+                color: colorScheme.primary,
                 border: Border.all(
-                  color: colorScheme.primaryContainer, // Color claro del tema
+                  color: colorScheme.primaryContainer,
                   width: 2.0,
                 ),
-                // 3. Bordes redondeados
                 borderRadius: BorderRadius.circular(16.0),
-                // 4. Sombra para profundidad
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black45,
@@ -251,7 +255,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-  // Helper para el FutureBuilder (sin cambios)
   Future<List<Map<String, dynamic>>> _fetchLanguages(int currentLangId) async {
     final supabase = Supabase.instance.client;
     final langs = await supabase.from('lenguaje').select();
@@ -261,8 +264,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     return otherLangs;
   }
 
-  // --- CAMBIO DE ESTÉTICA ---
-  // El item ahora es más simple, sin fondo propio
+  // 🔥 MÉTODO CORREGIDO - Ahora verifica si el lenguaje está completado
   Widget _buildLanguageMenuItem(
     String langName,
     String langAsset,
@@ -270,22 +272,84 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     TextTheme textTheme,
     ColorScheme colorScheme,
   ) {
+    // Obtener el estado de los lenguajes completados
+    final languageState = ref.watch(languageCompletionProvider);
+    final unlockedLanguages = languageState.unlockedLanguages;
+    
+    // Normalizar el nombre del lenguaje para comparar
+    final normalizedLangName = langName.trim().toLowerCase();
+    final normalizedUnlocked = unlockedLanguages
+        .map((l) => l.trim().toLowerCase())
+        .toList();
+    
+    // Verificar si este lenguaje está completado
+    final isCompleted = normalizedUnlocked.contains(normalizedLangName);
+
     return InkWell(
-      onTap: () {
-        _portalController.hide(); // Oculta el menú
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Debes terminar este lenguaje antes de cambiar"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+      onTap: () async {
+        _portalController.hide();
+        
+        // ✅ LÓGICA CORREGIDA
+        if (!isCompleted) {
+          // 🔒 Lenguaje NO completado - Mostrar error
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  "Debes completar ${langName.toUpperCase()} primero"
+                ),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
+          return;
+        }
+        
+        // ✅ Lenguaje completado - Permitir cambio
+        try {
+          final userId = ref.read(authStateProvider).value?.session?.user.id;
+          if (userId == null) {
+            throw Exception('Usuario no autenticado');
+          }
+
+          // Cambiar el lenguaje
+          await ref.read(languageCompletionProvider.notifier)
+              .updateFavoriteLanguage(userId, normalizedLangName);
+
+          // 🔥 CRÍTICO: Volver a verificar lenguajes completados
+          // Esto actualiza la lista de unlockedLanguages
+          await ref.read(languageCompletionProvider.notifier)
+              .checkLanguageCompletion(userId);
+
+          // Actualizar el appBar
+          await ref.read(appBarProvider.notifier).fetchStats();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Cambiado a ${langName.toUpperCase()}'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       },
       borderRadius: BorderRadius.circular(12.0),
       child: Padding(
-        padding: const EdgeInsets.all(12.0), // Más padding
+        padding: const EdgeInsets.all(12.0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center, // ¡Alineación!
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Avatar del lenguaje
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.grey.shade300,
@@ -296,28 +360,42 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              langName,
-              style: textTheme.bodyMedium?.copyWith(
-                // --- CAMBIO: Color de texto de 'utils' ---
-                // 'onPrimary' es el color para poner ENCIMA de 'primary'
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
+            
+            // Nombre del lenguaje
+            Expanded(
+              child: Text(
+                langName.toUpperCase(),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
+            
+            // Ícono de estado
+            if (isCompleted)
+              Icon(
+                Icons.check_circle,
+                color: Colors.green.shade300,
+                size: 20,
+              )
+            else
+              Icon(
+                Icons.lock,
+                color: colorScheme.onPrimary.withValues(alpha: 0.5),
+                size: 18,
+              ),
           ],
         ),
       ),
     );
   }
 
-  /// Widget reutilizable para CADA estadística (sin cambios)
   Widget _buildStatItem({
     required IconData icon,
     required Color color,
     required String text,
   }) {
-    // ... (tu código sin cambios) ...
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(

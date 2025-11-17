@@ -90,7 +90,6 @@ class LoginState extends StateNotifier<AsyncValue<void>> {
 
       await authRepository.signInWithGoogle();
       state = const AsyncValue.data(null);
-      _ref.invalidate(authStateProvider);
     } on TimeoutException {
       state = const AsyncValue.error(
         'Tiempo de espera agotado',

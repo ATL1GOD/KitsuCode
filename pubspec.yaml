@@ -9,17 +9,14 @@ environment:
 dependencies:
   # 🎯 OPTIMIZACIÓN: Dependencias de animación (reducidas de 11 a 8)
   animate_do: ^4.2.0
-  animated_background: ^2.0.0  # ⚠️ Usado en burbujas.dart - considerar optimizar
-  # animated_gradient: ^0.0.3  # ❌ ELIMINADO - No usado en el código
+  animated_background: ^2.0.0 # ⚠️ Usado en burbujas.dart - considerar optimizar
   curved_navigation_bar: ^1.0.6
   flex_color_scheme: ^8.2.0
   flutter:
     sdk: flutter
   flutter_animate: ^4.5.2
   flutter_dotenv: ^6.0.0
-  # flutter_glow: ^0.3.2  # ❌ ELIMINADO - No usado en el código
   flutter_riverpod: ^2.6.1
-  # glass_kit: ^4.0.1  # ❌ ELIMINADO - No usado en el código
   flutter_svg: ^2.2.1
   go_router: ^16.1.0
   google_fonts: ^6.3.2
@@ -70,7 +67,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/navbar/
     - assets/images/home/
     - assets/images/logros/
     - assets/images/auth/

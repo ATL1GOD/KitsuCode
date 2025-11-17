@@ -155,6 +155,41 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         return const Color(0xFF19647E);
     }
   }
+  
+   /// Ajustar colores específicos para Java (más vibrantes)
+  ColorScheme _adjustJavaColors(ColorScheme original) {
+    final isDark = original.brightness == Brightness.dark;
+    
+    if (isDark) {
+      // Dark mode: Colores más brillantes
+      return original.copyWith(
+        primary: const Color(0xFFFF9A7F),           // Naranja pastel
+        primaryContainer: const Color(0xFFB85A40),  // Naranja oscuro
+        primaryFixed: const Color(0xFFFFD6CC),
+        
+        secondary: const Color(0xFF5FD9CC),         // Turquesa brillante
+        secondaryContainer: const Color(0xFF1F7A70),
+        secondaryFixed: const Color(0xFFB8EDE7),
+        
+        tertiary: const Color(0xFFFFB77F),          // Naranja claro
+        tertiaryContainer: const Color(0xFFB86A30),
+      );
+    } else {
+      // Light mode: Colores vibrantes
+      return original.copyWith(
+        primary: const Color(0xFFE76F51),           // Naranja coral
+        primaryContainer: const Color(0xFFFFE5DD),  // Naranja muy claro
+        primaryFixed: const Color(0xFFFFD6CC),
+        
+        secondary: const Color(0xFF2A9D8F),         // Verde agua
+        secondaryContainer: const Color(0xFFCCF5F0),
+        secondaryFixed: const Color(0xFFB8EDE7),
+        
+        tertiary: const Color(0xFFF4A261),          // Naranja suave
+        tertiaryContainer: const Color(0xFFFFE8D6),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +371,15 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     int currentLangId,
     ThemeData languageTheme,
   ) {
-    final colorScheme = languageTheme.colorScheme;
+    // 🔥 AJUSTAR COLORES SOLO PARA JAVA
+    final stats = ref.watch(appBarProvider);
+    final isJava = stats.languageName.toLowerCase().trim() == 'java';
+    
+    var colorScheme = languageTheme.colorScheme;
+    if (isJava) {
+      colorScheme = _adjustJavaColors(colorScheme);
+    }
+    
     final textTheme = languageTheme.textTheme;
     final isDark = colorScheme.brightness == Brightness.dark;
     final languageListAsync = ref.watch(languageListProvider);

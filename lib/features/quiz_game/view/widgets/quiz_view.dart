@@ -376,15 +376,19 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
   /// Widget que construye el cuerpo principal del quiz (pregunta y opciones).
   Widget _buildQuizBody(ColorScheme colorScheme, String questionKey) {
+    // 🎯 OPTIMIZACIÓN: Memoizar MediaQuery para evitar llamadas múltiples
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final topPadding = mediaQuery.padding.top;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            minHeight:
-                MediaQuery.of(context).size.height -
+            minHeight: screenHeight -
                 AppBar().preferredSize.height -
-                MediaQuery.of(context).padding.top -
+                topPadding -
                 100,
           ),
           child: Column(

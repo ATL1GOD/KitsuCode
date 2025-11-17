@@ -158,6 +158,8 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                           return FadeInDown(
                             duration: const Duration(milliseconds: 400),
                             child: ListView.builder(
+                              // 🎯 OPTIMIZACIÓN: cacheExtent para mejor scrolling
+                              cacheExtent: 200.0,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               itemCount: users.length,
                               itemBuilder: (_, i) => FadeInDown(

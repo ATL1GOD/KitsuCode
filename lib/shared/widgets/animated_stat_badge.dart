@@ -26,18 +26,16 @@ class AnimatedStatBadge extends StatefulWidget {
 
 class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     with TickerProviderStateMixin {
-  late AnimationController _flipController;
-  late AnimationController _popController;
-  late AnimationController _streakFireController;
-  late AnimationController _lifeLossController;
-  late AnimationController _trophyGainController; // 🏆 NEW
+  // 🎯 OPTIMIZACIÓN: Reducido de 5 → 2 AnimationControllers
+  late AnimationController _mainController; // Combinación de flip + pop + efectos básicos
+  late AnimationController _effectsController; // Solo para streak fire (Lottie)
 
   late int _previousValue;
   late int _displayValue;
 
   bool _playStreakFire = false; // 🔥
-  bool _lifeLoss = false; // 💔
-  bool _trophyGain = false; // 🏆 NEW
+  bool _playLifeEffect = false; // 💔
+  bool _playTrophyEffect = false; // 🏆
 
   @override
   void initState() {
@@ -45,29 +43,16 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     _previousValue = widget.value;
     _displayValue = widget.value;
 
-    _flipController = AnimationController(
+    // Main controller: maneja flip, pop, shake y bounce
+    _mainController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 650), // Aumentado de 450 a 650
+      duration: const Duration(milliseconds: 400), // Reducido de 650ms
     );
 
-    _popController = AnimationController(
+    // Effects controller: solo para efectos Lottie (streak fire)
+    _effectsController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 650), // Aumentado de 450 a 650
-    );
-
-    _streakFireController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200), // Aumentado de 1800 a 2200
-    );
-
-    _lifeLossController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 750), // Aumentado de 550 a 750
-    );
-
-    _trophyGainController = AnimationController( // 🏆 NEW
-      vsync: this,
-      duration: const Duration(milliseconds: 800), // Aumentado de 600 a 800
+      duration: const Duration(milliseconds: 1500), // Reducido de 2200ms
     );
   }
 
@@ -78,42 +63,32 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     if (widget.value != _displayValue) {
       _startAnimation(oldWidget.value, widget.value);
 
-      // 🔥 streak increase
+      // 🔥 Streak increase - usa effectsController
       if (widget.type == StatType.streak && widget.value > oldWidget.value) {
         setState(() => _playStreakFire = true);
-        _streakFireController.forward(from: 0);
+        _effectsController.forward(from: 0);
 
-        Future.delayed(const Duration(milliseconds: 2200), () { // Actualizado de 1800 a 2200
+        Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
             setState(() => _playStreakFire = false);
-            _streakFireController.reset();
+            _effectsController.reset();
           }
         });
       }
 
-      // 💔 life decrease shake
+      // 💔 Life decrease - usa mainController (sin controller dedicado)
       if (widget.type == StatType.life && widget.value < oldWidget.value) {
-        setState(() => _lifeLoss = true);
-        _lifeLossController.forward(from: 0);
-
-        Future.delayed(const Duration(milliseconds: 750), () { // Actualizado de 550 a 750
-          if (mounted) {
-            setState(() => _lifeLoss = false);
-            _lifeLossController.reset();
-          }
+        setState(() => _playLifeEffect = true);
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (mounted) setState(() => _playLifeEffect = false);
         });
       }
 
-      // 🏆 trophy increase celebration
+      // 🏆 Trophy increase - usa mainController (sin controller dedicado)
       if (widget.type == StatType.trophy && widget.value > oldWidget.value) {
-        setState(() => _trophyGain = true);
-        _trophyGainController.forward(from: 0);
-
-        Future.delayed(const Duration(milliseconds: 800), () { // Actualizado de 600 a 800
-          if (mounted) {
-            setState(() => _trophyGain = false);
-            _trophyGainController.reset();
-          }
+        setState(() => _playTrophyEffect = true);
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (mounted) setState(() => _playTrophyEffect = false);
         });
       }
     }
@@ -121,18 +96,14 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
 
   void _startAnimation(int from, int to) {
     _previousValue = from;
-    _flipController.forward(from: 0);
-    _popController.forward(from: 0);
+    _mainController.forward(from: 0); // Solo un controller
     setState(() => _displayValue = to);
   }
 
   @override
   void dispose() {
-    _flipController.dispose();
-    _popController.dispose();
-    _streakFireController.dispose();
-    _lifeLossController.dispose();
-    _trophyGainController.dispose(); // 🏆 NEW
+    _mainController.dispose();
+    _effectsController.dispose();
     super.dispose();
   }
 
@@ -141,9 +112,10 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     final primaryColor = widget.borderColor ?? Theme.of(context).colorScheme.primary;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_flipController, _streakFireController, _lifeLossController, _trophyGainController]),
+      // 🎯 OPTIMIZACIÓN: Solo 2 controladores en lugar de 4
+      animation: Listenable.merge([_mainController, _effectsController]),
       builder: (_, __) {
-        final t = _flipController.value;
+        final t = _mainController.value;
         final showingOld = t < 0.5;
         final localT = showingOld ? (t / 0.5) : ((1 - t) / 0.5);
 
@@ -151,9 +123,9 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         final scale = 1.0 + 0.40 * math.sin(t * math.pi);
         final numDisplayed = showingOld ? _previousValue : _displayValue;
 
-        // 🔥 Fire animation progress
-        final fireProgress = _streakFireController.value.clamp(0.0, 1.0);
-        
+        // 🔥 Fire animation (solo para streak)
+        final fireProgress = _effectsController.value.clamp(0.0, 1.0);
+
         double lottieOpacity = 0.0;
         if (_playStreakFire && widget.type == StatType.streak) {
           if (fireProgress < 0.15) {
@@ -176,52 +148,37 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
           }
         }
 
-        // 💔 Life loss animation
-        final lifeAnim = _lifeLossController.value;
+        // 💔 Life loss - usa mainController en lugar de controller dedicado
         double shake = 0;
         double lifeScale = 1.0;
         Color iconColor = widget.color;
 
-        if (_lifeLoss && widget.type == StatType.life) {
-          // Shake effect: vibra de lado a lado
-          shake = math.sin(lifeAnim * math.pi * 8) * 5;
-          // Pulse effect: se encoge y crece
-          lifeScale = 1.0 + (0.3 * math.sin(lifeAnim * math.pi * 2));
-          // Color flash: parpadea en rojo
-          iconColor = Color.lerp(
-            Colors.red[700]!,
-            widget.color,
-            lifeAnim
-          )!;
+        if (_playLifeEffect && widget.type == StatType.life) {
+          shake = math.sin(t * math.pi * 8) * 4; // Reducido de 5 a 4
+          lifeScale = 1.0 + (0.25 * math.sin(t * math.pi * 2)); // Reducido de 0.3
+          iconColor = Color.lerp(Colors.red[700]!, widget.color, t)!;
         }
 
-        // 🏆 Trophy gain animation
-        final trophyAnim = _trophyGainController.value;
+        // 🏆 Trophy gain - usa mainController en lugar de controller dedicado
         double trophyBounce = 0;
         double trophyScale = 1.0;
         double trophyRotation = 0;
 
-        if (_trophyGain && widget.type == StatType.trophy) {
-          // Bounce effect: rebota hacia arriba
-          trophyBounce = -math.sin(trophyAnim * math.pi) * 8;
-          // Scale effect: crece y vuelve a tamaño normal
-          trophyScale = 1.0 + (0.4 * math.sin(trophyAnim * math.pi));
-          // Rotation: gira ligeramente
-          trophyRotation = math.sin(trophyAnim * math.pi * 2) * 0.2;
-          // Sparkle color: brilla en dorado
-          iconColor = Color.lerp(
-            Colors.amber[400]!,
-            widget.color,
-            trophyAnim
-          )!;
+        if (_playTrophyEffect && widget.type == StatType.trophy) {
+          trophyBounce = -math.sin(t * math.pi) * 6; // Reducido de 8
+          trophyScale = 1.0 + (0.3 * math.sin(t * math.pi)); // Reducido de 0.4
+          trophyRotation = math.sin(t * math.pi * 2) * 0.15; // Reducido de 0.2
+          iconColor = Color.lerp(Colors.amber[400]!, widget.color, t)!;
         }
 
-        return Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            // base badge
-            Transform.scale(
+        // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints innecesarios
+        return RepaintBoundary(
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              // base badge
+              Transform.scale(
               scale: scale,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -312,7 +269,8 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         );
       },
     );

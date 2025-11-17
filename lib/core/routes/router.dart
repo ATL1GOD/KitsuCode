@@ -67,33 +67,53 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(ref),
+
+    // --- ### LÓGICA DE REDIRECT CORREGIDA ### ---
     redirect: (context, state) {
       final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
       final loc = state.matchedLocation;
 
-      // --- ¡MODIFICADO! Añadida la nueva ruta ---
-      final inAuth =
+      // Definir rutas públicas/de autenticación
+      final inAuthRoute =
           loc == '/auth' ||
           loc == '/forgot-password' ||
           loc == '/update-password';
-
       final inSplash = loc == '/';
       final inNoInternet = loc == '/no-internet';
 
-      // Si estamos en splash, dejar que termine
-      if (inSplash) return null;
-
-      // Si estamos en NoInternet, no redirigir
+      // 1. Siempre permitir la ruta de "sin internet"
       if (inNoInternet) return null;
 
-      // --- ¡MODIFICADO! ---
-      // Si el usuario está en la pantalla de /update-password, déjalo estar
+      // 2. Permitir siempre la pantalla de actualizar contraseña (para el flujo de reseteo)
       if (loc == '/update-password') return null;
 
-      // Lógica normal de auth
-      if (!isLogged && !inAuth) return '/auth';
-      if (isLogged && inAuth) return '/home';
+      // 3. Lógica del Splash (¡LA CORRECCIÓN!)
+      if (inSplash) {
+        // Si estamos en el Splash Y acabamos de iniciar sesión (ej. Google),
+        // ¡sácalo de ahí y llévalo al home!
+        if (isLogged) return '/home';
 
+        // Si no, quédate en el Splash (está cargando)
+        return null;
+      }
+
+      // 4. Lógica de Rutas de Auth (Login, Registro, etc.)
+      if (inAuthRoute) {
+        // Si ya está logueado y visita /auth, llévalo al home
+        if (isLogged) return '/home';
+
+        // Si no, déjalo en la ruta de auth
+        return null;
+      }
+
+      // 5. Lógica de Rutas Protegidas (todas las demás)
+      if (!isLogged) {
+        // Si no está logueado y no está en una ruta de auth,
+        // mándalo a /auth
+        return '/auth';
+      }
+
+      // 6. Si está logueado y en una ruta protegida, déjalo estar
       return null;
     },
     routes: [

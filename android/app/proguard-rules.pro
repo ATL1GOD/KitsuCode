@@ -1,4 +1,6 @@
-# 🎯 OPTIMIZACIÓN: Reglas de ProGuard/R8 para KitsuCode
+# --- PLAY CORE (FIX PRINCIPAL) ---
+-keep class com.google.android.play.** { *; }
+-dontwarn com.google.android.play.**
 
 # Flutter wrapper
 -keep class io.flutter.app.** { *; }
@@ -22,17 +24,18 @@
 -keep class io.supabase.** { *; }
 -dontwarn io.supabase.**
 
-# Gson (usado por muchas librerías)
+# Gson
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn sun.misc.**
 -keep class com.google.gson.** { *; }
+
 -keep class * implements com.google.gson.TypeAdapter
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
 
-# Keep generic signatures (para Reflection)
+# Keep generic signatures
 -keepattributes Signature
 -keepattributes *Annotation*
 -keepattributes EnclosingMethod
@@ -44,7 +47,6 @@
     public static *** i(...);
 }
 
-# Optimización adicional
 -optimizationpasses 5
 -dontusemixedcaseclassnames
 -dontskipnonpubliclibraryclasses

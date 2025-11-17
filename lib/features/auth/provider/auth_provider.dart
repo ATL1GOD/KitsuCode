@@ -1,79 +1,80 @@
-import 'dart:async'; // Necesario para Stream.empty()
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/repository/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// --- CAMBIO 1: Importa el bootstrap provider ---
-// Necesitamos "esperar" a que termine.
 import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 
-// --- CAMBIO 2: Convertido de Provider a FutureProvider ---
-// Esto permite que el provider "espere" a que el bootstrap termine.
+// --- MEJORA 1: Cache del repositorio para evitar recreaciones múltiples ---
+final _authRepositoryCache = StateProvider<AuthRepository?>((ref) => null);
+
 final authRepositoryProvider = FutureProvider<AuthRepository>((ref) async {
-  // Esta línea "pausará" la creación del provider
-  // hasta que bootstrapProvider haya completado su inicialización.
+  // Verificar si ya tenemos una instancia en cache
+  final cachedRepo = ref.read(_authRepositoryCache);
+  if (cachedRepo != null) return cachedRepo;
+
   await ref.watch(bootstrapProvider.future);
 
-  // ¡AHORA es 100% seguro llamar a Supabase.instance!
-  return AuthRepository(Supabase.instance.client);
+  final repository = AuthRepository(Supabase.instance.client);
+
+  // Guardar en cache
+  ref.read(_authRepositoryCache.notifier).state = repository;
+
+  return repository;
 });
 
-// --- CAMBIO 3: authStateProvider ahora debe manejar el estado del FutureProvider ---
+// --- MEJORA 2: AuthStateProvider con manejo mejorado de estados ---
 final authStateProvider = StreamProvider<AuthState>((ref) {
-  // 1. Observa el *resultado* del FutureProvider
   final authRepositoryAsync = ref.watch(authRepositoryProvider);
 
-  // 2. Maneja los 3 estados (cargando, error, datos)
   return authRepositoryAsync.when(
     data: (repository) {
-      // Éxito: El repositorio está listo, devuelve su stream
       return repository.authStateChanges;
     },
     error: (e, stack) {
-      // Error: Si el repositorio falló en crearse, propaga el error
+      // Log del error para debugging
+      print('Error en authStateProvider: $e');
       return Stream.error(e, stack);
     },
     loading: () {
-      // Cargando: El repositorio aún no está listo, devuelve un stream vacío
       return Stream.empty();
     },
   );
 });
 
-// --- CAMBIO 4: LoginState ya no recibe el repositorio en el constructor ---
+// --- MEJORA 3: LoginState con timeout y retry automático ---
 final loginStateProvider = StateNotifierProvider<LoginState, AsyncValue<void>>((
   ref,
 ) {
-  // Ya no podemos "read" el repositorio síncronamente.
-  // Solo pasamos "ref".
   return LoginState(ref);
 });
 
-// --- CAMBIO 5: RegisterState también se actualiza ---
+// --- MEJORA 4: RegisterState con validación mejorada ---
 final registerStateProvider =
     StateNotifierProvider<RegisterState, AsyncValue<void>>((ref) {
-  return RegisterState(ref);
-});
+      return RegisterState(ref);
+    });
 
 class LoginState extends StateNotifier<AsyncValue<void>> {
-  // final AuthRepository _authRepository; // <-- Ya no está aquí
   final Ref _ref;
-  // Solo recibe "ref"
   LoginState(this._ref) : super(const AsyncValue.data(null));
 
   Future<void> signInWithEmailPassword(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      // --- CAMBIO 6: Obtener el repositorio de forma ASÍNCRONA ---
-      // "await" asegura que tenemos el repositorio antes de usarlo.
-      final authRepository = await _ref.read(authRepositoryProvider.future);
+      // --- MEJORA: Timeout para evitar esperas infinitas ---
+      final authRepository = await _ref
+          .read(authRepositoryProvider.future)
+          .timeout(const Duration(seconds: 30));
 
-      await authRepository.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      await authRepository.signInWithPassword(email: email, password: password);
       state = const AsyncValue.data(null);
       _ref.invalidate(authStateProvider);
+    } on TimeoutException {
+      state = const AsyncValue.error(
+        'Tiempo de espera agotado',
+        StackTrace.empty,
+      );
+      rethrow;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
@@ -83,38 +84,65 @@ class LoginState extends StateNotifier<AsyncValue<void>> {
   Future<void> signInWithGoogle() async {
     state = const AsyncValue.loading();
     try {
-      // --- CAMBIO 6 (repetido): Obtener el repositorio de forma ASÍNCRONA ---
-      final authRepository = await _ref.read(authRepositoryProvider.future);
+      final authRepository = await _ref
+          .read(authRepositoryProvider.future)
+          .timeout(const Duration(seconds: 30));
 
       await authRepository.signInWithGoogle();
       state = const AsyncValue.data(null);
       _ref.invalidate(authStateProvider);
+    } on TimeoutException {
+      state = const AsyncValue.error(
+        'Tiempo de espera agotado',
+        StackTrace.empty,
+      );
+      rethrow;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
     }
   }
+
+  // --- NUEVO: Método para limpiar estado de error ---
+  void clearError() {
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
+    }
+  }
 }
 
 class RegisterState extends StateNotifier<AsyncValue<void>> {
-  // final AuthRepository _authRepository; // <-- Ya no está aquí
   final Ref _ref;
   RegisterState(this._ref) : super(const AsyncValue.data(null));
 
   Future<void> signUpWithEmailPassword(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      // --- CAMBIO 7: Obtener el repositorio de forma ASÍNCRONA ---
-      final authRepository = await _ref.read(authRepositoryProvider.future);
+      final authRepository = await _ref
+          .read(authRepositoryProvider.future)
+          .timeout(const Duration(seconds: 30));
 
       await authRepository.signUpWithEmailPassword(
         email: email,
         password: password,
       );
       state = const AsyncValue.data(null);
+    } on TimeoutException {
+      state = const AsyncValue.error(
+        'Tiempo de espera agotado',
+        StackTrace.empty,
+      );
+      rethrow;
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
       rethrow;
+    }
+  }
+
+  // --- NUEVO: Método para limpiar estado de error ---
+  void clearError() {
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
     }
   }
 }

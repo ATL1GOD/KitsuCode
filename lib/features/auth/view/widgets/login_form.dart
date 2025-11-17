@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart'; // Importa el archivo renombrado
+import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
   final VoidCallback onSwitchToRegister;
@@ -17,8 +17,29 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  // --- MEJORA: Control de visibilidad de errores ---
+  bool _showError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // --- MEJORA: Limpiar errores cuando se modifica el texto ---
+    _emailController.addListener(_clearErrors);
+    _passwordController.addListener(_clearErrors);
+  }
+
+  void _clearErrors() {
+    if (_showError) {
+      setState(() => _showError = false);
+      // Limpiar errores en el state provider
+      ref.read(loginStateProvider.notifier).clearError();
+    }
+  }
+
   @override
   void dispose() {
+    _emailController.removeListener(_clearErrors);
+    _passwordController.removeListener(_clearErrors);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -27,18 +48,31 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      setState(() => _showError = false);
+
       final loginNotifier = ref.read(loginStateProvider.notifier);
       try {
         await loginNotifier.signInWithEmailPassword(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        // --- MEJORA: Feedback positivo ---
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Inicio de sesión exitoso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } catch (e) {
+        setState(() => _showError = true);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: ${e.toString()}'),
               backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4), // Más tiempo para leer
             ),
           );
         }
@@ -55,6 +89,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           SnackBar(
             content: Text('Error con Google: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -78,9 +113,16 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               hintText: 'Email',
               prefixIcon: Icons.alternate_email,
               keyboardType: TextInputType.emailAddress,
-              validator: (value) => value == null || value.isEmpty
-                  ? 'Por favor ingresa un correo'
-                  : null,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa un correo';
+                }
+                // --- MEJORA: Validación de formato de email ---
+                if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                  return 'Ingresa un correo válido';
+                }
+                return null;
+              },
             ),
           ),
           const SizedBox(height: 16),
@@ -96,13 +138,25 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   : null,
             ),
           ),
+          // --- MEJORA: Mensaje de error persistente ---
+          if (_showError && loginState.hasError) ...[
+            const SizedBox(height: 8),
+            AnimatedFadeIn(
+              delay: 0,
+              child: Text(
+                'Error de autenticación. Verifica tus credenciales.',
+                style: TextStyle(color: Colors.red.shade400, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           AnimatedFadeIn(
             delay: 300,
             child: PrimaryAuthButton(
               isLoading: loginState.isLoading,
               text: 'Iniciar Sesión',
-              onPressed: _submit,
+              onPressed: loginState.isLoading ? null : _submit,
             ),
           ),
           const SizedBox(height: 16),
@@ -112,10 +166,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             delay: 500,
             child: SocialAuthButton(
               text: 'Continuar con Google',
-              iconPath:
-                  'assets/images/auth/google_logo.png', // Asegúrate que esta ruta sea correcta
+              iconPath: 'assets/images/auth/google_logo.png',
               isLoading: loginState.isLoading,
-              onPressed: _googleSignIn,
+              onPressed: loginState.isLoading ? null : _googleSignIn,
             ),
           ),
           const SizedBox(height: 16),
@@ -124,7 +177,30 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             child: SwitchFormButton(
               text: '¿No tienes cuenta?',
               highlightedText: 'Regístrate',
-              onPressed: widget.onSwitchToRegister,
+              onPressed: loginState.isLoading
+                  ? () {}
+                  : widget.onSwitchToRegister,
+            ),
+          ),
+          // --- MEJORA: Enlace de recuperación de contraseña ---
+          const SizedBox(height: 8),
+          AnimatedFadeIn(
+            delay: 700,
+            child: TextButton(
+              onPressed: () {
+                // TODO: Implementar recuperación de contraseña
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Función de recuperación en desarrollo'),
+                  ),
+                );
+              },
+              child: Text(
+                '¿Olvidaste tu contraseña?',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
             ),
           ),
         ],

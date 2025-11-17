@@ -1,4 +1,3 @@
-// lib/features/auth/repository/auth_repository.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
@@ -9,12 +8,18 @@ class AuthRepository {
   Stream<AuthState> get authStateChanges =>
       _supabaseClient.auth.onAuthStateChange;
 
+  // --- MEJORA: Validación de email antes del login ---
   Future<void> signInWithPassword({
     required String email,
     required String password,
   }) async {
+    // Validación básica del email
+    if (!_isValidEmail(email)) {
+      throw AuthException('Formato de email inválido');
+    }
+
     await _supabaseClient.auth.signInWithPassword(
-      email: email,
+      email: email.trim(),
       password: password,
     );
   }
@@ -23,25 +28,32 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    await _supabaseClient.auth.signUp(email: email, password: password);
+    // Validación básica del email
+    if (!_isValidEmail(email)) {
+      throw AuthException('Formato de email inválido');
+    }
+
+    await _supabaseClient.auth.signUp(email: email.trim(), password: password);
   }
 
   Future<void> signInWithGoogle() async {
-    await _supabaseClient.auth.signInWithOAuth(OAuthProvider.google);
+    await _supabaseClient.auth.signInWithOAuth(
+      OAuthProvider.google,
+      // --- MEJORA: Parámetros adicionales para mejor UX ---
+      redirectTo: 'kitsucode://login-callback',
+    );
   }
 
   Future<void> signOut() async {
     await _supabaseClient.auth.signOut();
   }
 
-  // Método para cambiar la contraseña del usuario autenticado
   Future<void> changePassword(String newPassword) async {
     await _supabaseClient.auth.updateUser(
       UserAttributes(password: newPassword),
     );
   }
-  
-  // Verifica la contraseña actual del usuario antes de un cambio sensible.
+
   Future<void> reauthenticate(String password) async {
     final user = _supabaseClient.auth.currentUser;
     final email = user?.email;
@@ -55,40 +67,46 @@ class AuthRepository {
     );
   }
 
-  // --- ¡FUNCIÓN CORREGIDA! ---
-  /// Llama a la Edge Function para eliminar todos los datos del usuario
   Future<void> deleteAccount() async {
     try {
-      // 1. Obtiene la sesión actual para enviarla (implícitamente)
       if (_supabaseClient.auth.currentSession == null) {
-        throw const AuthException('No hay sesión activa para eliminar la cuenta');
+        throw const AuthException(
+          'No hay sesión activa para eliminar la cuenta',
+        );
       }
 
-      // 2. Invoca la Edge Function con el método POST
       final response = await _supabaseClient.functions.invoke(
         'Delete-accountI',
-        method: HttpMethod.post, // <-- ¡ESTO ES LO QUE FALTABA!
+        method: HttpMethod.post,
       );
 
       if (response.status != 200) {
-        // Si la función devuelve un error (500, 401, etc.)
-        final errorMsg = response.data?['error'] ?? 'Error desconocido desde la función';
+        final errorMsg =
+            response.data?['error'] ?? 'Error desconocido desde la función';
         throw AuthException('Error al eliminar la cuenta: $errorMsg');
       }
 
-      // 3. Si todo salió bien en el backend (status 200),
-      // el usuario ya no existe, así que lo deslogueamos del cliente.
       await _supabaseClient.auth.signOut();
-
     } on Exception catch (e) {
-      // Captura errores específicos de la invocación de funciones
       print('Error al invocar la función "delete-user-data": ${e.toString()}');
       throw AuthException('Error del servidor: ${e.toString()}');
     } catch (e) {
-      // Captura otros errores (como el AuthException que lanzamos arriba)
       print('Error en deleteAccount: $e');
-      // Re-lanza el error para que la UI (settings_view) lo atrape
       rethrow;
     }
   }
+
+  // --- NUEVO: Método de utilidad para validar email ---
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email.trim());
+  }
+
+  // --- NUEVO: Verificar si el usuario está autenticado ---
+  bool get isAuthenticated => _supabaseClient.auth.currentUser != null;
+
+  // --- NUEVO: Obtener el usuario actual ---
+  User? get currentUser => _supabaseClient.auth.currentUser;
 }

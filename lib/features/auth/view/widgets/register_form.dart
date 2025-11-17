@@ -100,13 +100,20 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 if (value.length < 8) {
                   return 'Mínimo 8 caracteres';
                 }
-                // Expresión regular para validar la contraseña
-                final passwordRegex = RegExp(
-                  r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).*$',
-                );
-                if (!passwordRegex.hasMatch(value)) {
-                  return 'Debe incluir mayúsculas, minúsculas, números y símbolos.';
-                }
+
+                // --- MEJORA: Validación más detallada de contraseña ---
+                final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
+                final hasLowercase = RegExp(r'[a-z]').hasMatch(value);
+                final hasDigits = RegExp(r'[0-9]').hasMatch(value);
+                final hasSpecialChars = RegExp(
+                  r'[!@#$%^&*(),.?":{}|<>]',
+                ).hasMatch(value);
+
+                if (!hasUppercase) return 'Incluye al menos una mayúscula';
+                if (!hasLowercase) return 'Incluye al menos una minúscula';
+                if (!hasDigits) return 'Incluye al menos un número';
+                if (!hasSpecialChars) return 'Incluye al menos un símbolo';
+
                 return null;
               },
             ),
@@ -137,18 +144,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             ),
           ),
           const SizedBox(height: 16),
-          // const AnimatedFadeIn(delay: 500, child: OrDivider()),
-          // const SizedBox(height: 16),
-          // AnimatedFadeIn(
-          //   delay: 600,
-          //   child: SocialAuthButton(
-          //     text: 'Registrarse con Google',
-          //     iconPath:
-          //         'images/auth/google_logo.png', // Asegúrate que la ruta sea correcta
-          //     isLoading: isLoading,
-          //     onPressed: _googleSignIn,
-          //   ),
-          // ),
           const SizedBox(height: 16),
           AnimatedFadeIn(
             delay: 700,

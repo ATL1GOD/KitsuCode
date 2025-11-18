@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart'; // <-- AÑADIDO
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+// --- AÑADIDO: Import para manejar las notificaciones ---
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthRepository {
   final SupabaseClient _supabaseClient;
@@ -65,7 +67,39 @@ class AuthRepository {
     );
   }
 
+  // --- ¡AQUÍ ESTÁ LA CORRECCIÓN PARA LAS NOTIFICACIONES! ---
   Future<void> signOut() async {
+    try {
+      // --- LÓGICA CORREGIDA BASADA EN TU ESQUEMA ---
+      // 1. Obtenemos el ID del usuario que va a cerrar sesión
+      final userId = _supabaseClient.auth.currentUser?.id;
+
+      if (userId != null) {
+        // 2. Actualizamos la tabla 'usuarios' para borrar su fcm_token
+        //    Esto evita que reciba notificaciones después de cerrar sesión.
+        await _supabaseClient
+            .from('usuarios')
+            .update({'fcm_token': null})
+            .match({'id': userId});
+
+        if (kDebugMode) {
+          print('Token FCM limpiado para el usuario: $userId');
+        }
+      }
+
+      // Opcional: invalidar el token de Firebase localmente
+      // Esto fuerza a que se genere uno nuevo la próxima vez
+      // y es una buena práctica de limpieza.
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (e) {
+      // No debemos detener el signOut si la limpieza del token falla,
+      // pero sí debemos registrarlo.
+      if (kDebugMode) {
+        print('Error al limpiar suscripción de notificaciones: $e');
+      }
+    }
+
+    // Finalmente, cerramos la sesión de Supabase
     await _supabaseClient.auth.signOut();
   }
 
@@ -106,8 +140,10 @@ class AuthRepository {
             response.data?['error'] ?? 'Error desconocido desde la función';
         throw AuthException('Error al eliminar la cuenta: $errorMsg');
       }
+      
+      // --- IMPORTANTE: Llamamos al nuevo signOut que limpia notificaciones ---
+      await signOut();
 
-      await _supabaseClient.auth.signOut();
     } on Exception catch (e) {
       print('Error al invocar la función "delete-user-data": ${e.toString()}');
       throw AuthException('Error del servidor: ${e.toString()}');

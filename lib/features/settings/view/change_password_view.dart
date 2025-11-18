@@ -230,7 +230,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                           vertical: 16.0,
                                         ),
                                         child: Image.asset(
-                                          'assets/images/auth/fox_login.png',
+                                          'assets/images/auth/fox_login.webp',
                                           height: 180,
                                         ),
                                       )

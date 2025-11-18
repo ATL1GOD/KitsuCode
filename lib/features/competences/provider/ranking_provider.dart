@@ -21,9 +21,9 @@ final selectedLanguageProvider = StateProvider.autoDispose<int>((ref) {
 });
 final allLanguagesProvider =
     Provider.autoDispose<Map<int, Map<String, String>>>((ref) => {
-          1: {'name': 'C', 'logo': 'assets/images/logo_c.webp'},
-          2: {'name': 'Java', 'logo': 'assets/images/logo_java.webp'},
-          3: {'name': 'Python', 'logo': 'assets/images/logo_python.webp'},
+          1: {'name': 'C', 'logo': 'images/home/logo_c.webp'},
+          2: {'name': 'Java', 'logo': 'images/home/logo_java.webp'},
+          3: {'name': 'Python', 'logo': 'images/home/logo_python.webp'},
         });
 final allTimeFiltersProvider = Provider.autoDispose<Map<int, String>>((ref) => {
       1: 'Histórico',

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 
-const String _defaultAsset = 'assets/images/logo_python.webp';
+const String _defaultAsset = 'assets/images/home/logo_python.webp';
 
 // 1. EL MODELO DEL ESTADO (Sin cambios)
 @immutable
@@ -61,11 +61,11 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
   String _getAssetForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
-        return 'assets/images/logo_python.webp';
+        return 'assets/images/home/logo_python.webp';
       case 'java':
-        return 'assets/images/logo_java.webp';
+        return 'assets/images/home/logo_java.webp';
       case 'c':
-        return 'assets/images/logo_c.webp';
+        return 'assets/images/home/logo_c.webp';
       default:
         return _defaultAsset;
     }

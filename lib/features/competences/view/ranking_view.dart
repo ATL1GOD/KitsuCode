@@ -12,10 +12,12 @@ import 'package:kitsucode/features/competences/view/widgets/ranking_error_widget
 import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widget.dart';
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
-import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; 
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:lottie/lottie.dart';
-
 import 'package:visibility_detector/visibility_detector.dart';
+
+// ✅ IMPORTANTE: OptimizedImage para soportar asset_path / URLs de Supabase
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 // --- WIDGET PRINCIPAL: RankingView (Sin cambios) ---
 class RankingView extends ConsumerWidget {
@@ -76,7 +78,6 @@ class _RankingContent extends ConsumerStatefulWidget {
 // --- 🔥 3. AÑADIR ESTADO, TickerProviderStateMixin y WidgetsBindingObserver ---
 class _RankingContentState extends ConsumerState<_RankingContent>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  
   late final AnimationController _lottieController;
   late final AnimationController _decorativeBgController;
 
@@ -90,11 +91,11 @@ class _RankingContentState extends ConsumerState<_RankingContent>
     super.initState();
     // --- 🔥 4. INICIALIZAR SIN DURACIÓN (Lottie) ---
     _lottieController = AnimationController(vsync: this);
-    
+
     // --- (Esta animación sí tiene duración, tu código original estaba bien) ---
     _decorativeBgController =
         AnimationController(vsync: this, duration: const Duration(seconds: 8));
-        
+
     // Registrar el observador
     WidgetsBinding.instance.addObserver(this);
   }
@@ -227,8 +228,9 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                       if (ranking.isEmpty) return const _EmptyRankingWidget();
                       final top3 =
                           ranking.length >= 3 ? ranking.sublist(0, 3) : ranking;
-                      final restOfRanking =
-                          ranking.length > 3 ? ranking.sublist(3) : <RankingModel>[];
+                      final restOfRanking = ranking.length > 3
+                          ? ranking.sublist(3)
+                          : <RankingModel>[];
                       final currentUserData = (currentUserId == null)
                           ? null
                           : ranking
@@ -259,8 +261,7 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                         // ... (sin cambios)
                                         users: top3,
                                         colors: colors,
-                                        currentUserId: currentUserId
-                                    ),
+                                        currentUserId: currentUserId),
                                 ],
                               ),
                               // ... (El resto de tu vista no cambia) ...
@@ -368,7 +369,7 @@ class _DecorativeBackground extends StatefulWidget {
 
 class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   // --- 🔥 11. YA NO NECESITA SingleTickerProviderStateMixin ---
-  
+
   // El controlador ahora viene del widget padre
   // late final AnimationController _controller; // <-- Ya no se crea aquí
   late final List<Animation<Alignment>> _animations;
@@ -376,7 +377,7 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   @override
   void initState() {
     super.initState();
-    
+
     // --- 🔥 12. USAR EL CONTROLADOR DEL PADRE ('widget.controller') ---
     _animations = [
       _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
@@ -394,10 +395,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
 
   AlignmentTween _createTween(Alignment begin, Alignment end) =>
       AlignmentTween(begin: begin, end: end);
-  CurvedAnimation _createCurve(double begin, double end) =>
-      CurvedAnimation(
-          parent: widget.controller, // <--- Usar widget.controller
-          curve: Interval(begin, end, curve: Curves.easeInOutSine));
+  CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
+      parent: widget.controller, // <--- Usar widget.controller
+      curve: Interval(begin, end, curve: Curves.easeInOutSine));
 
   @override
   void dispose() {
@@ -437,11 +437,11 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   }
 }
 
-// --- (El resto de widgets, _PodiumWidget, _PodiumPlace, _CurrentUserBanner, 
+// --- (El resto de widgets, _PodiumWidget, _PodiumPlace, _CurrentUserBanner,
 //      se quedan exactamente igual) ---
 
 class _PodiumWidget extends StatelessWidget {
-// ... (Sin cambios)
+  // ... (Sin cambios)
   final List<RankingModel> users;
   final ColorScheme colors;
   final String? currentUserId;
@@ -486,7 +486,7 @@ class _PodiumWidget extends StatelessWidget {
 }
 
 class _PodiumPlace extends StatelessWidget {
-// ... (Sin cambios)
+  // ... (Sin cambios salvo el AVATAR)
   final RankingModel user;
   final int place;
   final Color color;
@@ -503,6 +503,11 @@ class _PodiumPlace extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final size = 110.0 * heightFactor;
+
+    // 👉 Ruta real del avatar (asset local o URL de Supabase)
+    final String avatarPath =
+        getAvatarAssetPathById(user.idAvatarSeleccionado);
+
     return GestureDetector(
       onTap: () {
         if (isCurrentUser) return;
@@ -519,19 +524,31 @@ class _PodiumPlace extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (place == 1)
-                Icon(Icons.emoji_events, color: color, size: 32),
+              if (place == 1) Icon(Icons.emoji_events, color: color, size: 32),
               if (place != 1) const SizedBox(height: 32),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
                   CircleAvatar(
-                      radius: size / 2,
-                      backgroundColor: color,
-                      child: CircleAvatar(
-                          radius: (size / 2) - 4,
-                          backgroundImage: AssetImage(getAvatarAssetPathById(
-                              user.idAvatarSeleccionado)))),
+                    radius: size / 2,
+                    backgroundColor: color,
+                    child: CircleAvatar(
+                      radius: (size / 2) - 4,
+                      // ✅ Reemplazo de AssetImage → OptimizedImage
+                      child: ClipOval(
+                        child: avatarPath.isEmpty
+                            ? const ColoredBox(color: Colors.transparent)
+                            : OptimizedImage(
+                                imagePath: avatarPath,
+                                width: size - 8,
+                                height: size - 8,
+                                fit: BoxFit.cover,
+                                enableCache: true,
+                              ),
+                      ),
+                      backgroundColor: Colors.black12,
+                    ),
+                  ),
                   Positioned(
                     bottom: -10,
                     left: 0,
@@ -553,8 +570,8 @@ class _PodiumPlace extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodyLarge
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+                  style:
+                      textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
               Text('${user.totalScore} Pts',
                   style: textTheme.bodySmall
                       ?.copyWith(color: color, fontWeight: FontWeight.bold)),
@@ -567,7 +584,7 @@ class _PodiumPlace extends StatelessWidget {
 }
 
 class _CurrentUserBanner extends StatelessWidget {
-// ... (Sin cambios)
+  // ... (Sin cambios)
   final RankingModel user;
   final ColorScheme colors;
   const _CurrentUserBanner({required this.user, required this.colors});

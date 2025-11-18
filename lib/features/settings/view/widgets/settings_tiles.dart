@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ... (SectionHeader y _BaseSettingsTile se quedan igual) ...
+// ... (SectionHeader queda igual) ...
 
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -80,16 +80,13 @@ class _BaseSettingsTile extends StatelessWidget {
   }
 }
 
-// ... (SettingsNavigationTile se queda igual) ...
-
+// --- SettingsNavigationTile (usa dynamicColor en el ícono) ---
 class SettingsNavigationTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
   final Color dynamicColor;
-  // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-  // Se añade '?' para hacerlo nulable
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
 
   const SettingsNavigationTile({
     super.key,
@@ -107,10 +104,10 @@ class SettingsNavigationTile extends StatelessWidget {
 
     return _BaseSettingsTile(
       dynamicColor: dynamicColor,
-      onTap: onTap, // Ahora acepta 'null' sin problemas
+      onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, color: c.primary, size: 28),
+          Icon(icon, color: dynamicColor, size: 28), // ← cambio
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -128,24 +125,20 @@ class SettingsNavigationTile extends StatelessWidget {
   }
 }
 
-
-// --- ¡WIDGET MODIFICADO! ---
-// SettingsSwitchTile ahora toma 'title' y 'icon' como variables
+// --- SettingsSwitchTile (usa dynamicColor en el ícono y track del switch) ---
 class SettingsSwitchTile extends ConsumerStatefulWidget {
-  // --- ¡CAMBIOS! ---
-  final String title;       // Ya no es 'Modo Oscuro' fijo
-  final IconData icon;      // Ya no es 'dark_mode' fijo
-  // --- FIN CAMBIOS ---
+  final String title;
   final String subtitle;
+  final IconData icon;
   final Color dynamicColor;
   final bool initialValue;
   final Function(bool) onChanged;
 
   const SettingsSwitchTile({
     super.key,
-    required this.title,    // ¡Añadido!
+    required this.title,
     required this.subtitle,
-    required this.icon,     // ¡Añadido!
+    required this.icon,
     required this.dynamicColor,
     required this.initialValue,
     required this.onChanged,
@@ -163,8 +156,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
     super.initState();
     _currentValue = widget.initialValue;
   }
-  
-  // ¡Añadido! Actualiza el switch si el provider cambia
+
   @override
   void didUpdateWidget(covariant SettingsSwitchTile oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -182,31 +174,32 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
 
     return _BaseSettingsTile(
       dynamicColor: widget.dynamicColor,
-      onTap: null, 
+      onTap: null,
       child: Row(
         children: [
-          // --- ¡CAMBIO! ---
-          Icon(widget.icon, color: c.primary, size: 28), // Usa el ícono variable
+          Icon(widget.icon, color: widget.dynamicColor, size: 28), // ← cambio
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold)), // Usa el título variable
+                Text(widget.title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                 Text(widget.subtitle, style: t.bodySmall?.copyWith(color: c.onSurface.withOpacity(.6))),
               ],
             ),
           ),
-          // --- FIN CAMBIO ---
           Switch(
             value: _currentValue,
             onChanged: (newValue) {
-              // NO actualizamos el estado local inmediatamente
-              // Solo llamamos al callback y esperamos que el provider se actualice
               widget.onChanged(newValue);
-              // El estado local se actualizará en didUpdateWidget cuando el provider cambie
             },
             activeThumbColor: widget.dynamicColor,
+            trackColor: MaterialStateProperty.resolveWith((states) {
+              final on = states.contains(MaterialState.selected);
+              return on
+                  ? widget.dynamicColor.withOpacity(.35)
+                  : c.surfaceContainerHigh; // contraste cuando está off
+            }), // ← nuevo
           ),
         ],
       ),
@@ -214,8 +207,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
   }
 }
 
-// ... (SettingsSliderTile y SettingsDestructiveTile se quedan igual) ...
-
+// --- SettingsSliderTile (usa dynamicColor en el ícono) ---
 class SettingsSliderTile extends ConsumerStatefulWidget {
   final String title;
   final IconData icon;
@@ -245,7 +237,6 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
     _currentValue = widget.initialValue;
   }
 
-  // ¡Añadido! Actualiza el slider si el provider cambia
   @override
   void didUpdateWidget(covariant SettingsSliderTile oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -259,7 +250,6 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final c = Theme.of(context).colorScheme;
 
     return _BaseSettingsTile(
       dynamicColor: widget.dynamicColor,
@@ -269,7 +259,7 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
         children: [
           Row(
             children: [
-              Icon(widget.icon, color: c.primary, size: 28),
+              Icon(widget.icon, color: widget.dynamicColor, size: 28), // ← cambio
               const SizedBox(width: 16),
               Text(widget.title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             ],
@@ -281,8 +271,6 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
                 _currentValue = newValue;
               });
             },
-            // ¡CAMBIO! Usamos 'onChangeEnd' para notificar al provider
-            // Esto es mejor para el rendimiento que 'onChanged'
             onChangeEnd: (newValue) {
               widget.onChanged(newValue);
             },
@@ -296,7 +284,6 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
     );
   }
 }
-
 
 class SettingsDestructiveTile extends StatelessWidget {
   final String title;
@@ -321,7 +308,7 @@ class SettingsDestructiveTile extends StatelessWidget {
     final errorColor = c.error;
 
     return _BaseSettingsTile(
-      dynamicColor: errorColor, // Borde rojo
+      dynamicColor: errorColor, // Borde rojo (intencional)
       onTap: onTap,
       child: Row(
         children: [

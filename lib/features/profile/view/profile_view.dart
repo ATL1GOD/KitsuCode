@@ -229,22 +229,30 @@ class _ProfileBackground extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final avatarId = ref.watch(userProfileByIdProvider(userId)
-        .select((data) => data.value?.idAvatarSeleccionado));
-    final dynamicColor = avatarId != null
-        ? getAvatarColorById(avatarId)
+    final avatarId = ref.watch(
+      userProfileByIdProvider(userId)
+          .select((data) => data.value?.idAvatarSeleccionado),
+    );
+
+    // 👇 OBTENEMOS LA LISTA REAL DE AVATARES
+    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+
+    // 👇 COLOR DINÁMICO REAL (SIN FALLBACK ANTIGUO)
+    final dynamicColor = (avatarId != null && avatarsList.isNotEmpty)
+        ? getAvatarColorById(avatarId, avatarsList)
         : colors.surfaceContainerLowest;
 
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              dynamicColor.withAlpha((255 * 0.4).round()),
-              colors.surfaceContainerLowest,
-            ],
-            stops: const [0.0, 0.6]),
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            dynamicColor.withAlpha((255 * 0.4).round()),
+            colors.surfaceContainerLowest,
+          ],
+          stops: const [0.0, 0.6],
+        ),
       ),
     );
   }

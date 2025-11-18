@@ -3,13 +3,19 @@ import 'package:lottie/lottie.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 
-/// Widget reutilizable para el fondo animado de las vistas de Settings
-/// La animación Lottie se oculta mediante un fade out/colapso cuando se
-/// abre el teclado virtual para optimizar el rendimiento del formulario.
-class AnimatedSettingsBackground extends StatelessWidget {
+// ✅ añadidos para obtener el color desde la BD
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
+
+/// Widget reutilizable para el fondo animado de Settings.
+/// La animación Lottie se oculta (fade) y se desmonta cuando se abre el teclado
+/// para optimizar el rendimiento.
+class AnimatedSettingsBackground extends ConsumerWidget {
   final UserProfileModel profile;
   final ColorScheme colors;
   final bool isKeyboardVisible; // <-- NUEVA PROPIEDAD
+
   const AnimatedSettingsBackground({
     super.key,
     required this.profile,
@@ -18,8 +24,15 @@ class AnimatedSettingsBackground extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ✅ Color primario desde BD (avatar) — mismo método usado en otras vistas
+    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+    final int avatarId = profile.idAvatarSeleccionado;
+
+    final dynamicColor = avatarsList.isNotEmpty
+        ? getAvatarColorById(avatarId, avatarsList)
+        : AllStatsView.getHeaderColor(profile, colors);
+
     return RepaintBoundary(
       child: Stack(
         children: [
@@ -30,7 +43,8 @@ class AnimatedSettingsBackground extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  dynamicColor.withAlpha(100),
+                  // alineado al resto de pantallas (~40% de opacidad)
+                  dynamicColor.withAlpha((255 * 0.4).round()),
                   colors.surfaceContainerLowest,
                 ],
                 stops: const [0.0, 0.7],
@@ -38,24 +52,32 @@ class AnimatedSettingsBackground extends StatelessWidget {
             ),
           ),
 
-          // --- ANIMACIÓN LOTTIE CONTROLADA (Usa AnimatedOpacity) ---
-          AnimatedOpacity( // <-- ANIMACIÓN PARA OCULTAR
-            opacity: isKeyboardVisible ? 0.0 : 0.85, // Si el teclado está visible, opacidad 0
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
-                BlendMode.srcIn,
-              ),
-              child: RepaintBoundary(
-                child: Lottie.asset(
-                  'assets/animations/spring.json',
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                  repeat: true,
-                  frameRate: FrameRate(30), // Optimizado: 30fps en lugar de max
+          // --- ANIMACIÓN LOTTIE CONTROLADA ---
+          // 1) Visibility desmonta el child cuando hay teclado (ahorro real de recursos)
+          // 2) AnimatedOpacity mantiene el fade suave
+          Visibility(
+            visible: !isKeyboardVisible,
+            maintainState: false,
+            child: AnimatedOpacity(
+              opacity: isKeyboardVisible ? 0.0 : 0.85,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
+                  BlendMode.srcIn,
+                ),
+                child: IgnorePointer(
+                  child: RepaintBoundary(
+                    child: Lottie.asset(
+                      'assets/animations/spring.json',
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      repeat: true,
+                      frameRate: FrameRate(30), // Optimizado: 30fps
+                    ),
+                  ),
                 ),
               ),
             ),

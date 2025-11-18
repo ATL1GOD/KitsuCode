@@ -14,8 +14,9 @@ import 'package:kitsucode/features/notifications/model/notification_settings_mod
 import 'package:animate_do/animate_do.dart';
 // 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+// ✅ NUEVO: fallback anterior para color dinámico si aún no carga la lista de avatares
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
-// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class NotificationCategoryView extends ConsumerStatefulWidget {
   final String title;
   final List<NotificationSetting> settings;
@@ -28,15 +29,11 @@ class NotificationCategoryView extends ConsumerStatefulWidget {
       _NotificationCategoryViewState();
 }
 
-// --- 🔥 3. AÑADIR ESTADO Y WidgetsBindingObserver ---
 class _NotificationCategoryViewState
     extends ConsumerState<NotificationCategoryView> with WidgetsBindingObserver {
-      
-  // --- 🔥 4. BANDERAS DE ESTADO ---
   bool _isPageVisible = true;
   bool _isAppActive = true;
 
-  // --- 🔥 5. MANEJO DE CICLO DE VIDA ---
   @override
   void initState() {
     super.initState();
@@ -57,12 +54,13 @@ class _NotificationCategoryViewState
       _isAppActive = state == AppLifecycleState.resumed;
     });
   }
-  // --- FIN MANEJO DE CICLO DE VIDA ---
 
-
-  // Helper para obtener el color dinámico
+  // ✅ ACTUALIZADO: usa color del avatar desde BD si hay lista; si no, fallback al método previo
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
-    return getAvatarColorById(profile.idAvatarSeleccionado);
+    final avatarsList = ref.read(currentUserAvatarsProvider).value ?? [];
+    return avatarsList.isNotEmpty
+        ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+        : AllStatsView.getHeaderColor(profile, colors);
   }
 
   @override
@@ -96,7 +94,6 @@ class _NotificationCategoryViewState
 
           final liveSettingsList = asyncLiveSettings.value ?? [];
 
-          // --- 🔥 6. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
           return VisibilityDetector(
             key: Key('notification-category-detector-${widget.title}'),
             onVisibilityChanged: (visibilityInfo) {
@@ -107,7 +104,6 @@ class _NotificationCategoryViewState
             },
             child: Stack(
               children: [
-                // --- 🔥 7. LÓGICA CONDICIONAL ---
                 if (_isAppActive && _isPageVisible)
                   AnimatedSettingsBackground(
                     profile: profile,
@@ -115,25 +111,24 @@ class _NotificationCategoryViewState
                     isKeyboardVisible: isKeyboardVisible,
                   )
                 else
-                  // Fondo estático
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            dynamicColor.withAlpha(100),
-                            colors.surfaceContainerLowest,
-                          ],
-                          stops: const [0.0, 0.7]),
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          // puedes cambiar a withAlpha((255*0.4).round()) si quieres empatar exacto
+                          dynamicColor.withAlpha(100),
+                          colors.surfaceContainerLowest,
+                        ],
+                        stops: const [0.0, 0.7],
+                      ),
                     ),
                   ),
-                // --- FIN LÓGICA CONDICIONAL ---
 
                 SafeArea(
                   child: Column(
                     children: [
-                      // --- (BARRA SUPERIOR SIN CAMBIOS) ---
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
@@ -145,18 +140,21 @@ class _NotificationCategoryViewState
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
-                                widget.title, // <-- Usar widget.title
+                                widget.title,
                                 textAlign: TextAlign.center,
                                 style: textTheme.titleLarge
                                     ?.copyWith(fontWeight: FontWeight.bold),
@@ -167,7 +165,6 @@ class _NotificationCategoryViewState
                         ),
                       ),
 
-                      // --- (LISTVIEW SIN CAMBIOS) ---
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.symmetric(
@@ -187,7 +184,8 @@ class _NotificationCategoryViewState
                                   title: liveSetting.nombreTipo,
                                   subtitle: liveSetting.descripcion ??
                                       'Activar o desactivar esta alerta',
-                                  icon: Icons.notifications_active_outlined,
+                                  icon:
+                                      Icons.notifications_active_outlined,
                                   dynamicColor: dynamicColor,
                                   initialValue: liveSetting.habilitado,
                                   onChanged: (newValue) {

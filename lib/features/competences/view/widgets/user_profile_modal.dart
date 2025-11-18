@@ -1,3 +1,5 @@
+// lib/features/competences/view/widgets/user_profile_modal.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,50 +7,45 @@ import 'package:kitsucode/features/profile/provider/follow_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
+// ✅ OptimizedImage
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 // --- NUEVO: Mapa de IDs de Lenguaje a sus assets ---
-// Basado en el JSON que me diste: [{"id_lenguaje":1,"nombre":"c"}, ...]
-// ¡Asegúrate de que estas rutas de assets sean correctas!
 const Map<int, String> _languageAssets = {
   1: 'assets/images/logo_c.png',
-  2: 'assets/images/logo_java.png', // <-- Corregí una errata (decía assetss)
+  2: 'assets/images/logo_java.png',
   3: 'assets/images/logo_python.png',
 };
 
-/// Devuelve un color específico basado en el string del rango.
 Color _getRankColor(String rank) {
   switch (rank.toLowerCase()) {
     case 'diamante':
-      return const Color(0xFFb9f2ff); // Azul Diamante
+      return const Color(0xFFb9f2ff);
     case 'oro':
-      return const Color(0xFFFFD700); // Oro (Dorado)
+      return const Color(0xFFFFD700);
     case 'plata':
-      return const Color(0xFFC0C0C0); // Plata
+      return const Color(0xFFC0C0C0);
     case 'bronce':
-      return const Color(0xFFCD7F32); // Bronce
+      return const Color(0xFFCD7F32);
     default:
       return Colors.grey.shade500;
   }
 }
 
-// --- ¡NUEVO! ---
-/// Devuelve un IconData específico basado en el string del rango.
-/// ¡Puedes cambiar estos iconos por los que prefieras!
 IconData _getRankIcon(String rank) {
   switch (rank.toLowerCase()) {
     case 'diamante':
-      return Icons.diamond_outlined; // Icono de diamante
+      return Icons.diamond_outlined;
     case 'oro':
-      return Icons.emoji_events_outlined; // Icono de trofeo
+      return Icons.emoji_events_outlined;
     case 'plata':
-      return Icons.shield_outlined; // Icono de escudo
+      return Icons.shield_outlined;
     case 'bronce':
-      return Icons.star_border_outlined; // Icono de estrella
+      return Icons.star_border_outlined;
     default:
-      return Icons.bookmark_border; // Un icono por defecto
+      return Icons.bookmark_border;
   }
 }
-// --- FIN NUEVO ---
 
 class UserProfileModal extends ConsumerWidget {
   final String userId;
@@ -67,28 +64,29 @@ class UserProfileModal extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final userProfileAsync = ref.watch(userProfileByIdProvider(userId));
     final rankColor = _getRankColor(rank);
-    final rankIcon = _getRankIcon(rank); // <-- ¡NUEVO! Obtenemos el icono
+    final rankIcon = _getRankIcon(rank);
 
-    // --- ¡CAMBIO! Construye la LISTA de iconos ---
+    // Lista de iconos de lenguajes (con OptimizedImage + width/height)
     List<Widget> languageIcons = [];
     if (rankLanguageIds != null && rankLanguageIds!.isNotEmpty) {
       for (var langId in rankLanguageIds!) {
-        if (_languageAssets.containsKey(langId)) {
+        final path = _languageAssets[langId];
+        if (path != null) {
           languageIcons.add(
             Padding(
-              // Separación entre iconos
               padding: const EdgeInsets.symmetric(horizontal: 2.0),
-              child: Image.asset(
-                _languageAssets[langId]!,
-                width: 20, // <-- ¡MÁS PEQUEÑO!
-                height: 20, // <-- ¡MÁS PEQUEÑO!
+              child: OptimizedImage(
+                imagePath: path,
+                width: 20,
+                height: 20,
+                fit: BoxFit.contain,
+                enableCache: true,
               ),
             ),
           );
         }
       }
     }
-    // --- FIN CAMBIO ---
 
     return ZoomIn(
       duration: const Duration(milliseconds: 300),
@@ -111,12 +109,12 @@ class UserProfileModal extends ConsumerWidget {
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: rankColor.withAlpha(204), // 0.8 opacity
+                      color: rankColor.withAlpha(204),
                       width: 2.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: rankColor.withAlpha(128), // 0.5 opacity
+                        color: rankColor.withAlpha(128),
                         blurRadius: 15,
                         spreadRadius: 2,
                       ),
@@ -156,21 +154,22 @@ class UserProfileModal extends ConsumerWidget {
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: () {
-                                context.pop(); // Cierra el modal
-                                context.push(
-                                    '/profile/${user.userId}'); // Navega al perfil del usuario
+                                context.pop();
+                                context.push('/profile/${user.userId}');
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: colors.primary,
                                 side: BorderSide(
-                                    color: colors.primary.withAlpha(128)),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 13),
+                                  color: colors.primary.withAlpha(128),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 13),
                                 textStyle: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      30), // Bordes más redondeados
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
                               child: const Text('Ver Perfil'),
@@ -181,6 +180,8 @@ class UserProfileModal extends ConsumerWidget {
                     ],
                   ),
                 ),
+
+                // Avatar grande con OptimizedImage (ancho/alto requeridos)
                 Positioned(
                   top: 0,
                   child: Container(
@@ -195,48 +196,48 @@ class UserProfileModal extends ConsumerWidget {
                         )
                       ],
                     ),
-                    child: CircleAvatar(
-                      radius: 55,
-                      backgroundImage: AssetImage(
-                        getAvatarAssetPathById(user.idAvatarSeleccionado),
+                    child: ClipOval(
+                      child: SizedBox(
+                        width: 110,  // diámetro (radius 55 * 2)
+                        height: 110,
+                        child: OptimizedImage(
+                          imagePath: getAvatarAssetPathById(
+                            user.idAvatarSeleccionado,
+                          ),
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          enableCache: true,
+                        ),
                       ),
-                      backgroundColor: colors.surfaceContainer,
                     ),
                   ),
                 ),
-                
-                // --- ¡CAMBIO! Badge de Rango (Superior Derecha) ---
+
+                // Badge de Rango (arriba derecha)
                 Positioned(
-                  top: 70, // 60 (margen) + 10
-                  right: 15, // En la esquina derecha
+                  top: 70,
+                  right: 15,
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: rankColor, // Color de fondo del rango
+                      color: rankColor,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: colors.surface, width: 1.5), // Borde blanco
+                      border: Border.all(color: colors.surface, width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(38), // 0.15 opacity
+                          color: Colors.black.withAlpha(38),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         )
                       ],
                     ),
-                    // ¡CAMBIO! Reemplazamos el Text por un Row
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // ¡NUEVO! El icono del rango
-                        Icon(
-                          rankIcon,
-                          color: Colors.black, // Color del icono
-                          size: 14, // Tamaño pequeño, ajusta si es necesario
-                        ),
-                        const SizedBox(width: 4), // Un pequeño espacio
-                        // El texto original
+                        Icon(rankIcon, color: Colors.black, size: 14),
+                        const SizedBox(width: 4),
                         Text(
                           rank[0].toUpperCase() +
                               rank.substring(1).toLowerCase(),
@@ -250,40 +251,31 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                   ),
                 ),
-                // --- FIN CAMBIO ---
 
-                // --- ¡CAMBIO! Iconos de Lenguaje (Superior Izquierda) ---
+                // Iconos de lenguajes (arriba izquierda) usando OptimizedImage
                 if (languageIcons.isNotEmpty)
                   Positioned(
-                    top: 70, // Misma altura que el badge de rango
-                    left: 15, // En la esquina izquierda
+                    top: 70,
+                    left: 15,
                     child: Container(
-                      // Limita el ancho en caso de que haya DEMASIADOS iconos
                       constraints: const BoxConstraints(maxWidth: 100),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 4),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
-                        color: rankColor, // Color de fondo del rango
-                        borderRadius:
-                            BorderRadius.circular(20), // Forma de "píldora"
-                        border: Border.all(
-                            color: colors.surface, width: 1.5), // Borde blanco
+                        color: rankColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: colors.surface, width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withAlpha(38), // 0.15 opacity
+                            color: Colors.black.withAlpha(38),
                             blurRadius: 5,
                             offset: const Offset(0, 2),
                           )
                         ],
                       ),
-                      // Usamos una Fila para poner los iconos uno al lado del otro
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: languageIcons, // <-- La lista de iconos
-                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: languageIcons),
                     ),
                   ),
-                // --- FIN CAMBIO ---
               ],
             );
           },
@@ -296,22 +288,29 @@ class UserProfileModal extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
-          color: colors.surface, borderRadius: BorderRadius.circular(24)),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.error_outline, color: colors.error, size: 48),
           const SizedBox(height: 16),
-          Text('Error al cargar el perfil',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: colors.error),
-              textAlign: TextAlign.center),
+          Text(
+            'Error al cargar el perfil',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colors.error,
+            ),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
-          Text(err.toString(),
-              style: TextStyle(color: colors.onSurfaceVariant),
-              textAlign: TextAlign.center),
+          Text(
+            err.toString(),
+            style: TextStyle(color: colors.onSurfaceVariant),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -352,38 +351,33 @@ class FollowButton extends ConsumerWidget {
                         .toggleFollow(userId);
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isFollowing
-                  ? colors.surfaceContainerHighest
-                  : colors.primary,
+              backgroundColor:
+                  isFollowing ? colors.surfaceContainerHighest : colors.primary,
               foregroundColor:
                   isFollowing ? colors.onSurfaceVariant : colors.onPrimary,
-              padding:
-                  const EdgeInsets.symmetric(vertical: 13), // Aumentamos la altura
+              padding: const EdgeInsets.symmetric(vertical: 13),
               textStyle:
                   const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(30), // Bordes más redondeados
+                borderRadius: BorderRadius.circular(30),
               ),
-              elevation: 2, // Le damos una pequeña sombra
+              elevation: 2,
             ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(
-                    scale:
-                        Tween<double>(begin: 0.8, end: 1.0).animate(animation),
-                    child: child,
-                  ),
-                );
-              },
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.8, end: 1.0).animate(animation),
+                  child: child,
+                ),
+              ),
               child: isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : Text(isFollowing ? 'Siguiendo' : 'Seguir',
                       key: ValueKey(isFollowing)),
             ),
@@ -432,8 +426,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       AlignmentTween(begin: begin, end: end);
   CurvedAnimation _createCurve(double begin, double end) =>
       CurvedAnimation(
-          parent: _controller,
-          curve: Interval(begin, end, curve: Curves.easeInOutSine));
+        parent: _controller,
+        curve: Interval(begin, end, curve: Curves.easeInOutSine),
+      );
 
   @override
   void dispose() {

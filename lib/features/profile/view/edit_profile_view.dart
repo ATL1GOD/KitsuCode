@@ -11,6 +11,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:lottie/lottie.dart';
 // 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
   const EditProfileView({super.key});
@@ -173,10 +174,13 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
         }
         _currentProfileData = profile;
 
-        final tempProfileForColor = profile.copyWith(
-            idAvatarSeleccionado:
-                _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado);
-        final dynamicColor = getHeaderColor(tempProfileForColor, colors);
+        // ⬇️⬇️⬇️ CORRECCIÓN: usar la lista de avatares para obtener el color real de BD
+        final avatars = ref.watch(currentUserAvatarsProvider).value ?? [];
+        final selectedIdForColor =
+            _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado;
+        final dynamicColor = getAvatarColorById(selectedIdForColor, avatars);
+        // ⬆️⬆️⬆️ FIN DE LA CORRECCIÓN
+
         final remainingName =
             2 - _currentProfileData.cambiosNombrePerfilEsteMes;
         final nameVerb = remainingName == 1 ? 'queda' : 'quedan';
@@ -195,9 +199,17 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
             _currentProfileData.cambiosNombrePerfilEsteMes >= 2;
 
         final currentAvatarPath = getAvatarAssetPathById(
-            _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado);
+          _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado,
+          avatars,
+        );
         Widget avatarImage = _isInitialized
-            ? Image.asset(currentAvatarPath, fit: BoxFit.cover)
+            ? OptimizedImage(
+                imagePath: currentAvatarPath,
+                fit: BoxFit.cover,
+                enableCache: true,
+                width: isKeyboardVisible ? 120 : 160, // requerido
+                height: isKeyboardVisible ? 120 : 160, // requerido
+              )
             : const SizedBox.shrink();
 
         // --- 🔥 6. ENVOLVER EL SCAFFOLD CON VISIBILITYDETECTOR ---

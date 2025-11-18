@@ -7,11 +7,14 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:particles_fly/particles_fly.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 class ProfileHeader extends ConsumerWidget {
   final String userId;
   final bool isCurrentUserProfile;
-  // --- 🔥 1. AÑADIR NUEVAS PROPIEDADES ---
+
+  // Control de efectos (por si el contenedor padre pausa pestañas/páginas)
   final bool isAppActive;
   final bool isTabVisible;
 
@@ -19,9 +22,8 @@ class ProfileHeader extends ConsumerWidget {
     super.key,
     required this.userId,
     required this.isCurrentUserProfile,
-    // --- 🔥 2. AÑADIR AL CONSTRUCTOR (requeridas) ---
-    this.isAppActive = true, // Valor por defecto por si se usa en otro lado
-    this.isTabVisible = true, // Valor por defecto
+    this.isAppActive = true,
+    this.isTabVisible = true,
   });
 
   @override
@@ -33,27 +35,41 @@ class ProfileHeader extends ConsumerWidget {
 
     return profileState.when(
       skipLoadingOnRefresh: true,
-      loading: () {
-        return const SizedBox(height: 365); // Placeholder
-      },
-      error: (error, stack) {
-        return SizedBox(
-          height: 365,
-          child: Center(child: Text('Error: $error')),
-        );
-      },
+      loading: () => const SizedBox(height: 365),
+      error: (error, _) => SizedBox(
+        height: 365,
+        child: Center(child: Text('Error: $error')),
+      ),
       data: (userProfile) {
-        final dynamicColor =
-            getAvatarColorById(userProfile.idAvatarSeleccionado);
-        final avatarAssetPath =
-            getAvatarAssetPathById(userProfile.idAvatarSeleccionado);
-        Widget avatarImage = Image.asset(avatarAssetPath, fit: BoxFit.cover);
+        // Lista de avatares desde BD
+        final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+
+        // Color dinámico (fallback al cálculo previo si aún no cargan avatares)
+        final dynamicColor = (avatarsList.isNotEmpty)
+            ? getAvatarColorById(userProfile.idAvatarSeleccionado, avatarsList)
+            : AllStatsView.getHeaderColor(userProfile, colors);
+
+        // Asset del avatar (fallback vacío → ícono de error)
+        final avatarPath = (avatarsList.isNotEmpty)
+            ? getAvatarAssetPathById(userProfile.idAvatarSeleccionado, avatarsList)
+            : "";
+
+        final Widget avatarImage = avatarPath.isEmpty
+            ? const Icon(Icons.error, size: 40)
+            : OptimizedImage(
+                imagePath: avatarPath,
+                width: 150,
+                height: 150,
+                fit: BoxFit.cover,
+                enableCache: true,
+              );
 
         return Stack(
           alignment: Alignment.topCenter,
           children: [
+            // Header ondulado con degradado del color del avatar
             ClipPath(
-              clipper: WaveClipper(),
+              clipper: const WaveClipper(),
               child: Container(
                 height: 220,
                 width: size.width,
@@ -62,26 +78,27 @@ class ProfileHeader extends ConsumerWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      dynamicColor.withOpacity(0.6),
-                      dynamicColor.withOpacity(0.2),
+                      dynamicColor.withAlpha(153), // ~0.6
+                      dynamicColor.withAlpha(51),  // ~0.2
                     ],
                   ),
                 ),
-                // --- 🔥 3. APLICAR LÓGICA DE VISIBILIDAD ---
-                child: (isAppActive && isTabVisible) // <-- ¡LA CONDICIÓN!
+                // Partículas solo cuando realmente debe animar
+                child: (isAppActive && isTabVisible)
                     ? ParticlesFly(
                         height: 220,
                         width: size.width,
                         connectDots: false,
-                        numberOfParticles: 10, // Optimizado: 10 partículas en lugar de 20
-                        particleColor: Colors.white.withOpacity(0.5),
+                        numberOfParticles: 10, // optimizado
+                        particleColor: Colors.white.withAlpha(128), // ~0.5
                         speedOfParticles: 0.5,
                         isRandomColor: false,
                       )
-                    : const SizedBox.shrink(), // <-- Si no, no renderizar nada
+                    : const SizedBox.shrink(),
               ),
             ),
-            // ... (El resto de tu widget no cambia) ...
+
+            // Contenido principal
             Padding(
               padding: const EdgeInsets.only(top: 70.0),
               child: Column(
@@ -99,11 +116,10 @@ class ProfileHeader extends ConsumerWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border:
-                                    Border.all(color: Colors.white, width: 4),
+                                border: Border.all(color: Colors.white, width: 4),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: dynamicColor.withOpacity(0.5),
+                                    color: dynamicColor.withAlpha(128), // ~0.5
                                     blurRadius: 20,
                                     spreadRadius: 2,
                                   ),
@@ -134,10 +150,12 @@ class ProfileHeader extends ConsumerWidget {
                                   radius: 22,
                                   backgroundColor: colors.secondary,
                                   child: IconButton(
-                                    icon: Icon(Icons.edit,
-                                        color: colors.onSecondary, size: 20),
-                                    onPressed: () =>
-                                        context.push('/edit-profile'),
+                                    icon: Icon(
+                                      Icons.edit,
+                                      color: colors.onSecondary,
+                                      size: 20,
+                                    ),
+                                    onPressed: () => context.push('/edit-profile'),
                                   ),
                                 ),
                               ),
@@ -147,27 +165,36 @@ class ProfileHeader extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
+
+                  // Nombre
                   FadeInUp(
                     from: 15,
                     duration: const Duration(milliseconds: 400),
                     delay: const Duration(milliseconds: 100),
                     child: Text(
                       userProfile.nombrePerfil,
-                      style: textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+
+                  // Username
                   FadeInUp(
                     from: 15,
                     duration: const Duration(milliseconds: 400),
                     delay: const Duration(milliseconds: 150),
                     child: Text(
                       '@${userProfile.nombreUsuario}',
-                      style: textTheme.bodyLarge
-                          ?.copyWith(color: colors.onSurface.withOpacity(0.7)),
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colors.onSurface.withAlpha(179), // ~0.7
+                      ),
                     ),
                   ),
+
                   const SizedBox(height: 20),
+
+                  // Siguiendo / Seguidores
                   FadeInUp(
                     from: 15,
                     duration: const Duration(milliseconds: 400),
@@ -185,7 +212,7 @@ class ProfileHeader extends ConsumerWidget {
                         Container(
                           height: 30,
                           width: 1,
-                          color: colors.onSurface.withOpacity(0.2),
+                          color: colors.onSurface.withAlpha(51), // ~0.2
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                         ),
                         _buildFollowStat(
@@ -207,28 +234,33 @@ class ProfileHeader extends ConsumerWidget {
     );
   }
 
-  // (Método _buildFollowStat sin cambios)
-  Widget _buildFollowStat(BuildContext context, String count, String label,
-      String userId, String type) {
+  Widget _buildFollowStat(
+    BuildContext context,
+    String count,
+    String label,
+    String userId,
+    String type,
+  ) {
     final textTheme = Theme.of(context).textTheme;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return InkWell(
-      onTap: () {
-        context.push('/profile/$userId/follow/$type');
-      },
+      onTap: () => context.push('/profile/$userId/follow/$type'),
       borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
         child: Column(
           children: [
-            Text(count,
-                style: textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w600)),
-            Text(label,
-                style: textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6))),
+            Text(
+              count,
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            Text(
+              label,
+              style: textTheme.bodyMedium?.copyWith(
+                color: onSurface.withAlpha(153), // ~0.6
+              ),
+            ),
           ],
         ),
       ),
@@ -236,23 +268,33 @@ class ProfileHeader extends ConsumerWidget {
   }
 }
 
-// (Clipper sin cambios)
+// Clipper
 class WaveClipper extends CustomClipper<Path> {
+  const WaveClipper();
+
   @override
   Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 50);
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2, size.height - 30);
-    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy,
-        firstEndPoint.dx, firstEndPoint.dy);
-    var secondControlPoint =
+    final path = Path()..lineTo(0, size.height - 50);
+    final firstControlPoint = Offset(size.width / 4, size.height);
+    final firstEndPoint = Offset(size.width / 2, size.height - 30);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+    final secondControlPoint =
         Offset(size.width - (size.width / 4), size.height - 60);
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy,
-        secondEndPoint.dx, secondEndPoint.dy);
-    path.lineTo(size.width, 0);
-    path.close();
+    final secondEndPoint = Offset(size.width, size.height - 40);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+    path
+      ..lineTo(size.width, 0)
+      ..close();
     return path;
   }
 

@@ -56,6 +56,7 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
   bool _isAppActive = true;
 
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
+    // Fallback (se mantiene)
     return getAvatarColorById(profile.idAvatarSeleccionado);
   }
 
@@ -128,7 +129,11 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error: $e')),
         data: (profile) {
-          final dynamicColor = _getDynamicColor(profile, colors);
+          // ✅ NUEVO: obtener color desde la BD (lista de avatares); fallback al método existente
+          final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+          final dynamicColor = avatarsList.isNotEmpty
+              ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+              : _getDynamicColor(profile, colors);
 
           // --- 🔥 5. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
           return VisibilityDetector(
@@ -153,13 +158,15 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            dynamicColor.withAlpha(100),
-                            colors.surfaceContainerLowest,
-                          ],
-                          stops: const [0.0, 0.7]),
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          // alineado con otras vistas (~40% de opacidad)
+                          dynamicColor.withAlpha((255 * 0.4).round()),
+                          colors.surfaceContainerLowest,
+                        ],
+                        stops: const [0.0, 0.7],
+                      ),
                     ),
                   ),
                 // --- FIN LÓGICA CONDICIONAL ---

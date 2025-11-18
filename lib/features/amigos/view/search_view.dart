@@ -1,3 +1,5 @@
+// lib/features/amigos/view/widgets/search_widgets.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
@@ -5,6 +7,8 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+// ✅ OptimizedImage para cargar el avatar (asset o remoto)
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 // Provider para el término de búsqueda (lo que el usuario escribe)
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
@@ -205,13 +209,19 @@ class UserSearchCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Avatar
+                  // ✅ Avatar con OptimizedImage (soporta asset o remoto)
                   CircleAvatar(
                     radius: 40,
-                    backgroundImage: AssetImage(
-                      getAvatarAssetPathById(user.idAvatarSeleccionado),
-                    ),
                     backgroundColor: colors.surfaceContainer,
+                    child: ClipOval(
+                      child: OptimizedImage(
+                        imagePath: getAvatarAssetPathById(user.idAvatarSeleccionado),
+                        width: 80,          // 🔴 requerido por OptimizedImage
+                        height: 80,         // 🔴 requerido por OptimizedImage
+                        fit: BoxFit.cover,
+                        enableCache: true,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
 

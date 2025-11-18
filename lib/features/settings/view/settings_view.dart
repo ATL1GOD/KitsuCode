@@ -16,6 +16,8 @@ import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/shared/widgets/kitsu_action_modal.dart';
 // 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+// ✅ NUEVO: usar el color primario real del avatar desde BD
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 
 class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
@@ -240,7 +242,11 @@ class _SettingsViewState extends ConsumerState<SettingsView>
         loading: () => _SettingsLoadingShimmer(colors: colors),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
-          final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
+          // ✅ NUEVO: obtiene el color primario real del avatar desde la BD
+          final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+          final dynamicColor = avatarsList.isNotEmpty
+              ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+              : AllStatsView.getHeaderColor(profile, colors);
 
           // --- 🔥 5. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
           return VisibilityDetector(

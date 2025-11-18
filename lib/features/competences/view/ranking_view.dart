@@ -86,8 +86,10 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   void initState() {
     super.initState();
     _lottieController = AnimationController(vsync: this);
-    _decorativeBgController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 8));
+    _decorativeBgController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -128,8 +130,10 @@ class _RankingContentState extends ConsumerState<_RankingContent>
     final textTheme = Theme.of(context).textTheme;
 
     // ✅ Traemos y TIPAMOS la lista de avatares para resolver asset_path/URL
-    final List<AvatarModel>? avatarsList =
-        ref.watch(currentUserAvatarsProvider).value?.cast<AvatarModel>();
+    final List<AvatarModel>? avatarsList = ref
+        .watch(currentUserAvatarsProvider)
+        .value
+        ?.cast<AvatarModel>();
 
     final rankingAsync = ref.watch(globalRankingProvider);
     final authUser = ref.watch(authStateProvider).value?.session?.user;
@@ -170,7 +174,9 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
@@ -182,20 +188,22 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                   color: colors.surface.withAlpha(50),
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color:
-                                        colors.outlineVariant.withAlpha(130),
+                                    color: colors.outlineVariant.withAlpha(130),
                                   ),
                                 ),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
                                 'Tabla de Clasificación',
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 44),
@@ -223,8 +231,8 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                       final currentUserData = (currentUserId == null)
                           ? null
                           : ranking
-                              .where((user) => user.userId == currentUserId)
-                              .firstOrNull;
+                                .where((user) => user.userId == currentUserId)
+                                .firstOrNull;
 
                       return Stack(
                         children: [
@@ -234,11 +242,16 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                 children: [
                                   Container(
                                     margin: const EdgeInsets.fromLTRB(
-                                        16, 8, 16, 0),
+                                      16,
+                                      8,
+                                      16,
+                                      0,
+                                    ),
                                     height: 280,
                                     decoration: BoxDecoration(
                                       color: colors.surface.withValues(
-                                          alpha: .10), // ⚙️
+                                        alpha: .10,
+                                      ), // ⚙️
                                       borderRadius: BorderRadius.circular(24),
                                     ),
                                     child: _DecorativeBackground(
@@ -256,11 +269,15 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0, vertical: 12.0),
+                                  horizontal: 16.0,
+                                  vertical: 12.0,
+                                ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.leaderboard_outlined,
-                                        color: colors.primary),
+                                    Icon(
+                                      Icons.leaderboard_outlined,
+                                      color: colors.primary,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Clasificación General',
@@ -268,7 +285,8 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                           .textTheme
                                           .titleMedium
                                           ?.copyWith(
-                                              color: colors.onSurfaceVariant),
+                                            color: colors.onSurfaceVariant,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -276,13 +294,14 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                               Expanded(
                                 child: ListView.builder(
                                   padding: const EdgeInsets.only(
-                                      top: 4, bottom: 160),
+                                    top: 4,
+                                    bottom: 160,
+                                  ),
                                   itemCount: restOfRanking.length,
                                   itemBuilder: (context, index) {
                                     final user = restOfRanking[index];
                                     return FadeInUp(
-                                      delay:
-                                          Duration(milliseconds: index * 30),
+                                      delay: Duration(milliseconds: index * 30),
                                       child: RankingTile(
                                         user: user,
                                         isCurrentUser:
@@ -367,16 +386,26 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   void initState() {
     super.initState();
     _animations = [
-      _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
-          .animate(_createCurve(0.0, 0.5)),
-      _createTween(const Alignment(1.2, -0.2), const Alignment(-1.2, 0))
-          .animate(_createCurve(0.2, 0.7)),
-      _createTween(const Alignment(0, 1.1), const Alignment(0, -1.1))
-          .animate(_createCurve(0.4, 1.0)),
-      _createTween(const Alignment(1.1, 1), const Alignment(-1.1, 0.8))
-          .animate(_createCurve(0.1, 0.8)),
-      _createTween(const Alignment(-1.3, 0.9), const Alignment(1.3, -0.9))
-          .animate(_createCurve(0.3, 0.9)),
+      _createTween(
+        const Alignment(-1, -0.8),
+        const Alignment(1, -0.7),
+      ).animate(_createCurve(0.0, 0.5)),
+      _createTween(
+        const Alignment(1.2, -0.2),
+        const Alignment(-1.2, 0),
+      ).animate(_createCurve(0.2, 0.7)),
+      _createTween(
+        const Alignment(0, 1.1),
+        const Alignment(0, -1.1),
+      ).animate(_createCurve(0.4, 1.0)),
+      _createTween(
+        const Alignment(1.1, 1),
+        const Alignment(-1.1, 0.8),
+      ).animate(_createCurve(0.1, 0.8)),
+      _createTween(
+        const Alignment(-1.3, 0.9),
+        const Alignment(1.3, -0.9),
+      ).animate(_createCurve(0.3, 0.9)),
     ];
   }
 
@@ -384,12 +413,15 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
       AlignmentTween(begin: begin, end: end);
 
   CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
-        parent: widget.controller,
-        curve: Interval(begin, end, curve: Curves.easeInOutSine),
-      );
+    parent: widget.controller,
+    curve: Interval(begin, end, curve: Curves.easeInOutSine),
+  );
 
   Widget _buildIcon(
-      String assetPath, Animation<Alignment> animation, double size) {
+    String assetPath,
+    Animation<Alignment> animation,
+    double size,
+  ) {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, child) =>
@@ -503,8 +535,10 @@ class _PodiumPlace extends StatelessWidget {
     final size = 110.0 * heightFactor;
 
     // ✅ Usa la misma resolución que en el modal (con lista tipada si existe)
-    final String avatarPath =
-        getAvatarAssetPathById(user.idAvatarSeleccionado, avatarsList);
+    final String avatarPath = getAvatarAssetPathById(
+      user.idAvatarSeleccionado,
+      avatarsList,
+    );
 
     return GestureDetector(
       onTap: () {
@@ -562,7 +596,7 @@ class _PodiumPlace extends StatelessWidget {
                         ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -571,13 +605,16 @@ class _PodiumPlace extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 '${user.totalScore} Pts',
-                style: textTheme.bodySmall
-                    ?.copyWith(color: color, fontWeight: FontWeight.bold),
+                style: textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

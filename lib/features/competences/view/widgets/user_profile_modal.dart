@@ -1,5 +1,3 @@
-// lib/features/competences/view/widgets/user_profile_modal.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,10 +5,9 @@ import 'package:kitsucode/features/profile/provider/follow_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
-// ✅ OptimizedImage
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
-// --- NUEVO: Mapa de IDs de Lenguaje a sus assets ---
+// --- Íconos de lenguajes (assets locales) ---
 const Map<int, String> _languageAssets = {
   1: 'assets/images/logo_c.png',
   2: 'assets/images/logo_java.png',
@@ -47,6 +44,30 @@ IconData _getRankIcon(String rank) {
   }
 }
 
+/// Renderiza imágenes:
+/// - `assets/...` -> Image.asset
+/// - URL / ruta remota -> OptimizedImage
+Widget _smartImage({
+  required String path,
+  required double width,
+  required double height,
+  BoxFit fit = BoxFit.cover,
+}) {
+  if (path.isEmpty) {
+    return const ColoredBox(color: Colors.transparent);
+  }
+  if (path.startsWith('assets/')) {
+    return Image.asset(path, width: width, height: height, fit: fit);
+  }
+  return OptimizedImage(
+    imagePath: path,
+    width: width,
+    height: height,
+    fit: fit,
+    enableCache: true,
+  );
+}
+
 class UserProfileModal extends ConsumerWidget {
   final String userId;
   final String rank;
@@ -66,27 +87,24 @@ class UserProfileModal extends ConsumerWidget {
     final rankColor = _getRankColor(rank);
     final rankIcon = _getRankIcon(rank);
 
-    // Lista de iconos de lenguajes (con OptimizedImage + width/height)
-    List<Widget> languageIcons = [];
-    if (rankLanguageIds != null && rankLanguageIds!.isNotEmpty) {
-      for (var langId in rankLanguageIds!) {
-        final path = _languageAssets[langId];
-        if (path != null) {
-          languageIcons.add(
+    // Para resolver correctamente rutas de avatares (assets/URL)
+    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+
+    // Íconos de lenguajes (assets locales)
+    final List<Widget> languageIcons = [
+      if (rankLanguageIds != null)
+        for (final id in rankLanguageIds!)
+          if (_languageAssets[id] != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2.0),
-              child: OptimizedImage(
-                imagePath: path,
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Image.asset(
+                _languageAssets[id]!,
                 width: 20,
                 height: 20,
                 fit: BoxFit.contain,
-                enableCache: true,
               ),
             ),
-          );
-        }
-      }
-    }
+    ];
 
     return ZoomIn(
       duration: const Duration(milliseconds: 300),
@@ -96,8 +114,14 @@ class UserProfileModal extends ConsumerWidget {
         elevation: 0,
         child: userProfileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => _buildErrorCard(colors, err),
+          error: (err, _) => _buildErrorCard(colors, err),
           data: (user) {
+            // Ruta final del avatar (puede ser asset o URL)
+            final String avatarPath = getAvatarAssetPathById(
+              user.idAvatarSeleccionado,
+              avatarsList, // <--- IMPORTANTE
+            );
+
             return Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.topCenter,
@@ -108,10 +132,7 @@ class UserProfileModal extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: rankColor.withAlpha(204),
-                      width: 2.5,
-                    ),
+                    border: Border.all(color: rankColor.withAlpha(204), width: 2.5),
                     boxShadow: [
                       BoxShadow(
                         color: rankColor.withAlpha(128),
@@ -138,13 +159,9 @@ class UserProfileModal extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               _buildStatColumn(
-                                  context,
-                                  user.siguiendoCount.toString(),
-                                  'Siguiendo'),
+                                  context, user.siguiendoCount.toString(), 'Siguiendo'),
                               _buildStatColumn(
-                                  context,
-                                  user.seguidoresCount.toString(),
-                                  'Seguidores'),
+                                  context, user.seguidoresCount.toString(), 'Seguidores'),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -159,15 +176,10 @@ class UserProfileModal extends ConsumerWidget {
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: colors.primary,
-                                side: BorderSide(
-                                  color: colors.primary.withAlpha(128),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 13),
+                                side: BorderSide(color: colors.primary.withAlpha(128)),
+                                padding: const EdgeInsets.symmetric(vertical: 13),
                                 textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -181,7 +193,7 @@ class UserProfileModal extends ConsumerWidget {
                   ),
                 ),
 
-                // Avatar grande con OptimizedImage (ancho/alto requeridos)
+                // Avatar grande (usa helper inteligente)
                 Positioned(
                   top: 0,
                   child: Container(
@@ -198,29 +210,25 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                     child: ClipOval(
                       child: SizedBox(
-                        width: 110,  // diámetro (radius 55 * 2)
+                        width: 110,
                         height: 110,
-                        child: OptimizedImage(
-                          imagePath: getAvatarAssetPathById(
-                            user.idAvatarSeleccionado,
-                          ),
+                        child: _smartImage(
+                          path: avatarPath,
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          enableCache: true,
                         ),
                       ),
                     ),
                   ),
                 ),
 
-                // Badge de Rango (arriba derecha)
+                // Badge de rango
                 Positioned(
                   top: 70,
                   right: 15,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: rankColor,
                       borderRadius: BorderRadius.circular(20),
@@ -239,28 +247,23 @@ class UserProfileModal extends ConsumerWidget {
                         Icon(rankIcon, color: Colors.black, size: 14),
                         const SizedBox(width: 4),
                         Text(
-                          rank[0].toUpperCase() +
-                              rank.substring(1).toLowerCase(),
+                          rank[0].toUpperCase() + rank.substring(1).toLowerCase(),
                           style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                            color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                // Iconos de lenguajes (arriba izquierda) usando OptimizedImage
+                // Lenguajes (assets locales)
                 if (languageIcons.isNotEmpty)
                   Positioned(
                     top: 70,
                     left: 15,
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 100),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
                         color: rankColor,
                         borderRadius: BorderRadius.circular(20),
@@ -286,43 +289,33 @@ class UserProfileModal extends ConsumerWidget {
 
   Widget _buildErrorCard(ColorScheme colors, Object err) {
     return Container(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(24),
-      ),
+        color: colors.surface, borderRadius: BorderRadius.circular(24)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.error_outline, color: colors.error, size: 48),
           const SizedBox(height: 16),
-          Text(
-            'Error al cargar el perfil',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colors.error,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          Text('Error al cargar el perfil',
+              style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: colors.error),
+              textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Text(
-            err.toString(),
-            style: TextStyle(color: colors.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
+          Text(err.toString(),
+              style: TextStyle(color: colors.onSurfaceVariant),
+              textAlign: TextAlign.center),
         ],
       ),
     );
   }
 
   Widget _buildStatColumn(BuildContext context, String value, String label) {
-    final textTheme = Theme.of(context).textTheme;
+    final t = Theme.of(context).textTheme;
     return Column(
       children: [
-        Text(value,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-        Text(label, style: textTheme.bodySmall),
+        Text(value, style: t.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text(label, style: t.bodySmall),
       ],
     );
   }
@@ -334,58 +327,43 @@ class FollowButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = Theme.of(context).colorScheme;
+    final c = Theme.of(context).colorScheme;
     final isFollowingState = ref.watch(isFollowingProvider(userId));
     final isLoading = ref.watch(followControllerProvider);
 
     return SizedBox(
       width: double.infinity,
       child: isFollowingState.when(
-        data: (isFollowing) {
-          return ElevatedButton(
-            onPressed: isLoading
-                ? null
-                : () {
-                    ref
-                        .read(followControllerProvider.notifier)
-                        .toggleFollow(userId);
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isFollowing ? colors.surfaceContainerHighest : colors.primary,
-              foregroundColor:
-                  isFollowing ? colors.onSurfaceVariant : colors.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              textStyle:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+        data: (isFollowing) => ElevatedButton(
+          onPressed: isLoading
+              ? null
+              : () => ref.read(followControllerProvider.notifier).toggleFollow(userId),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isFollowing ? c.surfaceContainerHighest : c.primary,
+            foregroundColor: isFollowing ? c.onSurfaceVariant : c.onPrimary,
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            elevation: 2,
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.8, end: 1.0).animate(animation),
+                child: child,
               ),
-              elevation: 2,
             ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.8, end: 1.0).animate(animation),
-                  child: child,
-                ),
-              ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(isFollowing ? 'Siguiendo' : 'Seguir',
-                      key: ValueKey(isFollowing)),
-            ),
-          );
-        },
+            child: isLoading
+                ? const SizedBox(
+                    width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(isFollowing ? 'Siguiendo' : 'Seguir',
+                    key: ValueKey(isFollowing)),
+          ),
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) =>
-            ElevatedButton(onPressed: null, child: const Text('Error')),
+        error: (_, __) => ElevatedButton(onPressed: null, child: const Text('Error')),
       ),
     );
   }
@@ -425,10 +403,8 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
   AlignmentTween _createTween(Alignment begin, Alignment end) =>
       AlignmentTween(begin: begin, end: end);
   CurvedAnimation _createCurve(double begin, double end) =>
-      CurvedAnimation(
-        parent: _controller,
-        curve: Interval(begin, end, curve: Curves.easeInOutSine),
-      );
+      CurvedAnimation(parent: _controller,
+          curve: Interval(begin, end, curve: Curves.easeInOutSine));
 
   @override
   void dispose() {
@@ -436,19 +412,18 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
     super.dispose();
   }
 
-  Widget _buildIcon(BuildContext context, String assetPath,
-      Animation<Alignment> animation, double size) {
-    final colors = Theme.of(context).colorScheme;
+  Widget _buildIcon(
+      BuildContext context, String assetPath, Animation<Alignment> anim, double size) {
+    final c = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) =>
-          Align(alignment: animation.value, child: child),
+      builder: (_, child) => Align(alignment: anim.value, child: child),
       child: Image.asset(
         assetPath,
         width: size,
         height: size,
         fit: BoxFit.contain,
-        color: colors.primary.withAlpha(26),
+        color: c.primary.withAlpha(26),
         colorBlendMode: BlendMode.srcIn,
       ),
     );
@@ -460,15 +435,11 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          _buildIcon(
-              context, 'assets/images/logo_python.png', _animations[0], 50),
-          _buildIcon(
-              context, 'assets/images/logo_java.png', _animations[1], 60),
+          _buildIcon(context, 'assets/images/logo_python.png', _animations[0], 50),
+          _buildIcon(context, 'assets/images/logo_java.png', _animations[1], 60),
           _buildIcon(context, 'assets/images/logo_c.png', _animations[2], 70),
-          _buildIcon(
-              context, 'assets/images/logo_python.png', _animations[3], 40),
-          _buildIcon(
-              context, 'assets/images/logo_java.png', _animations[4], 55),
+          _buildIcon(context, 'assets/images/logo_python.png', _animations[3], 40),
+          _buildIcon(context, 'assets/images/logo_java.png', _animations[4], 55),
         ],
       ),
     );

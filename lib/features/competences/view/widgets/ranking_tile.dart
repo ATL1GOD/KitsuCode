@@ -5,17 +5,20 @@ import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ AGREGADO
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart'; // ✅ OptimizedImage
+import 'package:kitsucode/features/profile/model/avatar_model.dart'; // <--- AÑADE ESTA IMPORTACIÓN
 
 class RankingTile extends StatelessWidget {
   final RankingModel user;
   final bool isCurrentUser;
   final ColorScheme colors;
+  final List<AvatarModel>? avatarsList; // <--- AÑADE ESTE CAMPO
 
   const RankingTile({
     super.key,
     required this.user,
     required this.isCurrentUser,
     required this.colors,
+    this.avatarsList, // <--- AÑADE ESTO AL CONSTRUCTOR
   });
 
   @override
@@ -38,7 +41,11 @@ class RankingTile extends StatelessWidget {
     }
 
     // ✅ Path del avatar (desde tu helper)
-    final avatarPath = getAvatarAssetPathById(user.idAvatarSeleccionado);
+    // AHORA USA LA LISTA QUE LE PASAMOS
+    final avatarPath = getAvatarAssetPathById(
+      user.idAvatarSeleccionado,
+      avatarsList, // <--- USA LA LISTA AQUÍ
+    );
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -96,8 +103,8 @@ class RankingTile extends StatelessWidget {
                         ? const SizedBox.shrink()
                         : OptimizedImage(
                             imagePath: avatarPath,
-                            width: 44,   // 🔸 requeridos por tu widget
-                            height: 44,  // 🔸
+                            width: 44, // 🔸 requeridos por tu widget
+                            height: 44, // 🔸
                             fit: BoxFit.cover,
                             enableCache: true,
                           ),

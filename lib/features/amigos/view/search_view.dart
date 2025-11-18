@@ -9,6 +9,8 @@ import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 // ✅ OptimizedImage para cargar el avatar (asset o remoto)
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
+// AÑADE LA IMPORTACIÓN DEL MODELO DE AVATAR 👇
+import 'package:kitsucode/features/profile/model/avatar_model.dart';
 
 // Provider para el término de búsqueda (lo que el usuario escribe)
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
@@ -167,14 +169,20 @@ class _SearchFieldState extends ConsumerState<SearchField> {
   }
 }
 
-class UserSearchCard extends StatelessWidget {
+// CAMBIO AQUÍ: StatelessWidget -> ConsumerWidget 👇
+class UserSearchCard extends ConsumerWidget {
   // ¡Actualizado para usar el modelo ligero!
   final UserSearchPreviewModel user;
   const UserSearchCard({super.key, required this.user});
 
   @override
-  Widget build(BuildContext context) {
+  // CAMBIO AQUÍ: Añadir WidgetRef ref 👇
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+
+    // AÑADIDO AQUÍ: Observamos el provider de avatares 👇
+    final List<AvatarModel>? avatarsList =
+        ref.watch(currentUserAvatarsProvider).value?.cast<AvatarModel>();
 
     return Card(
       elevation: 5,
@@ -215,9 +223,13 @@ class UserSearchCard extends StatelessWidget {
                     backgroundColor: colors.surfaceContainer,
                     child: ClipOval(
                       child: OptimizedImage(
-                        imagePath: getAvatarAssetPathById(user.idAvatarSeleccionado),
-                        width: 80,          // 🔴 requerido por OptimizedImage
-                        height: 80,         // 🔴 requerido por OptimizedImage
+                        // CAMBIO AQUÍ: Pasar la lista de avatares 👇
+                        imagePath: getAvatarAssetPathById(
+                          user.idAvatarSeleccionado,
+                          avatarsList,
+                        ),
+                        width: 80, // 🔴 requerido por OptimizedImage
+                        height: 80, // 🔴 requerido por OptimizedImage
                         fit: BoxFit.cover,
                         enableCache: true,
                       ),

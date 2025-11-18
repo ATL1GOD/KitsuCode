@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/scheduler.dart';
 
+// ... (OptimizedImage class sin cambios) ...
 class OptimizedImage extends StatefulWidget {
   final String imagePath;
   final double width;
@@ -25,6 +26,7 @@ class OptimizedImage extends StatefulWidget {
   State<OptimizedImage> createState() => _OptimizedImageState();
 }
 
+
 class _OptimizedImageState extends State<OptimizedImage> {
   String _optimizedUrl = '';
   bool _shouldLoad = false;
@@ -44,9 +46,11 @@ class _OptimizedImageState extends State<OptimizedImage> {
       _optimizedUrl = _getOptimizedUrl();
       _isInitialized = true;
       // debug
-      debugPrint(
+      // AQUÍ 👇
+      /* debugPrint(
         '[OptimizedImage] didChangeDependencies -> url=$_optimizedUrl path=${widget.imagePath}',
       );
+      */
     }
   }
 
@@ -66,10 +70,13 @@ class _OptimizedImageState extends State<OptimizedImage> {
       _optimizedUrl = _getOptimizedUrl();
       _isInitialized = true;
 
+      // Y AQUÍ 👇
+      /*
       debugPrint(
         '[OptimizedImage] didUpdateWidget -> '
         'old=${oldWidget.imagePath} new=${widget.imagePath} url=$_optimizedUrl',
       );
+      */
 
       // Opcional: forzar pequeño “reload” visual
       _shouldLoad = false;
@@ -99,7 +106,8 @@ class _OptimizedImageState extends State<OptimizedImage> {
 
     final targetWidth = (widget.width * devicePixelRatio).round();
 
-    return 'https://$projectId.supabase.co/storage/v1/object/public/$bucketName/${widget.imagePath}'
+    return 'https://'
+        '$projectId.supabase.co/storage/v1/object/public/$bucketName/${widget.imagePath}'
         '?width=$targetWidth'
         '&quality=${_calculateQuality(devicePixelRatio)}'
         '&format=webp'
@@ -216,6 +224,7 @@ class _OptimizedImageState extends State<OptimizedImage> {
   }
 }
 
+// ... (OptimizedImageListTile sin cambios) ...
 class OptimizedImageListTile extends StatelessWidget {
   final String imagePath;
   final double width;

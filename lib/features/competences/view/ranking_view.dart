@@ -13,18 +13,18 @@ import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widg
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
+import 'package:kitsucode/features/profile/model/avatar_model.dart'; // ✅ TIPADO
 import 'package:lottie/lottie.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-// ✅ IMPORTANTE: OptimizedImage para soportar asset_path / URLs de Supabase
+// Solo se usa para los avatares (podium / tiles)
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
-// --- WIDGET PRINCIPAL: RankingView (Sin cambios) ---
 class RankingView extends ConsumerWidget {
   const RankingView({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ... (sin cambios) ...
     ref.watch(followRealtimeProvider);
     ref.watch(realtimeUpdateProvider);
     final authState = ref.watch(authStateProvider);
@@ -40,7 +40,6 @@ class RankingView extends ConsumerWidget {
   }
 
   Widget _buildNotAuthenticatedScreen(BuildContext context) {
-    // ... (sin cambios) ...
     final colors = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
@@ -67,7 +66,6 @@ class RankingView extends ConsumerWidget {
   }
 }
 
-// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class _RankingContent extends ConsumerStatefulWidget {
   const _RankingContent();
 
@@ -75,13 +73,11 @@ class _RankingContent extends ConsumerStatefulWidget {
   ConsumerState<_RankingContent> createState() => _RankingContentState();
 }
 
-// --- 🔥 3. AÑADIR ESTADO, TickerProviderStateMixin y WidgetsBindingObserver ---
 class _RankingContentState extends ConsumerState<_RankingContent>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _lottieController;
   late final AnimationController _decorativeBgController;
 
-  // Banderas de estado
   bool _isTabVisible = true;
   bool _isAppActive = true;
   bool _isLottieLoaded = false;
@@ -89,14 +85,9 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   @override
   void initState() {
     super.initState();
-    // --- 🔥 4. INICIALIZAR SIN DURACIÓN (Lottie) ---
     _lottieController = AnimationController(vsync: this);
-
-    // --- (Esta animación sí tiene duración, tu código original estaba bien) ---
     _decorativeBgController =
         AnimationController(vsync: this, duration: const Duration(seconds: 8));
-
-    // Registrar el observador
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -108,7 +99,6 @@ class _RankingContentState extends ConsumerState<_RankingContent>
     super.dispose();
   }
 
-  // --- 🔥 5. MÉTODO QUE REACCIONA A LA BARRA DE NOTIFICACIONES ---
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -118,16 +108,13 @@ class _RankingContentState extends ConsumerState<_RankingContent>
     });
   }
 
-  // --- 🔥 6. LÓGICA CENTRAL PARA CONTROLAR AMBAS ANIMACIONES ---
   void _updateAnimationState() {
-    // Lógica para Lottie
     if (_isAppActive && _isTabVisible && _isLottieLoaded) {
       _lottieController.repeat();
     } else {
       _lottieController.stop();
     }
 
-    // Lógica para el fondo decorativo
     if (_isAppActive && _isTabVisible) {
       _decorativeBgController.repeat(reverse: true);
     } else {
@@ -137,14 +124,17 @@ class _RankingContentState extends ConsumerState<_RankingContent>
 
   @override
   Widget build(BuildContext context) {
-    // ... (Tu lógica de providers se queda igual) ...
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    // ✅ Traemos y TIPAMOS la lista de avatares para resolver asset_path/URL
+    final List<AvatarModel>? avatarsList =
+        ref.watch(currentUserAvatarsProvider).value?.cast<AvatarModel>();
+
     final rankingAsync = ref.watch(globalRankingProvider);
     final authUser = ref.watch(authStateProvider).value?.session?.user;
     final String? currentUserId = authUser?.id;
 
-    // --- 🔥 7. VISIBILITYDETECTOR ---
     return VisibilityDetector(
       key: const Key('ranking-view-detector'),
       onVisibilityChanged: (visibilityInfo) {
@@ -154,7 +144,7 @@ class _RankingContentState extends ConsumerState<_RankingContent>
         });
       },
       child: Scaffold(
-        backgroundColor: colors.primaryContainer.withOpacity(0.05),
+        backgroundColor: colors.primaryContainer.withValues(alpha: .05), // ⚙️
         body: Stack(
           children: [
             Positioned.fill(
@@ -164,18 +154,16 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                   'assets/animations/background_train.json',
                   fit: BoxFit.cover,
                   controller: _lottieController,
-                  // --- 🔥 8. ASIGNAR DURACIÓN AL CONTROLADOR ---
                   onLoaded: (composition) {
                     _lottieController.duration = composition.duration;
                     _isLottieLoaded = true;
-                    _updateAnimationState(); // Iniciar si debe
+                    _updateAnimationState();
                   },
                 ),
               ),
             ),
             Column(
               children: [
-                // ... (Tu SafeArea no cambia) ...
                 SafeArea(
                   bottom: false,
                   child: Column(
@@ -184,7 +172,6 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
                         child: Row(
-                          // ... (El Row del título no cambia) ...
                           children: [
                             InkWell(
                               onTap: () => context.pop(),
@@ -192,11 +179,13 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color:
+                                        colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
                                 child: Icon(Icons.arrow_back_ios_new_rounded,
                                     color: colors.onSurface),
                               ),
@@ -224,10 +213,10 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                     error: (e, s) =>
                         Center(child: RankingErrorWidget(error: e)),
                     data: (ranking) {
-                      // ... (Tu lógica de 'data' no cambia) ...
                       if (ranking.isEmpty) return const _EmptyRankingWidget();
-                      final top3 =
-                          ranking.length >= 3 ? ranking.sublist(0, 3) : ranking;
+                      final top3 = ranking.length >= 3
+                          ? ranking.sublist(0, 3)
+                          : ranking;
                       final restOfRanking = ranking.length > 3
                           ? ranking.sublist(3)
                           : <RankingModel>[];
@@ -248,23 +237,23 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                         16, 8, 16, 0),
                                     height: 280,
                                     decoration: BoxDecoration(
-                                      color: colors.surface.withOpacity(0.1),
+                                      color: colors.surface.withValues(
+                                          alpha: .10), // ⚙️
                                       borderRadius: BorderRadius.circular(24),
                                     ),
-                                    // --- 🔥 9. PASAR EL CONTROLADOR AL HIJO ---
                                     child: _DecorativeBackground(
                                       controller: _decorativeBgController,
                                     ),
                                   ),
                                   if (top3.isNotEmpty)
                                     _PodiumWidget(
-                                        // ... (sin cambios)
-                                        users: top3,
-                                        colors: colors,
-                                        currentUserId: currentUserId),
+                                      users: top3,
+                                      colors: colors,
+                                      currentUserId: currentUserId,
+                                      avatarsList: avatarsList, // ✅ pasa lista
+                                    ),
                                 ],
                               ),
-                              // ... (El resto de tu vista no cambia) ...
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16.0, vertical: 12.0),
@@ -292,12 +281,15 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                   itemBuilder: (context, index) {
                                     final user = restOfRanking[index];
                                     return FadeInUp(
-                                      delay: Duration(milliseconds: index * 30),
+                                      delay:
+                                          Duration(milliseconds: index * 30),
                                       child: RankingTile(
                                         user: user,
                                         isCurrentUser:
                                             user.userId == currentUserId,
                                         colors: colors,
+                                        // AÑADIDO AQUÍ 👇
+                                        avatarsList: avatarsList,
                                       ),
                                     );
                                   },
@@ -311,7 +303,11 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                               left: 0,
                               right: 0,
                               child: _CurrentUserBanner(
-                                  user: currentUserData, colors: colors),
+                                user: currentUserData,
+                                colors: colors,
+                                // AÑADIDO AQUÍ 👇
+                                avatarsList: avatarsList,
+                              ),
                             ),
                         ],
                       );
@@ -327,10 +323,9 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   }
 }
 
-// --- WIDGETS AUXILIARES ---
 class _EmptyRankingWidget extends StatelessWidget {
-  // ... (Sin cambios)
   const _EmptyRankingWidget();
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -357,28 +352,20 @@ class _EmptyRankingWidget extends StatelessWidget {
   }
 }
 
-// --- 🔥 10. MODIFICAR _DecorativeBackground ---
 class _DecorativeBackground extends StatefulWidget {
-  // Aceptar el controlador como parámetro
   final AnimationController controller;
-  const _DecorativeBackground({required this.controller}); // <--- Modificado
+  const _DecorativeBackground({required this.controller});
 
   @override
   State<_DecorativeBackground> createState() => _DecorativeBackgroundState();
 }
 
 class _DecorativeBackgroundState extends State<_DecorativeBackground> {
-  // --- 🔥 11. YA NO NECESITA SingleTickerProviderStateMixin ---
-
-  // El controlador ahora viene del widget padre
-  // late final AnimationController _controller; // <-- Ya no se crea aquí
   late final List<Animation<Alignment>> _animations;
 
   @override
   void initState() {
     super.initState();
-
-    // --- 🔥 12. USAR EL CONTROLADOR DEL PADRE ('widget.controller') ---
     _animations = [
       _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
           .animate(_createCurve(0.0, 0.5)),
@@ -395,33 +382,32 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
 
   AlignmentTween _createTween(Alignment begin, Alignment end) =>
       AlignmentTween(begin: begin, end: end);
-  CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
-      parent: widget.controller, // <--- Usar widget.controller
-      curve: Interval(begin, end, curve: Curves.easeInOutSine));
 
-  @override
-  void dispose() {
-    // El controlador se 'dispose' en el widget padre, no aquí
-    super.dispose();
-  }
+  CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
+        parent: widget.controller,
+        curve: Interval(begin, end, curve: Curves.easeInOutSine),
+      );
 
   Widget _buildIcon(
       String assetPath, Animation<Alignment> animation, double size) {
     return AnimatedBuilder(
-      animation: widget.controller, // <--- Usar widget.controller
+      animation: widget.controller,
       builder: (context, child) =>
           Align(alignment: animation.value, child: child),
       child: Opacity(
         opacity: 0.1,
-        child: Image.asset(assetPath,
-            width: size, height: size, fit: BoxFit.contain),
+        child: Image.asset(
+          assetPath,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (El build se queda igual)
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: Stack(
@@ -437,16 +423,19 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   }
 }
 
-// --- (El resto de widgets, _PodiumWidget, _PodiumPlace, _CurrentUserBanner,
-//      se quedan exactamente igual) ---
-
 class _PodiumWidget extends StatelessWidget {
-  // ... (Sin cambios)
   final List<RankingModel> users;
   final ColorScheme colors;
   final String? currentUserId;
-  const _PodiumWidget(
-      {required this.users, required this.colors, required this.currentUserId});
+  final List<AvatarModel>? avatarsList; // ✅ lista tipada
+
+  const _PodiumWidget({
+    required this.users,
+    required this.colors,
+    required this.currentUserId,
+    required this.avatarsList,
+  });
+
   @override
   Widget build(BuildContext context) {
     return FadeInDown(
@@ -459,25 +448,31 @@ class _PodiumWidget extends StatelessWidget {
           children: [
             if (users.length > 1)
               _PodiumPlace(
-                  user: users[1],
-                  place: 2,
-                  color: Colors.grey.shade400,
-                  heightFactor: 0.7,
-                  isCurrentUser: users[1].userId == currentUserId),
+                user: users[1],
+                place: 2,
+                color: Colors.grey.shade400,
+                heightFactor: 0.7,
+                isCurrentUser: users[1].userId == currentUserId,
+                avatarsList: avatarsList,
+              ),
             if (users.isNotEmpty)
               _PodiumPlace(
-                  user: users[0],
-                  place: 1,
-                  color: Colors.amber.shade400,
-                  heightFactor: 1.0,
-                  isCurrentUser: users[0].userId == currentUserId),
+                user: users[0],
+                place: 1,
+                color: Colors.amber.shade400,
+                heightFactor: 1.0,
+                isCurrentUser: users[0].userId == currentUserId,
+                avatarsList: avatarsList,
+              ),
             if (users.length > 2)
               _PodiumPlace(
-                  user: users[2],
-                  place: 3,
-                  color: Colors.brown.shade400,
-                  heightFactor: 0.55,
-                  isCurrentUser: users[2].userId == currentUserId),
+                user: users[2],
+                place: 3,
+                color: Colors.brown.shade400,
+                heightFactor: 0.55,
+                isCurrentUser: users[2].userId == currentUserId,
+                avatarsList: avatarsList,
+              ),
           ],
         ),
       ),
@@ -486,27 +481,30 @@ class _PodiumWidget extends StatelessWidget {
 }
 
 class _PodiumPlace extends StatelessWidget {
-  // ... (Sin cambios salvo el AVATAR)
   final RankingModel user;
   final int place;
   final Color color;
   final double heightFactor;
   final bool isCurrentUser;
-  const _PodiumPlace(
-      {required this.user,
-      required this.place,
-      required this.color,
-      required this.heightFactor,
-      required this.isCurrentUser});
+  final List<AvatarModel>? avatarsList; // ✅
+
+  const _PodiumPlace({
+    required this.user,
+    required this.place,
+    required this.color,
+    required this.heightFactor,
+    required this.isCurrentUser,
+    required this.avatarsList,
+  });
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final size = 110.0 * heightFactor;
 
-    // 👉 Ruta real del avatar (asset local o URL de Supabase)
+    // ✅ Usa la misma resolución que en el modal (con lista tipada si existe)
     final String avatarPath =
-        getAvatarAssetPathById(user.idAvatarSeleccionado);
+        getAvatarAssetPathById(user.idAvatarSeleccionado, avatarsList);
 
     return GestureDetector(
       onTap: () {
@@ -534,7 +532,7 @@ class _PodiumPlace extends StatelessWidget {
                     backgroundColor: color,
                     child: CircleAvatar(
                       radius: (size / 2) - 4,
-                      // ✅ Reemplazo de AssetImage → OptimizedImage
+                      backgroundColor: Colors.black12,
                       child: ClipOval(
                         child: avatarPath.isEmpty
                             ? const ColoredBox(color: Colors.transparent)
@@ -546,7 +544,6 @@ class _PodiumPlace extends StatelessWidget {
                                 enableCache: true,
                               ),
                       ),
-                      backgroundColor: Colors.black12,
                     ),
                   ),
                   Positioned(
@@ -556,25 +553,32 @@ class _PodiumPlace extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 14,
                       backgroundColor: color,
-                      child: Text('$place',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                              fontSize: 16)),
+                      child: Text(
+                        '$place',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   )
                 ],
               ),
               const SizedBox(height: 16),
-              Text(user.profileName,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-              Text('${user.totalScore} Pts',
-                  style: textTheme.bodySmall
-                      ?.copyWith(color: color, fontWeight: FontWeight.bold)),
+              Text(
+                user.profileName,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${user.totalScore} Pts',
+                style: textTheme.bodySmall
+                    ?.copyWith(color: color, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),
@@ -584,10 +588,16 @@ class _PodiumPlace extends StatelessWidget {
 }
 
 class _CurrentUserBanner extends StatelessWidget {
-  // ... (Sin cambios)
   final RankingModel user;
   final ColorScheme colors;
-  const _CurrentUserBanner({required this.user, required this.colors});
+  final List<AvatarModel>? avatarsList; // <--- AÑADIDO AQUÍ
+
+  const _CurrentUserBanner({
+    required this.user,
+    required this.colors,
+    this.avatarsList, // <--- AÑADIDO AL CONSTRUCTOR
+  });
+
   @override
   Widget build(BuildContext context) {
     return FadeInUp(
@@ -602,12 +612,18 @@ class _CurrentUserBanner extends StatelessWidget {
           color: colors.primaryContainer,
           boxShadow: [
             BoxShadow(
-                color: colors.primary.withAlpha(77),
-                blurRadius: 10,
-                offset: const Offset(0, 4))
+              color: colors.primary.withAlpha(77),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
-        child: RankingTile(user: user, isCurrentUser: true, colors: colors),
+        child: RankingTile(
+          user: user,
+          isCurrentUser: true,
+          colors: colors,
+          avatarsList: avatarsList, // <--- PASADO AL TILE
+        ),
       ),
     );
   }

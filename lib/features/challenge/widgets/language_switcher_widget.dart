@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
+
+// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
+// --- FIN MODIFICACIÓN ---
+
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -58,13 +63,9 @@ class _LanguageSwitcherWidgetState
 
       if (mounted) {
         // Mostrar confirmación
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Cambiado a $languageName'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
+        showSuccessSnackbar(context, 'Cambiado', 'Cambiado a $languageName');
+        // --- FIN MODIFICACIÓN ---
 
         // Colapsar el widget
         setState(() {
@@ -74,12 +75,9 @@ class _LanguageSwitcherWidgetState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
+        showErrorSnackbar(context, 'Error', 'Error: $e');
+        // --- FIN MODIFICACIÓN ---
         setState(() => _isLoading = false);
       }
     }
@@ -129,9 +127,7 @@ class _LanguageSwitcherWidgetState
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
           // Header - Siempre visible
@@ -186,8 +182,10 @@ class _LanguageSwitcherWidgetState
 
                   // Badge de lenguajes desbloqueados
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
@@ -240,86 +238,85 @@ class _LanguageSwitcherWidgetState
                       ...unlockedLanguages.map((language) {
                         final isCurrentLanguage =
                             language.trim().toLowerCase() ==
-                                currentLanguage.trim().toLowerCase();
+                            currentLanguage.trim().toLowerCase();
                         final color = _getLanguageColor(language);
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          child: InkWell(
-                            onTap: isCurrentLanguage || _isLoading
-                                ? null
-                                : () => _switchLanguage(language),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isCurrentLanguage
-                                    ? color.withValues(alpha: 0.15)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isCurrentLanguage
-                                      ? color
-                                      : Colors.transparent,
-                                  width: 2,
-                                ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _getLanguageIcon(language),
+                              child: InkWell(
+                                onTap: isCurrentLanguage || _isLoading
+                                    ? null
+                                    : () => _switchLanguage(language),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
                                     color: isCurrentLanguage
-                                        ? color
-                                        : Colors.grey,
-                                    size: 20,
+                                        ? color.withValues(alpha: 0.15)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isCurrentLanguage
+                                          ? color
+                                          : Colors.transparent,
+                                      width: 2,
+                                    ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      language.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: isCurrentLanguage
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _getLanguageIcon(language),
                                         color: isCurrentLanguage
                                             ? color
-                                            : Colors.grey[700],
+                                            : Colors.grey,
+                                        size: 20,
                                       ),
-                                    ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          language.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: isCurrentLanguage
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: isCurrentLanguage
+                                                ? color
+                                                : Colors.grey[700],
+                                          ),
+                                        ),
+                                      ),
+                                      if (isCurrentLanguage)
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: color,
+                                          size: 20,
+                                        )
+                                      else if (_isLoading)
+                                        const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      else
+                                        const Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 16,
+                                          color: Colors.grey,
+                                        ),
+                                    ],
                                   ),
-                                  if (isCurrentLanguage)
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: color,
-                                      size: 20,
-                                    )
-                                  else if (_isLoading)
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  else
-                                    const Icon(
-                                      Icons.arrow_forward_ios,
-                                      size: 16,
-                                      color: Colors.grey,
-                                    ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ),
-                        ).animate().fadeIn(duration: 200.ms).slideX(
-                              begin: -0.1,
-                              end: 0,
-                              duration: 300.ms,
-                            );
+                            )
+                            .animate()
+                            .fadeIn(duration: 200.ms)
+                            .slideX(begin: -0.1, end: 0, duration: 300.ms);
                       }),
                       const SizedBox(height: 8),
                     ],

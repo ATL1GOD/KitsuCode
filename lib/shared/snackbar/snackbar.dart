@@ -1,3 +1,4 @@
+//ruta: lib/shared/snackbar/snackbar.dart
 import 'package:flutter/material.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 

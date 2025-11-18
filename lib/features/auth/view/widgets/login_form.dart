@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart'; // <-- AÑADIDO
+import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
   final VoidCallback onSwitchToRegister;
@@ -18,13 +19,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // --- MEJORA: Control de visibilidad de errores ---
   bool _showError = false;
 
   @override
   void initState() {
     super.initState();
-    // --- MEJORA: Limpiar errores cuando se modifica el texto ---
     _emailController.addListener(_clearErrors);
     _passwordController.addListener(_clearErrors);
   }
@@ -32,7 +31,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   void _clearErrors() {
     if (_showError) {
       setState(() => _showError = false);
-      // Limpiar errores en el state provider
       ref.read(loginStateProvider.notifier).clearError();
     }
   }
@@ -57,25 +55,15 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // --- MEJORA: Feedback positivo ---
+        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Inicio de sesión exitoso!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showSuccessSnackbar(context, '¡Éxito!', 'Inicio de sesión exitoso.');
         }
       } catch (e) {
         setState(() => _showError = true);
+        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4), // Más tiempo para leer
-            ),
-          );
+          showErrorSnackbar(context, 'Error', e.toString());
         }
       }
     }
@@ -85,14 +73,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     try {
       await ref.read(loginStateProvider.notifier).signInWithGoogle();
     } catch (e) {
+      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error con Google: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        showErrorSnackbar(context, 'Error con Google', e.toString());
       }
     }
   }
@@ -118,7 +101,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 if (value == null || value.isEmpty) {
                   return 'Por favor ingresa un correo';
                 }
-                // --- MEJORA: Validación de formato de email ---
                 if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
                   return 'Ingresa un correo válido';
                 }
@@ -139,7 +121,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   : null,
             ),
           ),
-          // --- MEJORA: Mensaje de error persistente ---
           if (_showError && loginState.hasError) ...[
             const SizedBox(height: 8),
             AnimatedFadeIn(
@@ -183,12 +164,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   : widget.onSwitchToRegister,
             ),
           ),
-          // --- MEJORA: Enlace de recuperación de contraseña ---
           const SizedBox(height: 8),
           AnimatedFadeIn(
             delay: 700,
             child: TextButton(
-              // --- CAMBIO AQUÍ ---
               onPressed: () {
                 context.go('/forgot-password');
               },
@@ -200,7 +179,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               ),
             ),
           ),
-          // --- ¡NUEVO BOTÓN AÑADIDO AQUÍ! ---
           const SizedBox(height: 4),
           AnimatedFadeIn(
             delay: 800,

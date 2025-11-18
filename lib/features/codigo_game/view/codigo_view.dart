@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
 
+// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
+// --- FIN MODIFICACIÓN ---
+
 // --- Importaciones para la puntuación y navegación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -253,12 +257,13 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
               } catch (e) {
                 // Mostrar error al usuario
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al enviar resultado: $e'),
-                      backgroundColor: Colors.red,
-                    ),
+                  // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
+                  showErrorSnackbar(
+                    context,
+                    'Error',
+                    'Error al enviar resultado: $e',
                   );
+                  // --- FIN MODIFICACIÓN ---
                 }
               }
             },

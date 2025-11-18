@@ -1,10 +1,10 @@
-// lib/widgets/optimized_image.dart
+// lib/shared/optimized_image/optimizador_imagenes.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/scheduler.dart';
+// import 'package:flutter/scheduler.dart'; // <-- Ya no se necesita
 
-// ... (OptimizedImage class sin cambios) ...
-class OptimizedImage extends StatefulWidget {
+// CAMBIO GRANDE: Convertido de StatefulWidget a StatelessWidget
+class OptimizedImage extends StatelessWidget {
   final String imagePath;
   final double width;
   final double height;
@@ -22,81 +22,11 @@ class OptimizedImage extends StatefulWidget {
     this.isLocalAsset = false,
   });
 
-  @override
-  State<OptimizedImage> createState() => _OptimizedImageState();
-}
+  // --- TODA LA LÓGICA DE STATE (initState, _shouldLoad, etc.) SE HA IDO ---
 
-
-class _OptimizedImageState extends State<OptimizedImage> {
-  String _optimizedUrl = '';
-  bool _shouldLoad = false;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scheduleLoad();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (!_isInitialized) {
-      _optimizedUrl = _getOptimizedUrl();
-      _isInitialized = true;
-      // debug
-      // AQUÍ 👇
-      /* debugPrint(
-        '[OptimizedImage] didChangeDependencies -> url=$_optimizedUrl path=${widget.imagePath}',
-      );
-      */
-    }
-  }
-
-  /// 👇 AQUÍ ESTÁ LA MAGIA
-  /// Cuando cambie el `imagePath` (o tamaño), recalculamos la URL
-  @override
-  void didUpdateWidget(covariant OptimizedImage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    final bool pathChanged = oldWidget.imagePath != widget.imagePath;
-    final bool sizeChanged =
-        oldWidget.width != widget.width || oldWidget.height != widget.height;
-    final bool localFlagChanged =
-        oldWidget.isLocalAsset != widget.isLocalAsset;
-
-    if (pathChanged || sizeChanged || localFlagChanged) {
-      _optimizedUrl = _getOptimizedUrl();
-      _isInitialized = true;
-
-      // Y AQUÍ 👇
-      /*
-      debugPrint(
-        '[OptimizedImage] didUpdateWidget -> '
-        'old=${oldWidget.imagePath} new=${widget.imagePath} url=$_optimizedUrl',
-      );
-      */
-
-      // Opcional: forzar pequeño “reload” visual
-      _shouldLoad = false;
-      _scheduleLoad();
-    }
-  }
-
-  void _scheduleLoad() {
-    // Carga en el siguiente frame para no bloquear la UI
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _shouldLoad = true;
-        });
-      }
-    });
-  }
-
-  String _getOptimizedUrl() {
-    if (widget.isLocalAsset) return widget.imagePath;
+  // La función ahora recibe 'context' porque lo necesita para el MediaQuery
+  String _getOptimizedUrl(BuildContext context) {
+    if (isLocalAsset) return imagePath;
 
     const projectId = 'dagwwsclohbjsmxseuqd';
     const bucketName = 'assets';
@@ -104,10 +34,9 @@ class _OptimizedImageState extends State<OptimizedImage> {
     final mediaQuery = MediaQuery.of(context);
     final devicePixelRatio = mediaQuery.devicePixelRatio;
 
-    final targetWidth = (widget.width * devicePixelRatio).round();
+    final targetWidth = (width * devicePixelRatio).round();
 
-    return 'https://'
-        '$projectId.supabase.co/storage/v1/object/public/$bucketName/${widget.imagePath}'
+    return 'https://$projectId.supabase.co/storage/v1/object/public/$bucketName/$imagePath'
         '?width=$targetWidth'
         '&quality=${_calculateQuality(devicePixelRatio)}'
         '&format=webp'
@@ -122,59 +51,65 @@ class _OptimizedImageState extends State<OptimizedImage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_shouldLoad || !_isInitialized) {
-      return _buildSkeletonWidget();
+    // Ya no hay 'if (!_shouldLoad ...)'
+
+    // 1. Manejar assets locales primero
+    if (isLocalAsset) {
+      return _buildLocalImage(context);
     }
 
-    final bool isNetworkImage =
-        !widget.isLocalAsset && _optimizedUrl.startsWith('http');
+    // 2. Calcular la URL aquí, es súper rápido
+    final String optimizedUrl = _getOptimizedUrl(context);
 
-    // Assets locales
-    if (!isNetworkImage) {
-      return _buildLocalImage();
+    // 3. Manejar imágenes de red sin caché
+    if (!enableCache) {
+      return _buildNetworkImageWithoutCache(context, optimizedUrl);
     }
 
-    if (!widget.enableCache) {
-      return _buildNetworkImageWithoutCache();
-    }
-
-    return _buildCachedNetworkImage();
+    // 4. El caso principal: Imagen de red cacheada
+    // Esto irá directo a la caché de MEMORIA y no parpadeará
+    return _buildCachedNetworkImage(context, optimizedUrl);
   }
 
-  Widget _buildLocalImage() {
+  // --- Los widgets de construcción ahora reciben 'context' ---
+
+  Widget _buildLocalImage(BuildContext context) {
     return Image.asset(
-      widget.imagePath,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      cacheWidth: (widget.width * 2).round(),
-      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+      imagePath,
+      width: width,
+      height: height,
+      fit: fit,
+      cacheWidth: (width * 2).round(),
+      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context),
     );
   }
 
-  Widget _buildCachedNetworkImage() {
+  Widget _buildCachedNetworkImage(BuildContext context, String imageUrl) {
     return CachedNetworkImage(
-      imageUrl: _optimizedUrl,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      fadeInDuration: const Duration(milliseconds: 300),
+      imageUrl: imageUrl,
+      width: width,
+      height: height,
+      fit: fit,
+      // ESTA ES LA CLAVE: Si está en memoria, la muestra en 0ms (sin fade)
+      fadeInDuration: const Duration(milliseconds: 0),
+      // Un fade-out suave si la URL cambia
       fadeOutDuration: const Duration(milliseconds: 200),
       useOldImageOnUrlChange: true,
-      memCacheWidth: (widget.width * 2).round(),
-      memCacheHeight: (widget.height * 2).round(),
-      placeholder: (context, url) => _buildSkeletonWidget(),
-      errorWidget: (context, url, error) => _buildErrorWidget(),
+      memCacheWidth: (width * 2).round(),
+      memCacheHeight: (height * 2).round(),
+      placeholder: (context, url) => _buildSkeletonWidget(context),
+      errorWidget: (context, url, error) => _buildErrorWidget(context),
     );
   }
 
-  Widget _buildNetworkImageWithoutCache() {
+  Widget _buildNetworkImageWithoutCache(
+      BuildContext context, String imageUrl) {
     return Image.network(
-      _optimizedUrl,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-      cacheWidth: (widget.width * 2).round(),
+      imageUrl,
+      width: width,
+      height: height,
+      fit: fit,
+      cacheWidth: (width * 2).round(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded) return child;
         return AnimatedOpacity(
@@ -186,16 +121,16 @@ class _OptimizedImageState extends State<OptimizedImage> {
       },
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
-        return _buildSkeletonWidget();
+        return _buildSkeletonWidget(context);
       },
-      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(),
+      errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context),
     );
   }
 
-  Widget _buildSkeletonWidget() {
+  Widget _buildSkeletonWidget(BuildContext context) {
     return Container(
-      width: widget.width,
-      height: widget.height,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(4),
@@ -203,17 +138,16 @@ class _OptimizedImageState extends State<OptimizedImage> {
       child: Icon(
         Icons.photo,
         color: Colors.grey[300],
-        size: widget.width * 0.2,
+        size: width * 0.2,
       ),
     );
   }
 
-  Widget _buildErrorWidget() {
-    final minSize =
-        widget.width < widget.height ? widget.width : widget.height;
+  Widget _buildErrorWidget(BuildContext context) {
+    final minSize = width < height ? width : height;
     return Container(
-      width: widget.width,
-      height: widget.height,
+      width: width,
+      height: height,
       color: Theme.of(context).colorScheme.surfaceContainer,
       child: Icon(
         Icons.broken_image,
@@ -224,7 +158,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
   }
 }
 
-// ... (OptimizedImageListTile sin cambios) ...
 class OptimizedImageListTile extends StatelessWidget {
   final String imagePath;
   final double width;
@@ -247,6 +180,11 @@ class OptimizedImageListTile extends StatelessWidget {
       height: height,
       fit: fit,
       enableCache: true,
+      // AÑADIDO: Asumimos que OptimizedImageListTile
+      // también podría manejar assets locales.
+      // Si siempre son de red, puedes quitar esto.
+      isLocalAsset:
+          !imagePath.startsWith('http') && !imagePath.startsWith('avatares/'),
     );
   }
 }

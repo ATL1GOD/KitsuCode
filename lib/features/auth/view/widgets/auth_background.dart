@@ -116,7 +116,7 @@ class _AuthBackgroundState extends State<AuthBackground>
                           if (!isSmallScreen && widget.showFox) ...[
                             // <-- Check
                             Image.asset(
-                              'assets/images/auth/fox_login.png',
+                              'assets/images/auth/fox_login.webp',
                               height: 280,
                             ),
                             const SizedBox(height: 24),

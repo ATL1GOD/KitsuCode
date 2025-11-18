@@ -148,7 +148,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             delay: 500,
             child: SocialAuthButton(
               text: 'Continuar con Google',
-              iconPath: 'assets/images/auth/google_logo.png',
+              iconPath: 'assets/images/auth/google_logo.webp',
               isLoading: loginState.isLoading,
               onPressed: loginState.isLoading ? null : _googleSignIn,
             ),

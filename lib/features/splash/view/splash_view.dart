@@ -8,7 +8,6 @@ import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 
-
 const Color _kitsuOrange = Color(0xFFf79126);
 
 class SplashView extends ConsumerStatefulWidget {
@@ -20,7 +19,6 @@ class SplashView extends ConsumerStatefulWidget {
 
 class _SplashViewState extends ConsumerState<SplashView>
     with TickerProviderStateMixin {
-
   static const String _word = 'KITSUCODE';
 
   late AnimationController _controller;
@@ -34,47 +32,47 @@ class _SplashViewState extends ConsumerState<SplashView>
   late ProviderSubscription<AsyncValue<void>> _bootstrapSub;
 
   void _tryNavigate() {
-  if (_navigated) return;
-  if (!_bootstrapDone || !_animationDone) return;
+    if (_navigated) return;
+    if (!_bootstrapDone || !_animationDone) return;
 
-  _navigated = true;
-  FlutterNativeSplash.remove();
+    _navigated = true;
+    FlutterNativeSplash.remove();
 
-  // 🔥 VERIFICAR CONECTIVIDAD ANTES DE NAVEGAR
-  final connectivityState = ref.read(initialConnectivityProvider);
-  
-  connectivityState.when(
-    data: (status) {
-      if (status == ConnectivityStatus.offline) {
-        // Si no hay internet, ir a NoInternetView
+    // 🔥 VERIFICAR CONECTIVIDAD ANTES DE NAVEGAR
+    final connectivityState = ref.read(initialConnectivityProvider);
+
+    connectivityState.when(
+      data: (status) {
+        if (status == ConnectivityStatus.offline) {
+          // Si no hay internet, ir a NoInternetView
+          context.go('/no-internet');
+          return;
+        }
+
+        // Si hay internet, navegación normal según autenticación
+        final isLogged = ref.read(authStateProvider).value?.session != null;
+        if (isLogged) {
+          context.go('/home');
+        } else {
+          context.go('/auth');
+        }
+      },
+      loading: () {
+        // Mientras verifica conectividad, esperar un poco
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          _tryNavigate(); // Reintentar
+        });
+      },
+      error: (_, __) {
+        // Si hay error verificando, asumir sin internet
         context.go('/no-internet');
-        return;
-      }
-      
-      // Si hay internet, navegación normal según autenticación
-      final isLogged = ref.read(authStateProvider).value?.session != null;
-      if (isLogged) {
-        context.go('/home');
-      } else {
-        context.go('/auth');
-      }
-    },
-    loading: () {
-      // Mientras verifica conectividad, esperar un poco
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!mounted) return;
-        _tryNavigate(); // Reintentar
-      });
-    },
-    error: (_, __) {
-      // Si hay error verificando, asumir sin internet
-      context.go('/no-internet');
-    },
-  );
-}
+      },
+    );
+  }
 
   void _setupAnimation() {
-    const double totalDuration = 3.0; 
+    const double totalDuration = 3.0;
     const double letterDuration = 0.25;
     const double letterDelay = 0.10;
 
@@ -116,8 +114,10 @@ class _SplashViewState extends ConsumerState<SplashView>
   void _listenBootstrap() {
     ref.read(bootstrapProvider);
 
-    _bootstrapSub =
-        ref.listenManual<AsyncValue<void>>(bootstrapProvider, (_, next) {
+    _bootstrapSub = ref.listenManual<AsyncValue<void>>(bootstrapProvider, (
+      _,
+      next,
+    ) {
       next.whenOrNull(
         data: (_) {
           _bootstrapDone = true;
@@ -140,7 +140,7 @@ class _SplashViewState extends ConsumerState<SplashView>
 
     // 🔥 LA CLAVE: ESPERAR A QUE LA SPLASH NATIVA SE HAYA IDO COMPLETAMENTE
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(const Duration(milliseconds: 120)); 
+      await Future.delayed(const Duration(milliseconds: 120));
       // ⬆ Pequeño delay para asegurar que ya no está la splash nativa
       _controller.forward();
     });
@@ -163,10 +163,7 @@ class _SplashViewState extends ConsumerState<SplashView>
         fit: StackFit.expand,
         children: [
           Center(
-            child: Image.asset(
-              'assets/images/auth/fox_login.png',
-              width: 150,
-            ),
+            child: Image.asset('assets/images/auth/fox_login.webp', width: 150),
           ),
 
           Positioned(

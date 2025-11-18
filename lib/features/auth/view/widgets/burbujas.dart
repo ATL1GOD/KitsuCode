@@ -77,7 +77,7 @@
 //                     crossAxisAlignment: CrossAxisAlignment.stretch,
 //                     children: [
 //                       Image.asset(
-//                         'assets/images/fox_login.png',
+//                         'assets/images/fox_login.webp',
 //                         height: widget.isMobile ? 340 : 420,
 //                       ),
 //                       const SizedBox(height: 1),

@@ -9,9 +9,9 @@ import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 // --- Íconos de lenguajes (assets locales) ---
 const Map<int, String> _languageAssets = {
-  1: 'assets/images/logo_c.png',
-  2: 'assets/images/logo_java.png',
-  3: 'assets/images/logo_python.png',
+  1: 'assets/images/logo_c.webp',
+  2: 'assets/images/logo_java.webp',
+  3: 'assets/images/logo_python.webp',
 };
 
 Color _getRankColor(String rank) {
@@ -435,11 +435,11 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          _buildIcon(context, 'assets/images/logo_python.png', _animations[0], 50),
-          _buildIcon(context, 'assets/images/logo_java.png', _animations[1], 60),
-          _buildIcon(context, 'assets/images/logo_c.png', _animations[2], 70),
-          _buildIcon(context, 'assets/images/logo_python.png', _animations[3], 40),
-          _buildIcon(context, 'assets/images/logo_java.png', _animations[4], 55),
+          _buildIcon(context, 'assets/images/logo_python.webp', _animations[0], 50),
+          _buildIcon(context, 'assets/images/logo_java.webp', _animations[1], 60),
+          _buildIcon(context, 'assets/images/logo_c.webp', _animations[2], 70),
+          _buildIcon(context, 'assets/images/logo_python.webp', _animations[3], 40),
+          _buildIcon(context, 'assets/images/logo_java.webp', _animations[4], 55),
         ],
       ),
     );

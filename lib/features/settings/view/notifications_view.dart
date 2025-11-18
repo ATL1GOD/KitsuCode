@@ -16,6 +16,8 @@ import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 // 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+// ✅ Fallback consistente al color dinámico previo
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 // --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class NotificationsView extends ConsumerStatefulWidget {
@@ -54,9 +56,14 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
     });
   }
 
-  // --- (Tus métodos helper no cambian) ---
+  // --- Helpers de color dinámico e íconos ---
+  // ✅ Usa la lista real de avatares desde el provider (BD). Fallback al método previo.
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
-    return getAvatarColorById(profile.idAvatarSeleccionado);
+    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+    if (avatarsList.isNotEmpty) {
+      return getAvatarColorById(profile.idAvatarSeleccionado, avatarsList);
+    }
+    return AllStatsView.getHeaderColor(profile, colors);
   }
 
   IconData _getIconForCategory(String categoryName) {
@@ -229,11 +236,11 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                             );
 
                             final streakReminderSetting =
-                              visibleSettings.firstWhereOrNull(
-                            (s) =>
-                                s.nombreTipo.trim() ==
-                                'Recordatorio de Racha',
-                          );
+                                visibleSettings.firstWhereOrNull(
+                              (s) =>
+                                  s.nombreTipo.trim() ==
+                                  'Recordatorio de Racha',
+                            );
                             final amigosSettings = visibleSettings
                                 .where(
                                   (s) =>
@@ -304,24 +311,27 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                     ),
                                   ),
                                   if (streakReminderSetting != null)
-                              FadeInDown(
-                                delay: const Duration(milliseconds: 350),
-                                child: SettingsSwitchTile(
-                                  title: 'Recordatorio de Racha',
-                                  subtitle: 'Alertas para no perder tu racha',
-                                  icon: Icons.local_fire_department_outlined, // Icono de fuego
-                                  dynamicColor: dynamicColor,
-                                  initialValue: streakReminderSetting.habilitado,
-                                  onChanged: (newValue) {
-                                    ref
-                                        .read(notificationSettingsProvider.notifier)
-                                        .updateEnabled(
-                                          streakReminderSetting.preferenciaId,
-                                          newValue,
-                                        );
-                                  },
-                                ),
-                              ),
+                                    FadeInDown(
+                                      delay: const Duration(milliseconds: 350),
+                                      child: SettingsSwitchTile(
+                                        title: 'Recordatorio de Racha',
+                                        subtitle: 'Alertas para no perder tu racha',
+                                        icon: Icons.local_fire_department_outlined,
+                                        dynamicColor: dynamicColor,
+                                        initialValue:
+                                            streakReminderSetting.habilitado,
+                                        onChanged: (newValue) {
+                                          ref
+                                              .read(notificationSettingsProvider
+                                                  .notifier)
+                                              .updateEnabled(
+                                                streakReminderSetting
+                                                    .preferenciaId,
+                                                newValue,
+                                              );
+                                        },
+                                      ),
+                                    ),
                                 ],
                                 FadeInDown(
                                   delay: const Duration(milliseconds: 400),

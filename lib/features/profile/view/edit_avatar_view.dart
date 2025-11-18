@@ -40,8 +40,12 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final avatarsAsync = ref.watch(currentUserAvatarsProvider);
+    final avatarsValue = avatarsAsync.valueOrNull;
 
-    final dynamicBgColor = getAvatarColorById(_selectedAvatarId);
+    // ✅ Usa el color_primario de la BD del avatar seleccionado
+    final dynamicBgColor = avatarsValue != null
+        ? getAvatarColorById(_selectedAvatarId, avatarsValue)
+        : Colors.grey; // placeholder mientras carga
 
     return Scaffold(
       body: AnimatedContainer(
@@ -114,6 +118,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
               ),
               const SizedBox(height: 20),
 
+              // ✅ Vista previa con assetPath real y color de BD
               FadeIn(
                 delay: const Duration(milliseconds: 200),
                 duration: const Duration(milliseconds: 500),
@@ -175,12 +180,11 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                         child: GridView.builder(
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 15,
-                                mainAxisSpacing: 15,
-                                childAspectRatio:
-                                    1.0, // ✅ Esto mantiene los círculos perfectos
-                              ),
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 15,
+                            mainAxisSpacing: 15,
+                            childAspectRatio: 1.0, // círculos perfectos
+                          ),
                           itemCount: filteredAvatars.length,
                           itemBuilder: (context, index) {
                             final avatar = filteredAvatars[index];
@@ -188,13 +192,10 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                             return _CircularAvatarCell(
                               avatar: avatar,
                               isSelected: isSelected,
-                              // ✅ 2. LÓGICA DE ONTAP ACTUALIZADA
                               onTap: () {
                                 if (avatar.desbloqueado) {
-                                  // Si está desbloqueado, lo selecciona
                                   setState(() => _selectedAvatarId = avatar.id);
                                 } else {
-                                  // Si está bloqueado, muestra el modal
                                   AvatarModal.show(context, avatar: avatar);
                                 }
                               },
@@ -225,7 +226,6 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
 // --- WIDGETS DE UI ---
 
 class _SelectedAvatarDisplay extends ConsumerWidget {
-  // 1. Cambia a ConsumerWidget
   final int avatarId;
   final double size;
   final Color dynamicColor;
@@ -238,23 +238,17 @@ class _SelectedAvatarDisplay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 2. Añade WidgetRef
     final colors = Theme.of(context).colorScheme;
 
-    // 3. Obtén el path REAL desde el provider
-    final String avatarPath = ref
-        .watch(currentUserAvatarsProvider)
-        .when(
+    // ✅ Usa el assetPath real desde el provider
+    final String avatarPath = ref.watch(currentUserAvatarsProvider).when(
           data: (avatars) {
-            // Busca el avatar por ID en la lista cargada
             final avatar = avatars.firstWhere(
               (a) => a.id == avatarId,
-              // Si no lo encuentra (raro), usa el primer avatar por defecto
               orElse: () => avatars.first,
             );
             return avatar.assetPath;
           },
-          // Mientras carga o hay error, muestra una ruta vacía
           loading: () => '',
           error: (e, s) => '',
         );
@@ -277,7 +271,6 @@ class _SelectedAvatarDisplay extends ConsumerWidget {
       child: ClipOval(
         child: Container(
           color: Colors.transparent,
-          // 4. Usa el nuevo widget con el path correcto
           child: (avatarPath.isEmpty)
               ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
               : OptimizedImage(
@@ -313,14 +306,11 @@ class _CategoryIconButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected
-              ? colors.primary
-              : colors.surfaceContainer.withOpacity(0.2),
+          color:
+              isSelected ? colors.primary : colors.surfaceContainer.withOpacity(0.2),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected
-                ? colors.secondary
-                : colors.primary.withOpacity(0.3),
+            color: isSelected ? colors.secondary : colors.primary.withOpacity(0.3),
             width: isSelected ? 3 : 1.5,
           ),
           boxShadow: isSelected
@@ -402,8 +392,6 @@ class _CircularAvatarCell extends StatelessWidget {
                             ),
                       child: Container(
                         color: Colors.transparent,
-
-                        // Antes era Image.asset(...)
                         child: OptimizedImage(
                           imagePath: avatar.assetPath,
                           fit: BoxFit.cover,

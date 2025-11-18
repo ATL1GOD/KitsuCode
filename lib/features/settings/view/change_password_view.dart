@@ -6,9 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:animate_do/animate_do.dart'; // <--- REINSTALADO
-import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // Para getHeaderColor
-import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart'; // Importa SectionHeader
+import 'package:animate_do/animate_do.dart'; // Animaciones
+import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // Fallback de color
+import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart'; // SectionHeader
+
+// ✅ NUEVOS/ACLARADOS
+import 'package:kitsucode/shared/widgets/static_settings_background.dart'; // Fondo estático compartido
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // getAvatarColorById
 
 class ChangePasswordView extends ConsumerStatefulWidget {
   const ChangePasswordView({super.key});
@@ -32,30 +36,21 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
     super.dispose();
   }
 
-  // --- VALIDACIÓN DE CONTRASEÑA (Sin cambios) ---
   String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.isEmpty)
       return 'La contraseña no puede estar vacía';
-    }
-    if (value.length < 8) {
-      return 'Debe tener al menos 8 caracteres';
-    }
-    if (!value.contains(RegExp(r'[A-Z]'))) {
+    if (value.length < 8) return 'Debe tener al menos 8 caracteres';
+    if (!value.contains(RegExp(r'[A-Z]')))
       return 'Debe tener al menos una mayúscula';
-    }
-    if (!value.contains(RegExp(r'[a-z]'))) {
+    if (!value.contains(RegExp(r'[a-z]')))
       return 'Debe tener al menos una minúscula';
-    }
-    if (!value.contains(RegExp(r'[0-9]'))) {
+    if (!value.contains(RegExp(r'[0-9]')))
       return 'Debe tener al menos un número';
-    }
-    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')))
       return 'Debe tener al menos un símbolo';
-    }
     return null;
   }
 
-  // --- LÓGICA DE SUBMIT (Sin cambios) ---
   void _submitChangePassword() async {
     final isFormValid = _formKey.currentState!.validate();
     if (!isFormValid) {
@@ -103,15 +98,11 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
       );
       return;
     }
+
     setState(() => _isLoading = true);
     try {
-      // --- 1. OBTENER EL REPOSITORIO UNA VEZ ---
       final authRepo = await ref.read(authRepositoryProvider.future);
-
-      // --- 2. USAR EL REPOSITORIO OBTENIDO ---
       await authRepo.reauthenticate(_currentPasswordController.text);
-
-      // --- 3. USARLO DE NUEVO ---
       await authRepo.changePassword(_newPasswordController.text);
       if (mounted) {
         showSuccessSnackbar(
@@ -130,9 +121,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -156,24 +145,16 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
-          final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
+          // ✅ Color dinámico desde BD (con fallback al método previo)
+          final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+          final dynamicColor = avatarsList.isNotEmpty
+              ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+              : AllStatsView.getHeaderColor(profile, colors);
 
           return Stack(
             children: [
-              // --- FONDO (Estático) ---
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      dynamicColor.withAlpha(100),
-                      colors.surfaceContainerLowest,
-                    ],
-                    stops: const [0.0, 0.7],
-                  ),
-                ),
-              ),
+              // ✅ USAR el fondo estático compartido (como en SupportView)
+              StaticSettingsBackground(profile: profile, colors: colors),
 
               SafeArea(
                 child: Column(
@@ -218,7 +199,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                       ),
                     ),
 
-                    // --- LISTVIEW (Formulario) ---
+                    // --- FORMULARIO ---
                     Expanded(
                       child: Form(
                         key: _formKey,
@@ -228,26 +209,20 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                             vertical: 12.0,
                           ),
                           children: [
-                            // --- IMAGEN DEL ZORRO (Con FadeInDown, y colapsando con teclado) ---
+                            // Fox image colapsa con teclado (igual que tenías)
                             FadeInDown(
-                              // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 100),
                               child: AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 250),
-                                transitionBuilder:
-                                    (
-                                      Widget child,
-                                      Animation<double> animation,
-                                    ) {
-                                      return FadeTransition(
-                                        opacity: animation,
-                                        child: SizeTransition(
-                                          sizeFactor: animation,
-                                          axisAlignment: -1.0,
-                                          child: child,
-                                        ),
-                                      );
-                                    },
+                                transitionBuilder: (child, animation) =>
+                                    FadeTransition(
+                                      opacity: animation,
+                                      child: SizeTransition(
+                                        sizeFactor: animation,
+                                        axisAlignment: -1.0,
+                                        child: child,
+                                      ),
+                                    ),
                                 child: !isKeyboardVisible
                                     ? Padding(
                                         key: const ValueKey('fox-image'),
@@ -255,7 +230,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                           vertical: 16.0,
                                         ),
                                         child: Image.asset(
-                                          'assets/images/auth/fox_login.webp',
+                                          'assets/images/auth/fox_login.png',
                                           height: 180,
                                         ),
                                       )
@@ -265,9 +240,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // --- Sección de Credenciales (Con FadeInDown) ---
                             FadeInDown(
-                              // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 200),
                               child: SectionHeader(
                                 title: 'Credenciales',
@@ -276,9 +249,8 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // --- CAMPO 1 (Con FadeInDown) ---
+                            // Campo 1
                             FadeInDown(
-                              // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 300),
                               child: _TextFieldWrapper(
                                 dynamicColor: dynamicColor,
@@ -303,17 +275,15 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                     errorBorder: InputBorder.none,
                                     focusedErrorBorder: InputBorder.none,
                                   ),
-                                  validator: (value) =>
-                                      (value == null || value.isEmpty)
+                                  validator: (v) => (v == null || v.isEmpty)
                                       ? 'Ingresa tu contraseña actual'
                                       : null,
                                 ),
                               ),
                             ),
 
-                            // --- CAMPO 2 (Con FadeInDown) ---
+                            // Campo 2
                             FadeInDown(
-                              // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 400),
                               child: _TextFieldWrapper(
                                 dynamicColor: dynamicColor,
@@ -343,9 +313,8 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // --- CAMPO 3 (Con FadeInDown) ---
+                            // Campo 3
                             FadeInDown(
-                              // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 500),
                               child: _TextFieldWrapper(
                                 dynamicColor: dynamicColor,
@@ -370,8 +339,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                     errorBorder: InputBorder.none,
                                     focusedErrorBorder: InputBorder.none,
                                   ),
-                                  validator: (value) =>
-                                      (value == null || value.isEmpty)
+                                  validator: (v) => (v == null || v.isEmpty)
                                       ? 'Confirma tu contraseña'
                                       : null,
                                 ),
@@ -380,9 +348,8 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
 
                             const SizedBox(height: 24),
 
-                            // --- BOTÓN (Con FadeInDown) ---
+                            // Botón
                             FadeInDown(
-                              // <--- ANIMACIÓN REINSTALADA
                               delay: const Duration(milliseconds: 600),
                               child: _isLoading
                                   ? const Center(
@@ -424,7 +391,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
   }
 }
 
-// --- WRAPPER (Sin cambios) ---
 class _TextFieldWrapper extends StatelessWidget {
   final Widget child;
   final Color dynamicColor;
@@ -436,16 +402,13 @@ class _TextFieldWrapper extends StatelessWidget {
     final c = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      // Decoración idéntica a _BaseSettingsTile (o _StatsCard en apariencia)
       decoration: BoxDecoration(
-        color: c.surface.withAlpha(242), // .withOpacity(.95)
+        color: c.surface.withAlpha(242),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: dynamicColor.withAlpha(153),
-        ), // .withOpacity(.6)
+        border: Border.all(color: dynamicColor.withAlpha(153)),
         boxShadow: [
           BoxShadow(
-            color: dynamicColor.withAlpha(64), // .withOpacity(.25)
+            color: dynamicColor.withAlpha(64),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),

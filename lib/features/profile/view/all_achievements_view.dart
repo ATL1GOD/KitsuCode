@@ -13,11 +13,10 @@ import 'package:animate_do/animate_do.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 
-// 🔥 1. IMPORTAR VISIBILITY DETECTOR
+// ✅ NUEVO: para color de avatar desde BD
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-
-// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class AllAchievementsView extends ConsumerStatefulWidget {
   final String userId;
   const AllAchievementsView({super.key, required this.userId});
@@ -27,14 +26,11 @@ class AllAchievementsView extends ConsumerStatefulWidget {
       _AllAchievementsViewState();
 }
 
-// --- 🔥 3. AÑADIR ESTADO, TickerProviderStateMixin y WidgetsBindingObserver ---
 class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-      
   late final AnimationController _lottieController;
 
-  // Banderas de estado
-  bool _isPageVisible = true; // Esta vista no está en el Nav Bar, así que asumimos visible
+  bool _isPageVisible = true;
   bool _isAppActive = true;
   bool _isLottieLoaded = false;
 
@@ -69,6 +65,18 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
     }
   }
 
+  // ✅ Color dinámico desde BD con fallback seguro
+  Color _computeDynamicColor(
+    UserProfileModel profile,
+    ColorScheme colors,
+  ) {
+    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+    if (avatarsList.isNotEmpty) {
+      return getAvatarColorById(profile.idAvatarSeleccionado, avatarsList);
+    }
+    return AllStatsView.getHeaderColor(profile, colors);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -82,13 +90,9 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
       return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
     }
 
-    // --- 🔥 4. USAR widget.userId ---
     final profileState = ref.watch(userProfileByIdProvider(widget.userId));
     final achievementsState = ref.watch(userAchievementsProvider(widget.userId));
 
-    // --- 🔥 5. ENVOLVER EL SCAFFOLD CON VISIBILITYDETECTOR ---
-    // (Aunque esta página no está en el Nav Bar, es una buena práctica
-    // por si el usuario la deja y va a otra app)
     return VisibilityDetector(
       key: Key('all-achievements-detector-${widget.userId}'),
       onVisibilityChanged: (visibilityInfo) {
@@ -103,27 +107,30 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
           loading: () => _AchievementsLoadingShimmer(colors: colors),
           error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
           data: (profile) {
-            // --- 🔥 6. USAR widget.userId ---
             final isCurrentUser = widget.userId == currentAuthUserId;
-            final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
+            final dynamicColor = _computeDynamicColor(profile, colors);
 
             return Stack(
               children: [
+                // --- Fondo degradado con color del avatar (BD) ---
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          dynamicColor.withAlpha(100),
-                          colors.surfaceContainerLowest,
-                        ],
-                        stops: const [0.0, 0.7]),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        dynamicColor.withAlpha(100),
+                        colors.surfaceContainerLowest,
+                      ],
+                      stops: const [0.0, 0.7],
+                    ),
                   ),
                 ),
+
+                // --- Lottie tintado (sin withOpacity deprecado) ---
                 ColorFiltered(
                   colorFilter: ColorFilter.mode(
-                    colors.secondaryFixedDim.withOpacity(0.8),
+                    colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
                     BlendMode.srcIn,
                   ),
                   child: Lottie.asset(
@@ -131,7 +138,6 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
-                    // --- 🔥 7. ASIGNAR CONTROLADOR Y onLoaded ---
                     controller: _lottieController,
                     onLoaded: (composition) {
                       if (_lottieController.duration != composition.duration) {
@@ -142,10 +148,11 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                     },
                   ),
                 ),
+
                 SafeArea(
                   child: Column(
                     children: [
-                      // ... (Tu barra superior no cambia) ...
+                      // AppBar
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
@@ -157,13 +164,16 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
@@ -178,12 +188,14 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                           ],
                         ),
                       ),
+
+                      // Grid de logros
                       Expanded(
                         child: achievementsState.when(
                           loading: () =>
                               _AchievementsLoadingShimmer(colors: colors),
-                          error: (e, s) =>
-                              Center(child: Text('Error al cargar logros: $e')),
+                          error: (e, s) => Center(
+                              child: Text('Error al cargar logros: $e')),
                           data: (achievements) {
                             return _AchievementsGrid(
                               achievements: achievements,
@@ -206,14 +218,11 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
   }
 }
 
-// --- (El resto de widgets, _AchievementsGrid y _AchievementsLoadingShimmer,
-//      no cambian) ---
 class _AchievementsGrid extends StatelessWidget {
-  // ... (código sin cambios)
   final List<UserAchievementModel> achievements;
   final ColorScheme colors;
-  final UserProfileModel profile; // ✅ Recibimos el perfil
-  final bool isCurrentUser; // ✅ Recibimos el booleano
+  final UserProfileModel profile;
+  final bool isCurrentUser;
 
   const _AchievementsGrid({
     required this.achievements,
@@ -224,8 +233,6 @@ class _AchievementsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-    // 1. Separamos las listas en lugar de solo ordenarlas
     final unlockedAchievements =
         achievements.where((a) => a.obtenido).toList();
     final lockedAchievements =
@@ -237,7 +244,6 @@ class _AchievementsGrid extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
       children: [
-        // --- Información de resumen (igual que antes) ---
         FadeInDown(
           child: Column(
             children: [
@@ -261,7 +267,6 @@ class _AchievementsGrid extends StatelessWidget {
           ),
         ),
 
-        // --- SECCIÓN 1: DESBLOQUEADOS ---
         if (unlockedAchievements.isNotEmpty) ...[
           _buildSectionHeader(
             textTheme,
@@ -271,7 +276,6 @@ class _AchievementsGrid extends StatelessWidget {
           _buildGridView(unlockedAchievements),
         ],
 
-        // --- SECCIÓN 2: PENDIENTES ---
         if (lockedAchievements.isNotEmpty) ...[
           _buildSectionHeader(
             textTheme,
@@ -281,15 +285,12 @@ class _AchievementsGrid extends StatelessWidget {
           _buildGridView(lockedAchievements),
         ],
 
-        // Espacio extra al final para que no quede pegado
         const SizedBox(height: 40),
       ],
     );
   }
 
-  // --- WIDGET HELPER PARA LOS TÍTULOS ---
-  Widget _buildSectionHeader(
-      TextTheme textTheme, String title, IconData icon) {
+  Widget _buildSectionHeader(TextTheme textTheme, String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(top: 30.0, bottom: 16.0, left: 4.0),
       child: Row(
@@ -308,14 +309,12 @@ class _AchievementsGrid extends StatelessWidget {
     );
   }
 
-  // --- WIDGET HELPER PARA LA CUADRÍCULA ---
   Widget _buildGridView(List<UserAchievementModel> items) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
-      // 🎯 OPTIMIZACIÓN: Añadir cacheExtent para pre-renderizar elementos
-      cacheExtent: 100.0, // Pre-renderiza ~100px fuera de viewport
+      cacheExtent: 100.0,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 0.75,
@@ -324,8 +323,6 @@ class _AchievementsGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final achievement = items[index];
-        // Usamos un delay menor para la segunda sección si quisiéramos,
-        // pero 50ms por item se ve bien.
         return FadeInUp(
           delay: Duration(milliseconds: 30 * index),
           duration: const Duration(milliseconds: 400),
@@ -344,7 +341,6 @@ class _AchievementsGrid extends StatelessWidget {
 }
 
 class _AchievementsLoadingShimmer extends StatelessWidget {
-  // ... (código sin cambios)
   final ColorScheme colors;
   const _AchievementsLoadingShimmer({required this.colors});
 
@@ -354,26 +350,30 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
       baseColor: colors.surfaceContainerHigh,
       highlightColor: colors.surfaceContainerHighest,
       child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(), // No permitir scroll
+        physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            const SizedBox(height: 60), // Espacio para el appbar
+            const SizedBox(height: 60),
             Column(
               children: [
                 Container(
-                    width: 180,
-                    height: 30,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8))),
+                  width: 180,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 const SizedBox(height: 15),
                 Container(
-                    width: 250,
-                    height: 25,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8))),
+                  width: 250,
+                  height: 25,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 30),
@@ -391,8 +391,9 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
                 return Container(
                   height: 160,
                   decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12)),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 );
               },
             ),

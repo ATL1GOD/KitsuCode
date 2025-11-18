@@ -26,7 +26,7 @@ class OptimizedImage extends StatefulWidget {
 }
 
 class _OptimizedImageState extends State<OptimizedImage> {
-  late String _optimizedUrl;
+  String _optimizedUrl = '';
   bool _shouldLoad = false;
   bool _isInitialized = false;
 
@@ -43,6 +43,37 @@ class _OptimizedImageState extends State<OptimizedImage> {
     if (!_isInitialized) {
       _optimizedUrl = _getOptimizedUrl();
       _isInitialized = true;
+      // debug
+      debugPrint(
+        '[OptimizedImage] didChangeDependencies -> url=$_optimizedUrl path=${widget.imagePath}',
+      );
+    }
+  }
+
+  /// 👇 AQUÍ ESTÁ LA MAGIA
+  /// Cuando cambie el `imagePath` (o tamaño), recalculamos la URL
+  @override
+  void didUpdateWidget(covariant OptimizedImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final bool pathChanged = oldWidget.imagePath != widget.imagePath;
+    final bool sizeChanged =
+        oldWidget.width != widget.width || oldWidget.height != widget.height;
+    final bool localFlagChanged =
+        oldWidget.isLocalAsset != widget.isLocalAsset;
+
+    if (pathChanged || sizeChanged || localFlagChanged) {
+      _optimizedUrl = _getOptimizedUrl();
+      _isInitialized = true;
+
+      debugPrint(
+        '[OptimizedImage] didUpdateWidget -> '
+        'old=${oldWidget.imagePath} new=${widget.imagePath} url=$_optimizedUrl',
+      );
+
+      // Opcional: forzar pequeño “reload” visual
+      _shouldLoad = false;
+      _scheduleLoad();
     }
   }
 
@@ -76,7 +107,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
   }
 
   int _calculateQuality(double devicePixelRatio) {
-    // Calidades optimizadas para buena calidad visual
     if (devicePixelRatio > 3.0) return 90;
     if (devicePixelRatio > 2.0) return 85;
     return 80;
@@ -84,14 +114,15 @@ class _OptimizedImageState extends State<OptimizedImage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isNetworkImage = _optimizedUrl.startsWith('http');
-
     if (!_shouldLoad || !_isInitialized) {
       return _buildSkeletonWidget();
     }
 
+    final bool isNetworkImage =
+        !widget.isLocalAsset && _optimizedUrl.startsWith('http');
+
     // Assets locales
-    if (!isNetworkImage || widget.isLocalAsset) {
+    if (!isNetworkImage) {
       return _buildLocalImage();
     }
 
@@ -119,17 +150,11 @@ class _OptimizedImageState extends State<OptimizedImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-
       fadeInDuration: const Duration(milliseconds: 300),
       fadeOutDuration: const Duration(milliseconds: 200),
-
-      // Menos procesamiento de imágenes
       useOldImageOnUrlChange: true,
-
-      // Cache en memoria con buena resolución
       memCacheWidth: (widget.width * 2).round(),
       memCacheHeight: (widget.height * 2).round(),
-
       placeholder: (context, url) => _buildSkeletonWidget(),
       errorWidget: (context, url, error) => _buildErrorWidget(),
     );
@@ -141,7 +166,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-
       cacheWidth: (widget.width * 2).round(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded) return child;
@@ -177,7 +201,8 @@ class _OptimizedImageState extends State<OptimizedImage> {
   }
 
   Widget _buildErrorWidget() {
-    final minSize = widget.width < widget.height ? widget.width : widget.height;
+    final minSize =
+        widget.width < widget.height ? widget.width : widget.height;
     return Container(
       width: widget.width,
       height: widget.height,
@@ -188,11 +213,6 @@ class _OptimizedImageState extends State<OptimizedImage> {
         size: minSize * 0.3,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 

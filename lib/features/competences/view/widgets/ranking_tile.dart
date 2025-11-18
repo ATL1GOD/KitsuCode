@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ AGREGADO
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart'; // ✅ OptimizedImage
 
 class RankingTile extends StatelessWidget {
   final RankingModel user;
@@ -36,6 +37,9 @@ class RankingTile extends StatelessWidget {
         rankColor = Colors.brown.shade400;
     }
 
+    // ✅ Path del avatar (desde tu helper)
+    final avatarPath = getAvatarAssetPathById(user.idAvatarSeleccionado);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       clipBehavior: Clip.antiAlias,
@@ -53,15 +57,13 @@ class RankingTile extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (isCurrentUser) return;
-
-          // Mostrar el modal con más información del usuario
           showDialog(
             context: context,
-            builder: (ctx) => UserProfileModal(userId: user.userId , rank: user.rank),
+            builder: (ctx) =>
+                UserProfileModal(userId: user.userId, rank: user.rank),
           );
         },
         child: ListTile(
-          // Ajuste de padding para mejor alineación
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 4,
@@ -81,10 +83,26 @@ class RankingTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+
+              // ✅ Avatar con OptimizedImage (enmascarado circular)
               CircleAvatar(
                 radius: 22,
-                backgroundImage: AssetImage(getAvatarAssetPathById(user.idAvatarSeleccionado)), // ✅ CAMBIADO
                 backgroundColor: colors.surfaceContainerHighest,
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: avatarPath.isEmpty
+                        ? const SizedBox.shrink()
+                        : OptimizedImage(
+                            imagePath: avatarPath,
+                            width: 44,   // 🔸 requeridos por tu widget
+                            height: 44,  // 🔸
+                            fit: BoxFit.cover,
+                            enableCache: true,
+                          ),
+                  ),
+                ),
               ),
             ],
           ),

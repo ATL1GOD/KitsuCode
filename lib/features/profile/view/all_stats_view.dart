@@ -11,16 +11,13 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
-
-// 🔥 1. IMPORTAR VISIBILITY DETECTOR
+// 🔥 Visibilidad
 import 'package:visibility_detector/visibility_detector.dart';
 
-
-// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class AllStatsView extends ConsumerStatefulWidget {
   const AllStatsView({super.key});
 
-  // (El método estático se queda igual)
+  // Mantén este helper como fallback
   static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
     return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
@@ -29,13 +26,10 @@ class AllStatsView extends ConsumerStatefulWidget {
   ConsumerState<AllStatsView> createState() => _AllStatsViewState();
 }
 
-// --- 🔥 3. AÑADIR ESTADO, TickerProviderStateMixin y WidgetsBindingObserver ---
 class _AllStatsViewState extends ConsumerState<AllStatsView>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-      
   late final AnimationController _lottieController;
 
-  // Banderas de estado
   bool _isPageVisible = true;
   bool _isAppActive = true;
   bool _isLottieLoaded = false;
@@ -56,7 +50,7 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
+    if (!mounted) return;
     setState(() {
       _isAppActive = state == AppLifecycleState.resumed;
       _updateAnimationState();
@@ -77,7 +71,6 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
     final textTheme = Theme.of(context).textTheme;
 
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
-
     if (currentUserId == null) {
       return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
     }
@@ -85,10 +78,11 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
     final statsState = ref.watch(userStatsByIdProvider(currentUserId));
     final profileState = ref.watch(userProfileByIdProvider(currentUserId));
 
-    // --- 🔥 4. ENVOLVER EL SCAFFOLD CON VISIBILITYDETECTOR ---
+    // 👇 Importante: evita setState tras dispose
     return VisibilityDetector(
       key: const Key('all-stats-detector'),
       onVisibilityChanged: (visibilityInfo) {
+        if (!mounted) return;
         setState(() {
           _isPageVisible = visibilityInfo.visibleFraction > 0.1;
           _updateAnimationState();
@@ -100,25 +94,34 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
           loading: () => const _StatsLoadingShimmer(),
           error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
           data: (profile) {
-            final dynamicColor = AllStatsView.getHeaderColor(profile, colors);
+            // ✅ Color dinámico desde BD si ya está la lista de avatares; sino fallback
+            final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+            final dynamicColor = avatarsList.isNotEmpty
+                ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+                : AllStatsView.getHeaderColor(profile, colors);
 
             return Stack(
               children: [
+                // Fondo degradado
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          dynamicColor.withAlpha(100),
-                          colors.surfaceContainerLowest,
-                        ],
-                        stops: const [0.0, 0.7]),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        dynamicColor.withAlpha(100),
+                        colors.surfaceContainerLowest,
+                      ],
+                      stops: const [0.0, 0.7],
+                    ),
                   ),
                 ),
+
+                // Lottie con tinte y control seguro
                 ColorFiltered(
                   colorFilter: ColorFilter.mode(
-                    colors.secondaryFixedDim.withOpacity(0.8),
+                    // Reemplazo deprecado: withAlpha en vez de withOpacity(0.8)
+                    colors.secondaryFixedDim.withAlpha((0.8 * 255).round()),
                     BlendMode.srcIn,
                   ),
                   child: Lottie.asset(
@@ -126,9 +129,9 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
-                    // --- 🔥 5. ASIGNAR CONTROLADOR Y onLoaded ---
                     controller: _lottieController,
                     onLoaded: (composition) {
+                      if (!mounted) return; // 👈 evita setState tras dispose
                       if (_lottieController.duration != composition.duration) {
                         _lottieController.duration = composition.duration;
                       }
@@ -137,10 +140,11 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                     },
                   ),
                 ),
+
                 SafeArea(
                   child: Column(
                     children: [
-                      // ... (Tu barra superior no cambia) ...
+                      // AppBar
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
@@ -152,11 +156,12 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
                                 child: Icon(Icons.arrow_back_ios_new_rounded,
                                     color: colors.onSurface),
                               ),
@@ -173,13 +178,15 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                           ],
                         ),
                       ),
+
+                      // Contenido
                       Expanded(
                         child: statsState.when(
                           loading: () => const _StatsLoadingShimmer(),
                           error: (e, s) => Center(
-                              child: Text('Error al cargar estadísticas: $e')),
+                            child: Text('Error al cargar estadísticas: $e'),
+                          ),
                           data: (stats) {
-                            // ... (Tu ListView no cambia) ...
                             return ListView(
                               padding: const EdgeInsets.all(20.0),
                               children: [
@@ -187,12 +194,12 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                                   child: Column(
                                     children: [
                                       Text(
-                                          profile.nombrePerfil,
-                                          style: textTheme.headlineMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: colors.onSurface,
-                                          )),
+                                        profile.nombrePerfil,
+                                        style: textTheme.headlineMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: colors.onSurface,
+                                        ),
+                                      ),
                                       const SizedBox(height: 10),
                                       ElevatedButton.icon(
                                         onPressed: () {
@@ -200,27 +207,29 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                                             context.pushNamed(
                                               'challenge-history',
                                               pathParameters: {
-                                                'userId': currentUserId, 
+                                                'userId': currentUserId,
                                               },
                                             );
                                           }
                                         },
-                                        icon:
-                                            const Icon(Icons.history, size: 20),
+                                        icon: const Icon(Icons.history, size: 20),
                                         label: const Text('Ver historial'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: colors.primary,
                                           foregroundColor: colors.onPrimary,
                                           shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20)),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 const SizedBox(height: 30),
+
+                                // 👉 Card con BORDE y AURA usando dynamicColor
                                 _StatsCard(
+                                  dynamicColor: dynamicColor, // 👈 añadido
                                   child: Column(
                                     children: [
                                       _StatRow(
@@ -255,8 +264,7 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                                       ),
                                     ],
                                   ),
-                                ).animate().fadeIn(duration: 400.ms).slideY(
-                                    begin: 0.2, end: 0),
+                                ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
                               ],
                             );
                           },
@@ -274,35 +282,71 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
   }
 }
 
-// --- (Los widgets _StatsCard, _StatRow, y _StatsLoadingShimmer no cambian) ---
-// ... (código de _StatsCard) ...
-// ... (código de _StatRow) ...
-// ... (código de _StatsLoadingShimmer) ...
+// -------------------- Widgets auxiliares --------------------
+
 class _StatsCard extends StatelessWidget {
   final Widget child;
-  const _StatsCard({required this.child});
+  final Color? dynamicColor; // 👈 nuevo opcional (para no romper llamadas)
+  const _StatsCard({
+    required this.child,
+    this.dynamicColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final c = Theme.of(context).colorScheme;
+    final aura = dynamicColor ?? c.primary; // si no pasan color, usa el primario
+
     return Container(
       decoration: BoxDecoration(
-          color: colors.surfaceContainer.withAlpha(200),
-          borderRadius: BorderRadius.circular(24),
-          border:
-              Border.all(color: colors.outlineVariant.withAlpha(180), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: colors.shadow.withAlpha(25),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ]),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-        child: child,
+        color: c.surfaceContainer.withAlpha(210),
+        borderRadius: BorderRadius.circular(24),
+        // 👇 borde con tinte del avatar
+        border: Border.all(
+          color: aura.withAlpha(185),
+          width: 1.6,
+        ),
+        boxShadow: [
+          // 👇 “aura” suave del color dinámico
+          BoxShadow(
+            color: aura.withAlpha(72), // ~28% opacidad
+            blurRadius: 22,
+            spreadRadius: 2,
+            offset: const Offset(0, 7),
+          ),
+          // sombra base discreta
+          BoxShadow(
+            color: c.shadow.withAlpha(22),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+        child: _StatsCardChildProxy(),
+      ).copyWithChild(child), // truco para mantener padding constante
     );
+  }
+}
+
+/// Pequeño helper para poder “reemplazar” el child sin duplicar padding.
+class _StatsCardChildProxy extends StatelessWidget {
+  const _StatsCardChildProxy();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
+extension on Widget {
+  /// Devuelve el mismo widget pero reemplazando el `child` del Padding superior.
+  /// (Nos evita reescribir el Padding en cada edición)
+  Widget copyWithChild(Widget child) {
+    if (this is Padding) {
+      final p = this as Padding;
+      return Padding(padding: p.padding, child: child);
+    }
+    return child;
   }
 }
 
@@ -338,9 +382,13 @@ class _StatRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, color: colors.onSurface)),
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Stack(
                   children: [
@@ -352,9 +400,8 @@ class _StatRow extends StatelessWidget {
                       ),
                     ),
                     FractionallySizedBox(
-                      widthFactor: isPercentage
-                          ? (value.clamp(0, 100) / 100)
-                          : 0.75, 
+                      widthFactor:
+                          isPercentage ? (value.clamp(0, 100) / 100) : 0.75,
                       child: Container(
                         height: 8,
                         decoration: BoxDecoration(
@@ -380,8 +427,10 @@ class _StatRow extends StatelessWidget {
                     ? '${animatedValue.toStringAsFixed(1)}%'
                     : animatedValue.toInt().toString(),
                 textAlign: TextAlign.right,
-                style: textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold, color: color),
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ),
           ),
@@ -408,18 +457,22 @@ class _StatsLoadingShimmer extends StatelessWidget {
             Column(
               children: [
                 Container(
-                    width: 180,
-                    height: 30,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8))),
+                  width: 180,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 const SizedBox(height: 15),
                 Container(
-                    width: 140,
-                    height: 40,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20))),
+                  width: 140,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 30),
@@ -427,7 +480,9 @@ class _StatsLoadingShimmer extends StatelessWidget {
               height: 380,
               width: double.infinity,
               decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(24)),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
             ),
           ],
         ),

@@ -108,7 +108,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
         return 'assets/images/home/camino_c.webp';
 
       default:
-        return 'assets/images/home/camino.png';
+        return 'assets/images/home/camino_python.webp';
     }
   }
 

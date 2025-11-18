@@ -1,5 +1,3 @@
-// [NUEVO ARCHIVO: features/auth/view/widgets/auth_update_password_view.dart]
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +6,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_background.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
 import 'package:kitsucode/features/auth/view/auth_view.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 class UpdatePasswordView extends StatelessWidget {
   const UpdatePasswordView({super.key});
@@ -48,23 +47,19 @@ class _UpdatePasswordCardState extends ConsumerState<UpdatePasswordCard> {
           .read(updatePasswordProvider.notifier)
           .updatePassword(_passwordController.text);
 
+      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Contraseña actualizada con éxito!'),
-            backgroundColor: Colors.green,
-          ),
+        showSuccessSnackbar(
+          context,
+          '¡Éxito!',
+          'Contraseña actualizada con éxito.',
         );
         context.go('/home'); // ¡Éxito! Lo mandamos al Home.
       }
     } catch (e) {
+      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showErrorSnackbar(context, 'Error', e.toString());
       }
     }
   }
@@ -108,15 +103,12 @@ class _UpdatePasswordCardState extends ConsumerState<UpdatePasswordCard> {
                     style: TextStyle(color: Colors.white.withAlpha(204)),
                   ),
                   const SizedBox(height: 24),
-
-                  // Reutilizamos tu CustomInputField
                   CustomInputField(
                     controller: _passwordController,
                     hintText: 'Nueva Contraseña',
                     prefixIcon: Icons.lock_outline,
                     isPassword: true,
                     validator: (value) {
-                      // Usamos la validación de tu register_form.dart
                       if (value == null || value.isEmpty) {
                         return 'Ingresa una contraseña';
                       }
@@ -150,8 +142,6 @@ class _UpdatePasswordCardState extends ConsumerState<UpdatePasswordCard> {
                     },
                   ),
                   const SizedBox(height: 32),
-
-                  // Reutilizamos tu PrimaryAuthButton
                   PrimaryAuthButton(
                     isLoading: isLoading,
                     text: 'Guardar Contraseña',

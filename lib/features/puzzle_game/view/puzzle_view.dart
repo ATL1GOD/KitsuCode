@@ -11,6 +11,10 @@ import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_widgets.dart'
 import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
 import 'package:animate_do/animate_do.dart';
 
+// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
+// --- FIN MODIFICACIÓN ---
+
 // --- ¡CAMBIO 1! (Importaciones para el Tema y el Lenguaje) ---
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -219,7 +223,8 @@ class PuzzleView extends ConsumerWidget {
                                 retoId: currentState.challengeId,
                                 nivelId: currentState.nivelId, // ← ¡AÑADIDO!
                                 fueExitoso: true,
-                                tiempoQueTardo: 0, // No medimos tiempo en puzzles 
+                                tiempoQueTardo:
+                                    0, // No medimos tiempo en puzzles
                               );
 
                           // 2. Refrescar Ranking (NO refrescamos stats aquí - se hará al regresar al Home)
@@ -250,12 +255,13 @@ class PuzzleView extends ConsumerWidget {
                       } catch (e) {
                         // Mostrar error al usuario
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error al enviar resultado: $e'),
-                              backgroundColor: Colors.red,
-                            ),
+                          // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
+                          showErrorSnackbar(
+                            context,
+                            'Error',
+                            'Error al enviar resultado: $e',
                           );
+                          // --- FIN MODIFICACIÓN ---
                         }
                       }
                     },

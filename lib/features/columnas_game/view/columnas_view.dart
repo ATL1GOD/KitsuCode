@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
 
+// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
+// --- FIN MODIFICACIÓN ---
+
 // --- Importaciones para la puntuación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -261,12 +265,13 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
               } catch (e) {
                 // Mostrar error al usuario
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al enviar resultado: $e'),
-                      backgroundColor: Colors.red,
-                    ),
+                  // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
+                  showErrorSnackbar(
+                    context,
+                    'Error',
+                    'Error al enviar resultado: $e',
                   );
+                  // --- FIN MODIFICACIÓN ---
                 }
               }
             },

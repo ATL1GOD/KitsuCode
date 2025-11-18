@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart'; // Importa el archivo renombrado
+import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 class RegisterForm extends ConsumerStatefulWidget {
   final VoidCallback onSwitchToLogin;
@@ -35,23 +36,19 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registro exitoso. Revisa tu correo.'),
-              backgroundColor: Colors.green,
-            ),
+          showSuccessSnackbar(
+            context,
+            'Registro Exitoso',
+            'Revisa tu correo para confirmar la cuenta.',
           );
           context.go('/login');
         }
       } catch (e) {
+        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error en el registro: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          showErrorSnackbar(context, 'Error en el Registro', e.toString());
         }
       }
     }
@@ -100,8 +97,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 if (value.length < 8) {
                   return 'Mínimo 8 caracteres';
                 }
-
-                // --- MEJORA: Validación más detallada de contraseña ---
                 final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
                 final hasLowercase = RegExp(r'[a-z]').hasMatch(value);
                 final hasDigits = RegExp(r'[0-9]').hasMatch(value);

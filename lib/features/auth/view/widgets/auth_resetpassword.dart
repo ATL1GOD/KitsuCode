@@ -5,26 +5,20 @@ import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_background.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
-import 'package:kitsucode/features/auth/view/auth_view.dart'; // Importa el tema
+import 'package:kitsucode/features/auth/view/auth_view.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 class ForgotPasswordView extends StatelessWidget {
   const ForgotPasswordView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Reutilizamos el mismo tema de la pantalla de Auth
     return Theme(
       data: authTheme,
-      child: const Scaffold(
-        body: AuthBackground(
-          child: ForgotPasswordCard(), // Usamos un Card nuevo
-        ),
-      ),
+      child: const Scaffold(body: AuthBackground(child: ForgotPasswordCard())),
     );
   }
 }
-
-// --- Card y Formulario ---
 
 class ForgotPasswordCard extends ConsumerStatefulWidget {
   const ForgotPasswordCard({super.key});
@@ -44,25 +38,19 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
     try {
       await resetNotifier.sendResetEmail(_emailController.text.trim());
 
+      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Correo de recuperación enviado. ¡Revisa tu bandeja!',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        showSuccessSnackbar(
+          context,
+          'Correo Enviado',
+          '¡Revisa tu bandeja de entrada!',
         );
         context.go('/auth');
       }
     } catch (e) {
+      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showErrorSnackbar(context, 'Error', e.toString());
       }
     }
   }
@@ -78,7 +66,6 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
     final resetState = ref.watch(resetPasswordProvider);
     final isLoading = resetState.isLoading;
 
-    // Reutilizamos el estilo exacto de tu AuthCard
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -113,8 +100,6 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
                     style: TextStyle(color: Colors.white.withAlpha(204)),
                   ),
                   const SizedBox(height: 24),
-
-                  // Reutilizamos tu CustomInputField
                   CustomInputField(
                     controller: _emailController,
                     hintText: 'Email',
@@ -131,16 +116,12 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
                     },
                   ),
                   const SizedBox(height: 24),
-
-                  // Reutilizamos tu PrimaryAuthButton
                   PrimaryAuthButton(
                     isLoading: isLoading,
                     text: 'Enviar Correo',
                     onPressed: isLoading ? null : _submit,
                   ),
                   const SizedBox(height: 16),
-
-                  // Botón para regresar
                   SwitchFormButton(
                     text: 'Recordé mi contraseña.',
                     highlightedText: 'Iniciar Sesión',

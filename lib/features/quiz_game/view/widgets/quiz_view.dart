@@ -8,6 +8,11 @@ import 'package:flutter/services.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart'; // Importa QuizData
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
+
+// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
+// --- FIN MODIFICACIÓN ---
+
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 import 'package:go_router/go_router.dart';
@@ -246,12 +251,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
               } catch (e) {
                 // Mostrar error al usuario
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al enviar resultado: $e'),
-                      backgroundColor: Colors.red,
-                    ),
+                  // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
+                  showErrorSnackbar(
+                    context,
+                    'Error',
+                    'Error al enviar resultado: $e',
                   );
+                  // --- FIN MODIFICACIÓN ---
                 }
               }
             },
@@ -386,10 +392,8 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            minHeight: screenHeight -
-                AppBar().preferredSize.height -
-                topPadding -
-                100,
+            minHeight:
+                screenHeight - AppBar().preferredSize.height - topPadding - 100,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,9 +1,7 @@
 // lib/shared/optimized_image/optimizador_imagenes.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-// import 'package:flutter/scheduler.dart'; // <-- Ya no se necesita
 
-// CAMBIO GRANDE: Convertido de StatefulWidget a StatelessWidget
 class OptimizedImage extends StatelessWidget {
   final String imagePath;
   final double width;
@@ -22,9 +20,6 @@ class OptimizedImage extends StatelessWidget {
     this.isLocalAsset = false,
   });
 
-  // --- TODA LA LÓGICA DE STATE (initState, _shouldLoad, etc.) SE HA IDO ---
-
-  // La función ahora recibe 'context' porque lo necesita para el MediaQuery
   String _getOptimizedUrl(BuildContext context) {
     if (isLocalAsset) return imagePath;
 
@@ -51,27 +46,18 @@ class OptimizedImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ya no hay 'if (!_shouldLoad ...)'
-
-    // 1. Manejar assets locales primero
     if (isLocalAsset) {
       return _buildLocalImage(context);
     }
 
-    // 2. Calcular la URL aquí, es súper rápido
     final String optimizedUrl = _getOptimizedUrl(context);
 
-    // 3. Manejar imágenes de red sin caché
     if (!enableCache) {
       return _buildNetworkImageWithoutCache(context, optimizedUrl);
     }
 
-    // 4. El caso principal: Imagen de red cacheada
-    // Esto irá directo a la caché de MEMORIA y no parpadeará
     return _buildCachedNetworkImage(context, optimizedUrl);
   }
-
-  // --- Los widgets de construcción ahora reciben 'context' ---
 
   Widget _buildLocalImage(BuildContext context) {
     return Image.asset(
@@ -90,9 +76,7 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      // ESTA ES LA CLAVE: Si está en memoria, la muestra en 0ms (sin fade)
       fadeInDuration: const Duration(milliseconds: 0),
-      // Un fade-out suave si la URL cambia
       fadeOutDuration: const Duration(milliseconds: 200),
       useOldImageOnUrlChange: true,
       memCacheWidth: (width * 2).round(),
@@ -102,8 +86,7 @@ class OptimizedImage extends StatelessWidget {
     );
   }
 
-  Widget _buildNetworkImageWithoutCache(
-      BuildContext context, String imageUrl) {
+  Widget _buildNetworkImageWithoutCache(BuildContext context, String imageUrl) {
     return Image.network(
       imageUrl,
       width: width,
@@ -132,13 +115,17 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Colors.grey[200], // Un gris más claro para el fondo
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Icon(
-        Icons.photo,
-        color: Colors.grey[300],
-        size: width * 0.2,
+      child: Center(
+        child: SizedBox(
+          width: width * 0.4, // Ancho del indicador de progreso
+          child: LinearProgressIndicator(
+            color: Colors.grey[300], // Color de la barra de progreso
+            backgroundColor: Colors.grey[200], // Fondo de la barra
+          ),
+        ),
       ),
     );
   }
@@ -148,10 +135,18 @@ class OptimizedImage extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: Theme.of(context).colorScheme.surfaceContainer,
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHigh, // Un color un poco más oscuro que el surface normal
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Icon(
-        Icons.broken_image,
-        color: Theme.of(context).colorScheme.outline,
+        Icons
+            .image_not_supported_outlined, // Un icono de error más moderno y menos "roto"
+        color: Theme.of(
+          context,
+        ).colorScheme.outlineVariant, // Color del borde o un gris más oscuro
         size: minSize * 0.3,
       ),
     );
@@ -180,9 +175,6 @@ class OptimizedImageListTile extends StatelessWidget {
       height: height,
       fit: fit,
       enableCache: true,
-      // AÑADIDO: Asumimos que OptimizedImageListTile
-      // también podría manejar assets locales.
-      // Si siempre son de red, puedes quitar esto.
       isLocalAsset:
           !imagePath.startsWith('http') && !imagePath.startsWith('avatares/'),
     );

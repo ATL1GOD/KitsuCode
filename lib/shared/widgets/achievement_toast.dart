@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; // ¡Ya tenemos este helper!
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'package:kitsucode/shared/widgets/smart_image.dart';
 
 class AchievementToast extends StatelessWidget {
@@ -60,7 +61,7 @@ class AchievementToast extends StatelessWidget {
                 color: (borderColor ?? rarityColor).withOpacity(0.4),
                 blurRadius: 15.0, // Más difuminada
                 spreadRadius: 2.0, // Un poco más grande
-              )
+              ),
             ],
           ),
           child: Row(
@@ -68,15 +69,16 @@ class AchievementToast extends StatelessWidget {
               // --- El Icono ---
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: SmartImage(
-                path: iconUrl,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
+                child: OptimizedImage(
+                  imagePath: iconUrl,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  enableCache: true,
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // --- El Texto ---
               Expanded(
                 child: Column(

@@ -5,7 +5,8 @@ import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:kitsucode/features/profile/view/widgets/avatar_modal.dart'; 
+import 'package:kitsucode/features/profile/view/widgets/avatar_modal.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'package:kitsucode/shared/widgets/smart_image.dart';
 
 enum AvatarCategory { comun, especial }
@@ -65,12 +66,18 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
               FadeInDown(
                 duration: const Duration(milliseconds: 400),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: colors.onSurface,
+                        ),
                         onPressed: () => context.pop(null),
                       ),
                       Text(
@@ -86,12 +93,20 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.secondary,
                           foregroundColor: colors.onSecondary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           elevation: 8,
                           shadowColor: colors.secondary.withOpacity(0.6),
                         ),
-                        child: const Text('Listo', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Listo',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
@@ -119,13 +134,17 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                     _CategoryIconButton(
                       icon: Icons.pets,
                       isSelected: _selectedCategory == AvatarCategory.comun,
-                      onTap: () => setState(() => _selectedCategory = AvatarCategory.comun),
+                      onTap: () => setState(
+                        () => _selectedCategory = AvatarCategory.comun,
+                      ),
                     ),
                     const SizedBox(width: 20),
                     _CategoryIconButton(
                       icon: Icons.star_border_purple500_outlined,
                       isSelected: _selectedCategory == AvatarCategory.especial,
-                      onTap: () => setState(() => _selectedCategory = AvatarCategory.especial),
+                      onTap: () => setState(
+                        () => _selectedCategory = AvatarCategory.especial,
+                      ),
                     ),
                   ],
                 ),
@@ -136,12 +155,14 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                 child: avatarsAsync.when(
                   data: (avatars) {
                     final filteredAvatars = _getFilteredAvatars(avatars);
-                    
+
                     if (filteredAvatars.isEmpty) {
                       return Center(
                         child: Text(
                           'No hay avatares en esta categoría',
-                          style: textTheme.bodyLarge?.copyWith(color: colors.onSurface),
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: colors.onSurface,
+                          ),
                         ),
                       );
                     }
@@ -152,12 +173,14 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 15,
-                            mainAxisSpacing: 15,
-                            childAspectRatio: 1.0, // ✅ Esto mantiene los círculos perfectos
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 15,
+                                mainAxisSpacing: 15,
+                                childAspectRatio:
+                                    1.0, // ✅ Esto mantiene los círculos perfectos
+                              ),
                           itemCount: filteredAvatars.length,
                           itemBuilder: (context, index) {
                             final avatar = filteredAvatars[index];
@@ -181,7 +204,8 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                       ),
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
                     child: Text(
                       'Error al cargar avatares',
@@ -200,7 +224,8 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
 
 // --- WIDGETS DE UI ---
 
-class _SelectedAvatarDisplay extends ConsumerWidget { // 1. Cambia a ConsumerWidget
+class _SelectedAvatarDisplay extends ConsumerWidget {
+  // 1. Cambia a ConsumerWidget
   final int avatarId;
   final double size;
   final Color dynamicColor;
@@ -212,22 +237,25 @@ class _SelectedAvatarDisplay extends ConsumerWidget { // 1. Cambia a ConsumerWid
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // 2. Añade WidgetRef
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 2. Añade WidgetRef
     final colors = Theme.of(context).colorScheme;
-    
+
     // 3. Obtén el path REAL desde el provider
-    final String avatarPath = ref.watch(currentUserAvatarsProvider).when(
+    final String avatarPath = ref
+        .watch(currentUserAvatarsProvider)
+        .when(
           data: (avatars) {
             // Busca el avatar por ID en la lista cargada
             final avatar = avatars.firstWhere(
               (a) => a.id == avatarId,
               // Si no lo encuentra (raro), usa el primer avatar por defecto
-              orElse: () => avatars.first, 
+              orElse: () => avatars.first,
             );
             return avatar.assetPath;
           },
           // Mientras carga o hay error, muestra una ruta vacía
-          loading: () => '', 
+          loading: () => '',
           error: (e, s) => '',
         );
 
@@ -238,7 +266,11 @@ class _SelectedAvatarDisplay extends ConsumerWidget { // 1. Cambia a ConsumerWid
         shape: BoxShape.circle,
         gradient: LinearGradient(colors: [dynamicColor, colors.primary]),
         boxShadow: [
-          BoxShadow(color: dynamicColor.withOpacity(0.7), blurRadius: 25, spreadRadius: 4),
+          BoxShadow(
+            color: dynamicColor.withOpacity(0.7),
+            blurRadius: 25,
+            spreadRadius: 4,
+          ),
         ],
       ),
       padding: const EdgeInsets.all(4),
@@ -248,7 +280,13 @@ class _SelectedAvatarDisplay extends ConsumerWidget { // 1. Cambia a ConsumerWid
           // 4. Usa el nuevo widget con el path correcto
           child: (avatarPath.isEmpty)
               ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-              : SmartImage(path: avatarPath, fit: BoxFit.cover),
+              : OptimizedImage(
+                  imagePath: avatarPath,
+                  fit: BoxFit.cover,
+                  enableCache: true,
+                  width: size,
+                  height: size,
+                ),
         ),
       ),
     );
@@ -260,7 +298,11 @@ class _CategoryIconButton extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _CategoryIconButton({required this.icon, required this.isSelected, required this.onTap});
+  const _CategoryIconButton({
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -271,15 +313,30 @@ class _CategoryIconButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? colors.primary : colors.surfaceContainer.withOpacity(0.2),
+          color: isSelected
+              ? colors.primary
+              : colors.surfaceContainer.withOpacity(0.2),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? colors.secondary : colors.primary.withOpacity(0.3),
+            color: isSelected
+                ? colors.secondary
+                : colors.primary.withOpacity(0.3),
             width: isSelected ? 3 : 1.5,
           ),
-          boxShadow: isSelected ? [BoxShadow(color: colors.secondary.withOpacity(0.5), blurRadius: 10)] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: colors.secondary.withOpacity(0.5),
+                    blurRadius: 10,
+                  ),
+                ]
+              : [],
         ),
-        child: Icon(icon, color: isSelected ? colors.onPrimary : colors.onSurfaceVariant, size: 28),
+        child: Icon(
+          icon,
+          color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+          size: 28,
+        ),
       ),
     );
   }
@@ -323,21 +380,37 @@ class _CircularAvatarCell extends StatelessWidget {
                       color: isSelected ? colors.secondary : Colors.transparent,
                       width: isSelected ? 4.0 : 0.0,
                     ),
-                    boxShadow: isSelected 
-                      ? [BoxShadow(color: colors.secondary.withOpacity(0.6), blurRadius: 12)] 
-                      : [],
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: colors.secondary.withOpacity(0.6),
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : [],
                   ),
                   child: ClipOval(
                     child: ColorFiltered(
                       colorFilter: isLocked
-                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                          ? const ColorFilter.mode(
+                              Colors.grey,
+                              BlendMode.saturation,
+                            )
+                          : const ColorFilter.mode(
+                              Colors.transparent,
+                              BlendMode.multiply,
+                            ),
                       child: Container(
                         color: Colors.transparent,
-                        
-                        // Antes era Image.asset(...)
-                        child: SmartImage(path: avatar.assetPath, fit: BoxFit.cover),
 
+                        // Antes era Image.asset(...)
+                        child: OptimizedImage(
+                          imagePath: avatar.assetPath,
+                          fit: BoxFit.cover,
+                          enableCache: true,
+                          width: size,
+                          height: size,
+                        ),
                       ),
                     ),
                   ),

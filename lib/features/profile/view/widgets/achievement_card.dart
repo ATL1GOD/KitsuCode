@@ -6,6 +6,8 @@ import 'package:kitsucode/features/profile/view/widgets/achievement_modal.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 // helpers
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart';
+// ✅ IMPORTANTE: Importar el optimizador
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class AchievementCard extends StatelessWidget {
   final UserAchievementModel achievement;
@@ -31,13 +33,13 @@ class AchievementCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUnlocked = achievement.obtenido;
 
-    // ✅ 2. ¡CORREGIDO! LLAMAMOS AL HELPER SIN EL PARÁMETRO 'colors'
+    // ✅ Helper de color
     final effectColor = getRarityColor(achievement.raridad);
 
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 360;
 
-    // ✅ Usar colores del tema en lugar de hardcoded grises
+    // ✅ Usar colores del tema
     final double borderWidth = isUnlocked ? 3 : 1;
     final borderColor = isUnlocked ? effectColor : colors.outline;
     final lockedBackgroundColor = colors.surfaceContainerHigh;
@@ -73,8 +75,21 @@ class AchievementCard extends StatelessWidget {
                         Colors.transparent,
                         BlendMode.multiply,
                       )
-                    : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
-                child: Image.asset(achievement.iconUrl, fit: BoxFit.cover),
+                    : const ColorFilter.mode(
+                        Colors.grey, BlendMode.saturation),
+                // ✅ CAMBIO AQUÍ: Usamos LayoutBuilder + OptimizedImage
+                // LayoutBuilder nos da el tamaño disponible para pedir la imagen exacta
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return OptimizedImage(
+                      imagePath: achievement.iconUrl, // Ruta en Supabase
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      fit: BoxFit.cover,
+                      enableCache: true,
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -114,17 +129,14 @@ class AchievementCard extends StatelessWidget {
       ),
     );
 
-    // ✅ Tu lógica de click es correcta:
-    // Permite abrir el modal (que mostrará el estado bloqueado/desbloqueado)
+    // ✅ Lógica de click para abrir el modal
     if (isClickable) {
       return GestureDetector(
         onTap: () => AchievementModal.show(
           context,
           achievement,
-          profile:
-              profile, // <-- Pasa el perfil al modal (si el modal acepta este parámetro)
-          isCurrentUser:
-              isCurrentUser, // <-- Pasa el booleano al modal (si el modal acepta este parámetro)
+          profile: profile,
+          isCurrentUser: isCurrentUser,
         ),
         child: cardContent,
       );

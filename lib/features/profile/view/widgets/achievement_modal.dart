@@ -5,6 +5,8 @@ import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
+// ✅ IMPORTAR EL OPTIMIZADOR DE IMÁGENES
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class AchievementModal extends StatelessWidget {
   // Estos campos son necesarios para que el constructor de la clase
@@ -99,10 +101,12 @@ class _ModalContent extends StatelessWidget {
       colorFilter: isUnlocked
           ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
           : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
-      child: Image.asset(
-        achievement.iconUrl,
+      // ✅ CAMBIO: Usamos OptimizedImage para cargar desde Supabase
+      child: OptimizedImage(
+        imagePath: achievement.iconUrl, // URL del logro
         height: 200,
-        width: double.infinity,
+        // Usamos el max width del modal (320px) para la optimización
+        width: 320, 
         fit: BoxFit.cover,
       ),
     );
@@ -130,29 +134,29 @@ class _ModalContent extends StatelessWidget {
 
     final aura = isUnlocked
         ? Icon(
-                Icons.auto_awesome,
-                size: 120,
-                color: borderColor.withOpacity(0.35),
-              )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .fadeIn(duration: 600.ms)
-              .scale(
-                begin: const Offset(0.8, 0.8),
-                end: const Offset(1.2, 1.2),
-                duration: 800.ms,
-              )
+              Icons.auto_awesome,
+              size: 120,
+              color: borderColor.withOpacity(0.35),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fadeIn(duration: 600.ms)
+            .scale(
+              begin: const Offset(0.8, 0.8),
+              end: const Offset(1.2, 1.2),
+              duration: 800.ms,
+            )
         : Icon(
-                Icons.auto_awesome,
-                size: 120,
-                color: Colors.grey.shade600.withOpacity(0.5),
-              )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .fadeIn(duration: 600.ms)
-              .scale(
-                begin: const Offset(0.8, 0.8),
-                end: const Offset(1.2, 1.2),
-                duration: 800.ms,
-              );
+              Icons.auto_awesome,
+              size: 120,
+              color: Colors.grey.shade600.withOpacity(0.5),
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fadeIn(duration: 600.ms)
+            .scale(
+              begin: const Offset(0.8, 0.8),
+              end: const Offset(1.2, 1.2),
+              duration: 800.ms,
+            );
     // --- Fin Lógica sin cambios ---
 
     // ✅ 4. LÓGICA DE TEXTO PERSONALIZADA
@@ -375,6 +379,7 @@ class _ModalContent extends StatelessWidget {
                                     const SizedBox(height: 15),
                                   ],
                                 ),
+                                // Overlay de Bloqueado (solo se aplica al contenido no al fondo)
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Container(
@@ -384,6 +389,7 @@ class _ModalContent extends StatelessWidget {
                                       ),
                                     ),
                                   ),
+                                // Icono de Bloqueo
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Center(

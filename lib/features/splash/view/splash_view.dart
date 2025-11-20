@@ -8,6 +8,9 @@ import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 
+// 🔥 IMPORTAR para acceder al flag global
+import 'package:kitsucode/core/routes/router.dart' show setSplashCompleted;
+
 const Color _kitsuOrange = Color(0xFFf79126);
 
 class SplashView extends ConsumerStatefulWidget {
@@ -36,9 +39,13 @@ class _SplashViewState extends ConsumerState<SplashView>
     if (!_bootstrapDone || !_animationDone) return;
 
     _navigated = true;
+    
+    //Marcar que la splash terminó ANTES de navegar
+    setSplashCompleted();
+    
     FlutterNativeSplash.remove();
 
-    // 🔥 VERIFICAR CONECTIVIDAD ANTES DE NAVEGAR
+    //VERIFICAR CONECTIVIDAD ANTES DE NAVEGAR
     final connectivityState = ref.read(initialConnectivityProvider);
 
     connectivityState.when(
@@ -132,16 +139,14 @@ class _SplashViewState extends ConsumerState<SplashView>
   }
 
   @override
-  void initState() {
+  void initState() { 
     super.initState();
-
     _setupAnimation();
     _listenBootstrap();
 
-    // 🔥 LA CLAVE: ESPERAR A QUE LA SPLASH NATIVA SE HAYA IDO COMPLETAMENTE
+    //LA CLAVE: ESPERAR A QUE LA SPLASH NATIVA SE HAYA IDO COMPLETAMENTE
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(milliseconds: 120));
-      // ⬆ Pequeño delay para asegurar que ya no está la splash nativa
       _controller.forward();
     });
   }

@@ -45,6 +45,19 @@ class AchievementCard extends StatelessWidget {
     final lockedBackgroundColor = colors.surfaceContainerHigh;
     final lockedTextColor = colors.onSurfaceVariant.withOpacity(0.7);
 
+    // --- CAMBIOS DE DISEÑO PARA EL TEXTO ---
+    // 1. Padding vertical mínimo pero seguro (1.5)
+    final double verticalPadding = 1.5; 
+    
+    // 2. Ajustamos la fuente para una buena legibilidad (10-11px)
+    final double baseFontSize = isSmallScreen ? 10 : 11;
+    
+    // 3. Establecemos una altura mínima fija para el contenedor del texto (para 2 líneas + padding)
+    // Asumimos que la altura de la línea de 10-11px es ~14-16px. 
+    // 2 líneas * 15px + 2 * 1.5px padding = ~33px de alto mínimo.
+    final double minTextContainerHeight = isSmallScreen ? 30 : 35;
+
+
     Widget cardContent = Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -65,6 +78,7 @@ class AchievementCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // 1. IMAGEN (Ocupa el espacio que queda libre)
           Padding(
             padding: const EdgeInsets.all(4.0),
             child: ClipRRect(
@@ -77,8 +91,7 @@ class AchievementCard extends StatelessWidget {
                       )
                     : const ColorFilter.mode(
                         Colors.grey, BlendMode.saturation),
-                // ✅ CAMBIO AQUÍ: Usamos LayoutBuilder + OptimizedImage
-                // LayoutBuilder nos da el tamaño disponible para pedir la imagen exacta
+                // LayoutBuilder asegura que OptimizedImage obtenga el tamaño exacto
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     return OptimizedImage(
@@ -93,13 +106,18 @@ class AchievementCard extends StatelessWidget {
               ),
             ),
           ),
+          
+          // 2. TEXTO INFERIOR (Anclado al fondo)
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
+              // Establecemos una altura mínima para evitar compresión vertical
+              constraints: BoxConstraints(minHeight: minTextContainerHeight),
+              alignment: Alignment.center, // Centramos el texto verticalmente dentro de la nueva altura mínima
               padding: EdgeInsets.symmetric(
-                vertical: isSmallScreen ? 4.0 : 6.0,
+                vertical: verticalPadding, // <-- Padding vertical mínimo
                 horizontal: 4.0,
               ),
               decoration: BoxDecoration(
@@ -118,7 +136,8 @@ class AchievementCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: isSmallScreen ? 9 : 10,
+                  fontSize: baseFontSize, // <-- Tamaño ajustado
+                  height: 1.2, // Añade un poco de espacio entre líneas (line-height)
                   // ✅ Texto con color del tema
                   color: isUnlocked ? colors.onSurface : lockedTextColor,
                 ),

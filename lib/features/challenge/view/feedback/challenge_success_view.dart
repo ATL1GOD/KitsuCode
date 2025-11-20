@@ -48,114 +48,115 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
     setState(() => _isNavigating = true);
 
     try {
-      // 1. Actualizar estadísticas
-      ref.read(appBarProvider.notifier).fetchStats();
-      ref.read(oldStatsValuesProvider.notifier).state = null;
-      ref.read(shouldRefreshStatsProvider.notifier).state = false;
-
-      // Obtener total de lenguajes en la app 
-      final int totalLanguagesInApp = await Supabase.instance.client
-          .rpc('get_total_languages_count');
-      // Guardar en el provider
-
-      // 2. Verificar si completó el lenguaje
       final userId = ref.read(authStateProvider).value?.session?.user.id;
+      final currentLangId = ref.read(appBarProvider).languageId;
+
+      // ---------------------------------------------------------
+      // 1. PARALELISMO + CONSULTA SILENCIOSA
+      // ---------------------------------------------------------
+      final results = await Future.wait([
+        // A. Espera visual
+        Future.delayed(const Duration(milliseconds: 700)),
+        
+        // B. Fetch SILENCIOSO del puntaje real (106)
+        // No usamos el provider aquí para evitar que la UI parpadee o anime antes de tiempo.
+        Supabase.instance.client.rpc(
+          'get_my_language_score', 
+          params: {'p_language_id': currentLangId}
+        ),
+        
+        // C. Verificar completitud (Lógica rápida de arrays)
+        userId != null 
+            ? ref.read(languageCompletionProvider.notifier).checkLanguageCompletion(userId)
+            : Future.value(),
+            
+        // D. Total de lenguajes
+        Supabase.instance.client.rpc('get_total_languages_count'),
+      ]);
+
+      if (!mounted) return;
+
+      // Recuperamos el puntaje real de la consulta silenciosa
+      final realTotalTrophies = (results[1] as num?)?.toInt() ?? 0;
+
+      // ---------------------------------------------------------
+      // 2. LÓGICA DE DESBLOQUEO
+      // ---------------------------------------------------------
+      final totalLanguagesInApp = results[3] as int;
+      final languageState = ref.read(languageCompletionProvider);
+
       bool shouldShowCelebration = false;
       String completedLanguage = '';
       List<String> unlockedLanguages = [];
       bool canUnlock = true;
 
       if (userId != null) {
-        // Hacer la verificación
-        await ref.read(languageCompletionProvider.notifier)
-            .checkLanguageCompletion(userId);
-        
-        final languageState = ref.read(languageCompletionProvider);
-        
-        // Lógica para 1 solo lenguaje (esto está perfecto)
-        shouldShowCelebration = languageState.hasCompletedLanguage && 
-                                 languageState.canUnlockNewLanguage &&
-                                 languageState.unlockedLanguages.length < totalLanguagesInApp;
-        
-        if (shouldShowCelebration) {
+        if (languageState.hasCompletedLanguage && 
+            languageState.canUnlockNewLanguage &&
+            languageState.unlockedLanguages.length < totalLanguagesInApp) {
+          
+          shouldShowCelebration = true;
           completedLanguage = languageState.currentLanguage;
           unlockedLanguages = languageState.unlockedLanguages;
           canUnlock = languageState.canUnlockNewLanguage;
-          
-        } else if (languageState.hasCompletedLanguage && 
-                   !languageState.canUnlockNewLanguage) {
-          // Si completó pero ya no puede desbloquear (ya fue usado), ir al home
-        
+
         } else if (languageState.hasCompletedLanguage && 
                    languageState.unlockedLanguages.length >= totalLanguagesInApp) {
           
-          // solución para el caso de que complete TODOS los lenguajes
-          
-          // El 'languageState.currentLanguage' tiene el 3er lenguaje (ej. 'Python')
-          final String lenguajeActual = languageState.currentLanguage;
-
-          // ¿Este lenguaje 'canUnlockNewLanguage'?
-          // Si es 'true', es la primera vez que completamos este 3er lenguaje.
           final bool esLaPrimeraVez = languageState.canUnlockNewLanguage;
 
-          if (esLaPrimeraVez && lenguajeActual.isNotEmpty) {
-            // ¡Es la primera vez!
-            
-            // 1. Marcamos el 3er lenguaje como "usado" en la BD
-            try {
-              final supabase = Supabase.instance.client;
-              // Obtener array actual
-              final userResponse = await supabase
-                  .from('usuarios')
-                  .select('lenguajes_usados_desbloqueo')
-                  .eq('id', userId)
-                  .single();
-
-              final currentList = userResponse['lenguajes_usados_desbloqueo'] as List?;
-              final usados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
-              
-              usados.add(lenguajeActual.trim().toLowerCase());
-              
-              await supabase
-                  .from('usuarios')
-                  .update({'lenguajes_usados_desbloqueo': usados.toList()})
-                  .eq('id', userId);
-              
-            } catch (e) {
-              // Silencioso en producción
-            }
-
-            // 2. Configuramos la navegación a la pantalla final
+          if (esLaPrimeraVez && languageState.currentLanguage.isNotEmpty) {
             shouldShowCelebration = true;
             completedLanguage = 'ALL';
             unlockedLanguages = languageState.unlockedLanguages;
-            canUnlock = false; // No hay más lenguajes para desbloquear
-
-          } else {
-            // No es la primera vez (canUnlock es false porque ya lo marcamos)
-            // No hacemos nada, 'shouldShowCelebration' queda 'false'
+            canUnlock = false;
+            _markLanguageAsUsedBackground(userId, languageState.currentLanguage);
           }
-          
-          // fin de la solución
         }
       }
 
       if (!mounted) return;
 
-      // 3. Decidir la navegación basado en el resultado
+      // ---------------------------------------------------------
+      // 3. NAVEGACIÓN Y REBOBINADO
+      // ---------------------------------------------------------
       if (shouldShowCelebration) {
-        // Ir a la celebración (sea de 1 o de TODOS)
         context.go('/language-completion', extra: {
           'completedLanguage': completedLanguage,
           'unlockedLanguages': unlockedLanguages,
           'canUnlockNewLanguage': canUnlock,
         });
       } else {
-        // Ir al home normalmente
+        // --- TRUCO DEL REBOBINADO SIN FLICKER ---
+        
+        // A. Calculamos el valor "viejo" (105) basándonos en el real (106) que acabamos de consultar
+        final oldTrophies = (realTotalTrophies - widget.trofeosObtenidos).clamp(0, 999999).toInt();
+        
+        // B. Inyectamos ese valor viejo en el provider
+        // Como no hemos actualizado el provider todavía, esto mantiene o fija la UI en 105.
+        final currentStats = ref.read(appBarProvider);
+        ref.read(appBarProvider.notifier).updateStatsDirectly(
+          lives: currentStats.lives,
+          trophies: oldTrophies, 
+          streak: currentStats.streak, 
+        );
+
+        // C. Navegamos al Home (que mostrará 105)
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
+        
+        ref.read(oldStatsValuesProvider.notifier).state = null;
+        ref.read(shouldRefreshStatsProvider.notifier).state = false;
+
         context.go(returnPath);
+
+        // D. Disparamos la actualización REAL.
+        // Al llegar al Home, esto correrá y actualizará 105 -> 106, disparando LA animación.
+        Future.delayed(const Duration(milliseconds: 150), () {
+          ref.read(appBarProvider.notifier).fetchStats();
+        });
       }
+
     } catch (e) {
       if (mounted) {
         final returnPath = ref.read(navigationReturnPathProvider);
@@ -167,6 +168,28 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
         setState(() => _isNavigating = false);
       }
     }
+  }
+
+  void _markLanguageAsUsedBackground(String userId, String languageName) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userResponse = await supabase
+          .from('usuarios')
+          .select('lenguajes_usados_desbloqueo')
+          .eq('id', userId)
+          .single();
+      
+      final currentList = List<String>.from(userResponse['lenguajes_usados_desbloqueo'] ?? []);
+      final normalized = languageName.trim().toLowerCase();
+      
+      if (!currentList.contains(normalized)) {
+        currentList.add(normalized);
+        await supabase
+            .from('usuarios')
+            .update({'lenguajes_usados_desbloqueo': currentList})
+            .eq('id', userId);
+      }
+    } catch (_) {}
   }
   // fin de metodo 
 

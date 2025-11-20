@@ -1,226 +1,598 @@
-// lib/features/challenge/provider/language_completion_provider.dart
-
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+
+
 // Estado para tracking de completitud de lenguajes
+
 class LanguageCompletionState {
+
   final String currentLanguage;
+
   final List<String> unlockedLanguages;
+
   final bool hasCompletedLanguage;
+
   final bool canUnlockNewLanguage; // Si este lenguaje puede desbloquear otro
+
   final int totalLevelsInLanguage;
+
   final int completedLevelsInLanguage;
 
+
+
   LanguageCompletionState({
+
     required this.currentLanguage,
+
     required this.unlockedLanguages,
+
     this.hasCompletedLanguage = false,
+
     this.canUnlockNewLanguage = true, // Por defecto sí puede
+
     this.totalLevelsInLanguage = 0,
+
     this.completedLevelsInLanguage = 0,
+
   });
 
+
+
   LanguageCompletionState copyWith({
+
     String? currentLanguage,
+
     List<String>? unlockedLanguages,
+
     bool? hasCompletedLanguage,
+
     bool? canUnlockNewLanguage,
+
     int? totalLevelsInLanguage,
+
     int? completedLevelsInLanguage,
+
   }) {
+
     return LanguageCompletionState(
+
       currentLanguage: currentLanguage ?? this.currentLanguage,
+
       unlockedLanguages: unlockedLanguages ?? this.unlockedLanguages,
+
       hasCompletedLanguage: hasCompletedLanguage ?? this.hasCompletedLanguage,
+
       canUnlockNewLanguage: canUnlockNewLanguage ?? this.canUnlockNewLanguage,
-      totalLevelsInLanguage: totalLevelsInLanguage ?? this.totalLevelsInLanguage,
+
+      totalLevelsInLanguage:
+
+          totalLevelsInLanguage ?? this.totalLevelsInLanguage,
+
       completedLevelsInLanguage:
+
           completedLevelsInLanguage ?? this.completedLevelsInLanguage,
+
     );
+
   }
+
+
 
   double get progressPercentage {
+
     if (totalLevelsInLanguage == 0) return 0.0;
+
     return completedLevelsInLanguage / totalLevelsInLanguage;
+
   }
 
+
+
   bool get isLanguageCompleted => progressPercentage >= 1.0;
+
 }
 
+
+
 class LanguageCompletionNotifier
+
     extends StateNotifier<LanguageCompletionState> {
+
   final SupabaseClient _supabase;
 
+
+
   LanguageCompletionNotifier(this._supabase)
+
       : super(LanguageCompletionState(
+
           currentLanguage: '',
+
           unlockedLanguages: [],
+
         ));
 
-  /// Verifica si el usuario completó un lenguaje
+
+
+  /// Verifica si el usuario completó un lenguaje (Estrategia Híbrida)
+
   Future<void> checkLanguageCompletion(String userId) async {
+
     try {
+
       // 1. Obtener el lenguaje favorito actual y arrays en UNA sola consulta
+
       final userResponse = await _supabase
+
           .from('usuarios')
+
           .select('''
+
             lenguaje_favorito,
+
             lenguajes_completados,
+
             lenguajes_usados_desbloqueo,
+
             lenguaje:lenguaje_favorito ( nombre )
+
           ''')
+
           .eq('id', userId)
+
           .single();
 
+
+
       final langData = userResponse['lenguaje'] as Map<String, dynamic>?;
+
       final currentLanguageName = (langData?['nombre'] as String?)?.trim() ?? '';
+
+
 
       if (currentLanguageName.isEmpty) return;
 
+
+
       final normalizedCurrentLang = currentLanguageName.toLowerCase();
 
-      // 3. Procesar Arrays
+      final currentLangId = userResponse['lenguaje_favorito'] as int;
+
+
+
+      // 2. Procesar Arrays
+
       final completadosList = List<String>.from(
-        (userResponse['lenguajes_completados'] as List? ?? []).map((e) => e.toString().trim().toLowerCase())
+
+        (userResponse['lenguajes_completados'] as List? ?? [])
+
+            .map((e) => e.toString().trim().toLowerCase())
+
       );
+
+
 
       final usadosList = List<String>.from(
-        (userResponse['lenguajes_usados_desbloqueo'] as List? ?? []).map((e) => e.toString().trim().toLowerCase())
+
+        (userResponse['lenguajes_usados_desbloqueo'] as List? ?? [])
+
+            .map((e) => e.toString().trim().toLowerCase())
+
       );
 
-      // 4. Lógica optimizada
-      final isCompleted = completadosList.contains(normalizedCurrentLang);
+
+
+      // 3. Lógica de Verificación
+
+      bool isCompleted = completadosList.contains(normalizedCurrentLang);
+
+
+
+      // --- AQUÍ ESTÁ LA SOLUCIÓN ---
+
+      // Si la BD dice que NO está completado, verificamos manualmente contando niveles.
+
+      // Esto arregla el caso donde el Trigger SQL no existe o falló.
+
+      if (!isCompleted) {
+
+        // Verificación manual (Dart contando niveles)
+
+        final manualCheck = await _verifyManuallyIfCompleted(userId, currentLangId);
+
+       
+
+        if (manualCheck) {
+
+          isCompleted = true;
+
+          // ¡Importante! Actualizamos la BD para que quede guardado
+
+          await _addToCompletedLanguages(userId, normalizedCurrentLang);
+
+          // Actualizamos la lista local para que la lógica siguiente funcione
+
+          completadosList.add(normalizedCurrentLang);
+
+        }
+
+      }
+
+      // -----------------------------
+
+
+
+      // 4. Determinar desbloqueo
+
       final hasBeenUsed = usadosList.contains(normalizedCurrentLang);
+
       final canUnlock = isCompleted && !hasBeenUsed;
 
+
+
       // 5. Obtener desbloqueados
+
       final unlockedLanguages = await _getUnlockedLanguages(userId);
 
+
+
       state = state.copyWith(
+
         currentLanguage: currentLanguageName,
+
         unlockedLanguages: unlockedLanguages,
+
         hasCompletedLanguage: isCompleted,
+
         canUnlockNewLanguage: canUnlock,
+
       );
-      
+
+     
+
     } catch (e) {
-      // rethrow; // Silencioso
+
+       debugPrint('Error checkLanguageCompletion: $e');
+
     }
+
   }
 
-  /// Verifica si un lenguaje puede desbloquear otro lenguaje
-  Future<bool> _canLanguageUnlockAnother(String userId, String languageName) async {
+
+
+  /// Cuenta niveles manualmente: Es la "red de seguridad"
+
+  Future<bool> _verifyManuallyIfCompleted(String userId, int langId) async {
+
     try {
+
+      // A. Obtener secciones del lenguaje
+
+      final sectionsResponse = await _supabase
+
+          .from('secciones')
+
+          .select('id_seccion')
+
+          .eq('id_lenguaje', langId);
+
+     
+
+      final sectionIds = sectionsResponse.map((s) => s['id_seccion'] as int).toList();
+
+      if (sectionIds.isEmpty) return false;
+
+
+
+      // B. Obtener total de niveles de esas secciones
+
+      final levelsResponse = await _supabase
+
+          .from('niveles')
+
+          .select('id_nivel')
+
+          .inFilter('id_seccion', sectionIds);
+
+     
+
+      final totalLevels = levelsResponse.length;
+
+      if (totalLevels == 0) return false;
+
+
+
+      final levelIds = levelsResponse.map((l) => l['id_nivel'] as int).toList();
+
+
+
+      // C. Contar cuántos de esos niveles ha completado el usuario
+
+      final completedResponse = await _supabase
+
+          .from('progreso_usuario')
+
+          .select('id_nivel')
+
+          .eq('id_usuario', userId)
+
+          .inFilter('id_nivel', levelIds);
+
+
+
+      final completedLevels = completedResponse.length;
+
+
+
+      // D. Si completó todos (o más), es true
+
+      return completedLevels >= totalLevels;
+
+
+
+    } catch (e) {
+
+      return false;
+
+    }
+
+  }
+
+
+
+  /// Verifica si un lenguaje puede desbloquear otro lenguaje
+
+  Future<bool> _canLanguageUnlockAnother(String userId, String languageName) async {
+
+    try {
+
       final userResponse = await _supabase
+
           .from('usuarios')
+
           .select('lenguajes_usados_desbloqueo')
+
           .eq('id', userId)
+
           .maybeSingle();
+
+
 
       if (userResponse == null) return false;
 
+
+
       final usadosList = userResponse['lenguajes_usados_desbloqueo'] as List?;
+
       final usados = usadosList?.map((e) => e.toString().trim().toLowerCase()).toList() ?? [];
-      
+
+     
+
       return !usados.contains(languageName.trim().toLowerCase());
+
     } catch (e) {
+
       return true;
+
     }
+
   }
+
+
 
   Future<void> _addToCompletedLanguages(String userId, String languageName) async {
+
     try {
+
       final userResponse = await _supabase.from('usuarios').select('lenguajes_completados').eq('id', userId).maybeSingle();
+
       if (userResponse == null) return;
-      final currentList = userResponse['lenguajes_completados'] as List?;
-      final completados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
-      completados.add(languageName.trim().toLowerCase());
-      await _supabase.from('usuarios').update({'lenguajes_completados': completados.toList()}).eq('id', userId);
+
+      final currentList = List<String>.from(userResponse['lenguajes_completados'] ?? []);
+
+      final normalized = languageName.trim().toLowerCase();
+
+     
+
+      if (!currentList.contains(normalized)) {
+
+        currentList.add(normalized);
+
+        await _supabase.from('usuarios').update({'lenguajes_completados': currentList}).eq('id', userId);
+
+      }
+
     } catch (e) {}
+
   }
 
+
+
   Future<void> _removeFromCompletedLanguages(String userId, String languageName) async {
+
     try {
+
       final userResponse = await _supabase.from('usuarios').select('lenguajes_completados').eq('id', userId).maybeSingle();
+
       if (userResponse == null) return;
-      final currentList = userResponse['lenguajes_completados'] as List?;
-      final completados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
-      completados.remove(languageName.trim().toLowerCase());
-      await _supabase.from('usuarios').update({'lenguajes_completados': completados.toList()}).eq('id', userId);
+
+      final currentList = List<String>.from(userResponse['lenguajes_completados'] ?? []);
+
+      final normalized = languageName.trim().toLowerCase();
+
+     
+
+      if (currentList.contains(normalized)) {
+
+        currentList.remove(normalized);
+
+        await _supabase.from('usuarios').update({'lenguajes_completados': currentList}).eq('id', userId);
+
+      }
+
     } catch (e) {}
+
   }
+
+
+
 
 
   Future<void> _addToSelectedLanguages(String userId, String languageName) async {
+
     try {
+
       final userResponse = await _supabase.from('usuarios').select('lenguajes_seleccionados').eq('id', userId).maybeSingle();
+
       if (userResponse == null) return;
-      final currentList = userResponse['lenguajes_seleccionados'] as List?;
-      final seleccionados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
-      seleccionados.add(languageName.trim().toLowerCase());
-      await _supabase.from('usuarios').update({'lenguajes_seleccionados': seleccionados.toList()}).eq('id', userId);
+
+      final currentList = List<String>.from(userResponse['lenguajes_seleccionados'] ?? []);
+
+      final normalized = languageName.trim().toLowerCase();
+
+     
+
+      if (!currentList.contains(normalized)) {
+
+        currentList.add(normalized);
+
+        await _supabase.from('usuarios').update({'lenguajes_seleccionados': currentList}).eq('id', userId);
+
+      }
+
     } catch (e) {}
+
   }
+
+
 
   Future<List<String>> _getUnlockedLanguages(String userId) async {
+
     try {
+
       final response = await _supabase.rpc('get_unlocked_languages', params: {'user_id': userId}) as List;
+
       return response.map((row) => (row['language_name'] as String).trim().toLowerCase()).toList();
+
     } catch (e) {
+
       return [];
+
     }
+
   }
 
+
+
   /// Actualiza el lenguaje favorito del usuario
+
   Future<void> updateFavoriteLanguage(
-    String userId, 
-    String languageName, 
-    {String? previousLanguage} // ✅ Parámetro restaurado
+
+    String userId,
+
+    String languageName,
+
+    {String? previousLanguage}
+
   ) async {
+
     try {
+
       final normalizedName = languageName.trim().toLowerCase();
-      
+
+     
+
       final languageResponse = await _supabase
+
           .from('lenguaje')
+
           .select('id_lenguaje, nombre')
+
           .ilike('nombre', normalizedName)
+
           .maybeSingle();
 
+
+
       if (languageResponse == null) throw Exception('Lenguaje no encontrado: $languageName');
+
       final languageId = languageResponse['id_lenguaje'] as int;
+
+
 
       await _supabase.from('usuarios').update({'lenguaje_favorito': languageId}).eq('id', userId);
 
+
+
       if (previousLanguage != null && previousLanguage.isNotEmpty) {
+
         await _markLanguageAsUsedForUnlock(userId, previousLanguage.trim().toLowerCase());
+
       }
 
+
+
       await _addToSelectedLanguages(userId, normalizedName);
+
       state = state.copyWith(currentLanguage: languageName.trim());
+
     } catch (e) {
+
       rethrow;
+
     }
+
   }
+
+
 
   Future<void> _markLanguageAsUsedForUnlock(String userId, String languageName) async {
+
     try {
+
       final userResponse = await _supabase.from('usuarios').select('lenguajes_usados_desbloqueo').eq('id', userId).maybeSingle();
+
       if (userResponse == null) return;
-      final currentList = userResponse['lenguajes_usados_desbloqueo'] as List?;
-      final usados = currentList?.map((e) => e.toString()).toSet() ?? <String>{};
-      usados.add(languageName.trim().toLowerCase());
-      await _supabase.from('usuarios').update({'lenguajes_usados_desbloqueo': usados.toList()}).eq('id', userId);
+
+      final currentList = List<String>.from(userResponse['lenguajes_usados_desbloqueo'] ?? []);
+
+      final normalized = languageName.trim().toLowerCase();
+
+     
+
+      if (!currentList.contains(normalized)) {
+
+        currentList.add(normalized);
+
+        await _supabase.from('usuarios').update({'lenguajes_usados_desbloqueo': currentList}).eq('id', userId);
+
+      }
+
     } catch (e) {}
+
   }
+
+
 
   void resetCompletionState() {
+
     state = state.copyWith(hasCompletedLanguage: false);
+
   }
+
 }
 
+
+
 final languageCompletionProvider =
+
     StateNotifierProvider<LanguageCompletionNotifier, LanguageCompletionState>(
+
   (ref) => LanguageCompletionNotifier(Supabase.instance.client),
+
 );
+

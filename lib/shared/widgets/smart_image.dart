@@ -21,6 +21,10 @@ class SmartImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool esUrlDeRed = path.startsWith('http');
 
+    // 🎯 OPTIMIZACIÓN: Calcular cache dimensions si se especifican width/height
+    final int? cacheWidth = width != null ? (width! * 2).round() : null;
+    final int? cacheHeight = height != null ? (height! * 2).round() : null;
+
     if (esUrlDeRed) {
       // 2. Si es URL, usamos CachedNetworkImage
       return CachedNetworkImage(
@@ -28,9 +32,14 @@ class SmartImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        // Muestra un 'cargando...'
-        placeholder: (context, url) => const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
+        // 🎯 OPTIMIZACIÓN: Limitar tamaño en memoria
+        memCacheWidth: cacheWidth,
+        memCacheHeight: cacheHeight,
+        // Placeholder más ligero
+        placeholder: (context, url) => Container(
+          width: width,
+          height: height,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         // Muestra un ícono de error
         errorWidget: (context, url, error) {
@@ -50,6 +59,9 @@ class SmartImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        // 🎯 OPTIMIZACIÓN: Limitar tamaño en cache
+        cacheWidth: cacheWidth,
+        cacheHeight: cacheHeight,
         errorBuilder: (context, error, stackTrace) {
           return Container(
             width: width,

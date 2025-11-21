@@ -47,21 +47,23 @@ class RankingTile extends StatelessWidget {
       avatarsList, // <--- USA LA LISTA AQUÍ
     );
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      clipBehavior: Clip.antiAlias,
-      color: isCurrentUser
-          ? colors.secondaryContainer.withOpacity(0.4)
-          : colors.surfaceContainerHigh,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isCurrentUser ? colors.secondary : colors.outlineVariant,
-          width: isCurrentUser ? 1.5 : 1.0,
+    // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints innecesarios
+    return RepaintBoundary(
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        clipBehavior: Clip.antiAlias,
+        color: isCurrentUser
+            ? colors.secondaryContainer.withOpacity(0.4)
+            : colors.surfaceContainerHigh,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isCurrentUser ? colors.secondary : colors.outlineVariant,
+            width: isCurrentUser ? 1.5 : 1.0,
+          ),
         ),
-      ),
-      child: InkWell(
+        child: InkWell(
         onTap: () {
           if (isCurrentUser) return;
           showDialog(
@@ -148,6 +150,7 @@ class RankingTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

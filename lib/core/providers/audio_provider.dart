@@ -8,60 +8,135 @@ final audioControllerProvider = Provider<AudioController>((ref) {
 
 class AudioController {
   final Ref ref;
-  // Usamos múltiples players para permitir solapamiento de sonidos si es necesario
-  final AudioPlayer _player = AudioPlayer();
+  
+  // Canal 1: Efectos de Sonido (SFX)
+  final AudioPlayer _sfxPlayer = AudioPlayer();
+  
+  // Canal 2: Música de Fondo (BGM)
+  final AudioPlayer _musicPlayer = AudioPlayer();
 
-  AudioController(this.ref);
+  // Cache para saber qué debería estar sonando
+  String? _currentMusicTrack;
 
-  /// Método genérico privado para reproducir
-  Future<void> _play(String assetName) async {
-    // 1. Leemos la configuración actual SIN escuchar cambios (read)
-    //    para no reconstruir widgets innecesariamente.
+  AudioController(this.ref) {
+    _musicPlayer.setReleaseMode(ReleaseMode.loop);
+    
+    // Configuración de contexto para optimizar audio en segundo plano/interrupciones
+    final AudioContext audioContext = AudioContext(
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.ambient,
+      ),
+      android: AudioContextAndroid(
+        isSpeakerphoneOn: true,
+        stayAwake: false, // Ahorra batería
+        contentType: AndroidContentType.music,
+        usageType: AndroidUsageType.game,
+        audioFocus: AndroidAudioFocus.gain,
+      ),
+    );
+    AudioPlayer.global.setAudioContext(audioContext);
+  }
+
+  // ==========================================
+  // LÓGICA DE EFECTOS (SFX)
+  // ==========================================
+  Future<void> _playSfx(String assetName) async {
     final settingsState = ref.read(settingsProvider);
-
-    // 2. Verificamos si tenemos datos y si el sonido está activado
     if (!settingsState.hasValue || settingsState.value == null) return;
     
     final config = settingsState.value!;
-    
-    // Si el usuario desactivó los efectos en la BD, no hacemos nada.
     if (!config.sonidoEfectos) return;
 
     try {
-      // 3. Configurar volumen según la preferencia del usuario
-      // El volumen en audioplayers va de 0.0 a 1.0
-      await _player.setVolume(config.volumenAudio.clamp(0.0, 1.0));
+      double volumen = config.volumenAudio.clamp(0.0, 1.0);
+      await _sfxPlayer.setVolume(volumen);
       
-      // 4. Reproducir
-      // Nota: En audioplayers v6+, AssetSource busca en 'assets/' automáticamente
-      // Si tu archivo está en 'assets/audio/click.mp3', usa 'audio/click.mp3'
-      if (_player.state == PlayerState.playing) {
-        await _player.stop(); // Reiniciar si ya está sonando para efectos rápidos
+      if (_sfxPlayer.state == PlayerState.playing) {
+        await _sfxPlayer.stop();
       }
-      await _player.play(AssetSource('audio/$assetName'));
       
+      await _sfxPlayer.play(AssetSource('audio/$assetName'));
     } catch (e) {
-      // Manejo silencioso de errores de audio para no interrumpir la UX
-      print('Error reproduciendo audio: $e');
+      // Fail silently
     }
   }
 
-  // --- Métodos públicos para usar en la UI ---
+  Future<void> playClick() async => await _playSfx('click.mp3');
+  Future<void> playSuccess() async => await _playSfx('success.mp3');
+  Future<void> playError() async => await _playSfx('error.mp3');
+  Future<void> playLevelUnlock() async => await _playSfx('unlock.mp3');
 
-  Future<void> playClick() async {
-    await _play('click.mp3');
+
+  // ==========================================
+  // LÓGICA DE MÚSICA DE FONDO (BGM)
+  // ==========================================
+  
+  Future<void> playBackgroundMusic(String languageName) async {
+    String trackName;
+    switch (languageName.toLowerCase()) {
+      case 'python': trackName = 'bgm_python.mp3'; break;
+      case 'java': trackName = 'bgm_java.mp3'; break;
+      case 'c': trackName = 'bgm_c.mp3'; break;
+      default: trackName = 'bgm_menu.mp3'; break;
+    }
+
+    // 🔍 VERIFICACIÓN INTELIGENTE (IDEMPOTENCIA)
+    // Si ya estamos tocando ESTA canción y el player está activo, NO REINICIAMOS.
+    // Esto permite llamar a este método muchas veces sin causar cortes.
+    if (_currentMusicTrack == trackName && _musicPlayer.state == PlayerState.playing) {
+      await updateMusicVolume(); // Solo aseguramos que el volumen sea correcto
+      return;
+    }
+
+    _currentMusicTrack = trackName;
+
+    try {
+      await updateMusicVolume(); 
+      // Si estaba parada o era otra canción, le damos play.
+      await _musicPlayer.play(AssetSource('audio/music/$trackName'));
+    } catch (e) {
+      // Fail silently
+    }
   }
 
-  Future<void> playSuccess() async {
-    await _play('success.mp3');
+  Future<void> updateMusicVolume() async {
+    final settingsState = ref.read(settingsProvider);
+    if (!settingsState.hasValue || settingsState.value == null) return;
+
+    double volumenUsuario = settingsState.value!.volumenAudio.clamp(0.0, 1.0);
+    // Música al 60% para dejar espacio a los efectos
+    double volumenFinal = volumenUsuario * 0.6; 
+
+    await _musicPlayer.setVolume(volumenFinal);
   }
 
-  Future<void> playError() async {
-    await _play('error.mp3');
+  Future<void> stopMusic() async {
+    await _musicPlayer.stop();
+    // NOTA: No limpiamos _currentMusicTrack aquí a propósito.
+    // Así, si intentamos reproducir la misma canción después, el playBackgroundMusic
+    // detectará que el estado NO es 'playing' y la reiniciará.
+  }
+
+  // ==========================================
+  // CICLO DE VIDA
+  // ==========================================
+  
+  Future<void> pauseMusicAppLifecycle() async {
+    // Solo pausamos si realmente está sonando
+    if (_musicPlayer.state == PlayerState.playing) {
+      await _musicPlayer.pause();
+    }
   }
   
-  // Para el desbloqueo de nivel, quizás un sonido más "mágico"
-  Future<void> playLevelUnlock() async {
-    await _play('unlock.mp3'); 
+  Future<void> resumeMusicAppLifecycle() async {
+     // Intentamos reanudar
+     if (_musicPlayer.state == PlayerState.paused) {
+       await _musicPlayer.resume();
+     }
+  }
+
+  void dispose() {
+    _musicPlayer.dispose();
+    _sfxPlayer.dispose();
   }
 }

@@ -5,6 +5,8 @@ import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:kitsucode/core/providers/theme_provider.dart';
 import 'package:kitsucode/core/providers/app_init_provider.dart';
+// 1. Importamos el MusicManager
+import 'package:kitsucode/core/widgets/music_manager.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -20,13 +22,17 @@ class MyApp extends ConsumerWidget {
     });
 
     return OverlaySupport.global(
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        theme: AppThemes.lightTheme,
-        darkTheme: AppThemes.darkTheme,
-        routerConfig: router,
-        themeMode: themeMode,
+      // 2. Envolvemos MaterialApp con MusicManager
+      // Esto asegura que el "oído" de la música esté activo en TODA la app
+      child: MusicManager(
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          theme: AppThemes.lightTheme,
+          darkTheme: AppThemes.darkTheme,
+          routerConfig: router,
+          themeMode: themeMode,
         ),
-      );
-    }
+      ),
+    );
+  }
 }

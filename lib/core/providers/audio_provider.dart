@@ -21,7 +21,7 @@ class AudioController {
     // Optimización 1: Música en modo Loop
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
     
-    // Optimización 2: SFX en modo LowLatency (Ideal para sonidos cortos)
+    // Optimización 2: SFX en modo LowLatency
     _sfxPlayer.setPlayerMode(PlayerMode.lowLatency);
     
     final AudioContext audioContext = AudioContext(
@@ -36,7 +36,7 @@ class AudioController {
         stayAwake: false,
         contentType: AndroidContentType.music,
         usageType: AndroidUsageType.game,
-        audioFocus: AndroidAudioFocus.none, // 🔥 CLAVE: Evita que el SFX pause la música
+        audioFocus: AndroidAudioFocus.none,
       ),
     );
     
@@ -45,16 +45,13 @@ class AudioController {
     _startWatchdog();
   }
 
-  // --- HELPERS PRIVADOS PARA LEER SETTINGS ---
-
-  // Obtiene el volumen de la música (0.0 a 1.0)
+  // --- HELPERS ---
   double _getMusicVolume() {
     final settingsState = ref.read(settingsProvider);
     if (!settingsState.hasValue || settingsState.value == null) return 1.0;
     return settingsState.value!.volumenAudio.clamp(0.0, 1.0);
   }
 
-  // Obtiene si los efectos están activos (true/false)
   bool _areSfxEnabled() {
     final settingsState = ref.read(settingsProvider);
     if (!settingsState.hasValue || settingsState.value == null) return true;
@@ -62,7 +59,6 @@ class AudioController {
   }
 
   // --- WATCHDOG ---
-
   void _startWatchdog() {
     _watchdogTimer?.cancel();
     _watchdogTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
@@ -71,16 +67,17 @@ class AudioController {
   }
 
   Future<void> _checkMusicState() async {
-    // 🔥 1. Si el volumen de música es 0, no forzamos play (ahorro de batería)
+    // Si el volumen es 0, no forzamos play (ahorro de batería)
     if (_getMusicVolume() <= 0) return;
 
+    // Si la bandera dice que NO debe sonar, el watchdog se detiene aquí.
     if (!_shouldBePlaying || _currentMusicTrack == null) {
       return;
     }
 
     final currentState = _musicPlayer.state;
     
-    // 🔥 2. Solo intervenir si debería sonar y no lo hace
+    // Solo intervenir si debería sonar y no lo hace
     if (currentState != PlayerState.playing) {
       try {
         if (currentState == PlayerState.paused) {
@@ -91,7 +88,6 @@ class AudioController {
             return;
           }
         }
-        // Si resume falló, play completo
         await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
       } catch (e) {
         // Fallo silencioso
@@ -99,20 +95,13 @@ class AudioController {
     }
   }
 
-  // ==========================================
-  // EFECTOS DE SONIDO (SFX)
-  // Controlado por: sonido_efectos (Boolean)
-  // ==========================================
-  
+  // --- SFX ---
   Future<void> _playSfx(String assetName) async {
-    // 🔥 OPTIMIZACIÓN: Si los efectos están desactivados, salimos inmediatamente.
-    // No cargamos archivos ni usamos el reproductor.
+    // Si efectos desactivados, salir rápido
     if (!_areSfxEnabled()) return;
 
     try {
-      // Usamos volumen 1.0 fijo para efectos (independiente de la música)
       await _sfxPlayer.setVolume(1.0);
-      
       if (_sfxPlayer.state == PlayerState.playing) {
         await _sfxPlayer.stop();
       }
@@ -127,11 +116,7 @@ class AudioController {
   Future<void> playError() async => await _playSfx('error.mp3');
   Future<void> playLevelUnlock() async => await _playSfx('unlock.mp3');
 
-  // ==========================================
-  // MÚSICA DE FONDO (BGM)
-  // Controlado por: volumen_audio (Numeric)
-  // ==========================================
-  
+  // --- MÚSICA ---
   Future<void> playBackgroundMusic(String languageName) async {
     String trackName;
     switch (languageName.toLowerCase().trim()) {
@@ -143,7 +128,6 @@ class AudioController {
 
     _shouldBePlaying = true;
 
-    // Si ya es la canción correcta
     if (_currentMusicTrack == trackName) {
       await updateMusicVolume();
       return;
@@ -151,9 +135,7 @@ class AudioController {
 
     _currentMusicTrack = trackName;
 
-    // 🔥 OPTIMIZACIÓN CRÍTICA:
-    // Si el volumen de música es 0, pausamos y NO cargamos nada nuevo.
-    // Evita decodificar audio si no se va a escuchar.
+    // Si volumen es 0, pausar y no cargar nada nuevo
     if (_getMusicVolume() <= 0) {
       if (_musicPlayer.state == PlayerState.playing) {
         await _musicPlayer.pause();
@@ -163,48 +145,34 @@ class AudioController {
 
     try {
       await updateMusicVolume();
-      
       if (_musicPlayer.state == PlayerState.playing) {
         await _musicPlayer.stop();
       }
-      
       await Future.delayed(const Duration(milliseconds: 50));
       await _musicPlayer.play(AssetSource('audio/music/$trackName'));
-      
     } catch (e) {
       _currentMusicTrack = null;
       _shouldBePlaying = false;
     }
   }
 
-  /// Se llama desde Settings cuando el usuario mueve el slider de volumen
   Future<void> updateMusicVolume() async {
-    // Obtenemos volumen crudo de la BD (0.0 a 1.0)
     final volumenDb = _getMusicVolume();
-    
-    // Aplicamos un factor de reducción suave (0.6) para que no sature
     double volumenFinal = volumenDb * 0.6; 
 
-    // 🔥 LÓGICA INTELIGENTE DE PAUSA/PLAY
     if (volumenFinal <= 0) {
-      // CASO A: Volumen es 0 -> Pausamos para ahorrar batería
       if (_musicPlayer.state == PlayerState.playing) {
         await _musicPlayer.pause();
       }
     } else {
-      // CASO B: Volumen > 0 -> Aplicamos volumen
       await _musicPlayer.setVolume(volumenFinal);
 
-      // Si debería estar sonando (_shouldBePlaying) pero estaba pausada 
-      // (probablemente porque el volumen era 0 antes), la reanudamos sola.
       if (_shouldBePlaying && 
           _currentMusicTrack != null && 
           _musicPlayer.state != PlayerState.playing) {
-        
         if (_musicPlayer.state == PlayerState.paused) {
            await _musicPlayer.resume();
         } else {
-           // Si estaba stopped, play completo
            await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
         }
       }
@@ -216,37 +184,35 @@ class AudioController {
     await _musicPlayer.pause();
   }
 
+  // 🔥 CORRECCIÓN CRÍTICA:
+  // Al salir de la app, ponemos la bandera en false.
+  // Así el watchdog sabe que NO debe intentar reproducir nada.
   Future<void> pauseMusicAppLifecycle() async {
+    _shouldBePlaying = false; // 👈 ESTO ES LO QUE FALTABA
+    
     if (_musicPlayer.state == PlayerState.playing) {
-      // No cambiamos _shouldBePlaying a false, solo pausamos el hardware
       await _musicPlayer.pause();
     }
   }
 
-  // Método para forzar reanudación (si el sistema lo mató)
   Future<void> forceResumeMusic() async {
     if (_currentMusicTrack == null) return;
-    // Si el volumen es 0, no tiene sentido forzar nada
     if (_getMusicVolume() <= 0) return; 
 
     _shouldBePlaying = true;
 
     try {
       final currentState = _musicPlayer.state;
-
       if (currentState == PlayerState.paused) {
         await _musicPlayer.resume();
         await Future.delayed(const Duration(milliseconds: 200));
-        
         if (_musicPlayer.state == PlayerState.playing) {
           await updateMusicVolume();
           return;
         }
       }
-
       await updateMusicVolume();
       await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
-      
     } catch (e) {
       // Fallo silencioso
     }

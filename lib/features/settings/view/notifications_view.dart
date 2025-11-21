@@ -1,6 +1,5 @@
-// lib/features/settings/view/notifications_view.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 👈 Haptics
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -14,12 +13,10 @@ import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
-// 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
-// ✅ Fallback consistente al color dinámico previo
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 Audio
 
-// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget ---
 class NotificationsView extends ConsumerStatefulWidget {
   const NotificationsView({super.key});
 
@@ -27,14 +24,11 @@ class NotificationsView extends ConsumerStatefulWidget {
   ConsumerState<NotificationsView> createState() => _NotificationsViewState();
 }
 
-// --- 🔥 3. AÑADIR ESTADO Y WidgetsBindingObserver ---
 class _NotificationsViewState extends ConsumerState<NotificationsView>
     with WidgetsBindingObserver {
-  // --- 🔥 4. BANDERAS DE ESTADO ---
   bool _isPageVisible = true;
   bool _isAppActive = true;
 
-  // --- 🔥 5. MANEJO DE CICLO DE VIDA ---
   @override
   void initState() {
     super.initState();
@@ -56,8 +50,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
     });
   }
 
-  // --- Helpers de color dinámico e íconos ---
-  // ✅ Usa la lista real de avatares desde el provider (BD). Fallback al método previo.
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
     if (avatarsList.isNotEmpty) {
@@ -86,9 +78,18 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
     ColorScheme colors,
   ) async {
     if (newValue) {
+      // 🔥 Sonido Activación Masiva
+      HapticFeedback.mediumImpact();
+      ref.read(audioControllerProvider).playSuccess();
+
       ref.read(notificationSettingsProvider.notifier).updateAllEnabled(true);
       return;
     }
+    
+    // 🔥 Sonido Pregunta
+    HapticFeedback.lightImpact();
+    ref.read(audioControllerProvider).playClick();
+
     final didConfirm = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -99,12 +100,20 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
               '¿Estás seguro de que quieres desactivar todas las notificaciones de la aplicación?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop(false);
+              },
               child:
                   Text('Cancelar', style: TextStyle(color: colors.onSurfaceVariant)),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () {
+                // 🔥 Sonido Desactivación Masiva
+                HapticFeedback.mediumImpact();
+                ref.read(audioControllerProvider).playClick();
+                Navigator.of(context).pop(true);
+              },
               style: FilledButton.styleFrom(backgroundColor: colors.error),
               child: const Text('Desactivar'),
             ),
@@ -137,7 +146,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
         data: (profile) {
           final dynamicColor = _getDynamicColor(profile, colors);
 
-          // --- 🔥 6. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
           return VisibilityDetector(
             key: const Key('notifications-view-detector'),
             onVisibilityChanged: (visibilityInfo) {
@@ -148,7 +156,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
             },
             child: Stack(
               children: [
-                // --- 🔥 7. LÓGICA CONDICIONAL ---
                 if (_isAppActive && _isPageVisible)
                   AnimatedSettingsBackground(
                     profile: profile,
@@ -156,7 +163,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                     isKeyboardVisible: isKeyboardVisible,
                   )
                 else
-                  // Fondo estático
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -169,19 +175,22 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                           stops: const [0.0, 0.7]),
                     ),
                   ),
-                // --- FIN LÓGICA CONDICIONAL ---
 
                 SafeArea(
                   child: Column(
                     children: [
-                      // --- (BARRA SUPERIOR Y LISTVIEW NO CAMBIAN) ---
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
                         child: Row(
                           children: [
                             InkWell(
-                              onTap: () => context.pop(),
+                              onTap: () {
+                                // 🔥 Sonido Back
+                                HapticFeedback.lightImpact();
+                                ref.read(audioControllerProvider).playClick();
+                                context.pop();
+                              },
                               borderRadius: BorderRadius.circular(30),
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
@@ -275,6 +284,7 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                     dynamicColor: dynamicColor,
                                     initialValue: masterSwitchState,
                                     onChanged: (newValue) {
+                                      // 🔥 Lógica con sonido dentro del dialog helper
                                       _showConfirmationDialog(
                                           context, ref, newValue, colors);
                                     },
@@ -303,6 +313,9 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                           'Recordatorio de Estudio'),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
+                                        // 🔥 Sonido Nav
+                                        HapticFeedback.lightImpact();
+                                        ref.read(audioControllerProvider).playClick();
                                         context.push(
                                           '/settings/notifications/reminder',
                                           extra: reminderSetting,
@@ -321,6 +334,10 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                         initialValue:
                                             streakReminderSetting.habilitado,
                                         onChanged: (newValue) {
+                                          // 🔥 Sonido Switch
+                                          HapticFeedback.lightImpact();
+                                          ref.read(audioControllerProvider).playClick();
+
                                           ref
                                               .read(notificationSettingsProvider
                                                   .notifier)
@@ -349,6 +366,9 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       icon: _getIconForCategory('Amigos'),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
+                                        // 🔥 Sonido Nav
+                                        HapticFeedback.lightImpact();
+                                        ref.read(audioControllerProvider).playClick();
                                         context.push(
                                           '/settings/notifications/category',
                                           extra: {
@@ -370,6 +390,9 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                           'Retos y Novedades'),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
+                                        // 🔥 Sonido Nav
+                                        HapticFeedback.lightImpact();
+                                        ref.read(audioControllerProvider).playClick();
                                         context.push(
                                           '/settings/notifications/category',
                                           extra: {

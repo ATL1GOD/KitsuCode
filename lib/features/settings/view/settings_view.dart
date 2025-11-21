@@ -1,7 +1,6 @@
-// lib/features/settings/view/settings_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart'; // 👈 IMPORTANTE: Haptics
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -14,10 +13,9 @@ import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/shared/widgets/kitsu_action_modal.dart';
-// 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
-// ✅ NUEVO: usar el color primario real del avatar desde BD
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
+import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE: Audio
 
 class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
@@ -26,14 +24,15 @@ class SettingsView extends ConsumerStatefulWidget {
   ConsumerState<SettingsView> createState() => _SettingsViewState();
 }
 
-// --- 🔥 2. AÑADIR WidgetsBindingObserver ---
 class _SettingsViewState extends ConsumerState<SettingsView>
     with WidgetsBindingObserver {
-  // --- 🔥 3. BANDERAS DE ESTADO ---
   bool _isPageVisible = true;
   bool _isAppActive = true;
 
-  // --- 🔥 4. MANEJO DE CICLO DE VIDA ---
+  // 🔥 1. VARIABLE DE ESTADO OPTIMISTA
+  // Sirve para engañar al ojo y mover el switch antes de que la BD responda
+  bool? _optimisticDarkMode;
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +54,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
     });
   }
 
-  // --- (Tus métodos _showSignOutDialog y _showDeleteAccountDialog no cambian) ---
   void _showSignOutDialog(
       BuildContext context, WidgetRef ref, Color dynamicColor) {
     final colors = Theme.of(context).colorScheme;
@@ -68,7 +66,11 @@ class _SettingsViewState extends ConsumerState<SettingsView>
       message: '¿Estás seguro de que quieres finalizar tu sesión actual?',
       actions: [
         TextButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            ref.read(audioControllerProvider).playClick();
+            context.pop();
+          },
           child: const Text('Cancelar'),
         ),
         ElevatedButton(
@@ -77,7 +79,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
             foregroundColor: colors.onPrimary,
           ),
           onPressed: () async {
-            context.pop(); // <-- Mover context.pop() aquí
+            HapticFeedback.mediumImpact();
+            ref.read(audioControllerProvider).playClick();
+            
+            context.pop(); 
             try {
               final authRepo = await ref.read(authRepositoryProvider.future);
               await authRepo.signOut();
@@ -172,7 +177,11 @@ class _SettingsViewState extends ConsumerState<SettingsView>
     final colors = Theme.of(context).colorScheme;
     return [
       TextButton(
-        onPressed: () => context.pop(),
+        onPressed: () {
+           HapticFeedback.lightImpact();
+           ref.read(audioControllerProvider).playClick();
+           context.pop();
+        },
         child: const Text('Cancelar'),
       ),
       AnimatedBuilder(
@@ -191,7 +200,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
             ),
             onPressed: canDelete
                 ? () async {
-                    context.pop(); // <-- Mover context.pop() aquí
+                    HapticFeedback.heavyImpact();
+                    ref.read(audioControllerProvider).playError();
+                    
+                    context.pop();
                     showHelpSnackbar(
                         context, 'Procesando...', 'Eliminando tu cuenta...');
                     try {
@@ -210,7 +222,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
       ),
     ];
   }
-  // --- FIN DE MÉTODOS HELPER ---
 
   @override
   Widget build(BuildContext context) {
@@ -242,13 +253,11 @@ class _SettingsViewState extends ConsumerState<SettingsView>
         loading: () => _SettingsLoadingShimmer(colors: colors),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
-          // ✅ NUEVO: obtiene el color primario real del avatar desde la BD
           final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
           final dynamicColor = avatarsList.isNotEmpty
               ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
               : AllStatsView.getHeaderColor(profile, colors);
 
-          // --- 🔥 5. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
           return VisibilityDetector(
             key: const Key('settings-view-detector'),
             onVisibilityChanged: (visibilityInfo) {
@@ -259,15 +268,17 @@ class _SettingsViewState extends ConsumerState<SettingsView>
             },
             child: Stack(
               children: [
-                // --- 🔥 6. LÓGICA CONDICIONAL ---
+                // 🔥 2. OPTIMIZACIÓN: RepaintBoundary
+                // Aísla el fondo animado para que no se repinte cuando se mueve el switch
                 if (_isAppActive && _isPageVisible)
-                  AnimatedSettingsBackground(
-                    profile: profile,
-                    colors: colors,
-                    isKeyboardVisible: isKeyboardVisible,
+                  RepaintBoundary(
+                    child: AnimatedSettingsBackground(
+                      profile: profile,
+                      colors: colors,
+                      isKeyboardVisible: isKeyboardVisible,
+                    ),
                   )
                 else
-                  // Fondo estático cuando la app/vista no está activa
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -280,19 +291,21 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                           stops: const [0.0, 0.7]),
                     ),
                   ),
-                // --- FIN DE LA LÓGICA CONDICIONAL ---
 
                 SafeArea(
                   child: Column(
                     children: [
-                      // --- (BARRA SUPERIOR Y LISTVIEW NO CAMBIAN) ---
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
                         child: Row(
                           children: [
                             InkWell(
-                              onTap: () => context.pop(),
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                ref.read(audioControllerProvider).playClick();
+                                context.pop();
+                              },
                               borderRadius: BorderRadius.circular(30),
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
@@ -341,34 +354,64 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                   child:
                                       Text('Error al cargar preferencias: $e')),
                               data: (prefs) {
+                                // 🔥 LÓGICA ANTI-LAG (Optimistic UI)
                                 final String themeFromDB = prefs.temaVisual;
-                                final bool isDarkMode;
+                                final bool realIsDark;
                                 if (themeFromDB == 'system') {
-                                  isDarkMode = isSystemDark;
+                                  realIsDark = isSystemDark;
                                 } else {
-                                  isDarkMode = (themeFromDB == 'dark');
+                                  realIsDark = (themeFromDB == 'dark');
                                 }
+
+                                // Si tenemos un valor optimista (mientras el usuario espera), usamos ese.
+                                final bool switchValue = _optimisticDarkMode ?? realIsDark;
+
                                 return FadeInDown(
                                   delay: const Duration(milliseconds: 200),
                                   child: Column(
                                     children: [
                                       SettingsSwitchTile(
-                                        title: isDarkMode
+                                        title: switchValue
                                             ? 'Modo Oscuro'
                                             : 'Modo Claro',
-                                        icon: isDarkMode
+                                        icon: switchValue
                                             ? Icons.dark_mode_outlined
                                             : Icons.light_mode_outlined,
                                         subtitle:
                                             'Alternar entre tema claro y oscuro',
                                         dynamicColor: dynamicColor,
-                                        initialValue: isDarkMode,
+                                        
+                                        // 🔥 Valor instantáneo
+                                        initialValue: switchValue, 
+                                        
                                         onChanged: (value) {
-                                          final newTheme =
-                                              value ? 'dark' : 'light';
-                                          ref
-                                              .read(settingsProvider.notifier)
-                                              .updateTemaVisual(newTheme);
+                                          // 1. Feedback Inmediato
+                                          HapticFeedback.lightImpact();
+                                          ref.read(audioControllerProvider).playClick();
+                                          
+                                          // 2. Actualización Visual Inmediata (Sin tocar BD aún)
+                                          setState(() {
+                                            _optimisticDarkMode = value;
+                                          });
+
+                                          // 3. Pausa para permitir animación del switch (320ms)
+                                          Future.delayed(const Duration(milliseconds: 320), () {
+                                            if (!mounted) return;
+                                            
+                                            final newTheme = value ? 'dark' : 'light';
+                                            
+                                            // 4. Ahora sí, trabajo pesado
+                                            ref.read(settingsProvider.notifier)
+                                               .updateTemaVisual(newTheme)
+                                               .then((_) {
+                                                  // 5. Limpieza
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      _optimisticDarkMode = null;
+                                                    });
+                                                  }
+                                               });
+                                          });
                                         },
                                       ),
                                       SettingsSwitchTile(
@@ -379,6 +422,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                         dynamicColor: dynamicColor,
                                         initialValue: prefs.sonidoEfectos,
                                         onChanged: (value) {
+                                          HapticFeedback.lightImpact();
+                                          ref.read(audioControllerProvider).playClick();
                                           ref
                                               .read(settingsProvider.notifier)
                                               .updateSonidoEfectos(value);
@@ -416,6 +461,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                     icon: Icons.lock_outline,
                                     dynamicColor: dynamicColor,
                                     onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      ref.read(audioControllerProvider).playClick();
                                       context.pushNamed('change-password');
                                     },
                                   ),
@@ -439,6 +486,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                     icon: Icons.campaign_outlined,
                                     dynamicColor: dynamicColor,
                                     onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      ref.read(audioControllerProvider).playClick();
                                       context.push('/settings/notifications');
                                     },
                                   ),
@@ -462,6 +511,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                     icon: Icons.support_agent,
                                     dynamicColor: dynamicColor,
                                     onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      ref.read(audioControllerProvider).playClick();
                                       context.push('/settings/support');
                                     },
                                   ),
@@ -485,6 +536,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                       icon: Icons.delete_forever_outlined,
                                       dynamicColor: dynamicColor,
                                       onTap: () {
+                                        HapticFeedback.mediumImpact();
+                                        ref.read(audioControllerProvider).playClick();
                                         _showDeleteAccountDialog(context, ref);
                                       },
                                     ),
@@ -494,6 +547,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                       icon: Icons.logout,
                                       dynamicColor: dynamicColor,
                                       onTap: () {
+                                        HapticFeedback.mediumImpact();
+                                        ref.read(audioControllerProvider).playClick();
                                         _showSignOutDialog(
                                             context, ref, dynamicColor);
                                       },

@@ -43,9 +43,13 @@ class _MusicManagerState extends ConsumerState<MusicManager>
           break;
           
         case AppLifecycleState.resumed:
-          final currentLang = ref.read(appBarProvider).languageName;
-          if (currentLang.isNotEmpty) {
-            audioController.playBackgroundMusic(currentLang);
+          // Solo reanudar si NO estamos en un reto
+          final isInChallenge = ref.read(isInChallengeProvider);
+          if (!isInChallenge) {
+            final currentLang = ref.read(appBarProvider).languageName;
+            if (currentLang.isNotEmpty) {
+              audioController.playBackgroundMusic(currentLang);
+            }
           }
           break;
         default:
@@ -64,16 +68,23 @@ class _MusicManagerState extends ConsumerState<MusicManager>
       return widget.child;
     }
 
-    // Listener del estado del reto
+    // 🔥 AQUÍ ESTÁ LA MAGIA: Control explícito al Entrar/Salir de retos
     ref.listen(isInChallengeProvider, (previous, next) {
-      if (next == false && previous == true) {
-        // Salió del reto, reanudar música
+      final audioController = ref.read(audioControllerProvider);
+
+      // CASO 1: Entrando al reto (False -> True)
+      if (previous == false && next == true) {
+        // 🛑 Detener música del menú explícitamente
+        audioController.stopMusic();
+      }
+      
+      // CASO 2: Saliendo del reto (True -> False)
+      if (previous == true && next == false) {
+        // ▶️ Reanudar música del menú
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
           
-          final audioController = ref.read(audioControllerProvider);
           final currentLang = ref.read(appBarProvider).languageName;
-          
           if (currentLang.isNotEmpty) {
             audioController.playBackgroundMusic(currentLang);
           }
@@ -83,13 +94,17 @@ class _MusicManagerState extends ConsumerState<MusicManager>
 
     // Listener del AppBar (cambios de lenguaje)
     ref.listen(appBarProvider, (previous, next) {
+      // Solo cambiar música si NO estamos en un reto
+      final isInChallenge = ref.read(isInChallengeProvider);
+      if (isInChallenge) return; 
+
       if (next.languageName.isNotEmpty && 
           previous?.languageName != next.languageName) {
         ref.read(audioControllerProvider).playBackgroundMusic(next.languageName);
       }
     });
 
-    // Listener de volumen (Ajustes)
+    // Listener de volumen
     ref.listen(settingsProvider, (previous, next) {
       next.whenData((_) {
         ref.read(audioControllerProvider).updateMusicVolume();

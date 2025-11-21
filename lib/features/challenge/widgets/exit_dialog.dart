@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 👈 IMPORTANTE: Haptics
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 🔥 NUEVO
-import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart'; // 🔥 NUEVO
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart';
+import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE: Audio
 
 /// Muestra un diálogo de confirmación genérico para salir de un reto.
-void showExitDialog(BuildContext context, WidgetRef ref) { // 🔥 AÑADIR ref
+void showExitDialog(BuildContext context, WidgetRef ref) {
+  // 🔥 1. SONIDO Y VIBRACIÓN AL ABRIR EL DIÁLOGO
+  HapticFeedback.lightImpact();
+  ref.read(audioControllerProvider).playClick();
+
   final theme = Theme.of(context);
   final colorScheme = theme.colorScheme;
   final textTheme = theme.textTheme;
@@ -56,7 +62,12 @@ void showExitDialog(BuildContext context, WidgetRef ref) { // 🔥 AÑADIR ref
               foregroundColor: colorScheme.onSurfaceVariant,
               textStyle: buttonTextStyle,
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // 🔥 2. SONIDO AL CANCELAR
+              HapticFeedback.lightImpact();
+              ref.read(audioControllerProvider).playClick();
+              Navigator.pop(context);
+            },
             child: const Text('CANCELAR'),
           ),
 
@@ -73,7 +84,12 @@ void showExitDialog(BuildContext context, WidgetRef ref) { // 🔥 AÑADIR ref
               textStyle: buttonTextStyle,
             ),
             onPressed: () {
-              //REANUDAR MÚSICA ANTES DE SALIR
+              // 🔥 3. SONIDO AL CONFIRMAR SALIDA
+              // Usamos mediumImpact para darle "peso" a la decisión de salir
+              HapticFeedback.mediumImpact();
+              ref.read(audioControllerProvider).playClick();
+
+              // REANUDAR MÚSICA ANTES DE SALIR
               resumeMusicAfterChallenge(ref);
               
               Navigator.pop(context); // Cierra el diálogo

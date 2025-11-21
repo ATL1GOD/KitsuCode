@@ -18,23 +18,29 @@ class AudioController {
   Timer? _watchdogTimer;
 
   AudioController(this.ref) {
+    // Optimización 1: Música en modo Loop
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
+    
+    // Optimización 2: SFX en modo LowLatency (Ideal para sonidos cortos como clicks, evita conflictos)
+    _sfxPlayer.setPlayerMode(PlayerMode.lowLatency);
     
     final AudioContext audioContext = AudioContext(
       iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.playback,
+        category: AVAudioSessionCategory.playback, // O 'ambient' si quieres mezclar con Spotify
         options: {
-          AVAudioSessionOptions.mixWithOthers,
+          AVAudioSessionOptions.mixWithOthers, // Permite mezclar sonidos
         },
       ),
       android: AudioContextAndroid(
         isSpeakerphoneOn: false,
         stayAwake: false,
         contentType: AndroidContentType.music,
-        usageType: AndroidUsageType.media,
-        audioFocus: AndroidAudioFocus.gain,
+        usageType: AndroidUsageType.game, // Cambiado a 'game' que es más apropiado
+        audioFocus: AndroidAudioFocus.none, // 🔥 CLAVE: 'none' evita que el SFX pause la música
       ),
     );
+    
+    // Aplicar contexto globalmente
     AudioPlayer.global.setAudioContext(audioContext);
 
     _startWatchdog();
@@ -144,7 +150,7 @@ class AudioController {
           return;
         }
       } catch (e) {
-        // Fallo silencioso, intentar play completo abajo
+        // Fallo silencioso
       }
     }
 

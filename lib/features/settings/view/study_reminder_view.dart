@@ -1,6 +1,5 @@
-// lib/features/settings/view/study_reminder_view.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 👈 Haptics
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,8 +12,8 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
 import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
-// 🔥 1. IMPORTAR
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 Audio
 
 // --- Helpers (Sin cambios) ---
 TimeOfDay? _stringToTimeOfDay(String? hora) {
@@ -45,22 +44,18 @@ class StudyReminderView extends ConsumerStatefulWidget {
   ConsumerState<StudyReminderView> createState() => _StudyReminderViewState();
 }
 
-// --- 🔥 2. AÑADIR WidgetsBindingObserver ---
 class _StudyReminderViewState extends ConsumerState<StudyReminderView>
     with WidgetsBindingObserver {
   late bool _isEnabled;
   late TimeOfDay _selectedTime;
 
-  // --- 🔥 3. BANDERAS DE ESTADO ---
   bool _isPageVisible = true;
   bool _isAppActive = true;
 
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
-    // Fallback (se mantiene)
     return getAvatarColorById(profile.idAvatarSeleccionado);
   }
 
-  // --- 🔥 4. MANEJO DE CICLO DE VIDA ---
   @override
   void initState() {
     super.initState();
@@ -84,16 +79,22 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
       _isAppActive = state == AppLifecycleState.resumed;
     });
   }
-  // --- FIN MANEJO DE CICLO DE VIDA ---
 
-  // --- (Método _pickTime no cambia) ---
   Future<void> _pickTime(BuildContext context) async {
+    // 🔥 Sonido al abrir picker
+    HapticFeedback.lightImpact();
+    ref.read(audioControllerProvider).playClick();
+
     final newTime = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
     );
 
     if (newTime != null) {
+      // 🔥 Sonido confirmación
+      HapticFeedback.mediumImpact();
+      ref.read(audioControllerProvider).playSuccess(); // O click
+
       setState(() {
         _selectedTime = newTime;
       });
@@ -129,13 +130,11 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error: $e')),
         data: (profile) {
-          // ✅ NUEVO: obtener color desde la BD (lista de avatares); fallback al método existente
           final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
           final dynamicColor = avatarsList.isNotEmpty
               ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
               : _getDynamicColor(profile, colors);
 
-          // --- 🔥 5. ENVOLVER EL STACK CON VISIBILITYDETECTOR ---
           return VisibilityDetector(
             key: const Key('study-reminder-detector'),
             onVisibilityChanged: (visibilityInfo) {
@@ -146,7 +145,6 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
             },
             child: Stack(
               children: [
-                // --- 🔥 6. LÓGICA CONDICIONAL ---
                 if (_isAppActive && _isPageVisible)
                   AnimatedSettingsBackground(
                     profile: profile,
@@ -154,14 +152,12 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                     isKeyboardVisible: isKeyboardVisible,
                   )
                 else
-                  // Fondo estático
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          // alineado con otras vistas (~40% de opacidad)
                           dynamicColor.withAlpha((255 * 0.4).round()),
                           colors.surfaceContainerLowest,
                         ],
@@ -169,19 +165,22 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                       ),
                     ),
                   ),
-                // --- FIN LÓGICA CONDICIONAL ---
 
                 SafeArea(
                   child: Column(
                     children: [
-                      // --- (BARRA SUPERIOR Y LISTVIEW NO CAMBIAN) ---
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
                         child: Row(
                           children: [
                             InkWell(
-                              onTap: () => context.pop(),
+                              onTap: () {
+                                // 🔥 Sonido Back
+                                HapticFeedback.lightImpact();
+                                ref.read(audioControllerProvider).playClick();
+                                context.pop();
+                              },
                               borderRadius: BorderRadius.circular(30),
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
@@ -222,6 +221,10 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                                 dynamicColor: dynamicColor,
                                 initialValue: _isEnabled,
                                 onChanged: (newValue) {
+                                  // 🔥 Sonido Switch
+                                  HapticFeedback.lightImpact();
+                                  ref.read(audioControllerProvider).playClick();
+                                  
                                   setState(() {
                                     _isEnabled = newValue;
                                   });

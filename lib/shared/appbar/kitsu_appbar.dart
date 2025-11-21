@@ -1,8 +1,7 @@
-// lib/shared/appbar/kitsu_appbar.dart
-
 import 'dart:ui'; // Para BackdropFilter (blur)
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 👈 IMPORTANTE PARA HAPTICS
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kitsucode/core/utils/app_themes.dart';
@@ -11,7 +10,7 @@ import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-
+import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE PARA AUDIO
 
 /// WIDGET PARA ANIMACIÓN ESCALONADA (STAGGER)
 class _StaggerItem extends StatefulWidget {
@@ -305,6 +304,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         overlayChildBuilder: (BuildContext context) {
           return GestureDetector(
             onTap: () {
+              // 🔥 SONIDO AL CERRAR CLICANDO FUERA
+              HapticFeedback.lightImpact();
+              ref.read(audioControllerProvider).playClick();
+              
               _portalController.hide();
               setState(() => _isMenuOpen = false);
             },
@@ -321,7 +324,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                     child: IntrinsicWidth(
                       child: IntrinsicHeight(
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: () {}, // Evita cerrar al tocar el menú mismo
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 260),
                             switchInCurve: Curves.easeOutBack,
@@ -346,6 +349,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         },
         child: InkWell(
           onTap: () {
+            // 🔥 SONIDO Y VIBRACIÓN AL ABRIR/CERRAR EL MENÚ
+            HapticFeedback.lightImpact();
+            ref.read(audioControllerProvider).playClick();
+
             setState(() => _isMenuOpen = !_isMenuOpen);
             _portalController.toggle();
           },
@@ -552,6 +559,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         setState(() => _isMenuOpen = false);
 
         if (!isCompleted) {
+          // 🔥 SONIDO DE ERROR Y VIBRACIÓN FUERTE
+          HapticFeedback.heavyImpact();
+          ref.read(audioControllerProvider).playError();
+
           showWarningSnackbar(
             context,
             '¡Aún no!',
@@ -559,6 +570,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           );
           return;
         }
+
+        // 🔥 SONIDO DE CONFIRMACIÓN Y VIBRACIÓN MEDIA
+        HapticFeedback.mediumImpact();
+        ref.read(audioControllerProvider).playClick();
 
         try {
           final userId = ref.read(authStateProvider).value?.session?.user.id;
@@ -575,6 +590,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           await ref.read(appBarProvider.notifier).fetchStats();
         } catch (e) {
           if (!mounted) return;
+          
+          // Sonido error si falla la API
+          ref.read(audioControllerProvider).playError();
+          
           showErrorSnackbar(
             context,
             '¡Error!',

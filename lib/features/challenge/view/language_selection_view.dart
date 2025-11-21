@@ -142,12 +142,13 @@ class _LanguageSelectionViewState
       if (userId == null) {
         throw Exception('Usuario no autenticado');
       }
-      // Actualizar el lenguaje favorito en Supabase
-      // Pasar el lenguaje anterior (el que completaste) para marcarlo como "usado"
+      
+      // 🔥 CAMBIO CRÍTICO: updateFavoriteLanguage ya actualiza el AppBar internamente
+      // No necesitamos hacer fetchStats() de nuevo aquí
       await ref.read(languageCompletionProvider.notifier).updateFavoriteLanguage(
         userId,
         language.name.toLowerCase(),
-        previousLanguage: widget.currentLanguage, // 🆕 El lenguaje que completaste
+        previousLanguage: widget.currentLanguage,
       );
 
       // CRÍTICO: Volver a verificar lenguajes completados
@@ -157,8 +158,9 @@ class _LanguageSelectionViewState
       // CRÍTICO: Resetear el estado de completitud
       ref.read(languageCompletionProvider.notifier).resetCompletionState();
 
-      // NUEVO: Actualizar el appBarProvider para reflejar el cambio
-      await ref.read(appBarProvider.notifier).fetchStats();
+      // ❌ ELIMINADO: No hacemos fetchStats() aquí porque updateFavoriteLanguage
+      // ya llamó a appBarProvider.updateLanguage() que hace el fetch correcto
+      // await ref.read(appBarProvider.notifier).fetchStats();
 
       if (mounted) {
         //Usando AwesomeSnackbar

@@ -121,19 +121,62 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
     }
   }
 
+  // 🔥 Nuevo método específico para fetch con languageId conocido
+  Future<void> fetchStatsForLanguage(int langId) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      // Carga Paralela: Trofeos (RPC), Stats y Nombre Lenguaje
+      final responses = await Future.wait<dynamic>([
+        _supabase.rpc('get_my_language_score', params: {'p_language_id': langId}),
+        _supabase.from('estadistica_usuario').select('racha_dias, vidas').eq('id_usuario', user.id).maybeSingle(),
+        _supabase.from('lenguaje').select('nombre').eq('id_lenguaje', langId).single(),
+      ]);
+
+      // Procesamiento Seguro de Datos
+      final totalTrofeos = (responses[0] as num?)?.toInt() ?? 0;
+      
+      final statsData = responses[1] as Map<String, dynamic>?;
+      final racha = statsData?['racha_dias'] ?? 0;
+      final vidas = statsData?['vidas'] ?? 5;
+
+      final langData = responses[2] as Map<String, dynamic>;
+      final langName = (langData['nombre'] as String).trim();
+      final langAsset = _getAssetForLanguage(langName);
+
+      debugPrint('🔥 fetchStatsForLanguage - Lang: $langName, Trofeos: $totalTrofeos'); // Debug
+
+      state = state.copyWith(
+        lives: vidas,
+        trophies: totalTrofeos,
+        streak: racha,
+        languageName: langName,
+        languageId: langId,
+        languageAssetPath: langAsset,
+        isLoading: false,
+      );
+    } catch (e) {
+      debugPrint('Error fetchStatsForLanguage: $e');
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
   // Cambiar lenguaje (Optimista + BD + Fetch)
   Future<void> updateLanguage(String newName, int newId) async {
     final newAsset = _getAssetForLanguage(newName);
     
-    // Update visual inmediato
+    debugPrint('🔥 updateLanguage - Cambiando a: $newName (ID: $newId)'); // Debug
+    
+    // 🔥 CAMBIO CRÍTICO: Solo actualizamos nombre/id/asset, NO los trofeos
     state = state.copyWith(
       languageName: newName,
       languageId: newId,
       languageAssetPath: newAsset,
-      trophies: 0, 
       isLoading: true,
     );
 
+    // Actualizamos BD
     final user = _supabase.auth.currentUser;
     if (user != null) {
       try {
@@ -142,7 +185,9 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
         debugPrint("Error update language: $e");
       }
     }
-    await fetchStats();
+    
+    // 🔥 Usamos el método específico que usa el newId directamente
+    await fetchStatsForLanguage(newId);
   }
 
   // Método para el "Truco del Rebobinado"
@@ -181,7 +226,7 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
       .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'intento_reto', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id_usuario', value: userId), callback: (_) => refresh())
       .subscribe(),
     supabase.channel('public:usuarios:appbar')
-      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'usuarios', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id', value: userId), callback: (_) => ref.read(appBarProvider.notifier).fetchStats())
+      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'usuarios', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id', value: userId), callback: (_) => refresh()) // 🔥 Cambiado para usar refresh() en lugar de fetchStats() directo
       .subscribe(),
   ];
 

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart'; // 🔥 NUEVO import
+
 
 
 // Estado para tracking de completitud de lenguajes
@@ -104,9 +106,11 @@ class LanguageCompletionNotifier
 
   final SupabaseClient _supabase;
 
+  final Ref _ref; // 🔥 NUEVO: Necesitamos el ref para actualizar el AppBar
 
 
-  LanguageCompletionNotifier(this._supabase)
+
+  LanguageCompletionNotifier(this._supabase, this._ref)
 
       : super(LanguageCompletionState(
 
@@ -504,6 +508,12 @@ class LanguageCompletionNotifier
 
       final normalizedName = languageName.trim().toLowerCase();
 
+      
+      debugPrint('🔥 [updateFavoriteLanguage] Iniciando...');
+      debugPrint('   - Usuario: $userId');
+      debugPrint('   - Nuevo lenguaje: $languageName');
+      debugPrint('   - Lenguaje anterior: $previousLanguage');
+
      
 
       final languageResponse = await _supabase
@@ -522,25 +532,60 @@ class LanguageCompletionNotifier
 
       final languageId = languageResponse['id_lenguaje'] as int;
 
+      final exactLanguageName = (languageResponse['nombre'] as String).trim();
 
+
+      debugPrint('   - ID del nuevo lenguaje: $languageId');
+      debugPrint('   - Nombre exacto: $exactLanguageName');
+
+
+      // 1. Actualizar BD
 
       await _supabase.from('usuarios').update({'lenguaje_favorito': languageId}).eq('id', userId);
 
+      debugPrint('   ✅ BD actualizada');
 
+
+      // 2. Marcar lenguaje anterior como usado
 
       if (previousLanguage != null && previousLanguage.isNotEmpty) {
 
         await _markLanguageAsUsedForUnlock(userId, previousLanguage.trim().toLowerCase());
 
+        debugPrint('   ✅ Lenguaje anterior marcado como usado');
+
       }
 
 
 
+      // 3. Agregar a lenguajes seleccionados
+
       await _addToSelectedLanguages(userId, normalizedName);
 
-      state = state.copyWith(currentLanguage: languageName.trim());
+      debugPrint('   ✅ Agregado a lenguajes seleccionados');
+      
+
+      // 4. Actualizar estado local
+
+      state = state.copyWith(currentLanguage: exactLanguageName);
+
+      debugPrint('   ✅ Estado local actualizado');
+      
+
+      // 🔥 5. CRÍTICO: Actualizar AppBar con los trofeos del nuevo lenguaje
+
+      // Importamos el appBarProvider desde app_bar_provider.dart
+
+      debugPrint('   🎯 Llamando a appBarProvider.updateLanguage...');
+      await _ref.read(appBarProvider.notifier).updateLanguage(exactLanguageName, languageId);
+
+      debugPrint('   ✅ AppBar actualizado');
+      
+      debugPrint('🔥 [updateFavoriteLanguage] ¡Completado exitosamente!');
 
     } catch (e) {
+
+      debugPrint('❌ [updateFavoriteLanguage] Error: $e');
 
       rethrow;
 
@@ -592,7 +637,6 @@ final languageCompletionProvider =
 
     StateNotifierProvider<LanguageCompletionNotifier, LanguageCompletionState>(
 
-  (ref) => LanguageCompletionNotifier(Supabase.instance.client),
+  (ref) => LanguageCompletionNotifier(Supabase.instance.client, ref), // 🔥 Pasamos el ref
 
 );
-

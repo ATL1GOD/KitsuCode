@@ -5,12 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
-// --- FUSIÓN: Se mantiene TU import de navigation_tracker_provider ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
-import 'package:url_launcher/url_launcher.dart'; // Para abrir los enlaces
+import 'package:url_launcher/url_launcher.dart';
 import 'package:kitsucode/core/providers/app_provider.dart';
 
-// --- Modelo Temporal de Recursos ---
+// 🔥 NUEVO IMPORT
+import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart';
+
 class RecursoModel {
   final String titulo;
   final String url;
@@ -24,14 +25,12 @@ class RecursoModel {
     );
   }
 }
-// ------------------------------------
 
 class ChallengeFailureView extends ConsumerWidget {
   final List<RecursoModel> recursos;
 
   const ChallengeFailureView({super.key, required this.recursos});
 
-  // --- Función helper para obtener el Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -47,7 +46,6 @@ class ChallengeFailureView extends ConsumerWidget {
     }
   }
 
-  // --- Función para abrir URL ---
   Future<void> _launchURL(String urlString) async {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
@@ -57,7 +55,6 @@ class ChallengeFailureView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 1. Obtenemos el tema del lenguaje actual
     final appBarState = ref.watch(appBarProvider);
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
@@ -66,9 +63,8 @@ class ChallengeFailureView extends ConsumerWidget {
     final colorScheme = challengeTheme.colorScheme;
     final textTheme = challengeTheme.textTheme;
 
-    // 2. Envolvemos el Scaffold en el Tema del lenguaje
     return PopScope(
-      canPop: false, // Bloquear el botón de retroceso y el gesto de swipe back
+      canPop: false,
       child: Theme(
         data: challengeTheme,
         child: Scaffold(
@@ -82,7 +78,6 @@ class ChallengeFailureView extends ConsumerWidget {
                 children: [
                   const Spacer(),
 
-                  // --- Animación o Ilustración ---
                   Image.asset(
                     'assets/images/zorro_oops.png',
                     height: 200,
@@ -90,14 +85,12 @@ class ChallengeFailureView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // --- Mensaje de Ánimo ---
                   Text(
                     '¡No te rindas!',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: colorScheme
-                          .error, // Usamos el color de error del tema
+                      color: colorScheme.error,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -110,7 +103,6 @@ class ChallengeFailureView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // --- Sección de Recursos ---
                   Text(
                     'Recursos Oficiales',
                     textAlign: TextAlign.left,
@@ -165,8 +157,6 @@ class ChallengeFailureView extends ConsumerWidget {
 
                   const Spacer(),
 
-                  // --- Botón de Continuar ---
-                  // --- FUSIÓN: Se usa TU 'onPressed' (dxniel7) ---
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
@@ -179,9 +169,11 @@ class ChallengeFailureView extends ConsumerWidget {
                     onPressed: () {
                       ref.read(appBarProvider.notifier).fetchStats();
 
-                      // El resto de tu lógica se queda igual
                       ref.read(oldStatsValuesProvider.notifier).state = null;
                       ref.read(shouldRefreshStatsProvider.notifier).state = false;
+
+                      //REANUDAR MÚSICA ANTES DE NAVEGAR
+                      resumeMusicAfterChallenge(ref);
 
                       if (!context.mounted) return;
 
@@ -200,9 +192,9 @@ class ChallengeFailureView extends ConsumerWidget {
                 ],
               ),
             ),
-          ), // Cierra SafeArea
-        ), // Cierra Scaffold
-      ), // Cierra Theme
-    ); // Cierra PopScope
+          ),
+        ),
+      ),
+    );
   }
 }

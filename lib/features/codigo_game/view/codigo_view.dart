@@ -383,7 +383,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
         appBar: ChallengeAppBar2(
           progress: progress,
           onClose: () {
-            showExitDialog(context);
+            showExitDialog(context, ref);
           },
         ),
         body: Column(

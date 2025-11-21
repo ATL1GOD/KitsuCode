@@ -13,6 +13,7 @@ import 'package:kitsucode/core/providers/app_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart';
 
 class ChallengeSuccessView extends ConsumerStatefulWidget {
   final int trofeosObtenidos;
@@ -41,7 +42,6 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
     }
   }
 
-  // inicio de metodo para manejar la navegacion despues del exito
   Future<void> _handleContinue() async {
     if (_isNavigating) return;
    
@@ -51,36 +51,21 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       final currentLangId = ref.read(appBarProvider).languageId;
 
-      // ---------------------------------------------------------
-      // 1. PARALELISMO + CONSULTA SILENCIOSA
-      // ---------------------------------------------------------
       final results = await Future.wait([
-        // A. Espera visual
         Future.delayed(const Duration(milliseconds: 700)),
-       
-        // B. Fetch SILENCIOSO del puntaje real (106)
         Supabase.instance.client.rpc(
           'get_my_language_score',
           params: {'p_language_id': currentLangId}
         ),
-       
-        // C. Verificar completitud (Lógica rápida de arrays)
         userId != null
             ? ref.read(languageCompletionProvider.notifier).checkLanguageCompletion(userId)
             : Future.value(),
-           
-        // D. Total de lenguajes
         Supabase.instance.client.rpc('get_total_languages_count'),
       ]);
 
       if (!mounted) return;
 
-      // Recuperamos el puntaje real de la consulta silenciosa
       final realTotalTrophies = (results[1] as num?)?.toInt() ?? 0;
-
-      // ---------------------------------------------------------
-      // 2. LÓGICA DE DESBLOQUEO
-      // ---------------------------------------------------------
       final totalLanguagesInApp = results[3] as int;
       final languageState = ref.read(languageCompletionProvider);
 
@@ -116,17 +101,12 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
 
       if (!mounted) return;
 
-      // ---------------------------------------------------------
-      // 3. NAVEGACIÓN Y REBOBINADO
-      // ---------------------------------------------------------
       if (shouldShowCelebration) {
-        // 🔥 CAMBIO CRÍTICO: No hacemos rebobinado aquí
-        // Simplemente navegamos y dejamos que la pantalla de language-completion
-        // maneje la actualización de trofeos cuando el usuario seleccione el nuevo lenguaje
-        
-        // IMPORTANTE: Limpiamos los flags para que el AppBar pueda actualizarse
         ref.read(oldStatsValuesProvider.notifier).state = null;
-        ref.read(shouldRefreshStatsProvider.notifier).state = true; // ✅ Permitimos refresh
+        ref.read(shouldRefreshStatsProvider.notifier).state = true;
+        
+        // REANUDAR MÚSICA ANTES DE NAVEGAR
+        resumeMusicAfterChallenge(ref);
         
         context.go('/language-completion', extra: {
           'completedLanguage': completedLanguage,
@@ -134,15 +114,9 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
           'canUnlockNewLanguage': canUnlock,
         });
       } else {
-        // --- TRUCO DEL REBOBINADO SIN FLICKER (solo cuando NO hay desbloqueo) ---
-       
-        // A. Calculamos el valor "viejo" (105) basándonos en el real (106) que acabamos de consultar
         final oldTrophies = (realTotalTrophies - widget.trofeosObtenidos).clamp(0, 999999).toInt();
-       
-        // 🔥 CRÍTICO: Bloqueamos los refreshes de Realtime ANTES de todo
         ref.read(shouldRefreshStatsProvider.notifier).state = false;
         
-        // B. Inyectamos ese valor viejo en el provider
         final currentStats = ref.read(appBarProvider);
         ref.read(appBarProvider.notifier).updateStatsDirectly(
           lives: currentStats.lives,
@@ -150,23 +124,20 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
           streak: currentStats.streak,
         );
 
-        // C. Navegamos al Home (que mostrará 105)
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
-       
         ref.read(oldStatsValuesProvider.notifier).state = null;
+
+        // REANUDAR MÚSICA ANTES DE NAVEGAR
+        resumeMusicAfterChallenge(ref);
 
         context.go(returnPath);
 
-        // D. Disparamos la actualización REAL más rápido
         Future.delayed(const Duration(milliseconds: 100), () {
           if (!mounted) return;
           
-          // Actualizamos (esto dispara la animación)
           ref.read(appBarProvider.notifier).fetchStats();
           
-          // DESBLOQUEAMOS Realtime DESPUÉS de que la animación haya terminado
-          // La animación del AppBar dura ~300-400ms, así que esperamos 600ms total
           Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted) {
               ref.read(shouldRefreshStatsProvider.notifier).state = true;
@@ -177,6 +148,9 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
 
     } catch (e) {
       if (mounted) {
+        // 🔥 REANUDAR MÚSICA TAMBIÉN EN ERROR
+        resumeMusicAfterChallenge(ref);
+        
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
         context.go(returnPath);
@@ -209,7 +183,6 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
       }
     } catch (_) {}
   }
-  // fin de metodo
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +260,6 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
 
                   const Spacer(),
 
-                  // Botón con loading state
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,

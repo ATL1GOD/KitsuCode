@@ -1,17 +1,14 @@
-// lib/features/home/view/home_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// --- FUSIÓN: Se mantienen TUS imports (dxniel7) ---
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
 import 'package:kitsucode/features/home/provider/home_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/map_home.dart';
 import 'package:kitsucode/shared/appbar/kitsu_appbar.dart';
-
-// --- FUSIÓN: Se mantienen TUS imports (dxniel7) ---
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
+import 'package:kitsucode/main.dart';
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -20,7 +17,7 @@ class HomeView extends ConsumerStatefulWidget {
   ConsumerState<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends ConsumerState<HomeView> {
+class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
   int iCurrentSection = 0;
 
   final double _changeThresholdPosition = 102.0;
@@ -29,7 +26,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
   final List<double> _sectionOffsets = [];
   final scrollCtrl = ScrollController();
 
-  // --- FUSIÓN: Adoptamos la lógica de scroll DE ELLOS (atl1god) ---
   final double _anticipationMargin = 0.1;
 
   @override
@@ -43,7 +39,39 @@ class _HomeViewState extends ConsumerState<HomeView> {
     });
   }
 
-  // (Tu función _calculateSectionOffsets - sin cambios)
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  // Detectar cuando REGRESAS al Home
+  @override
+  void didPopNext() {
+    // Delay para que la pantalla se estabilice
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      
+      try {
+        final audioController = ref.read(audioControllerProvider);
+        final currentLang = ref.read(appBarProvider).languageName;
+        
+        if (currentLang.isNotEmpty) {
+          audioController.playBackgroundMusic(currentLang);
+        }
+      } catch (e) {
+        // Fallo silencioso
+      }
+    });
+  }
+
+  @override
+  void didPushNext() {
+  }
+
   void _calculateSectionOffsets() {
     final sectionsAsync = ref.read(homeViewModelProvider);
 
@@ -55,7 +83,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
       for (int i = 0; i < sections.length; i++) {
         final section = sections[i];
         const double sectionHeaderHeight = 60.0;
-        const double buttonHeight = 56.0 + 6.0; // 62.0
+        const double buttonHeight = 56.0 + 6.0;
         final double stackHeight = section.levels.isEmpty
             ? 0.0
             : ((section.levels.length - 1) * 96.0 + 40.0) + buttonHeight;
@@ -67,12 +95,10 @@ class _HomeViewState extends ConsumerState<HomeView> {
     });
   }
 
-  // --- FUSIÓN: Adoptamos el scrollListener DE ELLOS (atl1god) ---
   void scrollListener() {
     if (_sectionOffsets.isEmpty) return;
     final currentScroll = scrollCtrl.position.pixels;
 
-    // Se usa la lógica de _anticipationMargin
     final double titleDisplayPosition =
         currentScroll + _changeThresholdPosition - _anticipationMargin;
 
@@ -92,12 +118,12 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     scrollCtrl.removeListener(scrollListener);
     scrollCtrl.dispose();
     super.dispose();
   }
 
-  // (Tu función _getMapBackgroundForLanguage - sin cambios)
   String _getMapBackgroundForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
       case 'python':
@@ -106,7 +132,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
         return 'assets/images/home/camino_java.webp';
       case 'c':
         return 'assets/images/home/camino_c.webp';
-
       default:
         return 'assets/images/home/camino_python.webp';
     }
@@ -116,20 +141,17 @@ class _HomeViewState extends ConsumerState<HomeView> {
   Widget build(BuildContext context) {
     ref.watch(mapStructureRealtimeProvider);
     ref.read(progressRealtimeProvider);
-    // --- FUSIÓN: Se mantiene TODA tu lógica de refresco (dxniel7) ---
-    // Esta es la clave para que "se vea bien"
+
     final shouldRefresh = ref.watch(shouldRefreshStatsProvider);
 
     if (shouldRefresh) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        // CRÍTICO: Verificar que REALMENTE estamos en el Home
         final currentRoute = GoRouterState.of(context).uri.toString();
 
         if (currentRoute != '/home') {
           return;
         }
 
-        // Restaurar valores antiguos primero (si existen) para garantizar animación
         final oldValues = ref.read(oldStatsValuesProvider);
 
         if (oldValues != null && oldValues.length == 3) {
@@ -141,7 +163,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 streak: oldValues[2],
               );
         } else {
-          // Si no hay valores guardados, hacemos fetch normal
           await Future.delayed(const Duration(milliseconds: 50));
           if (!mounted) return;
           await ref.read(appBarProvider.notifier).fetchStats();
@@ -149,15 +170,9 @@ class _HomeViewState extends ConsumerState<HomeView> {
         }
       });
     }
-    // --- FIN DE TU LÓGICA DE REFRESCO ---
 
     final sectionsAsync = ref.watch(homeViewModelProvider);
-
-    // --- FUSIÓN: Se usa TU 'ref.read' (dxniel7) porque es más eficiente ---
-    // El 'watch' de homeViewModelProvider ya se encarga de recargar esto.
     final appBarState = ref.read(appBarProvider);
-
-    // Obtenemos el path del mapa dinámicamente
     final mapAssetPath = _getMapBackgroundForLanguage(appBarState.languageName);
 
     return Scaffold(
@@ -171,14 +186,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
             );
           }
 
-          // --- FUSIÓN: Se usa TU lógica de 'sections.isEmpty' (dxniel7) ---
           if (sections.isEmpty) {
-            // Estado vacío - verificamos si aún está cargando el lenguaje
             final isAppBarLoading = ref.read(appBarProvider).isLoading;
             if (isAppBarLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            // Si no está cargando y no hay secciones, es que no hay datos.
             return const Center(
               child: Text("No hay secciones para este lenguaje."),
             );
@@ -186,19 +198,16 @@ class _HomeViewState extends ConsumerState<HomeView> {
 
           return Stack(
             children: [
-              // 1. FONDO IMAGEN (¡AHORA ES DINÁMICO!)
               Container(
                 decoration: BoxDecoration(
-                  // <-- Quitamos 'const'
                   image: DecorationImage(
-                    image: AssetImage(mapAssetPath), // <-- Usamos la variable
+                    image: AssetImage(mapAssetPath),
                     fit: BoxFit.cover,
                     repeat: ImageRepeat.noRepeat,
                   ),
                 ),
               ),
 
-              // 2. LISTVIEW (Sin cambios)
               ListView.separated(
                 controller: scrollCtrl,
                 padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
@@ -215,7 +224,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 itemCount: sections.length + 1,
               ),
 
-              // 3. "ESCUDO" DE IMAGEN (¡AHORA ES DINÁMICO!)
               Positioned(
                 top: 0,
                 left: 0,
@@ -223,9 +231,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 height: _changeThresholdPosition,
                 child: Container(
                   decoration: BoxDecoration(
-                    // <-- Quitamos 'const'
                     image: DecorationImage(
-                      image: AssetImage(mapAssetPath), // <-- Usamos la variable
+                      image: AssetImage(mapAssetPath),
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                     ),
@@ -234,10 +241,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                 ),
               ),
 
-              // 4. APPBAR (Sin cambios)
               const Positioned(top: 0, left: 0, right: 0, child: KitsuAppBar()),
 
-              // 5. ETAPA (Sin cambios)
               Positioned(
                 top: _changeThresholdPosition,
                 left: 0,
@@ -257,7 +262,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 }
 
-// (Tu clase CurrentSection sin cambios)
 class CurrentSection extends StatelessWidget {
   final SectionData data;
 

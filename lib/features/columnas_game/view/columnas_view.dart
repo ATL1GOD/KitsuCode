@@ -302,7 +302,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         appBar: ChallengeAppBar2(
           progress: progress,
           onClose: () {
-            showExitDialog(context);
+            showExitDialog(context, ref);
           },
         ),
         body: SafeArea(

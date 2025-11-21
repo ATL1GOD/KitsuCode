@@ -364,13 +364,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         canPop: false,
         onPopInvokedWithResult: (bool didPop, dynamic _) {
           if (didPop) return;
-          showExitDialog(context);
+          showExitDialog(context, ref);
         },
         child: Scaffold(
           appBar: ChallengeAppBar2(
             progress: progress,
             onClose: () {
-              showExitDialog(context);
+              showExitDialog(context, ref);
             },
           ),
           body: _buildQuizBody(colorScheme, questionKey),

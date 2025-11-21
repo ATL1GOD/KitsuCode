@@ -116,7 +116,7 @@ class PuzzleView extends ConsumerWidget {
         appBar: ChallengeAppBar2(
           progress: progress,
           onClose: () {
-            showExitDialog(context);
+            showExitDialog(context, ref);
           },
         ),
         body: Column(

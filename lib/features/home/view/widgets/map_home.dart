@@ -105,12 +105,10 @@ class Section extends ConsumerWidget {
               );
 
               return Positioned(
-                key: ValueKey('level_${level.idNivel}'),
                 top: (i * 96.0) + 40.0,
                 left: getLeft(i),
                 right: getRight(i),
                 child: AnimatedLevelNode(
-                  key: ValueKey(level.idNivel),
                   levelId: level.idNivel,
                   child: levelNodeWidget,
                 ),

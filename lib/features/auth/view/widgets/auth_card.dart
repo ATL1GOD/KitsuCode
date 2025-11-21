@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:kitsucode/core/utils/device_performance_utils.dart'; // 🎯 OPTIMIZACIÓN
 import 'package:kitsucode/features/auth/view/widgets/login_form.dart';
 import 'package:kitsucode/features/auth/view/widgets/register_form.dart';
 
@@ -19,59 +20,66 @@ class AuthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(100),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withAlpha(51)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(51),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: TabBar(
-                    dividerHeight: 0,
-                    controller: tabController,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white70,
-                    indicator: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: colorScheme.primary,
-                    ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    tabs: const [
-                      Tab(text: 'INICIAR SESIÓN'),
-                      Tab(text: 'REGISTRARSE'),
-                    ],
-                  ),
+    // 🎯 OPTIMIZACIÓN: Deshabilitar BackdropFilter en dispositivos de gama baja
+    final enableBlur = DevicePerformanceUtils.shouldEnableHeavyEffects();
+
+    final cardContent = Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(100),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withAlpha(51)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withAlpha(51),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: TabBar(
+                dividerHeight: 0,
+                controller: tabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: colorScheme.primary,
                 ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  height: 450,
-                  child: TabBarView(
-                    controller: tabController,
-                    children: [
-                      LoginForm(onSwitchToRegister: onSwitchToRegister),
-                      RegisterForm(onSwitchToLogin: onSwitchToLogin),
-                    ],
-                  ),
-                ),
-              ],
+                indicatorSize: TabBarIndicatorSize.tab,
+                tabs: const [
+                  Tab(text: 'INICIAR SESIÓN'),
+                  Tab(text: 'REGISTRARSE'),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 450,
+              child: TabBarView(
+                controller: tabController,
+                children: [
+                  LoginForm(onSwitchToRegister: onSwitchToRegister),
+                  RegisterForm(onSwitchToLogin: onSwitchToLogin),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
+    );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: enableBlur
+          ? BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: cardContent,
+            )
+          : cardContent,
     );
     }
 }

@@ -5,7 +5,6 @@ import 'package:flutter/services.dart'; // 👈 IMPORTANTE PARA HAPTICS
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kitsucode/core/utils/app_themes.dart';
-import 'package:kitsucode/core/utils/device_performance_utils.dart'; // 🎯 OPTIMIZACIÓN
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -442,50 +441,43 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           ),
         ];
 
-        // 🎯 OPTIMIZACIÓN: Deshabilitar BackdropFilter en dispositivos de gama baja
-        final enableBlur = DevicePerformanceUtils.shouldEnableHeavyEffects();
-
-        final menuContent = Container(
-          width: 260,
-          padding: const EdgeInsets.all(10),
-
-          /// PANEL CARTOON / GAMER DEPENDIENDO DEL MODO
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: panelGradientColors,
-            ),
-            border: Border.all(
-              color: panelBorderColor,
-              width: 3.0,
-            ),
-            boxShadow: panelShadows,
-          ),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(items.length, (i) {
-              return _StaggerItem(
-                delay: i * 70,
-                child: items[i],
-              );
-            }),
-          ),
-        );
-
         return Material(
           type: MaterialType.transparency,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: enableBlur
-                ? BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: menuContent,
-                  )
-                : menuContent,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: 260,
+                padding: const EdgeInsets.all(10),
+
+                /// PANEL CARTOON / GAMER DEPENDIENDO DEL MODO
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: panelGradientColors,
+                  ),
+                  border: Border.all(
+                    color: panelBorderColor,
+                    width: 3.0,
+                  ),
+                  boxShadow: panelShadows,
+                ),
+
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(items.length, (i) {
+                    return _StaggerItem(
+                      delay: i * 70,
+                      child: items[i],
+                    );
+                  }),
+                ),
+              ),
+            ),
           ),
         );
       },

@@ -301,10 +301,8 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                   itemBuilder: (context, index) {
                                     final user = restOfRanking[index];
                                     return FadeInUp(
-                                      key: ValueKey('ranking_${user.userId}'),
                                       delay: Duration(milliseconds: index * 30),
                                       child: RankingTile(
-                                        key: ValueKey(user.userId),
                                         user: user,
                                         isCurrentUser:
                                             user.userId == currentUserId,

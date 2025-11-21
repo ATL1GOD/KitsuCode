@@ -97,9 +97,12 @@ class _AnimatedLevelNodeState extends ConsumerState<AnimatedLevelNode>
           _isVisible = isNowVisible;
         }
       },
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
+      // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints innecesarios
+      child: RepaintBoundary(
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: widget.child,
+        ),
       ),
     );
   }

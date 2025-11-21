@@ -1,6 +1,7 @@
 // lib/features/challenge/widgets/challenge_feedback_modal.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Importar Riverpod
 import 'package:lottie/lottie.dart';
 
 // Modal de reporte
@@ -9,7 +10,11 @@ import 'package:kitsucode/features/challenge/widgets/report_error_modal.dart';
 // Tema principal de KitsuCode
 import 'package:kitsucode/core/utils/app_themes.dart';
 
-class ChallengeFeedbackModal extends StatelessWidget {
+// Audio Controller
+import 'package:kitsucode/core/providers/audio_provider.dart'; // 2. Importar el AudioProvider
+
+// 3. Cambiamos a ConsumerStatefulWidget para tener ciclo de vida (initState)
+class ChallengeFeedbackModal extends ConsumerStatefulWidget {
   final bool isCorrect;
   final VoidCallback onContinue;
   final int challengeId;
@@ -20,6 +25,25 @@ class ChallengeFeedbackModal extends StatelessWidget {
     required this.onContinue,
     required this.challengeId,
   });
+
+  @override
+  ConsumerState<ChallengeFeedbackModal> createState() => _ChallengeFeedbackModalState();
+}
+
+class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal> {
+
+  @override
+  void initState() {
+    super.initState();
+    // 4. Disparamos el sonido al iniciar el modal
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.isCorrect) {
+        ref.read(audioControllerProvider).playSuccess();
+      } else {
+        ref.read(audioControllerProvider).playError();
+      }
+    });
+  }
 
   Future<void> _handleReportError(BuildContext context) async {
     // Determinar si el tema actual del reto es claro u oscuro
@@ -37,7 +61,7 @@ class ChallengeFeedbackModal extends StatelessWidget {
         return Theme(
           data: appTheme,
           child: ReportErrorModal(
-            challengeId: challengeId,
+            challengeId: widget.challengeId, // Usamos widget.challengeId
           ),
         );
       },
@@ -62,7 +86,8 @@ class ChallengeFeedbackModal extends StatelessWidget {
     // Estilos de resultado
     final Color successColor = Colors.green.shade600;
     final Color errorColor = Colors.red.shade600;
-    final Color titleColor = isCorrect ? successColor : errorColor;
+    // Usamos widget.isCorrect
+    final Color titleColor = widget.isCorrect ? successColor : errorColor;
 
     const String lottieAsset = 'assets/animations/fox_run.json';
 
@@ -94,7 +119,7 @@ class ChallengeFeedbackModal extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 Text(
-                  isCorrect ? "¡Respuesta Correcta!" : "Respuesta Incorrecta",
+                  widget.isCorrect ? "¡Respuesta Correcta!" : "Respuesta Incorrecta",
                   style: textTheme.headlineMedium?.copyWith(
                     color: titleColor,
                     fontWeight: FontWeight.bold,
@@ -103,7 +128,7 @@ class ChallengeFeedbackModal extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 Text(
-                  isCorrect
+                  widget.isCorrect
                       ? "¡Sigue así! Lo estás haciendo muy bien."
                       : "No te preocupes. ¡Inténtalo de nuevo!",
                   style: textTheme.bodyLarge?.copyWith(
@@ -122,7 +147,7 @@ class ChallengeFeedbackModal extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  onPressed: onContinue,
+                  onPressed: widget.onContinue, // Usamos widget.onContinue
                   child: const Text(
                     'CONTINUAR',
                     style: TextStyle(

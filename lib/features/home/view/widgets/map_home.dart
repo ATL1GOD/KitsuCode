@@ -1,4 +1,3 @@
-// [COMIENZO DEL ARCHIVO map_home.dart]
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/home/view/widgets/buttons_home.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
@@ -6,21 +5,20 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/animated_level_node.dart';
-
-// --- ¡AÑADE ESTA IMPORTACIÓN! ---
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-// --- FIN DE LA IMPORTACIÓN ---
+
+// 1. IMPORTAR EL AUDIO PROVIDER
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
 class Section extends ConsumerWidget {
   final SectionData data;
 
   const Section({super.key, required this.data});
 
-  // --- (Tu función _navegarAReto no cambia en absoluto) ---
+  // Función original de navegación (SIN CAMBIOS)
   void _navegarAReto(BuildContext context, WidgetRef ref, LevelData level) {
     // --- LÓGICA DE BLOQUEO DE NIVEL ---
     if (level.isLocked) {
-      // ¡Usa tu nueva función!
       showWarningSnackbar(
         context,
         '¡Nivel Bloqueado!',
@@ -30,7 +28,7 @@ class Section extends ConsumerWidget {
     }
     // --- FIN LÓGICA DE BLOQUEO DE NIVEL ---
 
-    // 1. Si no hay retoId, es una lección (sin cambios)
+    // 1. Si no hay retoId, es una lección
     if (level.retoId == null) {
       debugPrint(
         "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
@@ -39,11 +37,10 @@ class Section extends ConsumerWidget {
       return;
     }
 
-    // 2. Lógica de bloqueo de vidas (sin cambios)
+    // 2. Lógica de bloqueo de vidas
     final appBarState = ref.read(appBarProvider);
 
     if (appBarState.lives <= 0) {
-      // ¡Usa tu nueva función!
       showErrorSnackbar(
         context,
         '¡Sin Vidas!',
@@ -96,12 +93,15 @@ class Section extends ConsumerWidget {
               int i = entry.key;
               LevelData level = entry.value;
 
-              // --- ¡INICIO DE LA MODIFICACIÓN! ---
-
               // 1. Definimos la bolita (el botón) como un widget
               final Widget levelNodeWidget = ReliefSectionButton(
                 onPressed: () {
-                  // Llamamos a la función con el ref
+                  // --- MODIFICACIÓN: AGREGAMOS EL SONIDO AQUÍ ---
+                  // Reproduce el click incluso si está bloqueado o sin vidas
+                  // para dar feedback táctil/auditivo inmediato.
+                  ref.read(audioControllerProvider).playClick();
+                  
+                  // Llamamos a la lógica original de navegación/validación
                   _navegarAReto(context, ref, level);
                 },
                 baseColor: data.color,
@@ -121,12 +121,10 @@ class Section extends ConsumerWidget {
                 left: getLeft(i),
                 right: getRight(i),
                 child: AnimatedLevelNode(
-                  // <-- ¡NUEVO WRAPPER!
                   levelId: level.idNivel, // Le pasamos su ID
                   child: levelNodeWidget, // Le pasamos la bolita como hijo
                 ),
               );
-              // --- FIN DE LA MODIFICACIÓN! ---
             }).toList(),
           ),
         ),
@@ -158,4 +156,3 @@ class Section extends ConsumerWidget {
     return 0.0;
   }
 }
-// [FIN DEL ARCHIVO map_home.dart]

@@ -289,7 +289,7 @@ class ProfileRepository {
           .select('nombre, asset_path, tipo, color_primario')
           .eq('id_avatar', avatarId)
           .single();
-          
+
       return data;
     } catch (e) {
       // ignore: avoid_print
@@ -363,5 +363,31 @@ class ProfileRepository {
       print('Error al buscar usuarios: $e');
       throw Exception('Error al buscar usuarios.');
     }
+  }
+
+  /// Obtiene la lista de lenguajes disponibles para elegir
+  Future<List<Map<String, dynamic>>> getAvailableLanguages() async {
+    final response = await _supabase
+        .from('lenguaje')
+        .select('id_lenguaje, nombre')
+        .order('nombre');
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Completa el onboarding
+  Future<void> completeOnboarding({
+    required String userId,
+    required String username,
+    required int languageId,
+  }) async {
+    await _supabase.rpc(
+      'completar_onboarding',
+      params: {
+        'p_user_id': userId,
+        'p_nombre_perfil':
+            username, // <--- AQUÍ CAMBIA LA CLAVE (antes era p_nombre_usuario)
+        'p_id_lenguaje': languageId,
+      },
+    );
   }
 }

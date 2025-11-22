@@ -4,11 +4,12 @@ class UserProfileModel {
   final String correo;
   final String nombrePerfil;
   final int idAvatarSeleccionado; // ¡CAMBIO! Ahora es int en lugar de String
-  final int siguiendoCount;  
-  final int seguidoresCount; 
+  final int siguiendoCount;
+  final int seguidoresCount;
   final int cambiosAvatarHoy;
   final int cambiosNombrePerfilEsteMes;
-
+  final int nivelConocimiento;
+  final bool onboardingCompletado; // <--- NUEVO: Agrega esta línea
   UserProfileModel({
     required this.userId,
     required this.nombreUsuario,
@@ -16,26 +17,31 @@ class UserProfileModel {
     required this.nombrePerfil,
     required this.idAvatarSeleccionado,
     required this.siguiendoCount,
-    required this.seguidoresCount, 
+    required this.seguidoresCount,
     required this.cambiosAvatarHoy,
     required this.cambiosNombrePerfilEsteMes,
+    required this.nivelConocimiento,
+    required this.onboardingCompletado, // <--- NUEVO: Agrega esto al constructor
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
     return UserProfileModel(
-      userId: json['id'],
-      nombreUsuario: json['nombre_usuario'] ?? 'N/A',
+      userId: json['id'] as String,
+      nombreUsuario: json['nombre_usuario'] as String? ?? '',
       correo: json['correo'] ?? 'Sin correo',
-      nombrePerfil: json['nombre_perfil'] ?? 'Sin Nombre',
-      idAvatarSeleccionado: json['id_avatar_seleccionado'] ?? 1, // Default: Zorro
-      
+      nombrePerfil: json['nombre_perfil'] as String? ?? '',
+      idAvatarSeleccionado:
+          json['id_avatar_seleccionado'] as int? ?? 1, // Default: Zorro
       siguiendoCount: json['siguiendo_count'] ?? 0,
-      seguidoresCount: json['seguidores_count'] ?? 0, 
+      seguidoresCount: json['seguidores_count'] ?? 0,
       cambiosAvatarHoy: json['cambios_avatar_hoy'] ?? 0,
-      cambiosNombrePerfilEsteMes: json['cambios_nombre_perfil_este_mes'] ?? 0
+      cambiosNombrePerfilEsteMes: json['cambios_nombre_perfil_este_mes'] ?? 0,
+      nivelConocimiento: json['nivel_conocimiento'] as int? ?? 0,
+      onboardingCompletado:
+          json['onboarding_completado'] as bool? ??
+          false, // <--- NUEVO: Mapeo del JSON
     );
   }
-
   // Método para clonar y modificar instancias
   UserProfileModel copyWith({
     String? userId,
@@ -47,6 +53,8 @@ class UserProfileModel {
     int? seguidoresCount,
     int? cambiosAvatarHoy,
     int? cambiosNombrePerfilEsteMes,
+    int? nivelConocimiento,
+    bool? onboardingCompletado,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -57,7 +65,10 @@ class UserProfileModel {
       siguiendoCount: siguiendoCount ?? this.siguiendoCount,
       seguidoresCount: seguidoresCount ?? this.seguidoresCount,
       cambiosAvatarHoy: cambiosAvatarHoy ?? this.cambiosAvatarHoy,
-      cambiosNombrePerfilEsteMes: cambiosNombrePerfilEsteMes ?? this.cambiosNombrePerfilEsteMes,
+      cambiosNombrePerfilEsteMes:
+          cambiosNombrePerfilEsteMes ?? this.cambiosNombrePerfilEsteMes,
+      nivelConocimiento: nivelConocimiento ?? this.nivelConocimiento,
+      onboardingCompletado: onboardingCompletado ?? this.onboardingCompletado,
     );
   }
 }

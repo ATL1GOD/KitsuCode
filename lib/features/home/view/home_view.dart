@@ -9,6 +9,8 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:kitsucode/main.dart';
 import 'package:kitsucode/core/providers/audio_provider.dart';
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -54,11 +56,11 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
     // Delay para que la pantalla se estabilice
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
-      
+
       try {
         final audioController = ref.read(audioControllerProvider);
         final currentLang = ref.read(appBarProvider).languageName;
-        
+
         if (currentLang.isNotEmpty) {
           audioController.playBackgroundMusic(currentLang);
         }
@@ -69,8 +71,7 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
   }
 
   @override
-  void didPushNext() {
-  }
+  void didPushNext() {}
 
   void _calculateSectionOffsets() {
     final sectionsAsync = ref.read(homeViewModelProvider);
@@ -139,6 +140,31 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Obtener ID del usuario para verificar perfil
+    final userId = ref.watch(authStateProvider).value?.session?.user.id;
+
+    // Si no hay usuario (caso raro pero posible), mostramos carga
+    if (userId == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // 2. CHECK DE ONBOARDING: Usamos ref.listen para no romper el build
+    ref.listen(userProfileByIdProvider(userId), (previous, next) {
+      next.whenData((profile) {
+        // Si ya cargó el perfil y onboarding_completado es false...
+        if (!profile.onboardingCompletado) {
+          // ...redirigimos. Usamos microtask para asegurar que sea post-render.
+          Future.microtask(() {
+            if (mounted) {
+              context.go('/onboarding');
+            }
+          });
+        }
+      });
+    });
+
+    // --- Lógica normal del Home ---
+
     ref.watch(mapStructureRealtimeProvider);
     ref.read(progressRealtimeProvider);
 

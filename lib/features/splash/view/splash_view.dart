@@ -8,8 +8,9 @@ import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 
-// 🔥 IMPORTAR para acceder al flag global
+// Asegúrate de que esta ruta sea correcta según tu estructura de carpetas
 import 'package:kitsucode/core/routes/router.dart' show setSplashCompleted;
+// O si está en core: import 'package:kitsucode/core/routes/router.dart' show setSplashCompleted;
 
 const Color _kitsuOrange = Color(0xFFf79126);
 
@@ -30,49 +31,55 @@ class _SplashViewState extends ConsumerState<SplashView>
 
   bool _bootstrapDone = false;
   bool _animationDone = false;
-  bool _navigated = false;
+  bool _navigated = false; // Flag de seguridad
 
   late ProviderSubscription<AsyncValue<void>> _bootstrapSub;
 
   void _tryNavigate() {
-    if (_navigated) return;
+    // 1. Si las pre-condiciones no están listas, esperamos.
     if (!_bootstrapDone || !_animationDone) return;
 
-    _navigated = true;
-    
-    //Marcar que la splash terminó ANTES de navegar
-    setSplashCompleted();
-    
-    FlutterNativeSplash.remove();
+    // NOTA: No ponemos _navigated = true aquí porque rompería el reintento
+    // si la conectividad está 'loading'.
 
-    //VERIFICAR CONECTIVIDAD ANTES DE NAVEGAR
     final connectivityState = ref.read(initialConnectivityProvider);
 
     connectivityState.when(
       data: (status) {
-        if (status == ConnectivityStatus.offline) {
-          // Si no hay internet, ir a NoInternetView
-          context.go('/no-internet');
-          return;
-        }
+        // 2. AQUÍ verificamos y bloqueamos la navegación múltiple
+        if (_navigated) return;
+        _navigated = true;
 
-        // Si hay internet, navegación normal según autenticación
-        final isLogged = ref.read(authStateProvider).value?.session != null;
-        if (isLogged) {
-          context.go('/home');
+        // 3. Abrimos el candado del Router
+        setSplashCompleted();
+        FlutterNativeSplash.remove();
+
+        // 4. Lógica de direccionamiento
+        if (status == ConnectivityStatus.offline) {
+          context.go('/no-internet');
         } else {
-          context.go('/auth');
+          final isLogged = ref.read(authStateProvider).value?.session != null;
+          if (isLogged) {
+            context.go('/home');
+          } else {
+            context.go('/auth');
+          }
         }
       },
       loading: () {
-        // Mientras verifica conectividad, esperar un poco
+        // Si está cargando, reintentamos. Como _navigated sigue false,
+        // la función volverá a entrar correctamente.
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
-          _tryNavigate(); // Reintentar
+          _tryNavigate();
         });
       },
       error: (_, __) {
-        // Si hay error verificando, asumir sin internet
+        if (_navigated) return;
+        _navigated = true;
+
+        setSplashCompleted();
+        FlutterNativeSplash.remove();
         context.go('/no-internet');
       },
     );
@@ -119,6 +126,7 @@ class _SplashViewState extends ConsumerState<SplashView>
   }
 
   void _listenBootstrap() {
+    // Nos aseguramos de inicializar el provider
     ref.read(bootstrapProvider);
 
     _bootstrapSub = ref.listenManual<AsyncValue<void>>(bootstrapProvider, (
@@ -131,6 +139,8 @@ class _SplashViewState extends ConsumerState<SplashView>
           _tryNavigate();
         },
         error: (_, __) {
+          // Incluso con error en bootstrap, intentamos continuar
+          // (quizás es error de red que manejaremos en connectivity)
           _bootstrapDone = true;
           _tryNavigate();
         },
@@ -139,15 +149,15 @@ class _SplashViewState extends ConsumerState<SplashView>
   }
 
   @override
-  void initState() { 
+  void initState() {
     super.initState();
     _setupAnimation();
     _listenBootstrap();
 
-    //LA CLAVE: ESPERAR A QUE LA SPLASH NATIVA SE HAYA IDO COMPLETAMENTE
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Pequeño delay para suavizar la transición desde el splash nativo
       await Future.delayed(const Duration(milliseconds: 120));
-      _controller.forward();
+      if (mounted) _controller.forward();
     });
   }
 

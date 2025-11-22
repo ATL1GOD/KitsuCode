@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kitsucode/features/onboarding/view/onboarding_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Providers
@@ -61,61 +62,54 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: GoRouterRefreshStream(ref),
 
     redirect: (context, state) {
-      final isLogged = ref.read(authStateProvider).valueOrNull?.session != null;
+      final authState = ref.read(authStateProvider).valueOrNull;
+      final isLogged = authState?.session != null;
       final loc = state.matchedLocation;
 
-      //debugPrint('Router redirect - Ruta: $loc | Logueado: $isLogged | Splash completada: $_splashCompleted');
-
+      // Define rutas especiales
       final inAuthRoute =
-          loc == '/auth' ||
+          loc.startsWith('/auth') ||
           loc == '/forgot-password' ||
           loc == '/update-password' ||
           loc == '/privacy-policy';
       final inSplash = loc == '/';
       final inNoInternet = loc == '/no-internet';
+      final inOnboarding = loc == '/onboarding'; // <--- Agregado
 
-      // 1. Siempre permitir la ruta de "sin internet"
       if (inNoInternet) return null;
-
-      // 2. Permitir siempre la pantalla de actualizar contraseña (para el flujo de reseteo)
       if (loc == '/update-password') return null;
-      
-      // 3. Permitir siempre la política de privacidad
       if (loc == '/privacy-policy') return null;
 
-      // 4. Lógica del Splash (¡LA CORRECCIÓN!)
+      // Lógica Splash
       if (inSplash) {
-        // NUEVO: Si la splash NO ha terminado, BLOQUEAR navegación
-        if (!_splashCompleted) {
-          return null;
-        }
-        
-        // Si estamos en el Splash Y acabamos de iniciar sesión (ej. Google),
-        // ¡sácalo de ahí y llévalo al home!
+        if (!_splashCompleted) return null; // Bloquea hasta que termine splash
         if (isLogged) return '/home';
-
-        // Si no está logueado, llévalo a auth
         return '/auth';
       }
 
-      // 5. Lógica de Rutas de Auth (Login, Registro, etc.)
-      if (inAuthRoute) {
-        if (isLogged) return '/home';
-        return null;
-      }
-
-      // 6. Lógica de Rutas Protegidas (todas las demás)
-      if (!isLogged) {
+      // Si no está logueado y trata de entrar a rutas privadas (excepto auth)
+      if (!isLogged && !inAuthRoute) {
         return '/auth';
       }
+
+      // Si está logueado y trata de ir a auth
+      if (isLogged && inAuthRoute) {
+        return '/home';
+      }
+
+      // NOTA: Quitamos la lógica de Onboarding de aquí para evitar bucles.
+      // La manejaremos en el HomeView o con un Wrapper.
 
       return null;
     },
-    
-    routes: [
-      // Splash
-      GoRoute(path: '/', builder: (context, state) => const SplashView()),
 
+    routes: [
+      // Asegúrate de tener la ruta de onboarding
+      GoRoute(path: '/', builder: (context, state) => const SplashView()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingView(),
+      ),
       // Auth
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
@@ -128,7 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/update-password',
         builder: (context, state) => const UpdatePasswordView(),
       ),
-      
+
       GoRoute(
         path: '/privacy-policy',
         builder: (context, state) => const PrivacyPolicyView(),

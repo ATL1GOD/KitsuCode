@@ -45,7 +45,7 @@ class _ExpandableSpecialEventCardState
         ? 0.0
         : completedChallenges / totalChallenges;
     final progressTitle = totalChallenges > 0
-        ? 'Completa ${totalChallenges} desafíos'
+        ? 'Completa $totalChallenges desafíos'
         : 'Sin desafíos definidos';
 
     return Card(

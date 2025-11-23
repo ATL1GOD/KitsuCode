@@ -1,12 +1,9 @@
 // lib/features/challenge/view/language_completion_celebration.dart
 
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'dart:math';
 import 'package:kitsucode/core/utils/app_themes.dart';
-
 
 class LanguageCompletionCelebration extends StatefulWidget {
   final String languageName; // "Python", "Java", "C"
@@ -31,11 +28,13 @@ class _LanguageCompletionCelebrationState
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
+
     // Iniciar confetti inmediatamente
     _confettiController.play();
-    
+
     // Mostrar contenido después de un pequeño delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -82,8 +81,7 @@ class _LanguageCompletionCelebrationState
   @override
   Widget build(BuildContext context) {
     // Tema y estilos
-    final size = MediaQuery.of(context).size;
-    
+
     // Obtenemos el tema y colores del lenguaje actual
     final challengeTheme = _getLanguageTheme(
       widget.languageName,
@@ -93,7 +91,7 @@ class _LanguageCompletionCelebrationState
     final textTheme = challengeTheme.textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface, 
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           // Fondo con gradiente
@@ -103,8 +101,8 @@ class _LanguageCompletionCelebrationState
                 center: Alignment.center,
                 radius: 1.0,
                 colors: [
-                  colorScheme.primary.withOpacity(0.3), 
-                  colorScheme.surface,                   
+                  colorScheme.primary.withAlpha(77),
+                  colorScheme.surface,
                 ],
               ),
             ),
@@ -122,9 +120,9 @@ class _LanguageCompletionCelebrationState
               gravity: 0.1,
               shouldLoop: false,
               colors: [
-                colorScheme.primary,    
-                colorScheme.secondary, 
-                colorScheme.tertiary,  
+                colorScheme.primary,
+                colorScheme.secondary,
+                colorScheme.tertiary,
                 Colors.yellow,
                 Colors.green,
                 Colors.blue,
@@ -144,34 +142,37 @@ class _LanguageCompletionCelebrationState
 
                     // Trofeo/Medalla animada
                     Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary.withOpacity(0.6), 
-                            colorScheme.primary,                   
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.5), 
-                            blurRadius: 40,
-                            spreadRadius: 10,
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colorScheme.primary.withAlpha(153),
+                                colorScheme.primary,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary.withAlpha(128),
+                                blurRadius: 40,
+                                spreadRadius: 10,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.emoji_events,
-                        size: 120,
-                        color: colorScheme.onPrimary, 
-                      ),
-                    )
+                          child: Icon(
+                            Icons.emoji_events,
+                            size: 120,
+                            color: colorScheme.onPrimary,
+                          ),
+                        )
                         .animate(onPlay: (controller) => controller.repeat())
-                        .shimmer(duration: 2000.ms, color: Colors.white.withOpacity(0.5))
+                        .shimmer(
+                          duration: 2000.ms,
+                          color: Colors.white.withAlpha(128),
+                        )
                         .then()
                         .shake(hz: 0.5, duration: 1000.ms),
 
@@ -179,62 +180,62 @@ class _LanguageCompletionCelebrationState
 
                     // Título principal
                     Text(
-                      '¡LENGUAJE DOMINADO!',
-                      style: textTheme.displaySmall?.copyWith( 
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface, 
-                        letterSpacing: 2,
-                        shadows: [
-                          Shadow(
-                            color: colorScheme.primary, 
-                            blurRadius: 20,
+                          '¡LENGUAJE DOMINADO!',
+                          style: textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                            letterSpacing: 2,
+                            shadows: [
+                              Shadow(
+                                color: colorScheme.primary,
+                                blurRadius: 20,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
-                    )
+                          textAlign: TextAlign.center,
+                        )
                         .animate()
                         .fadeIn(duration: 600.ms, delay: 300.ms)
                         .scale(delay: 300.ms)
                         .then()
-                        .shimmer(duration: 1500.ms, color: colorScheme.primary), 
+                        .shimmer(duration: 1500.ms, color: colorScheme.primary),
 
                     const SizedBox(height: 16),
 
                     // Nombre del lenguaje
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.2), 
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: colorScheme.primary, 
-                          width: 2,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _getLanguageIcon(),
-                            color: colorScheme.primary, 
-                            size: 28,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            widget.languageName.toUpperCase(),
-                            style: textTheme.headlineSmall?.copyWith( 
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary, 
-                              letterSpacing: 1.5,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withAlpha(51),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: colorScheme.primary,
+                              width: 2,
                             ),
                           ),
-                        ],
-                      ),
-                    )
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _getLanguageIcon(),
+                                color: colorScheme.primary,
+                                size: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                widget.languageName.toUpperCase(),
+                                style: textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.primary,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
                         .animate()
                         .fadeIn(duration: 600.ms, delay: 600.ms)
                         .slideY(begin: 0.3, end: 0, delay: 600.ms),
@@ -243,13 +244,13 @@ class _LanguageCompletionCelebrationState
 
                     // Mensaje motivador
                     Text(
-                      '¡Eres todo un programador!\n¡Sigue así! 🦊',
-                      style: textTheme.bodyLarge?.copyWith( 
-                        color: colorScheme.onSurface.withOpacity(0.7), 
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    )
+                          '¡Eres todo un programador!\n¡Sigue así! 🦊',
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurface.withAlpha(179),
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
                         .animate()
                         .fadeIn(duration: 600.ms, delay: 900.ms)
                         .slideY(begin: 0.2, end: 0, delay: 900.ms),
@@ -258,39 +259,42 @@ class _LanguageCompletionCelebrationState
 
                     // Botón de continuar
                     SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: widget.onContinue,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary, 
-                          foregroundColor: colorScheme.onPrimary, 
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 8,
-                          shadowColor: colorScheme.primary, 
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'CONTINUAR',
-                              style: textTheme.labelLarge?.copyWith( 
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: widget.onContinue,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
+                              elevation: 8,
+                              shadowColor: colorScheme.primary,
                             ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                      ),
-                    )
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'CONTINUAR',
+                                  style: textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ),
+                          ),
+                        )
                         .animate()
                         .fadeIn(duration: 600.ms, delay: 1200.ms)
                         .slideY(begin: 0.3, end: 0, delay: 1200.ms)
                         .then(delay: 600.ms)
-                        .shimmer(duration: 2000.ms, color: Colors.white.withOpacity(0.3)),
+                        .shimmer(
+                          duration: 2000.ms,
+                          color: Colors.white.withAlpha(77),
+                        ),
                   ],
                 ),
               ),

@@ -17,11 +17,8 @@ class _StaggerItem extends StatefulWidget {
   final Widget child;
   final int delay;
 
-  const _StaggerItem({
-    required this.child,
-    required this.delay,
-    Key? key,
-  }) : super(key: key);
+  const _StaggerItem({required this.child, required this.delay, Key? key})
+    : super(key: key);
 
   @override
   State<_StaggerItem> createState() => _StaggerItemState();
@@ -42,20 +39,12 @@ class _StaggerItemState extends State<_StaggerItem>
       duration: const Duration(milliseconds: 260),
     );
 
-    _fade = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
 
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.15),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) _controller.forward();
@@ -68,10 +57,7 @@ class _StaggerItemState extends State<_StaggerItem>
     return RepaintBoundary(
       child: FadeTransition(
         opacity: _fade,
-        child: SlideTransition(
-          position: _slide,
-          child: widget.child,
-        ),
+        child: SlideTransition(position: _slide, child: widget.child),
       ),
     );
   }
@@ -157,37 +143,37 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         return const Color(0xFF19647E);
     }
   }
-  
-   /// Ajustar colores específicos para Java (más vibrantes)
+
+  /// Ajustar colores específicos para Java (más vibrantes)
   ColorScheme _adjustJavaColors(ColorScheme original) {
     final isDark = original.brightness == Brightness.dark;
-    
+
     if (isDark) {
       // Dark mode: Colores más brillantes
       return original.copyWith(
-        primary: const Color(0xFFFF9A7F),           // Naranja pastel
-        primaryContainer: const Color(0xFFB85A40),  // Naranja oscuro
+        primary: const Color(0xFFFF9A7F), // Naranja pastel
+        primaryContainer: const Color(0xFFB85A40), // Naranja oscuro
         primaryFixed: const Color(0xFFFFD6CC),
-        
-        secondary: const Color(0xFF5FD9CC),         // Turquesa brillante
+
+        secondary: const Color(0xFF5FD9CC), // Turquesa brillante
         secondaryContainer: const Color(0xFF1F7A70),
         secondaryFixed: const Color(0xFFB8EDE7),
-        
-        tertiary: const Color(0xFFFFB77F),          // Naranja claro
+
+        tertiary: const Color(0xFFFFB77F), // Naranja claro
         tertiaryContainer: const Color(0xFFB86A30),
       );
     } else {
       // Light mode: Colores vibrantes
       return original.copyWith(
-        primary: const Color(0xFFE76F51),           // Naranja coral
-        primaryContainer: const Color(0xFFFFE5DD),  // Naranja muy claro
+        primary: const Color(0xFFE76F51), // Naranja coral
+        primaryContainer: const Color(0xFFFFE5DD), // Naranja muy claro
         primaryFixed: const Color(0xFFFFD6CC),
-        
-        secondary: const Color(0xFF2A9D8F),         // Verde agua
+
+        secondary: const Color(0xFF2A9D8F), // Verde agua
         secondaryContainer: const Color(0xFFCCF5F0),
         secondaryFixed: const Color(0xFFB8EDE7),
-        
-        tertiary: const Color(0xFFF4A261),          // Naranja suave
+
+        tertiary: const Color(0xFFF4A261), // Naranja suave
         tertiaryContainer: const Color(0xFFFFE8D6),
       );
     }
@@ -199,8 +185,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     final stats = ref.watch(appBarProvider);
 
     // Tema gamer por lenguaje
-    final languageTheme =
-        _getLanguageTheme(stats.languageName, Theme.of(context).brightness);
+    final languageTheme = _getLanguageTheme(
+      stats.languageName,
+      Theme.of(context).brightness,
+    );
 
     ref.listen<AppBarState>(appBarProvider, (previous, next) {
       if (previous != null &&
@@ -220,16 +208,17 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         data: languageTheme,
         child: Container(
           height: widget.preferredSize.height,
-          padding:
-              const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
+          padding: const EdgeInsets.only(
+            top: 40,
+            left: 16,
+            right: 16,
+            bottom: 8,
+          ),
           color: Colors.transparent,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const CircleAvatar(
-                radius: 22,
-                backgroundColor: Colors.white24,
-              ),
+              const CircleAvatar(radius: 22, backgroundColor: Colors.white24),
               _buildStatItem(
                 icon: Icons.local_fire_department,
                 color: Colors.grey,
@@ -257,8 +246,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
       data: languageTheme,
       child: Container(
         height: widget.preferredSize.height,
-        padding:
-            const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
+        padding: const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 8),
         color: Colors.transparent,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -291,12 +279,12 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     );
   }
 
-    Widget _buildLanguageSelector(
-      BuildContext context,
-      WidgetRef ref,
-      AppBarState stats,
-      ThemeData languageTheme,
-    ) {
+  Widget _buildLanguageSelector(
+    BuildContext context,
+    WidgetRef ref,
+    AppBarState stats,
+    ThemeData languageTheme,
+  ) {
     return CompositedTransformTarget(
       link: _layerLink,
       child: OverlayPortal(
@@ -307,15 +295,13 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
               // 🔥 SONIDO AL CERRAR CLICANDO FUERA
               HapticFeedback.lightImpact();
               ref.read(audioControllerProvider).playClick();
-              
+
               _portalController.hide();
               setState(() => _isMenuOpen = false);
             },
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: Container(color: Colors.transparent),
-                ),
+                Positioned.fill(child: Container(color: Colors.transparent)),
                 CompositedTransformFollower(
                   link: _layerLink,
                   offset: const Offset(0, 52),
@@ -384,17 +370,15 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     // 🔥 AJUSTAR COLORES SOLO PARA JAVA
     final stats = ref.watch(appBarProvider);
     final isJava = stats.languageName.toLowerCase().trim() == 'java';
-    
+
     var colorScheme = languageTheme.colorScheme;
     if (isJava) {
       colorScheme = _adjustJavaColors(colorScheme);
     }
-    
+
     final textTheme = languageTheme.textTheme;
     final isDark = colorScheme.brightness == Brightness.dark;
     final languageListAsync = ref.watch(languageListProvider);
-
-    
 
     return languageListAsync.when(
       error: (e, st) => _errorBox(colorScheme),
@@ -418,18 +402,16 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           );
         }).toList();
 
-        
-
         // Gradiente del panel según modo
         final List<Color> panelGradientColors = isDark
-                  ? [
-                      colorScheme.primaryContainer.withOpacity(0.90),
-                      colorScheme.tertiaryContainer.withOpacity(0.90),
-                    ]
-                  : [
-                      colorScheme.primaryFixed.withOpacity(0.90),
-                      colorScheme.secondaryFixed.withOpacity(0.90),
-                    ];
+            ? [
+                colorScheme.primaryContainer.withOpacity(0.90),
+                colorScheme.tertiaryContainer.withOpacity(0.90),
+              ]
+            : [
+                colorScheme.primaryFixed.withOpacity(0.90),
+                colorScheme.secondaryFixed.withOpacity(0.90),
+              ];
 
         final Color panelBorderColor = colorScheme.primary;
 
@@ -459,10 +441,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                     end: Alignment.centerRight,
                     colors: panelGradientColors,
                   ),
-                  border: Border.all(
-                    color: panelBorderColor,
-                    width: 3.0,
-                  ),
+                  border: Border.all(color: panelBorderColor, width: 3.0),
                   boxShadow: panelShadows,
                 ),
 
@@ -470,10 +449,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: List.generate(items.length, (i) {
-                    return _StaggerItem(
-                      delay: i * 70,
-                      child: items[i],
-                    );
+                    return _StaggerItem(delay: i * 70, child: items[i]);
                   }),
                 ),
               ),
@@ -528,22 +504,23 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     final unlockedLanguages = languageState.unlockedLanguages;
 
     final normalizedLangName = langName.trim().toLowerCase();
-    final normalizedUnlocked =
-        unlockedLanguages.map((l) => l.trim().toLowerCase()).toList();
+    final normalizedUnlocked = unlockedLanguages
+        .map((l) => l.trim().toLowerCase())
+        .toList();
 
     final isCompleted = normalizedUnlocked.contains(normalizedLangName);
     final isDark = colorScheme.brightness == Brightness.dark;
 
     // Gradiente por item según modo
     final List<Color> itemGradientColors = isDark
-    ? [
-        colorScheme.primaryContainer.withOpacity(0.85),
-        colorScheme.secondaryContainer.withOpacity(0.85),
-      ]
-    : [
-        colorScheme.primaryFixed.withOpacity(0.85),
-        colorScheme.secondaryFixed.withOpacity(0.85),
-      ];
+        ? [
+            colorScheme.primaryContainer.withOpacity(0.85),
+            colorScheme.secondaryContainer.withOpacity(0.85),
+          ]
+        : [
+            colorScheme.primaryFixed.withOpacity(0.85),
+            colorScheme.secondaryFixed.withOpacity(0.85),
+          ];
     final Color itemBorderColor = isDark
         ? colorScheme.primaryFixed
         : colorScheme.secondaryFixedDim;
@@ -590,10 +567,10 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           await ref.read(appBarProvider.notifier).fetchStats();
         } catch (e) {
           if (!mounted) return;
-          
+
           // Sonido error si falla la API
           ref.read(audioControllerProvider).playError();
-          
+
           showErrorSnackbar(
             context,
             '¡Error!',
@@ -613,10 +590,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             end: Alignment.centerRight,
             colors: itemGradientColors,
           ),
-          border: Border.all(
-            color: itemBorderColor,
-            width: 3,
-          ),
+          border: Border.all(color: itemBorderColor, width: 3),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(isDark ? 0.35 : 0.20),
@@ -636,7 +610,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withAlpha(230),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.20),
@@ -670,11 +644,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             ),
 
             if (isCompleted)
-              Icon(
-                Icons.check_circle,
-                color: Colors.green.shade300,
-                size: 22,
-              )
+              Icon(Icons.check_circle, color: Colors.green.shade300, size: 22)
             else
               Icon(
                 Icons.lock,

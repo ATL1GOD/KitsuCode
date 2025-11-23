@@ -43,20 +43,19 @@ class AchievementCard extends StatelessWidget {
     final double borderWidth = isUnlocked ? 3 : 1;
     final borderColor = isUnlocked ? effectColor : colors.outline;
     final lockedBackgroundColor = colors.surfaceContainerHigh;
-    final lockedTextColor = colors.onSurfaceVariant.withOpacity(0.7);
+    final lockedTextColor = colors.onSurfaceVariant.withAlpha(179);
 
     // --- CAMBIOS DE DISEÑO PARA EL TEXTO ---
     // 1. Padding vertical mínimo pero seguro (1.5)
-    final double verticalPadding = 1.5; 
-    
+    final double verticalPadding = 1.5;
+
     // 2. Ajustamos la fuente para una buena legibilidad (10-11px)
     final double baseFontSize = isSmallScreen ? 10 : 11;
-    
+
     // 3. Establecemos una altura mínima fija para el contenedor del texto (para 2 líneas + padding)
-    // Asumimos que la altura de la línea de 10-11px es ~14-16px. 
+    // Asumimos que la altura de la línea de 10-11px es ~14-16px.
     // 2 líneas * 15px + 2 * 1.5px padding = ~33px de alto mínimo.
     final double minTextContainerHeight = isSmallScreen ? 30 : 35;
-
 
     Widget cardContent = Container(
       decoration: BoxDecoration(
@@ -68,7 +67,7 @@ class AchievementCard extends StatelessWidget {
           BoxShadow(
             // ✅ Sombra según estado usando colores del tema
             color: isUnlocked
-                ? effectColor.withOpacity(0.3)
+                ? effectColor.withAlpha(77)
                 : colors.shadow.withOpacity(0.15),
             blurRadius: 3,
             spreadRadius: 0,
@@ -89,8 +88,7 @@ class AchievementCard extends StatelessWidget {
                         Colors.transparent,
                         BlendMode.multiply,
                       )
-                    : const ColorFilter.mode(
-                        Colors.grey, BlendMode.saturation),
+                    : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
                 // LayoutBuilder asegura que OptimizedImage obtenga el tamaño exacto
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -106,7 +104,7 @@ class AchievementCard extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 2. TEXTO INFERIOR (Anclado al fondo)
           Positioned(
             left: 0,
@@ -115,7 +113,8 @@ class AchievementCard extends StatelessWidget {
             child: Container(
               // Establecemos una altura mínima para evitar compresión vertical
               constraints: BoxConstraints(minHeight: minTextContainerHeight),
-              alignment: Alignment.center, // Centramos el texto verticalmente dentro de la nueva altura mínima
+              alignment: Alignment
+                  .center, // Centramos el texto verticalmente dentro de la nueva altura mínima
               padding: EdgeInsets.symmetric(
                 vertical: verticalPadding, // <-- Padding vertical mínimo
                 horizontal: 4.0,
@@ -123,8 +122,8 @@ class AchievementCard extends StatelessWidget {
               decoration: BoxDecoration(
                 // ✅ Usar colores del tema
                 color: isUnlocked
-                    ? colors.surface.withOpacity(0.8)
-                    : lockedBackgroundColor.withOpacity(0.9),
+                    ? colors.surface.withAlpha(204)
+                    : lockedBackgroundColor.withAlpha(230),
                 borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(8),
                 ),
@@ -137,7 +136,8 @@ class AchievementCard extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: baseFontSize, // <-- Tamaño ajustado
-                  height: 1.2, // Añade un poco de espacio entre líneas (line-height)
+                  height:
+                      1.2, // Añade un poco de espacio entre líneas (line-height)
                   // ✅ Texto con color del tema
                   color: isUnlocked ? colors.onSurface : lockedTextColor,
                 ),

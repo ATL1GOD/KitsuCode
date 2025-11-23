@@ -7,7 +7,6 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/features/profile/view/widgets/avatar_modal.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
-import 'package:kitsucode/shared/widgets/smart_image.dart';
 
 enum AvatarCategory { comun, especial }
 
@@ -59,8 +58,8 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
             center: const Alignment(0, -0.6),
             radius: 1.2,
             colors: [
-              dynamicBgColor.withOpacity(0.3),
-              colors.inverseSurface.withOpacity(0.0),
+              dynamicBgColor.withAlpha(77),
+              colors.inverseSurface.withAlpha(0),
             ],
           ),
         ),
@@ -105,7 +104,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                             vertical: 12,
                           ),
                           elevation: 8,
-                          shadowColor: colors.secondary.withOpacity(0.6),
+                          shadowColor: colors.secondary.withAlpha(153),
                         ),
                         child: const Text(
                           'Listo',
@@ -180,11 +179,11 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                         child: GridView.builder(
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 15,
-                            mainAxisSpacing: 15,
-                            childAspectRatio: 1.0, // círculos perfectos
-                          ),
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 15,
+                                mainAxisSpacing: 15,
+                                childAspectRatio: 1.0, // círculos perfectos
+                              ),
                           itemCount: filteredAvatars.length,
                           itemBuilder: (context, index) {
                             final avatar = filteredAvatars[index];
@@ -241,7 +240,9 @@ class _SelectedAvatarDisplay extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
 
     // ✅ Usa el assetPath real desde el provider
-    final String avatarPath = ref.watch(currentUserAvatarsProvider).when(
+    final String avatarPath = ref
+        .watch(currentUserAvatarsProvider)
+        .when(
           data: (avatars) {
             final avatar = avatars.firstWhere(
               (a) => a.id == avatarId,
@@ -261,7 +262,7 @@ class _SelectedAvatarDisplay extends ConsumerWidget {
         gradient: LinearGradient(colors: [dynamicColor, colors.primary]),
         boxShadow: [
           BoxShadow(
-            color: dynamicColor.withOpacity(0.7),
+            color: dynamicColor.withAlpha(179),
             blurRadius: 25,
             spreadRadius: 4,
           ),
@@ -306,17 +307,18 @@ class _CategoryIconButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color:
-              isSelected ? colors.primary : colors.surfaceContainer.withOpacity(0.2),
+          color: isSelected
+              ? colors.primary
+              : colors.surfaceContainer.withAlpha(51),
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? colors.secondary : colors.primary.withOpacity(0.3),
+            color: isSelected ? colors.secondary : colors.primary.withAlpha(77),
             width: isSelected ? 3 : 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: colors.secondary.withOpacity(0.5),
+                    color: colors.secondary.withAlpha(128),
                     blurRadius: 10,
                   ),
                 ]
@@ -373,7 +375,7 @@ class _CircularAvatarCell extends StatelessWidget {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: colors.secondary.withOpacity(0.6),
+                              color: colors.secondary.withAlpha(153),
                               blurRadius: 12,
                             ),
                           ]
@@ -408,11 +410,11 @@ class _CircularAvatarCell extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withAlpha(128),
                       ),
                       child: Icon(
                         Icons.lock,
-                        color: colors.onSurface.withOpacity(0.8),
+                        color: colors.onSurface.withAlpha(204),
                         size: 32,
                       ),
                     ),

@@ -140,15 +140,20 @@ class AuthRepository {
             response.data?['error'] ?? 'Error desconocido desde la función';
         throw AuthException('Error al eliminar la cuenta: $errorMsg');
       }
-      
+
       // --- IMPORTANTE: Llamamos al nuevo signOut que limpia notificaciones ---
       await signOut();
-
     } on Exception catch (e) {
-      print('Error al invocar la función "delete-user-data": ${e.toString()}');
+      if (kDebugMode) {
+        print(
+          'Error al invocar la función "delete-user-data": ${e.toString()}',
+        );
+      }
       throw AuthException('Error del servidor: ${e.toString()}');
     } catch (e) {
-      print('Error en deleteAccount: $e');
+      if (kDebugMode) {
+        print('Error en deleteAccount: $e');
+      }
       rethrow;
     }
   }

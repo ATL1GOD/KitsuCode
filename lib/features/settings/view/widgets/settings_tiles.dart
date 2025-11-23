@@ -62,7 +62,7 @@ class _BaseSettingsTile extends StatelessWidget {
             color: dynamicColor.withOpacity(.25),
             blurRadius: 12,
             offset: const Offset(0, 5),
-          )
+          ),
         ],
       ),
       child: Material(
@@ -113,12 +113,24 @@ class SettingsNavigationTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                Text(subtitle, style: t.bodySmall?.copyWith(color: c.onSurface.withOpacity(.6))),
+                Text(
+                  title,
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  subtitle,
+                  style: t.bodySmall?.copyWith(
+                    color: c.onSurface.withOpacity(.6),
+                  ),
+                ),
               ],
             ),
           ),
-          Icon(Icons.arrow_forward_ios_rounded, color: c.onSurfaceVariant, size: 18),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: c.onSurfaceVariant,
+            size: 18,
+          ),
         ],
       ),
     );
@@ -183,8 +195,16 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                Text(widget.subtitle, style: t.bodySmall?.copyWith(color: c.onSurface.withOpacity(.6))),
+                Text(
+                  widget.title,
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  widget.subtitle,
+                  style: t.bodySmall?.copyWith(
+                    color: c.onSurface.withOpacity(.6),
+                  ),
+                ),
               ],
             ),
           ),
@@ -259,9 +279,16 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
         children: [
           Row(
             children: [
-              Icon(widget.icon, color: widget.dynamicColor, size: 28), // ← cambio
+              Icon(
+                widget.icon,
+                color: widget.dynamicColor,
+                size: 28,
+              ), // ← cambio
               const SizedBox(width: 16),
-              Text(widget.title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                widget.title,
+                style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           Slider(
@@ -275,7 +302,7 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
               widget.onChanged(newValue);
             },
             activeColor: widget.dynamicColor,
-            inactiveColor: widget.dynamicColor.withOpacity(0.3),
+            inactiveColor: widget.dynamicColor.withAlpha(77),
             label: "${(_currentValue * 100).toInt()}%",
             divisions: 10,
           ),
@@ -318,8 +345,19 @@ class SettingsDestructiveTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: errorColor)),
-                Text(subtitle, style: t.bodySmall?.copyWith(color: errorColor.withOpacity(.8))),
+                Text(
+                  title,
+                  style: t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: errorColor,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: t.bodySmall?.copyWith(
+                    color: errorColor.withOpacity(.8),
+                  ),
+                ),
               ],
             ),
           ),

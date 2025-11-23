@@ -1,5 +1,6 @@
 // [COMIENZO DEL ARCHIVO /lib/features/challenge/provider/reto_provider.dart]
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert'; // Importante para decodificar el JSON de recursos
@@ -34,13 +35,11 @@ final challengeProvider = FutureProvider.family<ChallengeData, int>((
     //    Volvemos a tu consulta original y añadimos el join a 'reto'
     final response = await supabase
         .from('contenido_reto') // <-- Tu tabla original
-        .select(
-          '''
+        .select('''
           contenido, 
           dinamicas ( nombre ),
           reto ( recursos_json ) 
-          '''
-        ) // <-- ¡AÑADIDO EL JOIN SIMPLE A 'reto'!
+          ''') // <-- ¡AÑADIDO EL JOIN SIMPLE A 'reto'!
         .eq('id_reto', retoId) // <-- Tu .eq() original
         .maybeSingle(); // <-- Tu .maybeSingle() original
 
@@ -48,7 +47,7 @@ final challengeProvider = FutureProvider.family<ChallengeData, int>((
       throw Exception('No se encontró contenido para este reto (ID: $retoId).');
     }
     // 'response' es ahora el Map<String, dynamic> que esperas
-    
+
     // 5. EXTRACCIÓN Y VALIDACIÓN DE DATOS
 
     // Contenido (JSON)
@@ -65,33 +64,36 @@ final challengeProvider = FutureProvider.family<ChallengeData, int>((
       );
     }
     final String dinamicaNombre = dinamicasData['nombre'] as String;
-    
+
     // Recursos (¡NUEVO!)
     final dynamic retoData = response['reto']; // Esto debería ser un Map
     List<dynamic> recursosList = [];
-    
+
     // Verificamos que el join a 'reto' trajo datos y la columna 'recursos_json'
-    if (retoData != null && retoData is Map && retoData['recursos_json'] != null) {
-      // Tu BD tiene la columna 'recursos_json' como jsonb, 
+    if (retoData != null &&
+        retoData is Map &&
+        retoData['recursos_json'] != null) {
+      // Tu BD tiene la columna 'recursos_json' como jsonb,
       // pero a veces Supabase lo devuelve como String si se añadió después.
       // Manejamos ambos casos.
-      
+
       dynamic recursosJsonData = retoData['recursos_json'];
-      
+
       if (recursosJsonData is String) {
         // Si es un String, lo decodificamos
         if (recursosJsonData.isNotEmpty) {
-           try {
+          try {
             recursosList = json.decode(recursosJsonData) as List<dynamic>;
           } catch (e) {
-            print("Error al decodificar 'recursos_json' como String: $e");
+            if (kDebugMode) {
+              print("Error al decodificar 'recursos_json' como String: $e");
+            }
           }
         }
       } else if (recursosJsonData is List) {
         // Si ya es una Lista (formato JSONB nativo)
         recursosList = recursosJsonData;
       }
-
     }
 
     // 6. DEVOLVEMOS LOS DATOS EMPAQUETADOS
@@ -100,9 +102,10 @@ final challengeProvider = FutureProvider.family<ChallengeData, int>((
       contenido: contenido,
       recursos: recursosList, // <-- Pasamos la lista de recursos
     );
-    
   } catch (e) {
-    print('Error en challengeProvider: $e');
+    if (kDebugMode) {
+      print('Error en challengeProvider: $e');
+    }
     // Relanzamos el error para que el 'error' del .when() lo atrape
     throw Exception('Error al cargar el reto: $e');
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 
-// --- 1. PuzzleChip 
+// --- 1. PuzzleChip
 class PuzzleChip extends StatelessWidget {
   final String text;
   final bool isFilled;
@@ -18,46 +18,49 @@ class PuzzleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Material( 
+    return Material(
       color: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: (isFilled
-                  ? colorScheme.primaryContainer 
-                  : colorScheme.surfaceContainerHighest)
-              .withAlpha(isDragging ? 204 : 255),
+          color:
+              (isFilled
+                      ? colorScheme.primaryContainer
+                      : colorScheme.surfaceContainerHighest)
+                  .withAlpha(isDragging ? 204 : 255),
           borderRadius: BorderRadius.circular(12.0),
           border: Border.all(
             color: isFilled ? colorScheme.primary : colorScheme.outlineVariant,
-            width: 1.0, 
+            width: 1.0,
           ),
-          boxShadow: (isFilled || isDragging) ? null : [ 
-            BoxShadow(
-              color: colorScheme.primary.withAlpha(100), 
-              blurRadius: 0,
-              spreadRadius: 0,
-              offset: const Offset(0, 4), // Sombra "3D"
-            )
-          ],
+          boxShadow: (isFilled || isDragging)
+              ? null
+              : [
+                  BoxShadow(
+                    color: colorScheme.primary.withAlpha(100),
+                    blurRadius: 0,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4), // Sombra "3D"
+                  ),
+                ],
         ),
         child: Text(
           text,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: isFilled 
-                  ? colorScheme.onPrimaryContainer 
-                  : colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
+            color: isFilled
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
 }
 
-// --- 2. EmptyBlank 
+// --- 2. EmptyBlank
 class EmptyBlank extends StatelessWidget {
-  final bool isHighlighted; 
+  final bool isHighlighted;
   const EmptyBlank({super.key, this.isHighlighted = false});
 
   @override
@@ -65,17 +68,14 @@ class EmptyBlank extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 60,
-      height: 42, 
+      height: 42,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isHighlighted 
-          ? colorScheme.primaryContainer.withAlpha(128)
-          : colorScheme.surfaceContainer,
+        color: isHighlighted
+            ? colorScheme.primaryContainer.withAlpha(128)
+            : colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12.0),
-        border: Border.all( 
-          color: colorScheme.primary, 
-          width: 2.0,
-        ),
+        border: Border.all(color: colorScheme.primary, width: 2.0),
       ),
       child: Text(
         "...",
@@ -89,7 +89,7 @@ class EmptyBlank extends StatelessWidget {
   }
 }
 
-// --- 3. DraggableOption 
+// --- 3. DraggableOption
 class DraggableOption extends StatelessWidget {
   final PuzzleOption option;
   final bool isFilled;
@@ -114,30 +114,29 @@ class DraggableOption extends StatelessWidget {
       feedback: PuzzleChip(
         text: option.text,
         isFilled: isFilled,
-        isDragging: true, 
+        isDragging: true,
       ),
-      
+
       // 'childWhenDragging' es lo que se queda atrás.
-      childWhenDragging: isFilled 
-        ? const EmptyBlank() // Si estaba en un hueco, deja un hueco.
-        : Opacity( // Si estaba en el banco...
-            opacity: 0.0, // invisible para evitar "saltos" visuales
-            child: PuzzleChip( // pero mantenemos el tamaño
-              text: option.text,
-              isFilled: isFilled,
+      childWhenDragging: isFilled
+          ? const EmptyBlank() // Si estaba en un hueco, deja un hueco.
+          : Opacity(
+              // Si estaba en el banco...
+              opacity: 0.0, // invisible para evitar "saltos" visuales
+              child: PuzzleChip(
+                // pero mantenemos el tamaño
+                text: option.text,
+                isFilled: isFilled,
+              ),
             ),
-          ),
+
       // fin de 'childWhenDragging'
-          
-      child: PuzzleChip(
-        text: option.text,
-        isFilled: isFilled,
-      ),
+      child: PuzzleChip(text: option.text, isFilled: isFilled),
     );
   }
 }
 
-// --- 4. DragTargetBlank 
+// --- 4. DragTargetBlank
 class DragTargetBlank extends StatelessWidget {
   final String blankId;
   final PuzzleOption? filledOption;
@@ -167,17 +166,17 @@ class DragTargetBlank extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     // Determinar si este blank es el origen del arrastre
     final bool isSourceBlank = draggingFromBlankId == blankId;
-    
+
     // Determinar si el cursor está sobre otro blank con chip (para intercambio)
-    final bool isHoveringOverOtherBlank = hoveringOverBlankId != null && 
-                                          hoveringOverBlankId != blankId;
-    final PuzzleOption? hoveringBlankOption = isHoveringOverOtherBlank 
+    final bool isHoveringOverOtherBlank =
+        hoveringOverBlankId != null && hoveringOverBlankId != blankId;
+    final PuzzleOption? hoveringBlankOption = isHoveringOverOtherBlank
         ? allFilledBlanks[hoveringOverBlankId]
         : null;
-    
+
     return DragTarget<PuzzleOption>(
       onMove: (details) {
         // Notificar que el cursor está sobre este blank SOLO si hay drag activo
@@ -192,19 +191,21 @@ class DragTargetBlank extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         // Si hay un chip siendo arrastrado sobre este blank
         final bool isBeingDraggedOver = candidateData.isNotEmpty;
-        final PuzzleOption? incomingOption = 
-            candidateData.isNotEmpty ? candidateData.first : null;
-        
+        final PuzzleOption? incomingOption = candidateData.isNotEmpty
+            ? candidateData.first
+            : null;
+
         // CASO ESPECIAL 1: Este es el blank origen durante el drag ACTIVO
         // Solo aplicar esta lógica si realmente hay un drag en progreso
         // (verificando que filledOption coincida con draggingOption)
         // PERO: si estamos arrastrando de vuelta sobre el mismo blank (regresando),
         // NO aplicar esta lógica y dejar que se maneje normalmente
-        if (isSourceBlank && 
-            draggingOption != null && 
+        if (isSourceBlank &&
+            draggingOption != null &&
             draggingFromBlankId != null &&
             filledOption?.uniqueId == draggingOption?.uniqueId &&
-            !isBeingDraggedOver) { // <-- NUEVO: No aplicar si estamos sobre el mismo blank
+            !isBeingDraggedOver) {
+          // <-- NUEVO: No aplicar si estamos sobre el mismo blank
           // Si además estamos sobre otro blank con chip, mostrar preview del intercambio
           if (hoveringBlankOption != null &&
               hoveringOverBlankId != null &&
@@ -214,10 +215,7 @@ class DragTargetBlank extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12.0),
                 color: colorScheme.tertiary.withOpacity(0.25),
-                border: Border.all(
-                  color: colorScheme.tertiary,
-                  width: 3.0,
-                ),
+                border: Border.all(color: colorScheme.tertiary, width: 3.0),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
@@ -230,16 +228,16 @@ class DragTargetBlank extends StatelessWidget {
               ),
             );
           }
-          
+
           // Si NO estamos sobre otro blank (o no tiene chip), mostrar vacío
           // mientras se arrastra
           return const EmptyBlank();
         }
-        
+
         // Si estamos arrastrando de vuelta sobre el mismo blank origen,
         // el DraggableOption maneja esto automáticamente con su childWhenDragging
         // así que continuamos con la lógica normal
-        
+
         // CASO 1: Blank vacío
         if (filledOption == null) {
           // Si están arrastrando algo sobre él, mostrar preview
@@ -247,11 +245,8 @@ class DragTargetBlank extends StatelessWidget {
             return Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12.0),
-                color: colorScheme.primary.withOpacity(0.2),
-                border: Border.all(
-                  color: colorScheme.primary,
-                  width: 3.0,
-                ),
+                color: colorScheme.primary.withAlpha(51),
+                border: Border.all(color: colorScheme.primary, width: 3.0),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
@@ -267,21 +262,18 @@ class DragTargetBlank extends StatelessWidget {
           // Si no, mostrar blank vacío normal
           return const EmptyBlank();
         }
-        
+
         // CASO 2: Blank con chip
         // Si están arrastrando otro chip sobre él, SOLO mostrar el preview (sin superposición)
-        if (isBeingDraggedOver && 
-            incomingOption != null && 
+        if (isBeingDraggedOver &&
+            incomingOption != null &&
             incomingOption.uniqueId != filledOption!.uniqueId) {
           // Preview del chip que va a llegar
           return Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.0),
               color: colorScheme.primary.withOpacity(0.25),
-              border: Border.all(
-                color: colorScheme.primary,
-                width: 3.0,
-              ),
+              border: Border.all(color: colorScheme.primary, width: 3.0),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Text(
@@ -294,7 +286,7 @@ class DragTargetBlank extends StatelessWidget {
             ),
           );
         }
-        
+
         // Si no hay drag sobre este blank, mostrar el chip normal draggable
         return DraggableOption(
           option: filledOption!,
@@ -330,9 +322,10 @@ class PuzzleBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12).copyWith(
-        bottom: MediaQuery.of(context).padding.bottom + 12, 
-      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ).copyWith(bottom: MediaQuery.of(context).padding.bottom + 12),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
@@ -341,24 +334,21 @@ class PuzzleBottomBar extends StatelessWidget {
       ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isButtonEnabled 
-            ? colorScheme.secondary
-            : colorScheme.surfaceContainerHighest,
+          backgroundColor: isButtonEnabled
+              ? colorScheme.secondary
+              : colorScheme.surfaceContainerHighest,
           foregroundColor: isButtonEnabled
-            ? colorScheme.onSecondary
-            : colorScheme.outline,
+              ? colorScheme.onSecondary
+              : colorScheme.outline,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
         ),
-        onPressed: isButtonEnabled ? onCheckPressed : null, 
+        onPressed: isButtonEnabled ? onCheckPressed : null,
         child: const Text(
           'COMPROBAR',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
     );

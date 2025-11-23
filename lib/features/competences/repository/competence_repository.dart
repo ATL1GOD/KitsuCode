@@ -84,10 +84,13 @@ class MockCompetenceRepository implements CompetenceRepository {
       if (score >= 4500) {
         rankName = 'Diamante';
       } else if (score >= 3500)
+        // ignore: curly_braces_in_flow_control_structures
         rankName = 'Oro';
       else if (score >= 2000)
+        // ignore: curly_braces_in_flow_control_structures
         rankName = 'Plata';
       else
+        // ignore: curly_braces_in_flow_control_structures
         rankName = 'Bronce';
 
       ranking.add(
@@ -95,7 +98,8 @@ class MockCompetenceRepository implements CompetenceRepository {
           userId: userId,
           username: username,
           profileName: profileName,
-          idAvatarSeleccionado: (i % 20) + 1, // ✅ Avatares rotativos (soporta hasta 20 avatares)
+          idAvatarSeleccionado:
+              (i % 20) + 1, // ✅ Avatares rotativos (soporta hasta 20 avatares)
           totalScore: score,
           rank: rankName,
           position: i,

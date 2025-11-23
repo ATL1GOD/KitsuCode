@@ -232,6 +232,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   // 2. Navegar CON TROFEOS
                   if (!context.mounted) return;
                   // Cambiado a push para mantener la pantalla del quiz en la pila
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_success', extra: trofeos);
                 } else {
                   await repository.submitChallengeAttempt(
@@ -246,6 +247,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
                   // 3. Navegar
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_failure', extra: recursos);
                 }
               } catch (e) {
@@ -253,6 +255,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 if (context.mounted) {
                   // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
                   showErrorSnackbar(
+                    // ignore: use_build_context_synchronously
                     context,
                     'Error',
                     'Error al enviar resultado: $e',

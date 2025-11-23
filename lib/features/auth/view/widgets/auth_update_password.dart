@@ -120,11 +120,13 @@ class _UpdatePasswordCardState extends ConsumerState<UpdatePasswordCard> {
                       final hasSpecialChars = RegExp(
                         r'[!@#$%^&*(),.?":{}|<>]',
                       ).hasMatch(value);
-                      if (!hasUppercase)
+                      if (!hasUppercase) {
                         return 'Incluye al menos una mayúscula';
+                      }
                       if (!hasDigits) return 'Incluye al menos un número';
-                      if (!hasSpecialChars)
+                      if (!hasSpecialChars) {
                         return 'Incluye al menos un símbolo';
+                      }
                       return null;
                     },
                   ),

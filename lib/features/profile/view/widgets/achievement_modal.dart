@@ -94,7 +94,7 @@ class _ModalContent extends StatelessWidget {
     final Color borderColor = getRarityColor(raridad);
     final String rarityText = getRarityText(raridad);
     final isUnlocked = achievement.obtenido;
-    final lockedColor = colors.onSurfaceVariant.withOpacity(0.5);
+    final lockedColor = colors.onSurfaceVariant.withAlpha(128);
 
     // --- Lógica de Imagen, Animación y Aura ---
     Widget img = ColorFiltered(
@@ -106,7 +106,7 @@ class _ModalContent extends StatelessWidget {
         imagePath: achievement.iconUrl, // URL del logro
         height: 200,
         // Usamos el max width del modal (320px) para la optimización
-        width: 320, 
+        width: 320,
         fit: BoxFit.cover,
       ),
     );
@@ -134,29 +134,29 @@ class _ModalContent extends StatelessWidget {
 
     final aura = isUnlocked
         ? Icon(
-              Icons.auto_awesome,
-              size: 120,
-              color: borderColor.withOpacity(0.35),
-            )
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .fadeIn(duration: 600.ms)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.2, 1.2),
-              duration: 800.ms,
-            )
+                Icons.auto_awesome,
+                size: 120,
+                color: borderColor.withOpacity(0.35),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .fadeIn(duration: 600.ms)
+              .scale(
+                begin: const Offset(0.8, 0.8),
+                end: const Offset(1.2, 1.2),
+                duration: 800.ms,
+              )
         : Icon(
-              Icons.auto_awesome,
-              size: 120,
-              color: Colors.grey.shade600.withOpacity(0.5),
-            )
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .fadeIn(duration: 600.ms)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.2, 1.2),
-              duration: 800.ms,
-            );
+                Icons.auto_awesome,
+                size: 120,
+                color: Colors.grey.shade600.withAlpha(128),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .fadeIn(duration: 600.ms)
+              .scale(
+                begin: const Offset(0.8, 0.8),
+                end: const Offset(1.2, 1.2),
+                duration: 800.ms,
+              );
     // --- Fin Lógica sin cambios ---
 
     // ✅ 4. LÓGICA DE TEXTO PERSONALIZADA
@@ -175,7 +175,7 @@ class _ModalContent extends StatelessWidget {
       onTap: () => Navigator.of(context).pop(),
       child: Container(
         // Fondo semi-transparente para el "dim"
-        color: Colors.black.withOpacity(0.7),
+        color: Colors.black.withAlpha(179),
         child: GestureDetector(
           onTap: () {}, // Evita cerrar al tocar el modal
           child: Material(
@@ -197,8 +197,8 @@ class _ModalContent extends StatelessWidget {
                       boxShadow: [
                         BoxShadow(
                           color: isUnlocked
-                              ? borderColor.withOpacity(0.7)
-                              : Colors.grey.shade600.withOpacity(0.6),
+                              ? borderColor.withAlpha(179)
+                              : Colors.grey.shade600.withAlpha(153),
                           blurRadius: isUnlocked ? 30 : 20,
                           spreadRadius: isUnlocked ? 5 : 3,
                         ),
@@ -227,7 +227,7 @@ class _ModalContent extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: isUnlocked
-                                          ? borderColor.withOpacity(0.2)
+                                          ? borderColor.withAlpha(51)
                                           : Colors.grey.shade700,
                                       border: Border.all(
                                         color: isUnlocked
@@ -256,7 +256,7 @@ class _ModalContent extends StatelessWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color: isUnlocked
-                                          ? borderColor.withOpacity(0.8)
+                                          ? borderColor.withAlpha(204)
                                           : Colors.grey.shade500,
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -306,7 +306,7 @@ class _ModalContent extends StatelessWidget {
                               boxShadow: !isUnlocked
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.5),
+                                        color: Colors.black.withAlpha(128),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                         offset: const Offset(0, 2),
@@ -385,7 +385,7 @@ class _ModalContent extends StatelessWidget {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(11),
-                                        color: Colors.black.withOpacity(0.3),
+                                        color: Colors.black.withAlpha(77),
                                       ),
                                     ),
                                   ),
@@ -396,7 +396,7 @@ class _ModalContent extends StatelessWidget {
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
+                                          color: Colors.black.withAlpha(179),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(

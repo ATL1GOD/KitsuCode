@@ -23,7 +23,6 @@ class EditProfileView extends ConsumerStatefulWidget {
 // --- 🔥 2. AÑADIR WidgetsBindingObserver ---
 class _EditProfileViewState extends ConsumerState<EditProfileView>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-      
   TextEditingController? _nameController;
   String? _nameValidationError;
   late int _currentAvatarId;
@@ -38,10 +37,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
   bool _isPageVisible = true;
   bool _isAppActive = true;
   bool _isLottieLoaded = false;
-
-  static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
-    return getAvatarColorById(userProfile.idAvatarSeleccionado);
-  }
 
   // --- 🔥 4. MODIFICAR initState Y dispose ---
   @override
@@ -129,18 +124,21 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
       if (mounted) context.pop();
       return;
     }
-    final shouldPop = await showDialog<bool>(
+    final shouldPop =
+        await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Descartar cambios'),
             content: const Text('¿Seguro que quieres salir sin guardar?'),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancelar')),
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
               TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Salir')),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Salir'),
+              ),
             ],
           ),
         ) ??
@@ -176,8 +174,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
 
         // ⬇️⬇️⬇️ CORRECCIÓN: usar la lista de avatares para obtener el color real de BD
         final avatars = ref.watch(currentUserAvatarsProvider).value ?? [];
-        final selectedIdForColor =
-            _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado;
+        final selectedIdForColor = _isInitialized
+            ? _currentAvatarId
+            : profile.idAvatarSeleccionado;
         final dynamicColor = getAvatarColorById(selectedIdForColor, avatars);
         // ⬆️⬆️⬆️ FIN DE LA CORRECCIÓN
 
@@ -231,13 +230,14 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                   duration: const Duration(milliseconds: 300),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          dynamicColor.withAlpha((255 * 0.4).round()),
-                          colors.surfaceContainerLowest,
-                        ],
-                        stops: const [0.0, 0.6]),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        dynamicColor.withAlpha((255 * 0.4).round()),
+                        colors.surfaceContainerLowest,
+                      ],
+                      stops: const [0.0, 0.6],
+                    ),
                   ),
                 ),
 
@@ -250,7 +250,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                       return LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.white, Colors.white.withOpacity(0.0)],
+                        colors: [Colors.white, Colors.white.withAlpha(0)],
                         stops: const [0.6, 1.0],
                       ).createShader(rect);
                     },
@@ -264,7 +264,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                           height: 350,
                           child: ColorFiltered(
                             colorFilter: ColorFilter.mode(
-                              colors.secondaryFixedDim.withOpacity(0.5),
+                              colors.secondaryFixedDim.withAlpha(128),
                               BlendMode.srcIn,
                             ),
                             child: Lottie.asset(
@@ -275,8 +275,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                               controller: _lottieController,
                               onLoaded: (composition) {
                                 if (!mounted) return;
-                                if (_lottieController.duration != composition.duration) {
-                                  _lottieController.duration = composition.duration;
+                                if (_lottieController.duration !=
+                                    composition.duration) {
+                                  _lottieController.duration =
+                                      composition.duration;
                                 }
                                 _isLottieLoaded = true;
                                 _updateAnimationState();
@@ -293,14 +295,17 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                 SafeArea(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).viewInsets.bottom),
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // ... (Tu barra superior no cambia) ...
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
+                            horizontal: 16.0,
+                            vertical: 8.0,
+                          ),
                           child: Row(
                             children: [
                               InkWell(
@@ -309,12 +314,15 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                 child: Container(
                                   padding: const EdgeInsets.all(8.0),
                                   decoration: BoxDecoration(
-                                    color: colors.surface
-                                        .withAlpha((255 * 0.3).round()),
+                                    color: colors.surface.withAlpha(
+                                      (255 * 0.3).round(),
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.arrow_back_ios_new_rounded,
-                                      color: colors.onSurface),
+                                  child: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: colors.onSurface,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -324,8 +332,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                   child: Text(
                                     'Editar Perfil',
                                     textAlign: TextAlign.center,
-                                    style: textTheme.titleLarge
-                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                    style: textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -352,20 +361,20 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: LinearGradient(
-                                      colors: [dynamicColor, colors.primary]),
+                                    colors: [dynamicColor, colors.primary],
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: dynamicColor
-                                          .withAlpha((255 * 0.7).round()),
+                                      color: dynamicColor.withAlpha(
+                                        (255 * 0.7).round(),
+                                      ),
                                       blurRadius: 25,
                                       spreadRadius: 2,
                                     ),
                                   ],
                                 ),
                                 padding: const EdgeInsets.all(4),
-                                child: ClipOval(
-                                  child: avatarImage,
-                                ),
+                                child: ClipOval(child: avatarImage),
                               ),
                               if (!isKeyboardVisible && !maxAvatarChanges)
                                 Positioned(
@@ -378,7 +387,8 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                       _swingController = controller;
                                       _updateAnimationState(); // Sincronizar estado
                                     },
-                                    manualTrigger: true, // Lo controlamos nosotros
+                                    manualTrigger:
+                                        true, // Lo controlamos nosotros
                                     // infinite: true, // 'repeat' lo hace infinito
                                     delay: const Duration(seconds: 2),
                                     child: Material(
@@ -390,24 +400,31 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                         radius: 22,
                                         backgroundColor: colors.secondary,
                                         child: IconButton(
-                                          icon: Icon(Icons.edit,
-                                              color: colors.onSecondary,
-                                              size: 18),
+                                          icon: Icon(
+                                            Icons.edit,
+                                            color: colors.onSecondary,
+                                            size: 18,
+                                          ),
                                           onPressed: () async {
                                             if (maxAvatarChanges) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                content: Text(
-                                                    'Ya no puedes cambiar tu avatar hoy (máx 2 veces).'),
-                                                backgroundColor: Colors.red,
-                                              ));
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Ya no puedes cambiar tu avatar hoy (máx 2 veces).',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
                                               return;
                                             }
-                                            final newAvatarId =
-                                                await context.push<int>(
-                                                    '/edit-avatar',
-                                                    extra: _currentProfileData
-                                                        .idAvatarSeleccionado);
+                                            final newAvatarId = await context
+                                                .push<int>(
+                                                  '/edit-avatar',
+                                                  extra: _currentProfileData
+                                                      .idAvatarSeleccionado,
+                                                );
 
                                             if (newAvatarId != null &&
                                                 newAvatarId !=
@@ -438,8 +455,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('Nombre de Perfil',
-                                      style: textTheme.titleMedium),
+                                  Text(
+                                    'Nombre de Perfil',
+                                    style: textTheme.titleMedium,
+                                  ),
                                   const SizedBox(height: 10),
                                   if (_isInitialized)
                                     TextField(
@@ -447,23 +466,30 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                       decoration: InputDecoration(
                                         hintText: 'Tu nombre',
                                         filled: true,
-                                        fillColor: colors.surfaceContainerHighest
+                                        fillColor: colors
+                                            .surfaceContainerHighest
                                             .withAlpha((255 * 0.5).round()),
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(15.0),
+                                          borderRadius: BorderRadius.circular(
+                                            15.0,
+                                          ),
                                           borderSide: BorderSide.none,
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(15.0),
+                                          borderRadius: BorderRadius.circular(
+                                            15.0,
+                                          ),
                                           borderSide: BorderSide(
-                                              color: colors.primary, width: 2),
+                                            color: colors.primary,
+                                            width: 2,
+                                          ),
                                         ),
                                         errorText: _nameValidationError,
-                                        suffixIcon: Icon(Icons.person_outline,
-                                            color: colors.onSurfaceVariant
-                                                .withAlpha((255 * 0.6).round())),
+                                        suffixIcon: Icon(
+                                          Icons.person_outline,
+                                          color: colors.onSurfaceVariant
+                                              .withAlpha((255 * 0.6).round()),
+                                        ),
                                       ),
                                     ),
                                   Padding(
@@ -473,14 +499,16 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                           ? "Ya no puedes cambiar tu nombre este mes."
                                           : nameMessage,
                                       style: textTheme.bodySmall?.copyWith(
-                                          color: maxNameChanges
-                                              ? colors.error
-                                              : colors.onSurfaceVariant),
+                                        color: maxNameChanges
+                                            ? colors.error
+                                            : colors.onSurfaceVariant,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 30),
                                   ElevatedButton(
-                                    onPressed: (isSaving ||
+                                    onPressed:
+                                        (isSaving ||
                                             !hasChanges ||
                                             (_nameValidationError != null &&
                                                 isNameChanged))
@@ -488,18 +516,24 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                         : () async {
                                             if (isNameChanged &&
                                                 maxNameChanges) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                content: Text(
-                                                    'Ya no puedes cambiar tu nombre este mes.'),
-                                                backgroundColor: Colors.red,
-                                              ));
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Ya no puedes cambiar tu nombre este mes.',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
                                               return;
                                             }
 
                                             final updatedProfile = await ref
-                                                .read(profileControllerProvider
-                                                    .notifier)
+                                                .read(
+                                                  profileControllerProvider
+                                                      .notifier,
+                                                )
                                                 .updateProfile(
                                                   newName: isNameChanged
                                                       ? _nameController!.text
@@ -512,46 +546,61 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                             if (!context.mounted) return;
                                             if (updatedProfile != null) {
                                               if (isAvatarChanged) {
-                                                final remainingAvatar = 2 -
+                                                final remainingAvatar =
+                                                    2 -
                                                     updatedProfile
                                                         .cambiosAvatarHoy;
                                                 final avatarSnackBarMessage =
                                                     remainingAvatar > 0
-                                                        ? 'Te queda 1 cambio de avatar hoy.'
-                                                        : 'Límite de cambios de avatar alcanzado hoy.';
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(SnackBar(
-                                                        content: Text(
-                                                            avatarSnackBarMessage)));
+                                                    ? 'Te queda 1 cambio de avatar hoy.'
+                                                    : 'Límite de cambios de avatar alcanzado hoy.';
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      avatarSnackBarMessage,
+                                                    ),
+                                                  ),
+                                                );
                                               }
                                               context.pop();
                                             } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                content: Text(
-                                                    'Error al guardar cambios'),
-                                                backgroundColor: Colors.red,
-                                              ));
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Error al guardar cambios',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
                                             }
                                           },
                                     style: ElevatedButton.styleFrom(
-                                        backgroundColor: colors.primary,
-                                        foregroundColor: colors.onPrimary,
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 16),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30)),
-                                        textStyle: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16)),
+                                      backgroundColor: colors.primary,
+                                      foregroundColor: colors.onPrimary,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                     child: isSaving
                                         ? const SizedBox(
                                             height: 24,
                                             width: 24,
                                             child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white))
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
                                         : const Text('Guardar Cambios'),
                                   ),
                                   const SizedBox(height: 10),
@@ -559,18 +608,21 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                     onPressed: () =>
                                         _handleBackNavigation(hasChanges),
                                     style: OutlinedButton.styleFrom(
-                                        foregroundColor: colors.primary,
-                                        side: BorderSide(
-                                            color:
-                                                colors.primary.withAlpha(128)),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 16),
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30)),
-                                        textStyle: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16)),
+                                      foregroundColor: colors.primary,
+                                      side: BorderSide(
+                                        color: colors.primary.withAlpha(128),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                     child: const Text('Cancelar'),
                                   ),
                                 ],
@@ -611,10 +663,12 @@ class _GlassCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             decoration: BoxDecoration(
-                color: Colors.white.withAlpha((255 * 0.4).round()),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                    color: Colors.white.withAlpha((255 * 0.5).round()))),
+              color: Colors.white.withAlpha((255 * 0.4).round()),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withAlpha((255 * 0.5).round()),
+              ),
+            ),
             child: child,
           ),
         ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart'; // ¡Ya tenemos este helper!
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
-import 'package:kitsucode/shared/widgets/smart_image.dart';
 
 class AchievementToast extends StatelessWidget {
   final String title; // <-- 1. AÑADIDO: Título dinámico
@@ -51,14 +50,14 @@ class AchievementToast extends StatelessWidget {
             border: Border.all(
               // Usará el 'borderColor' (tu color primario) si existe.
               // Si no, usará el color de rareza como antes.
-              color: borderColor ?? rarityColor.withOpacity(0.5),
+              color: borderColor ?? rarityColor.withAlpha(128),
               width: 3, // <-- Aumentado a 3px para que se note
             ),
             // 4. ¡EL AURA! (BoxShadow mejorado)
             boxShadow: [
               BoxShadow(
                 // Usa el borderColor (si existe) o el color de rareza para el aura
-                color: (borderColor ?? rarityColor).withOpacity(0.4),
+                color: (borderColor ?? rarityColor).withAlpha(102),
                 blurRadius: 15.0, // Más difuminada
                 spreadRadius: 2.0, // Un poco más grande
               ),

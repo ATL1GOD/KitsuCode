@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // 👈 Haptics
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,7 +86,7 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
       ref.read(notificationSettingsProvider.notifier).updateAllEnabled(true);
       return;
     }
-    
+
     // 🔥 Sonido Pregunta
     HapticFeedback.lightImpact();
     ref.read(audioControllerProvider).playClick();
@@ -97,15 +98,18 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
           backgroundColor: colors.surfaceContainer,
           title: const Text('¿Desactivar todo?'),
           content: const Text(
-              '¿Estás seguro de que quieres desactivar todas las notificaciones de la aplicación?'),
+            '¿Estás seguro de que quieres desactivar todas las notificaciones de la aplicación?',
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 HapticFeedback.lightImpact();
                 Navigator.of(context).pop(false);
               },
-              child:
-                  Text('Cancelar', style: TextStyle(color: colors.onSurfaceVariant)),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -131,11 +135,14 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final currentAuthUserId =
-        ref.watch(authStateProvider).value!.session!.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value!
+        .session!
+        .user
+        .id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
-    final notificationSettingsState =
-        ref.watch(notificationSettingsProvider);
+    final notificationSettingsState = ref.watch(notificationSettingsProvider);
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
@@ -166,13 +173,14 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            dynamicColor.withAlpha(100),
-                            colors.surfaceContainerLowest,
-                          ],
-                          stops: const [0.0, 0.7]),
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          dynamicColor.withAlpha(100),
+                          colors.surfaceContainerLowest,
+                        ],
+                        stops: const [0.0, 0.7],
+                      ),
                     ),
                   ),
 
@@ -181,7 +189,9 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
@@ -195,21 +205,25 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
                                 'Notificaciones',
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 48),
@@ -221,11 +235,14 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                           loading: () =>
                               _NotificationsLoadingShimmer(colors: colors),
                           error: (e, s) => Center(
-                              child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text('Error al cargar: $e',
-                                textAlign: TextAlign.center),
-                          )),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'Error al cargar: $e',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
                           data: (settings) {
                             final bool masterSwitchState = settings.isEmpty
                                 ? false
@@ -234,26 +251,30 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                               'Recordatorio de Inactividad',
                             };
                             final visibleSettings = settings
-                                .where((s) =>
-                                    !tiposOcultos.contains(s.nombreTipo.trim()))
+                                .where(
+                                  (s) => !tiposOcultos.contains(
+                                    s.nombreTipo.trim(),
+                                  ),
+                                )
                                 .toList();
-                            final reminderSetting =
-                                visibleSettings.firstWhereOrNull(
-                              (s) =>
-                                  s.nombreTipo.trim() ==
-                                  'Recordatorio de Estudio',
-                            );
+                            final reminderSetting = visibleSettings
+                                .firstWhereOrNull(
+                                  (s) =>
+                                      s.nombreTipo.trim() ==
+                                      'Recordatorio de Estudio',
+                                );
 
-                            final streakReminderSetting =
-                                visibleSettings.firstWhereOrNull(
-                              (s) =>
-                                  s.nombreTipo.trim() ==
-                                  'Recordatorio de Racha',
-                            );
+                            final streakReminderSetting = visibleSettings
+                                .firstWhereOrNull(
+                                  (s) =>
+                                      s.nombreTipo.trim() ==
+                                      'Recordatorio de Racha',
+                                );
                             final amigosSettings = visibleSettings
                                 .where(
                                   (s) =>
-                                      s.nombreTipo.trim() == 'Nuevos Seguidores',
+                                      s.nombreTipo.trim() ==
+                                      'Nuevos Seguidores',
                                 )
                                 .toList();
                             final retosSettings = visibleSettings
@@ -265,13 +286,16 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                 .toList();
                             return ListView(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 12.0),
+                                horizontal: 16.0,
+                                vertical: 12.0,
+                              ),
                               children: [
                                 FadeInDown(
                                   child: SectionHeader(
-                                      title: 'General',
-                                      icon: Icons.tune,
-                                      colors: colors),
+                                    title: 'General',
+                                    icon: Icons.tune,
+                                    colors: colors,
+                                  ),
                                 ),
                                 FadeInDown(
                                   delay: const Duration(milliseconds: 100),
@@ -286,7 +310,11 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                     onChanged: (newValue) {
                                       // 🔥 Lógica con sonido dentro del dialog helper
                                       _showConfirmationDialog(
-                                          context, ref, newValue, colors);
+                                        context,
+                                        ref,
+                                        newValue,
+                                        colors,
+                                      );
                                     },
                                   ),
                                 ),
@@ -294,28 +322,31 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                   FadeInDown(
                                     delay: const Duration(milliseconds: 200),
                                     child: SectionHeader(
-                                        title: 'Recordatorios',
-                                        icon: Icons.schedule,
-                                        colors: colors),
+                                      title: 'Recordatorios',
+                                      icon: Icons.schedule,
+                                      colors: colors,
+                                    ),
                                   ),
                                   FadeInDown(
                                     delay: const Duration(milliseconds: 300),
                                     child: SettingsNavigationTile(
                                       title: 'Recordatorio de Estudio',
                                       subtitle: reminderSetting.habilitado
-                                          ? (reminderSetting
-                                                      .horaNotificacion !=
-                                                  null
-                                              ? 'Diario a las ${DateFormat.jm().format(DateTime(2024, 1, 1, _stringToTimeOfDay(reminderSetting.horaNotificacion)!.hour, _stringToTimeOfDay(reminderSetting.horaNotificacion)!.minute))}'
-                                              : 'Toca para fijar hora')
+                                          ? (reminderSetting.horaNotificacion !=
+                                                    null
+                                                ? 'Diario a las ${DateFormat.jm().format(DateTime(2024, 1, 1, _stringToTimeOfDay(reminderSetting.horaNotificacion)!.hour, _stringToTimeOfDay(reminderSetting.horaNotificacion)!.minute))}'
+                                                : 'Toca para fijar hora')
                                           : 'Desactivado',
                                       icon: _getIconForCategory(
-                                          'Recordatorio de Estudio'),
+                                        'Recordatorio de Estudio',
+                                      ),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
                                         // 🔥 Sonido Nav
                                         HapticFeedback.lightImpact();
-                                        ref.read(audioControllerProvider).playClick();
+                                        ref
+                                            .read(audioControllerProvider)
+                                            .playClick();
                                         context.push(
                                           '/settings/notifications/reminder',
                                           extra: reminderSetting,
@@ -328,19 +359,25 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       delay: const Duration(milliseconds: 350),
                                       child: SettingsSwitchTile(
                                         title: 'Recordatorio de Racha',
-                                        subtitle: 'Alertas para no perder tu racha',
-                                        icon: Icons.local_fire_department_outlined,
+                                        subtitle:
+                                            'Alertas para no perder tu racha',
+                                        icon: Icons
+                                            .local_fire_department_outlined,
                                         dynamicColor: dynamicColor,
                                         initialValue:
                                             streakReminderSetting.habilitado,
                                         onChanged: (newValue) {
                                           // 🔥 Sonido Switch
                                           HapticFeedback.lightImpact();
-                                          ref.read(audioControllerProvider).playClick();
+                                          ref
+                                              .read(audioControllerProvider)
+                                              .playClick();
 
                                           ref
-                                              .read(notificationSettingsProvider
-                                                  .notifier)
+                                              .read(
+                                                notificationSettingsProvider
+                                                    .notifier,
+                                              )
                                               .updateEnabled(
                                                 streakReminderSetting
                                                     .preferenciaId,
@@ -353,9 +390,10 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                 FadeInDown(
                                   delay: const Duration(milliseconds: 400),
                                   child: SectionHeader(
-                                      title: 'Actividad',
-                                      icon: Icons.group,
-                                      colors: colors),
+                                    title: 'Actividad',
+                                    icon: Icons.group,
+                                    colors: colors,
+                                  ),
                                 ),
                                 if (amigosSettings.isNotEmpty)
                                   FadeInDown(
@@ -368,7 +406,9 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       onTap: () {
                                         // 🔥 Sonido Nav
                                         HapticFeedback.lightImpact();
-                                        ref.read(audioControllerProvider).playClick();
+                                        ref
+                                            .read(audioControllerProvider)
+                                            .playClick();
                                         context.push(
                                           '/settings/notifications/category',
                                           extra: {
@@ -387,12 +427,15 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       subtitle:
                                           'Alertas de nuevos desafíos y anuncios',
                                       icon: _getIconForCategory(
-                                          'Retos y Novedades'),
+                                        'Retos y Novedades',
+                                      ),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
                                         // 🔥 Sonido Nav
                                         HapticFeedback.lightImpact();
-                                        ref.read(audioControllerProvider).playClick();
+                                        ref
+                                            .read(audioControllerProvider)
+                                            .playClick();
                                         context.push(
                                           '/settings/notifications/category',
                                           extra: {
@@ -428,7 +471,9 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
       return TimeOfDay(hour: hour, minute: minute);
     } catch (e) {
       // Usamos print en lugar de debugPrint para que se vea en el log de 'flutter run'
-      print('Error parseando hora: $e');
+      if (kDebugMode) {
+        print('Error parseando hora: $e');
+      }
       return null;
     }
   }
@@ -451,14 +496,16 @@ class _NotificationsLoadingShimmer extends StatelessWidget {
           children: [
             const SizedBox(height: 60),
             ...List.generate(
-                3,
-                (index) => Container(
-                      height: 70,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18)),
-                    )),
+              3,
+              (index) => Container(
+                height: 70,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
           ],
         ),
       ),

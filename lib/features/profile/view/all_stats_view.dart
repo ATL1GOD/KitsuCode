@@ -18,7 +18,10 @@ class AllStatsView extends ConsumerStatefulWidget {
   const AllStatsView({super.key});
 
   // Mantén este helper como fallback
-  static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
+  static Color getHeaderColor(
+    UserProfileModel userProfile,
+    ColorScheme colors,
+  ) {
     return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
 
@@ -72,7 +75,9 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
 
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
     if (currentUserId == null) {
-      return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
+      return const Scaffold(
+        body: Center(child: Text("Usuario no autenticado")),
+      );
     }
 
     final statsState = ref.watch(userStatsByIdProvider(currentUserId));
@@ -95,7 +100,8 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
           error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
           data: (profile) {
             // ✅ Color dinámico desde BD si ya está la lista de avatares; sino fallback
-            final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+            final avatarsList =
+                ref.watch(currentUserAvatarsProvider).value ?? [];
             final dynamicColor = avatarsList.isNotEmpty
                 ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
                 : AllStatsView.getHeaderColor(profile, colors);
@@ -120,7 +126,7 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                 // Lottie con tinte y control seguro
                 ColorFiltered(
                   colorFilter: ColorFilter.mode(
-                    // Reemplazo deprecado: withAlpha en vez de withOpacity(0.8)
+                    // Reemplazo deprecado: withAlpha en vez de withAlpha(204)
                     colors.secondaryFixedDim.withAlpha((0.8 * 255).round()),
                     BlendMode.srcIn,
                   ),
@@ -147,7 +153,9 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                       // AppBar
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
@@ -162,16 +170,19 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                                     color: colors.outlineVariant.withAlpha(130),
                                   ),
                                 ),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
                                 'Estadísticas',
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 48),
@@ -195,30 +206,34 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                                     children: [
                                       Text(
                                         profile.nombrePerfil,
-                                        style: textTheme.headlineMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: colors.onSurface,
-                                        ),
+                                        style: textTheme.headlineMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: colors.onSurface,
+                                            ),
                                       ),
                                       const SizedBox(height: 10),
                                       ElevatedButton.icon(
                                         onPressed: () {
-                                          if (currentUserId != null) {
-                                            context.pushNamed(
-                                              'challenge-history',
-                                              pathParameters: {
-                                                'userId': currentUserId,
-                                              },
-                                            );
-                                          }
+                                          context.pushNamed(
+                                            'challenge-history',
+                                            pathParameters: {
+                                              'userId': currentUserId,
+                                            },
+                                          );
                                         },
-                                        icon: const Icon(Icons.history, size: 20),
+                                        icon: const Icon(
+                                          Icons.history,
+                                          size: 20,
+                                        ),
                                         label: const Text('Ver historial'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: colors.primary,
                                           foregroundColor: colors.onPrimary,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(20),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -229,42 +244,45 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
 
                                 // 👉 Card con BORDE y AURA usando dynamicColor
                                 _StatsCard(
-                                  dynamicColor: dynamicColor, // 👈 añadido
-                                  child: Column(
-                                    children: [
-                                      _StatRow(
-                                        icon: Icons.shield_outlined,
-                                        title: 'Retos Completados',
-                                        value: stats.retosCompletados,
-                                        color: colors.secondary,
-                                        delay: 200.ms,
+                                      dynamicColor: dynamicColor, // 👈 añadido
+                                      child: Column(
+                                        children: [
+                                          _StatRow(
+                                            icon: Icons.shield_outlined,
+                                            title: 'Retos Completados',
+                                            value: stats.retosCompletados,
+                                            color: colors.secondary,
+                                            delay: 200.ms,
+                                          ),
+                                          _StatRow(
+                                            icon: Icons.local_fire_department,
+                                            title: 'Racha de Días',
+                                            value: stats.rachaDias,
+                                            color: colors.primary,
+                                            delay: 300.ms,
+                                          ),
+                                          _StatRow(
+                                            icon: Icons.check_circle_outline,
+                                            title: 'Aciertos',
+                                            value: stats.porcentajeAciertos,
+                                            isPercentage: true,
+                                            color: const Color(0xFF2E7D32),
+                                            delay: 400.ms,
+                                          ),
+                                          _StatRow(
+                                            icon: Icons.cancel_outlined,
+                                            title: 'Errores',
+                                            value: stats.porcentajeFallos,
+                                            isPercentage: true,
+                                            color: colors.error,
+                                            delay: 500.ms,
+                                          ),
+                                        ],
                                       ),
-                                      _StatRow(
-                                        icon: Icons.local_fire_department,
-                                        title: 'Racha de Días',
-                                        value: stats.rachaDias,
-                                        color: colors.primary,
-                                        delay: 300.ms,
-                                      ),
-                                      _StatRow(
-                                        icon: Icons.check_circle_outline,
-                                        title: 'Aciertos',
-                                        value: stats.porcentajeAciertos,
-                                        isPercentage: true,
-                                        color: const Color(0xFF2E7D32),
-                                        delay: 400.ms,
-                                      ),
-                                      _StatRow(
-                                        icon: Icons.cancel_outlined,
-                                        title: 'Errores',
-                                        value: stats.porcentajeFallos,
-                                        isPercentage: true,
-                                        color: colors.error,
-                                        delay: 500.ms,
-                                      ),
-                                    ],
-                                  ),
-                                ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
+                                    )
+                                    .animate()
+                                    .fadeIn(duration: 400.ms)
+                                    .slideY(begin: 0.2, end: 0),
                               ],
                             );
                           },
@@ -287,25 +305,20 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
 class _StatsCard extends StatelessWidget {
   final Widget child;
   final Color? dynamicColor; // 👈 nuevo opcional (para no romper llamadas)
-  const _StatsCard({
-    required this.child,
-    this.dynamicColor,
-  });
+  const _StatsCard({required this.child, this.dynamicColor});
 
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    final aura = dynamicColor ?? c.primary; // si no pasan color, usa el primario
+    final aura =
+        dynamicColor ?? c.primary; // si no pasan color, usa el primario
 
     return Container(
       decoration: BoxDecoration(
         color: c.surfaceContainer.withAlpha(210),
         borderRadius: BorderRadius.circular(24),
         // 👇 borde con tinte del avatar
-        border: Border.all(
-          color: aura.withAlpha(185),
-          width: 1.6,
-        ),
+        border: Border.all(color: aura.withAlpha(185), width: 1.6),
         boxShadow: [
           // 👇 “aura” suave del color dinámico
           BoxShadow(
@@ -400,8 +413,9 @@ class _StatRow extends StatelessWidget {
                       ),
                     ),
                     FractionallySizedBox(
-                      widthFactor:
-                          isPercentage ? (value.clamp(0, 100) / 100) : 0.75,
+                      widthFactor: isPercentage
+                          ? (value.clamp(0, 100) / 100)
+                          : 0.75,
                       child: Container(
                         height: 8,
                         decoration: BoxDecoration(

@@ -37,17 +37,22 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
   }
 
   String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty)
+    if (value == null || value.isEmpty) {
       return 'La contraseña no puede estar vacía';
+    }
     if (value.length < 8) return 'Debe tener al menos 8 caracteres';
-    if (!value.contains(RegExp(r'[A-Z]')))
+    if (!value.contains(RegExp(r'[A-Z]'))) {
       return 'Debe tener al menos una mayúscula';
-    if (!value.contains(RegExp(r'[a-z]')))
+    }
+    if (!value.contains(RegExp(r'[a-z]'))) {
       return 'Debe tener al menos una minúscula';
-    if (!value.contains(RegExp(r'[0-9]')))
+    }
+    if (!value.contains(RegExp(r'[0-9]'))) {
       return 'Debe tener al menos un número';
-    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')))
+    }
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
       return 'Debe tener al menos un símbolo';
+    }
     return null;
   }
 

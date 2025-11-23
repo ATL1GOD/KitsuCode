@@ -20,22 +20,19 @@ class RankingFiltersWidget extends ConsumerWidget {
         width: double.infinity,
         // Fondo translúcido con borde sutil
         decoration: BoxDecoration(
-          color: colors.surface.withOpacity(0.1),
+          color: colors.surface.withAlpha(26),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: colors.outline.withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: colors.outline.withAlpha(51), width: 1),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
           children: [
-            // 
+            //
             SizedBox(
               width: double.infinity,
               child: SegmentedButton<int>(
                 style: SegmentedButton.styleFrom(
-                  backgroundColor: colors.surfaceContainer.withOpacity(0.5),
+                  backgroundColor: colors.surfaceContainer.withAlpha(128),
                   foregroundColor: colors.onSurfaceVariant,
                   selectedForegroundColor: colors.onPrimary,
                   selectedBackgroundColor: colors.primary,
@@ -59,6 +56,7 @@ class RankingFiltersWidget extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
+
             /// Pestañas de filtro de tiempo
             /// (Hoy, Semana, Mes, Todos)
             const _TimeFilterTabs(),
@@ -83,23 +81,22 @@ class _TimeFilterTabs extends ConsumerWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: allTimeFilters.entries.map((entry) { // <-- Cambiado
+      children: allTimeFilters.entries.map((entry) {
+        // <-- Cambiado
         final isSelected = selectedTime == entry.key; // <-- Cambiado
         return GestureDetector(
           onTap: () {
             // --- CAMBIO 2: ACTUALIZA EL PROVIDER CORRECTO ---
-            ref.read(selectedTimeFilterProvider.notifier).state = entry.key; // <-- Cambiado
+            ref.read(selectedTimeFilterProvider.notifier).state =
+                entry.key; // <-- Cambiado
           },
           child: Column(
             children: [
               Text(
                 entry.value,
                 style: textTheme.labelLarge?.copyWith(
-                  color: isSelected
-                      ? colors.primary
-                      : colors.onSurfaceVariant,
-                  fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? colors.primary : colors.onSurfaceVariant,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
               const SizedBox(height: 4),

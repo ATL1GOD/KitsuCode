@@ -28,11 +28,11 @@ class OptimizedGlassCard extends StatelessWidget {
     final Color borderColor;
 
     if (isDarkMode) {
-      cardColor = colors.surfaceContainerHighest.withOpacity(0.6);
-      borderColor = colors.outline.withOpacity(0.3);
+      cardColor = colors.surfaceContainerHighest.withAlpha(153);
+      borderColor = colors.outline.withAlpha(77);
     } else {
-      cardColor = Colors.white.withOpacity(0.2);
-      borderColor = colors.outline.withOpacity(0.2);
+      cardColor = Colors.white.withAlpha(51);
+      borderColor = colors.outline.withAlpha(51);
     }
 
     return Padding(

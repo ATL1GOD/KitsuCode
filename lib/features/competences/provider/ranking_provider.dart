@@ -1,4 +1,5 @@
 // [COMIENZO DEL ARCHIVO ranking_provider.dart]
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/repository/competence_repository.dart';
@@ -19,16 +20,16 @@ final selectedLanguageProvider = StateProvider.autoDispose<int>((ref) {
   return appBarState.languageId;
 });
 final allLanguagesProvider =
-    Provider.autoDispose<Map<int, Map<String, String>>>((ref) => {
-          1: {'name': 'C', 'logo': 'images/home/logo_c.webp'},
-          2: {'name': 'Java', 'logo': 'images/home/logo_java.webp'},
-          3: {'name': 'Python', 'logo': 'images/home/logo_python.webp'},
-        });
-final allTimeFiltersProvider = Provider.autoDispose<Map<int, String>>((ref) => {
-      1: 'Histórico',
-      2: 'Últimos 30 Días',
-      3: 'Última Semana',
-    });
+    Provider.autoDispose<Map<int, Map<String, String>>>(
+      (ref) => {
+        1: {'name': 'C', 'logo': 'images/home/logo_c.webp'},
+        2: {'name': 'Java', 'logo': 'images/home/logo_java.webp'},
+        3: {'name': 'Python', 'logo': 'images/home/logo_python.webp'},
+      },
+    );
+final allTimeFiltersProvider = Provider.autoDispose<Map<int, String>>(
+  (ref) => {1: 'Histórico', 2: 'Últimos 30 Días', 3: 'Última Semana'},
+);
 final selectedTimeFilterProvider = StateProvider.autoDispose<int>((ref) => 1);
 
 // --- Provider de Ranking Global ---
@@ -66,7 +67,11 @@ final realtimeUpdateProvider = Provider((ref) {
         schema: 'public',
         table: 'intento_reto',
         callback: (payload) {
-          print('Cambio en "intento_reto" detectado, actualizando ranking...');
+          if (kDebugMode) {
+            print(
+              'Cambio en "intento_reto" detectado, actualizando ranking...',
+            );
+          }
           ref.invalidate(globalRankingProvider);
         },
       )
@@ -81,9 +86,11 @@ final realtimeUpdateProvider = Provider((ref) {
         table: 'estadistica_usuario',
         callback: (payload) {
           if (user != null && payload.newRecord['id_usuario'] == user.id) {
-            print(
-              'Cambio en "estadistica_usuario" detectado, actualizando AppBar...',
-            );
+            if (kDebugMode) {
+              print(
+                'Cambio en "estadistica_usuario" detectado, actualizando AppBar...',
+              );
+            }
             ref.read(appBarProvider.notifier).fetchStats();
           }
         },
@@ -104,7 +111,9 @@ final realtimeUpdateProvider = Provider((ref) {
             value: user.id,
           ),
           callback: (payload) {
-            print('Cambio en "usuarios" detectado, actualizando AppBar...');
+            if (kDebugMode) {
+              print('Cambio en "usuarios" detectado, actualizando AppBar...');
+            }
             ref.read(appBarProvider.notifier).fetchStats();
           },
         )

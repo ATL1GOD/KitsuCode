@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/shared/widgets/optimized_glass_card.dart';
 import 'achievement_card.dart';
@@ -27,13 +26,17 @@ class ProfileAchievementsSection extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
 
     // 3. Observar los datos del perfil que SÍ necesitamos
-    final nombrePerfil = ref.watch(userProfileByIdProvider(userId)
-        .select((data) => data.value?.nombrePerfil));
+    final nombrePerfil = ref.watch(
+      userProfileByIdProvider(
+        userId,
+      ).select((data) => data.value?.nombrePerfil),
+    );
 
     // 4. Observar el objeto 'userProfile' completo.
     // Lo necesitamos para el modal.
     final userProfileData = ref.watch(userProfileByIdProvider(userId));
-    final userProfile = userProfileData.value; // Puede ser null si está cargando
+    final userProfile =
+        userProfileData.value; // Puede ser null si está cargando
 
     Widget titleWidget(bool showButton) {
       // (Esta función interna no cambia)
@@ -44,17 +47,24 @@ class ProfileAchievementsSection extends ConsumerWidget {
             children: [
               Icon(Icons.emoji_events_outlined, color: colors.secondary),
               const SizedBox(width: 8),
-              Text('Logros',
-                  style: textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Logros',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           if (showButton)
             TextButton(
               onPressed: () => context.push('/profile/$userId/achievements'),
-              child: Text('Ver todo',
-                  style: TextStyle(
-                      color: colors.secondary, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Ver todo',
+                style: TextStyle(
+                  color: colors.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       );
@@ -79,11 +89,13 @@ class ProfileAchievementsSection extends ConsumerWidget {
               const SizedBox(height: 15),
               achievementsState.when(
                 loading: () => _AchievementsLoadingShimmer(colors: colors),
-                error: (error, stack) =>
-                    const Center(child: Text('No se pudieron cargar los logros')),
+                error: (error, stack) => const Center(
+                  child: Text('No se pudieron cargar los logros'),
+                ),
                 data: (achievements) {
-                  final obtained =
-                      achievements.where((a) => a.obtenido).toList();
+                  final obtained = achievements
+                      .where((a) => a.obtenido)
+                      .toList();
 
                   if (obtained.isEmpty) {
                     return Padding(
@@ -91,8 +103,11 @@ class ProfileAchievementsSection extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset('assets/images/zorro_oops.png',
-                              width: 60, height: 60),
+                          Image.asset(
+                            'assets/images/zorro_oops.png',
+                            width: 60,
+                            height: 60,
+                          ),
                           const SizedBox(width: 20),
                           Expanded(
                             child: Text(

@@ -77,7 +77,7 @@ class _SearchFieldState extends ConsumerState<SearchField> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withAlpha(26),
               blurRadius: 4,
               offset: Offset(0, 2),
             ),
@@ -105,8 +105,12 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                     hintText: 'Encuentra nuevos amigos...',
                     hintStyle: TextStyle(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? colors.surface.withOpacity(0.9) // Color más visible en tema oscuro
-                          : colors.onSurface.withOpacity(0.6), // Color en tema claro
+                          ? colors.surface.withOpacity(
+                              0.9,
+                            ) // Color más visible en tema oscuro
+                          : colors.onSurface.withOpacity(
+                              0.6,
+                            ), // Color en tema claro
                     ),
                     // Aquí tu lógica de 'X' funciona perfectamente
                     suffixIcon: _controller.text.isNotEmpty
@@ -181,12 +185,14 @@ class UserSearchCard extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
 
     // AÑADIDO AQUÍ: Observamos el provider de avatares 👇
-    final List<AvatarModel>? avatarsList =
-        ref.watch(currentUserAvatarsProvider).value?.cast<AvatarModel>();
+    final List<AvatarModel>? avatarsList = ref
+        .watch(currentUserAvatarsProvider)
+        .value
+        ?.cast<AvatarModel>();
 
     return Card(
       elevation: 5,
-      shadowColor: Colors.black.withAlpha(77), // (era withOpacity(0.3))
+      shadowColor: Colors.black.withAlpha(77), // (era withAlpha(77))
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias, // Para que la imagen no se salga
       child: InkWell(
@@ -204,7 +210,10 @@ class UserSearchCard extends ConsumerWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            SvgPicture.asset('assets/images/mensual/fondo.svg', fit: BoxFit.cover),
+            SvgPicture.asset(
+              'assets/images/mensual/fondo.svg',
+              fit: BoxFit.cover,
+            ),
 
             Container(
               decoration: BoxDecoration(
@@ -260,7 +269,7 @@ class UserSearchCard extends ConsumerWidget {
                       // --- ADVERTENCIA CORREGIDA ---
                       color: Colors.white.withAlpha(
                         204,
-                      ), // (era withOpacity(0.8))
+                      ), // (era withAlpha(204))
                       fontSize: 14,
                       shadows: const [
                         Shadow(blurRadius: 2, color: Colors.black),

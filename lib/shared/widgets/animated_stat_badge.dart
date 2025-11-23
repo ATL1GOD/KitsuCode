@@ -27,7 +27,8 @@ class AnimatedStatBadge extends StatefulWidget {
 class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     with TickerProviderStateMixin {
   // 🎯 OPTIMIZACIÓN: Reducido de 5 → 2 AnimationControllers
-  late AnimationController _mainController; // Combinación de flip + pop + efectos básicos
+  late AnimationController
+  _mainController; // Combinación de flip + pop + efectos básicos
   late AnimationController _effectsController; // Solo para streak fire (Lottie)
 
   late int _previousValue;
@@ -109,7 +110,8 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = widget.borderColor ?? Theme.of(context).colorScheme.primary;
+    final primaryColor =
+        widget.borderColor ?? Theme.of(context).colorScheme.primary;
 
     return AnimatedBuilder(
       // 🎯 OPTIMIZACIÓN: Solo 2 controladores en lugar de 4
@@ -155,7 +157,8 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
 
         if (_playLifeEffect && widget.type == StatType.life) {
           shake = math.sin(t * math.pi * 8) * 4; // Reducido de 5 a 4
-          lifeScale = 1.0 + (0.25 * math.sin(t * math.pi * 2)); // Reducido de 0.3
+          lifeScale =
+              1.0 + (0.25 * math.sin(t * math.pi * 2)); // Reducido de 0.3
           iconColor = Color.lerp(Colors.red[700]!, widget.color, t)!;
         }
 
@@ -179,96 +182,101 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
             children: [
               // base badge
               Transform.scale(
-              scale: scale,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(100),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: primaryColor.withOpacity(0.9),
-                    width: 2.0,
+                scale: scale,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withOpacity(0.5),
-                      blurRadius: 8,
-                      spreadRadius: 1,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(100),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: primaryColor.withAlpha(230),
+                      width: 2.0,
                     ),
-                    BoxShadow(
-                      color: primaryColor.withOpacity(0.3),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 🎯 icon with animations (life, trophy)
-                    Transform.translate(
-                      offset: Offset(shake, trophyBounce),
-                      child: Transform.scale(
-                        scale: widget.type == StatType.life ? lifeScale : trophyScale,
-                        child: Transform.rotate(
-                          angle: trophyRotation,
-                          child: Opacity(
-                            opacity: iconOpacity,
-                            child: Icon(
-                              widget.icon,
-                              color: iconColor,
-                              size: 29,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withAlpha(128),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                      BoxShadow(
+                        color: primaryColor.withAlpha(77),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 🎯 icon with animations (life, trophy)
+                      Transform.translate(
+                        offset: Offset(shake, trophyBounce),
+                        child: Transform.scale(
+                          scale: widget.type == StatType.life
+                              ? lifeScale
+                              : trophyScale,
+                          child: Transform.rotate(
+                            angle: trophyRotation,
+                            child: Opacity(
+                              opacity: iconOpacity,
+                              child: Icon(
+                                widget.icon,
+                                color: iconColor,
+                                size: 29,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, 0.0015)
-                        ..rotateX(showingOld ? angle : -angle),
-                      child: Text(
-                        numDisplayed.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 3,
-                              color: Colors.black87,
-                              offset: Offset(0, 1),
-                            )
-                          ],
+                      const SizedBox(width: 6),
+                      Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.0015)
+                          ..rotateX(showingOld ? angle : -angle),
+                        child: Text(
+                          numDisplayed.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 20,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 3,
+                                color: Colors.black87,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // 🔥 streak fire lottie
-            if (_playStreakFire && widget.type == StatType.streak)
-              Positioned(
-                left: -8,
-                top: -15,
-                child: Opacity(
-                  opacity: lottieOpacity,
-                  child: SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: Lottie.asset(
-                      'assets/lottie/streak_fire.json',
-                      repeat: false,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const SizedBox(),
-                    ),
+                    ],
                   ),
                 ),
               ),
+
+              // 🔥 streak fire lottie
+              if (_playStreakFire && widget.type == StatType.streak)
+                Positioned(
+                  left: -8,
+                  top: -15,
+                  child: Opacity(
+                    opacity: lottieOpacity,
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: Lottie.asset(
+                        'assets/lottie/streak_fire.json',
+                        repeat: false,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const SizedBox(),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );

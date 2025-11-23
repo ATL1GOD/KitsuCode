@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
-import 'package:kitsucode/features/profile/repository/profile_repository.dart';
-// Importa tu profile_provider para invalidar el cache al terminar
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 
 class OnboardingView extends ConsumerStatefulWidget {

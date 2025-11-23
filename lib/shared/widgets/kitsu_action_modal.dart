@@ -15,7 +15,7 @@ Future<T?> showKitsuActionModal<T>({
 }) {
   final colors = Theme.of(context).colorScheme;
   final textTheme = Theme.of(context).textTheme;
-  
+
   // El color del ícono usará el dynamicColor si no se especifica uno
   final Color finalIconColor = iconColor ?? dynamicColor;
 
@@ -25,8 +25,9 @@ Future<T?> showKitsuActionModal<T>({
     isScrollControlled: true,
     builder: (context) {
       return Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Container(
           padding: const EdgeInsets.all(24.0).copyWith(bottom: 16.0),
           // --- ¡DECORACIÓN DE AURA USANDO DYNAMIC COLOR! ---
@@ -36,13 +37,15 @@ Future<T?> showKitsuActionModal<T>({
               topLeft: Radius.circular(28.0),
               topRight: Radius.circular(28.0),
             ),
-            border: Border.all(color: dynamicColor.withOpacity(.6)), // Borde de aura
+            border: Border.all(
+              color: dynamicColor.withOpacity(.6),
+            ), // Borde de aura
             boxShadow: [
               BoxShadow(
                 color: dynamicColor.withOpacity(.25), // Sombra de aura
                 blurRadius: 12,
                 offset: const Offset(0, 5),
-              )
+              ),
             ],
           ),
           // --- FIN DE LA DECORACIÓN ---
@@ -54,7 +57,7 @@ Future<T?> showKitsuActionModal<T>({
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colors.onSurfaceVariant.withOpacity(0.4),
+                  color: colors.onSurfaceVariant.withAlpha(102),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -63,7 +66,11 @@ Future<T?> showKitsuActionModal<T>({
               // 2. Icono
               FadeInDown(
                 duration: const Duration(milliseconds: 300),
-                child: Icon(icon, color: finalIconColor, size: 48), // Usa el color final
+                child: Icon(
+                  icon,
+                  color: finalIconColor,
+                  size: 48,
+                ), // Usa el color final
               ),
               const SizedBox(height: 16),
 

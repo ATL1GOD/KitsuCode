@@ -21,7 +21,8 @@ class ChallengeSuccessView extends ConsumerStatefulWidget {
   const ChallengeSuccessView({super.key, required this.trofeosObtenidos});
 
   @override
-  ConsumerState<ChallengeSuccessView> createState() => _ChallengeSuccessViewState();
+  ConsumerState<ChallengeSuccessView> createState() =>
+      _ChallengeSuccessViewState();
 }
 
 class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
@@ -44,7 +45,7 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
 
   Future<void> _handleContinue() async {
     if (_isNavigating) return;
-   
+
     setState(() => _isNavigating = true);
 
     try {
@@ -55,10 +56,12 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
         Future.delayed(const Duration(milliseconds: 700)),
         Supabase.instance.client.rpc(
           'get_my_language_score',
-          params: {'p_language_id': currentLangId}
+          params: {'p_language_id': currentLangId},
         ),
         userId != null
-            ? ref.read(languageCompletionProvider.notifier).checkLanguageCompletion(userId)
+            ? ref
+                  .read(languageCompletionProvider.notifier)
+                  .checkLanguageCompletion(userId)
             : Future.value(),
         Supabase.instance.client.rpc('get_total_languages_count'),
       ]);
@@ -78,15 +81,12 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
         if (languageState.hasCompletedLanguage &&
             languageState.canUnlockNewLanguage &&
             languageState.unlockedLanguages.length < totalLanguagesInApp) {
-         
           shouldShowCelebration = true;
           completedLanguage = languageState.currentLanguage;
           unlockedLanguages = languageState.unlockedLanguages;
           canUnlock = languageState.canUnlockNewLanguage;
-
         } else if (languageState.hasCompletedLanguage &&
-                   languageState.unlockedLanguages.length >= totalLanguagesInApp) {
-         
+            languageState.unlockedLanguages.length >= totalLanguagesInApp) {
           final bool esLaPrimeraVez = languageState.canUnlockNewLanguage;
 
           if (esLaPrimeraVez && languageState.currentLanguage.isNotEmpty) {
@@ -94,7 +94,10 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
             completedLanguage = 'ALL';
             unlockedLanguages = languageState.unlockedLanguages;
             canUnlock = false;
-            _markLanguageAsUsedBackground(userId, languageState.currentLanguage);
+            _markLanguageAsUsedBackground(
+              userId,
+              languageState.currentLanguage,
+            );
           }
         }
       }
@@ -104,25 +107,32 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
       if (shouldShowCelebration) {
         ref.read(oldStatsValuesProvider.notifier).state = null;
         ref.read(shouldRefreshStatsProvider.notifier).state = true;
-        
+
         // REANUDAR MÚSICA ANTES DE NAVEGAR
         resumeMusicAfterChallenge(ref);
-        
-        context.go('/language-completion', extra: {
-          'completedLanguage': completedLanguage,
-          'unlockedLanguages': unlockedLanguages,
-          'canUnlockNewLanguage': canUnlock,
-        });
-      } else {
-        final oldTrophies = (realTotalTrophies - widget.trofeosObtenidos).clamp(0, 999999).toInt();
-        ref.read(shouldRefreshStatsProvider.notifier).state = false;
-        
-        final currentStats = ref.read(appBarProvider);
-        ref.read(appBarProvider.notifier).updateStatsDirectly(
-          lives: currentStats.lives,
-          trophies: oldTrophies,
-          streak: currentStats.streak,
+
+        context.go(
+          '/language-completion',
+          extra: {
+            'completedLanguage': completedLanguage,
+            'unlockedLanguages': unlockedLanguages,
+            'canUnlockNewLanguage': canUnlock,
+          },
         );
+      } else {
+        final oldTrophies = (realTotalTrophies - widget.trofeosObtenidos)
+            .clamp(0, 999999)
+            .toInt();
+        ref.read(shouldRefreshStatsProvider.notifier).state = false;
+
+        final currentStats = ref.read(appBarProvider);
+        ref
+            .read(appBarProvider.notifier)
+            .updateStatsDirectly(
+              lives: currentStats.lives,
+              trophies: oldTrophies,
+              streak: currentStats.streak,
+            );
 
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
@@ -135,9 +145,9 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
 
         Future.delayed(const Duration(milliseconds: 100), () {
           if (!mounted) return;
-          
+
           ref.read(appBarProvider.notifier).fetchStats();
-          
+
           Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted) {
               ref.read(shouldRefreshStatsProvider.notifier).state = true;
@@ -145,12 +155,11 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
           });
         });
       }
-
     } catch (e) {
       if (mounted) {
         // 🔥 REANUDAR MÚSICA TAMBIÉN EN ERROR
         resumeMusicAfterChallenge(ref);
-        
+
         final returnPath = ref.read(navigationReturnPathProvider);
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
         context.go(returnPath);
@@ -170,10 +179,12 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
           .select('lenguajes_usados_desbloqueo')
           .eq('id', userId)
           .single();
-     
-      final currentList = List<String>.from(userResponse['lenguajes_usados_desbloqueo'] ?? []);
+
+      final currentList = List<String>.from(
+        userResponse['lenguajes_usados_desbloqueo'] ?? [],
+      );
       final normalized = languageName.trim().toLowerCase();
-     
+
       if (!currentList.contains(normalized)) {
         currentList.add(normalized);
         await supabase
@@ -234,7 +245,7 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.5),
+                      color: colorScheme.primaryContainer.withAlpha(128),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -276,7 +287,9 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(

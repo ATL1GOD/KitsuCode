@@ -113,7 +113,7 @@ class _ReliefSectionButtonState extends State<ReliefSectionButton> {
                 borderRadius: BorderRadius.circular(36.0),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withAlpha(153),
                     offset: const Offset(-1, -1),
                     blurRadius: 1,
                   ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/auth/repository/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/core/providers/bootstrap_provider.dart';
@@ -32,7 +33,9 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
     },
     error: (e, stack) {
       // Log del error para debugging
-      print('Error en authStateProvider: $e');
+      if (kDebugMode) {
+        print('Error en authStateProvider: $e');
+      }
       return Stream.error(e, stack);
     },
     loading: () {

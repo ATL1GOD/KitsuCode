@@ -1,4 +1,5 @@
 // [COMIENZO DEL ARCHIVO home_repository.dart]
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/home/model/home_model.dart';
@@ -86,7 +87,9 @@ class SectionRepository {
         completedLevelIds: completedLevelIds,
       );
     } catch (e) {
-      print("Error en SectionRepository: $e");
+      if (kDebugMode) {
+        print("Error en SectionRepository: $e");
+      }
       throw Exception('No se pudieron cargar las secciones: $e');
     }
   }

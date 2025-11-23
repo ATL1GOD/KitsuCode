@@ -22,7 +22,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
   Widget _buildMilestone({required bool isLocked}) {
     const double size = 20.0;
     final Color bgColor = isLocked
-        ? Colors.black.withOpacity(0.2)
+        ? Colors.black.withAlpha(51)
         : Colors.green.shade300;
     final Color iconColor = isLocked ? Colors.white54 : Colors.white;
 
@@ -32,7 +32,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.black.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.black.withAlpha(51), width: 1),
       ),
       child: Icon(
         isLocked ? Icons.lock : Icons.check,
@@ -60,7 +60,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(barHeight / 2 + 5),
             border: Border.all(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withAlpha(77),
               width: borderWidth,
             ),
           ),
@@ -78,7 +78,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
                   child: Container(
                     height: barHeight,
                     width: totalWidth - (borderWidth * 2),
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withAlpha(77),
                   ),
                 ),
               ),

@@ -22,7 +22,10 @@ class ProfileView extends ConsumerStatefulWidget {
   final String? userId;
   const ProfileView({super.key, this.userId});
 
-  static Color getHeaderColor(UserProfileModel userProfile, ColorScheme colors) {
+  static Color getHeaderColor(
+    UserProfileModel userProfile,
+    ColorScheme colors,
+  ) {
     return getAvatarColorById(userProfile.idAvatarSeleccionado);
   }
 
@@ -32,13 +35,14 @@ class ProfileView extends ConsumerStatefulWidget {
 
 // --- 🔥 3. AÑADIR WidgetsBindingObserver ---
 class _ProfileViewState extends ConsumerState<ProfileView>
-    with TickerProviderStateMixin, WidgetsBindingObserver { // <-- AÑADIDO
-      
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  // <-- AÑADIDO
+
   late final AnimationController _lottieController;
 
   // --- 🔥 4. BANDERAS DE ESTADO ---
-  bool _isTabVisible = true;  // ¿Está esta pestaña visible?
-  bool _isAppActive = true;   // ¿Está la app en primer plano?
+  bool _isTabVisible = true; // ¿Está esta pestaña visible?
+  bool _isAppActive = true; // ¿Está la app en primer plano?
   bool _isLottieLoaded = false; // ¿Ya cargó el Lottie?
 
   @override
@@ -46,14 +50,13 @@ class _ProfileViewState extends ConsumerState<ProfileView>
     super.initState();
     // --- 🔥 5. INICIALIZAR SIN DURACIÓN ---
     _lottieController = AnimationController(vsync: this);
-    
+
     // --- 🔥 6. REGISTRAR EL OBSERVADOR DE CICLO DE VIDA ---
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    // --- 🔥 7. LIMPIAR TODO ---
     _lottieController.dispose();
     WidgetsBinding.instance.removeObserver(this); // <-- Limpiar observador
     super.dispose();
@@ -85,8 +88,12 @@ class _ProfileViewState extends ConsumerState<ProfileView>
   @override
   Widget build(BuildContext context) {
     // ... (Tu lógica de providers y variables se queda igual) ...
-    final currentAuthUserId =
-        ref.watch(authStateProvider).value?.session?.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value
+        ?.session
+        ?.user
+        .id;
     final targetUserId = widget.userId ?? currentAuthUserId;
     final isCurrentUserProfile = targetUserId == currentAuthUserId;
 
@@ -113,10 +120,7 @@ class _ProfileViewState extends ConsumerState<ProfileView>
       child: Scaffold(
         body: Stack(
           children: [
-            _ProfileBackground(
-              userId: targetUserId,
-              colors: colors,
-            ),
+            _ProfileBackground(userId: targetUserId, colors: colors),
             Column(
               children: [
                 // ... (Tu SafeArea y ProfileHeader no cambian) ...
@@ -133,8 +137,10 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                       ),
                       if (!isCurrentUserProfile)
                         Padding(
-                          padding:
-                              const EdgeInsets.only(top: 30.0, bottom: 20.0),
+                          padding: const EdgeInsets.only(
+                            top: 30.0,
+                            bottom: 20.0,
+                          ),
                           child: SizedBox(
                             width: 300,
                             child: FollowButton(userId: targetUserId),
@@ -150,8 +156,8 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                         child: ColorFiltered(
                           colorFilter: ColorFilter.mode(
                             isDarkMode
-                                ? colors.secondaryFixedDim.withOpacity(0.3)
-                                : colors.secondary.withOpacity(0.4),
+                                ? colors.secondaryFixedDim.withAlpha(77)
+                                : colors.secondary.withAlpha(102),
                             BlendMode.srcIn,
                           ),
                           child: Lottie.asset(
@@ -230,8 +236,9 @@ class _ProfileBackground extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarId = ref.watch(
-      userProfileByIdProvider(userId)
-          .select((data) => data.value?.idAvatarSeleccionado),
+      userProfileByIdProvider(
+        userId,
+      ).select((data) => data.value?.idAvatarSeleccionado),
     );
 
     // 👇 OBTENEMOS LA LISTA REAL DE AVATARES
@@ -281,8 +288,10 @@ class _TopBar extends StatelessWidget {
                 color: colors.surface.withAlpha((255 * 0.3).round()),
                 shape: BoxShape.circle,
               ),
-              child:
-                  Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: colors.onSurface,
+              ),
             ),
           ),
           if (isCurrentUserProfile)

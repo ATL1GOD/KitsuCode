@@ -14,14 +14,10 @@ Color _safeParseColor(String colorString) {
 }
 // --- Fin de la función de ayuda ---
 
-
 class AvatarModal extends StatelessWidget {
   final AvatarModel avatar;
 
-  const AvatarModal({
-    super.key,
-    required this.avatar,
-  });
+  const AvatarModal({super.key, required this.avatar});
 
   static Future<void> show(
     BuildContext context, {
@@ -44,9 +40,7 @@ class AvatarModal extends StatelessWidget {
                 ),
                 child: Scaffold(
                   backgroundColor: Colors.transparent, // Fondo transparente
-                  body: _ModalContent(
-                    avatar: avatar,
-                  ),
+                  body: _ModalContent(avatar: avatar),
                 ),
               ),
             ),
@@ -60,9 +54,7 @@ class AvatarModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: _ModalContent(
-        avatar: avatar,
-      ),
+      body: _ModalContent(avatar: avatar),
     );
   }
 }
@@ -70,9 +62,7 @@ class AvatarModal extends StatelessWidget {
 class _ModalContent extends StatelessWidget {
   final AvatarModel avatar;
 
-  const _ModalContent({
-    required this.avatar,
-  });
+  const _ModalContent({required this.avatar});
 
   @override
   Widget build(BuildContext context) {
@@ -83,16 +73,17 @@ class _ModalContent extends StatelessWidget {
     // El color, el aura y la imagen siempre están a color.
     final Color borderColor = _safeParseColor(avatar.colorPrimario);
     final String tipo = avatar.tipo;
-    final String tipoText = tipo.substring(0, 1).toUpperCase() + tipo.substring(1);
-    final lockedColor = colors.onSurfaceVariant.withOpacity(0.5);
+    final String tipoText =
+        tipo.substring(0, 1).toUpperCase() + tipo.substring(1);
+    final lockedColor = colors.onSurfaceVariant.withAlpha(128);
 
     // --- Lógica de Imagen (SIEMPRE A COLOR) ---
     Widget img = Image.asset(
-        avatar.assetPath,
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      );
+      avatar.assetPath,
+      height: 200,
+      width: double.infinity,
+      fit: BoxFit.cover,
+    );
 
     final animatedImg = ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
@@ -116,32 +107,35 @@ class _ModalContent extends StatelessWidget {
     );
 
     // --- Aura (SIEMPRE A COLOR) ---
-    final aura = Icon(
-            Icons.auto_awesome,
-            size: 120,
-            color: borderColor.withOpacity(0.5), // Siempre usa el color primario
-          )
-        .animate(onPlay: (c) => c.repeat(reverse: true))
-        .fadeIn(duration: 600.ms)
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1.2, 1.2),
-          duration: 800.ms,
-        );
+    final aura =
+        Icon(
+              Icons.auto_awesome,
+              size: 120,
+              color: borderColor.withOpacity(
+                0.5,
+              ), // Siempre usa el color primario
+            )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fadeIn(duration: 600.ms)
+            .scale(
+              begin: const Offset(0.8, 0.8),
+              end: const Offset(1.2, 1.2),
+              duration: 800.ms,
+            );
     // --- Fin Lógica ---
 
     // --- Lógica de Texto (depende de si está bloqueado) ---
     final String descriptionTitle = isUnlocked
         ? "¡Avatar desbloqueado!"
         : "Para desbloquear este avatar necesitas:";
-    
-    final String descriptionBody = avatar.requisitoDescripcion ?? avatar.descripcion ?? "Sigue jugando para descubrirlo.";
 
+    final String descriptionBody =
+        avatar.requisitoDescripcion ?? avatar.descripcion;
 
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        color: Colors.black.withOpacity(0.7), // Fondo "dim"
+        color: Colors.black.withAlpha(179), // Fondo "dim"
         child: GestureDetector(
           onTap: () {}, // Evita cerrar al tocar el modal
           child: Material(
@@ -160,7 +154,9 @@ class _ModalContent extends StatelessWidget {
                       color: colors.surface, // Fondo siempre claro/oscuro
                       boxShadow: [
                         BoxShadow(
-                          color: borderColor.withOpacity(0.7), // Sombra siempre de color
+                          color: borderColor.withOpacity(
+                            0.7,
+                          ), // Sombra siempre de color
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -175,11 +171,12 @@ class _ModalContent extends StatelessWidget {
                             children: [
                               Text(
                                 "Avatar",
-                                style: Theme.of(context).textTheme.titleMedium
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   // --- Círculo de ID (siempre a color) ---
                                   Container(
@@ -187,7 +184,7 @@ class _ModalContent extends StatelessWidget {
                                     height: 32,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: borderColor.withOpacity(0.2),
+                                      color: borderColor.withAlpha(51),
                                       border: Border.all(
                                         color: borderColor,
                                         width: 2,
@@ -211,7 +208,7 @@ class _ModalContent extends StatelessWidget {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: borderColor.withOpacity(0.8),
+                                      color: borderColor.withAlpha(204),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -219,7 +216,8 @@ class _ModalContent extends StatelessWidget {
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
-                                        color: colors.onPrimary, // Asumimos color claro
+                                        color: colors
+                                            .onPrimary, // Asumimos color claro
                                       ),
                                     ),
                                   ),
@@ -269,7 +267,8 @@ class _ModalContent extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w900,
-                                          color: colors.onSurface, // Siempre a color
+                                          color: colors
+                                              .onSurface, // Siempre a color
                                           fontSize: 18,
                                         ),
                                       ),
@@ -282,7 +281,9 @@ class _ModalContent extends StatelessWidget {
                                           : Icons.lock_outline,
                                       color: isUnlocked
                                           ? borderColor
-                                          : Colors.grey.shade500, // Gris si está bloqueado
+                                          : Colors
+                                                .grey
+                                                .shade500, // Gris si está bloqueado
                                       size: 24,
                                     ),
                                     const SizedBox(height: 10),
@@ -298,7 +299,7 @@ class _ModalContent extends StatelessWidget {
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: colors.onSurfaceVariant
+                                              color: colors.onSurfaceVariant,
                                             ),
                                           ),
                                           const SizedBox(height: 8),
@@ -306,7 +307,7 @@ class _ModalContent extends StatelessWidget {
                                             descriptionBody, // Cuerpo dinámico
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
-                                              color: colors.onSurfaceVariant
+                                              color: colors.onSurfaceVariant,
                                             ),
                                           ),
                                         ],
@@ -321,7 +322,7 @@ class _ModalContent extends StatelessWidget {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(11),
-                                        color: Colors.black.withOpacity(0.3),
+                                        color: Colors.black.withAlpha(77),
                                       ),
                                     ),
                                   ),
@@ -331,7 +332,7 @@ class _ModalContent extends StatelessWidget {
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.7),
+                                          color: Colors.black.withAlpha(179),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(

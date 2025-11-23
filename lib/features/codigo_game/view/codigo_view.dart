@@ -237,6 +237,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   ref.invalidate(desafiosProvider);
                   // 3. Navegar CON TROFEOS
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_success', extra: trofeos);
                 } else {
                   // 1. Enviar intento fallido
@@ -252,6 +253,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
                   // 3. Navegar
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_failure', extra: recursos);
                 }
               } catch (e) {
@@ -259,6 +261,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                 if (context.mounted) {
                   // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
                   showErrorSnackbar(
+                    // ignore: use_build_context_synchronously
                     context,
                     'Error',
                     'Error al enviar resultado: $e',

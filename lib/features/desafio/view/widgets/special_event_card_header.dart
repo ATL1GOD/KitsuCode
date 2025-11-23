@@ -205,7 +205,7 @@ class SpecialEventCardHeader extends StatelessWidget {
               shape: BoxShape.circle, // Asumiendo que tu estampa es redonda
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withAlpha(26),
                   blurRadius: 10,
                   offset: const Offset(2, 5), // Sombra hacia abajo y derecha
                 ),

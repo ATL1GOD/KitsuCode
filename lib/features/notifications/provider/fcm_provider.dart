@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart' show debugPrint;
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
 import 'package:kitsucode/features/notifications/service/fcm_service.dart';
@@ -13,17 +12,14 @@ final fcmServiceProvider = Provider<FCMService>((ref) {
   return FCMService(router, ref);
 });
 
-
 // --- 👇 ¡AQUÍ ESTÁ LA ADICIÓN! 👇 ---
 // Añade este provider en el mismo archivo.
 
 /// Este provider "activa" el servicio FCM cuando el usuario inicia sesión.
 /// Es de "disparar y olvidar" y se observa (watch) en MyApp.
 final fcmInitializationProvider = Provider<void>((ref) {
-  
   // Escucha los cambios en el estado de autenticación
   ref.listen(authStateProvider, (previous, next) {
-    
     // Reacciona solo cuando el estado tenga datos
     next.whenData((authState) {
       if (authState.session != null) {

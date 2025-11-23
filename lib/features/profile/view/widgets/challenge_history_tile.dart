@@ -37,10 +37,14 @@ class ChallengeHistoryTile extends StatelessWidget {
 
     // Determinamos si fue éxito o fallo y logica del aura
     final bool isSuccess = item.resultado.toLowerCase() == 'completado';
-    final Color auraColor = (isSuccess ? Colors.green : Colors.red).withOpacity(0.7);
-    final Color cardColor = isSuccess 
-      ? colorScheme.surface.withOpacity(0.9)
-      : colorScheme.errorContainer.withOpacity(0.5); // Un fondo rojo claro para fallos
+    final Color auraColor = (isSuccess ? Colors.green : Colors.red).withOpacity(
+      0.7,
+    );
+    final Color cardColor = isSuccess
+        ? colorScheme.surface.withAlpha(230)
+        : colorScheme.errorContainer.withOpacity(
+            0.5,
+          ); // Un fondo rojo claro para fallos
 
     // Construcción del Tile
     return Container(
@@ -50,16 +54,9 @@ class ChallengeHistoryTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           // Esta es el "aura"
-          BoxShadow(
-            color: auraColor,
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
+          BoxShadow(color: auraColor, blurRadius: 10, spreadRadius: 1),
         ],
-        border: Border.all(
-          color: auraColor.withOpacity(0.8),
-          width: 1.5,
-        ),
+        border: Border.all(color: auraColor.withAlpha(204), width: 1.5),
       ),
       child: ListTile(
         leading: Icon(

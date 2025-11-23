@@ -55,7 +55,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
   }
 
   void _showSignOutDialog(
-      BuildContext context, WidgetRef ref, Color dynamicColor) {
+    BuildContext context,
+    WidgetRef ref,
+    Color dynamicColor,
+  ) {
     final colors = Theme.of(context).colorScheme;
     showKitsuActionModal(
       context: context,
@@ -81,14 +84,15 @@ class _SettingsViewState extends ConsumerState<SettingsView>
           onPressed: () async {
             HapticFeedback.mediumImpact();
             ref.read(audioControllerProvider).playClick();
-            
-            context.pop(); 
+
+            context.pop();
             try {
               final authRepo = await ref.read(authRepositoryProvider.future);
               await authRepo.signOut();
 
               if (mounted) {
                 showSuccessSnackbar(
+                  // ignore: use_build_context_synchronously
                   context,
                   '¡Sesión cerrada!',
                   'Vuelve pronto a KitsuCode.',
@@ -96,6 +100,7 @@ class _SettingsViewState extends ConsumerState<SettingsView>
               }
             } catch (e) {
               if (mounted) {
+                // ignore: use_build_context_synchronously
                 showErrorSnackbar(context, 'Error', e.toString());
               }
             }
@@ -118,15 +123,25 @@ class _SettingsViewState extends ConsumerState<SettingsView>
       title: 'Eliminar Cuenta',
       message:
           '¡Acción irreversible! Se borrarán todos tus datos permanentemente.',
-      customContent:
-          _buildDeleteModalContent(context, controller, confirmationText),
-      actions:
-          _buildDeleteModalActions(context, ref, controller, confirmationText),
+      customContent: _buildDeleteModalContent(
+        context,
+        controller,
+        confirmationText,
+      ),
+      actions: _buildDeleteModalActions(
+        context,
+        ref,
+        controller,
+        confirmationText,
+      ),
     );
   }
 
-  Widget _buildDeleteModalContent(BuildContext context,
-      TextEditingController controller, String confirmationText) {
+  Widget _buildDeleteModalContent(
+    BuildContext context,
+    TextEditingController controller,
+    String confirmationText,
+  ) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     return Column(
@@ -141,8 +156,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
           controller: controller,
           autocorrect: false,
           textAlign: TextAlign.center,
-          style: textTheme.titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold, color: colors.error),
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colors.error,
+          ),
           decoration: InputDecoration(
             hintText: confirmationText,
             hintStyle: textTheme.titleMedium?.copyWith(
@@ -170,17 +187,18 @@ class _SettingsViewState extends ConsumerState<SettingsView>
   }
 
   List<Widget> _buildDeleteModalActions(
-      BuildContext context,
-      WidgetRef ref,
-      TextEditingController controller,
-      String confirmationText) {
+    BuildContext context,
+    WidgetRef ref,
+    TextEditingController controller,
+    String confirmationText,
+  ) {
     final colors = Theme.of(context).colorScheme;
     return [
       TextButton(
         onPressed: () {
-           HapticFeedback.lightImpact();
-           ref.read(audioControllerProvider).playClick();
-           context.pop();
+          HapticFeedback.lightImpact();
+          ref.read(audioControllerProvider).playClick();
+          context.pop();
         },
         child: const Text('Cancelar'),
       ),
@@ -190,8 +208,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
           final bool canDelete = controller.text.trim() == confirmationText;
           return ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  canDelete ? colors.error : colors.onSurface.withAlpha(31),
+              backgroundColor: canDelete
+                  ? colors.error
+                  : colors.onSurface.withAlpha(31),
               foregroundColor: canDelete
                   ? colors.onError
                   : colors.onSurface.withAlpha(97),
@@ -202,16 +221,21 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                 ? () async {
                     HapticFeedback.heavyImpact();
                     ref.read(audioControllerProvider).playError();
-                    
+
                     context.pop();
                     showHelpSnackbar(
-                        context, 'Procesando...', 'Eliminando tu cuenta...');
+                      context,
+                      'Procesando...',
+                      'Eliminando tu cuenta...',
+                    );
                     try {
-                      final authRepo =
-                          await ref.read(authRepositoryProvider.future);
+                      final authRepo = await ref.read(
+                        authRepositoryProvider.future,
+                      );
                       await authRepo.deleteAccount();
                     } catch (e) {
                       if (!mounted) return;
+                      // ignore: use_build_context_synchronously
                       showErrorSnackbar(context, 'Error', e.toString());
                     }
                   }
@@ -241,7 +265,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
     }
     final currentAuthUserId = authState.value?.session?.user.id;
     if (currentAuthUserId == null) {
-      return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
+      return const Scaffold(
+        body: Center(child: Text("Usuario no autenticado")),
+      );
     }
 
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
@@ -282,13 +308,14 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            dynamicColor.withAlpha(100),
-                            colors.surfaceContainerLowest,
-                          ],
-                          stops: const [0.0, 0.7]),
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          dynamicColor.withAlpha(100),
+                          colors.surfaceContainerLowest,
+                        ],
+                        stops: const [0.0, 0.7],
+                      ),
                     ),
                   ),
 
@@ -297,7 +324,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
@@ -310,21 +339,25 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
                                 'Configuración',
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 48),
@@ -334,25 +367,29 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 12.0),
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
                           children: [
                             // 1. Sección: Preferencias
                             FadeInDown(
                               delay: const Duration(milliseconds: 100),
                               child: SectionHeader(
-                                  title: 'Preferencias',
-                                  icon: Icons.palette_outlined,
-                                  colors: colors),
+                                title: 'Preferencias',
+                                icon: Icons.palette_outlined,
+                                colors: colors,
+                              ),
                             ),
                             preferenciasState.when(
                               loading: () => const Center(
-                                  child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(),
-                              )),
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
                               error: (e, s) => Center(
-                                  child:
-                                      Text('Error al cargar preferencias: $e')),
+                                child: Text('Error al cargar preferencias: $e'),
+                              ),
                               data: (prefs) {
                                 // 🔥 LÓGICA ANTI-LAG (Optimistic UI)
                                 final String themeFromDB = prefs.temaVisual;
@@ -364,7 +401,8 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                 }
 
                                 // Si tenemos un valor optimista (mientras el usuario espera), usamos ese.
-                                final bool switchValue = _optimisticDarkMode ?? realIsDark;
+                                final bool switchValue =
+                                    _optimisticDarkMode ?? realIsDark;
 
                                 return FadeInDown(
                                   delay: const Duration(milliseconds: 200),
@@ -380,38 +418,49 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                         subtitle:
                                             'Alternar entre tema claro y oscuro',
                                         dynamicColor: dynamicColor,
-                                        
+
                                         // 🔥 Valor instantáneo
-                                        initialValue: switchValue, 
-                                        
+                                        initialValue: switchValue,
+
                                         onChanged: (value) {
                                           // 1. Feedback Inmediato
                                           HapticFeedback.lightImpact();
-                                          ref.read(audioControllerProvider).playClick();
-                                          
+                                          ref
+                                              .read(audioControllerProvider)
+                                              .playClick();
+
                                           // 2. Actualización Visual Inmediata (Sin tocar BD aún)
                                           setState(() {
                                             _optimisticDarkMode = value;
                                           });
 
                                           // 3. Pausa para permitir animación del switch (320ms)
-                                          Future.delayed(const Duration(milliseconds: 320), () {
-                                            if (!mounted) return;
-                                            
-                                            final newTheme = value ? 'dark' : 'light';
-                                            
-                                            // 4. Ahora sí, trabajo pesado
-                                            ref.read(settingsProvider.notifier)
-                                               .updateTemaVisual(newTheme)
-                                               .then((_) {
-                                                  // 5. Limpieza
-                                                  if (mounted) {
-                                                    setState(() {
-                                                      _optimisticDarkMode = null;
-                                                    });
-                                                  }
-                                               });
-                                          });
+                                          Future.delayed(
+                                            const Duration(milliseconds: 320),
+                                            () {
+                                              if (!mounted) return;
+
+                                              final newTheme = value
+                                                  ? 'dark'
+                                                  : 'light';
+
+                                              // 4. Ahora sí, trabajo pesado
+                                              ref
+                                                  .read(
+                                                    settingsProvider.notifier,
+                                                  )
+                                                  .updateTemaVisual(newTheme)
+                                                  .then((_) {
+                                                    // 5. Limpieza
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _optimisticDarkMode =
+                                                            null;
+                                                      });
+                                                    }
+                                                  });
+                                            },
+                                          );
                                         },
                                       ),
                                       SettingsSwitchTile(
@@ -423,7 +472,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                         initialValue: prefs.sonidoEfectos,
                                         onChanged: (value) {
                                           HapticFeedback.lightImpact();
-                                          ref.read(audioControllerProvider).playClick();
+                                          ref
+                                              .read(audioControllerProvider)
+                                              .playClick();
                                           ref
                                               .read(settingsProvider.notifier)
                                               .updateSonidoEfectos(value);
@@ -452,9 +503,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               child: Column(
                                 children: [
                                   SectionHeader(
-                                      title: 'Seguridad',
-                                      icon: Icons.security_outlined,
-                                      colors: colors),
+                                    title: 'Seguridad',
+                                    icon: Icons.security_outlined,
+                                    colors: colors,
+                                  ),
                                   SettingsNavigationTile(
                                     title: 'Cambiar Contraseña',
                                     subtitle: 'Actualiza tu contraseña',
@@ -462,7 +514,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                     dynamicColor: dynamicColor,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
-                                      ref.read(audioControllerProvider).playClick();
+                                      ref
+                                          .read(audioControllerProvider)
+                                          .playClick();
                                       context.pushNamed('change-password');
                                     },
                                   ),
@@ -476,9 +530,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               child: Column(
                                 children: [
                                   SectionHeader(
-                                      title: 'Notificaciones',
-                                      icon: Icons.notifications_outlined,
-                                      colors: colors),
+                                    title: 'Notificaciones',
+                                    icon: Icons.notifications_outlined,
+                                    colors: colors,
+                                  ),
                                   SettingsNavigationTile(
                                     title: 'Configuración de Alertas',
                                     subtitle:
@@ -487,7 +542,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                     dynamicColor: dynamicColor,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
-                                      ref.read(audioControllerProvider).playClick();
+                                      ref
+                                          .read(audioControllerProvider)
+                                          .playClick();
                                       context.push('/settings/notifications');
                                     },
                                   ),
@@ -501,9 +558,10 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               child: Column(
                                 children: [
                                   SectionHeader(
-                                      title: 'Soporte',
-                                      icon: Icons.help_outline_rounded,
-                                      colors: colors),
+                                    title: 'Soporte',
+                                    icon: Icons.help_outline_rounded,
+                                    colors: colors,
+                                  ),
                                   SettingsNavigationTile(
                                     title: 'Ayuda y Sugerencias',
                                     subtitle:
@@ -512,7 +570,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                     dynamicColor: dynamicColor,
                                     onTap: () {
                                       HapticFeedback.lightImpact();
-                                      ref.read(audioControllerProvider).playClick();
+                                      ref
+                                          .read(audioControllerProvider)
+                                          .playClick();
                                       context.push('/settings/support');
                                     },
                                   ),
@@ -522,39 +582,48 @@ class _SettingsViewState extends ConsumerState<SettingsView>
 
                             // 5. Sección: Zona de Riesgo
                             FadeInDown(
-                                delay: const Duration(milliseconds: 1200),
-                                child: Column(
-                                  children: [
-                                    SectionHeader(
-                                        title: 'Zona de Riesgo',
-                                        icon: Icons.warning_amber_rounded,
-                                        colors: colors),
-                                    SettingsDestructiveTile(
-                                      title: 'Eliminar Cuenta',
-                                      subtitle:
-                                          'Elimina tu cuenta permanentemente',
-                                      icon: Icons.delete_forever_outlined,
-                                      dynamicColor: dynamicColor,
-                                      onTap: () {
-                                        HapticFeedback.mediumImpact();
-                                        ref.read(audioControllerProvider).playClick();
-                                        _showDeleteAccountDialog(context, ref);
-                                      },
-                                    ),
-                                    SettingsDestructiveTile(
-                                      title: 'Cerrar Sesión',
-                                      subtitle: 'Finaliza tu sesión actual',
-                                      icon: Icons.logout,
-                                      dynamicColor: dynamicColor,
-                                      onTap: () {
-                                        HapticFeedback.mediumImpact();
-                                        ref.read(audioControllerProvider).playClick();
-                                        _showSignOutDialog(
-                                            context, ref, dynamicColor);
-                                      },
-                                    ),
-                                  ],
-                                )),
+                              delay: const Duration(milliseconds: 1200),
+                              child: Column(
+                                children: [
+                                  SectionHeader(
+                                    title: 'Zona de Riesgo',
+                                    icon: Icons.warning_amber_rounded,
+                                    colors: colors,
+                                  ),
+                                  SettingsDestructiveTile(
+                                    title: 'Eliminar Cuenta',
+                                    subtitle:
+                                        'Elimina tu cuenta permanentemente',
+                                    icon: Icons.delete_forever_outlined,
+                                    dynamicColor: dynamicColor,
+                                    onTap: () {
+                                      HapticFeedback.mediumImpact();
+                                      ref
+                                          .read(audioControllerProvider)
+                                          .playClick();
+                                      _showDeleteAccountDialog(context, ref);
+                                    },
+                                  ),
+                                  SettingsDestructiveTile(
+                                    title: 'Cerrar Sesión',
+                                    subtitle: 'Finaliza tu sesión actual',
+                                    icon: Icons.logout,
+                                    dynamicColor: dynamicColor,
+                                    onTap: () {
+                                      HapticFeedback.mediumImpact();
+                                      ref
+                                          .read(audioControllerProvider)
+                                          .playClick();
+                                      _showSignOutDialog(
+                                        context,
+                                        ref,
+                                        dynamicColor,
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
 
                             const SizedBox(height: 40),
                           ],
@@ -589,14 +658,16 @@ class _SettingsLoadingShimmer extends StatelessWidget {
           children: [
             const SizedBox(height: 60),
             ...List.generate(
-                5,
-                (index) => Container(
-                      height: 70,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18)),
-                    )),
+              5,
+              (index) => Container(
+                height: 70,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
           ],
         ),
       ),

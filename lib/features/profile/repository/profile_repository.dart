@@ -1,6 +1,7 @@
 // lib/features/profile/repository/profile_repository.dart
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/model/user_stats_model.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
@@ -68,7 +69,9 @@ class ProfileRepository {
           )
           .toList();
     } catch (e) {
-      print('Error en getChallengeHistory: $e');
+      if (kDebugMode) {
+        print('Error en getChallengeHistory: $e');
+      }
       throw Exception('Error al obtener el historial de retos: $e');
     }
   }

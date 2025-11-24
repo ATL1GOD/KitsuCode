@@ -9,8 +9,9 @@ final audioControllerProvider = Provider<AudioController>((ref) {
 
 class AudioController {
   final Ref ref;
-  
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+
+  // 🔥 OPTIMIZACIÓN CRÍTICA: Pool de players precargados
+  final Map<String, AudioPlayer> _sfxPlayers = {};
   final AudioPlayer _musicPlayer = AudioPlayer();
 
   String? _currentMusicTrack;
@@ -20,10 +21,7 @@ class AudioController {
   AudioController(this.ref) {
     // Optimización 1: Música en modo Loop
     _musicPlayer.setReleaseMode(ReleaseMode.loop);
-    
-    // Optimización 2: SFX en modo LowLatency
-    _sfxPlayer.setPlayerMode(PlayerMode.lowLatency);
-    
+
     final AudioContext audioContext = AudioContext(
       iOS: AudioContextIOS(
         category: AVAudioSessionCategory.playback,
@@ -39,10 +37,34 @@ class AudioController {
         audioFocus: AndroidAudioFocus.none,
       ),
     );
-    
+
     AudioPlayer.global.setAudioContext(audioContext);
 
+    // 🔥 OPTIMIZACIÓN: Precargar todos los SFX
+    _preloadSfx();
+
     _startWatchdog();
+  }
+
+  // 🎯 Precarga de SFX para evitar recrear MediaCodec
+  Future<void> _preloadSfx() async {
+    final sfxFiles = ['click.mp3', 'success.mp3', 'error.mp3', 'unlock.mp3'];
+
+    for (final file in sfxFiles) {
+      final player = AudioPlayer();
+      await player.setPlayerMode(PlayerMode.lowLatency);
+      await player.setReleaseMode(ReleaseMode.stop);
+
+      // Precargar el archivo sin reproducir
+      try {
+        await player.setSource(AssetSource('audio/$file'));
+        await player.setVolume(1.0);
+        _sfxPlayers[file] = player;
+      } catch (e) {
+        // Si falla la precarga, continuar
+        player.dispose();
+      }
+    }
   }
 
   // --- HELPERS ---
@@ -96,18 +118,27 @@ class AudioController {
   }
 
   // --- SFX ---
+  // 🔥 OPTIMIZACIÓN CRÍTICA: Reutilizar players precargados
   Future<void> _playSfx(String assetName) async {
     // Si efectos desactivados, salir rápido
     if (!_areSfxEnabled()) return;
 
+    final player = _sfxPlayers[assetName];
+    if (player == null) return;
+
     try {
-      await _sfxPlayer.setVolume(1.0);
-      if (_sfxPlayer.state == PlayerState.playing) {
-        await _sfxPlayer.stop();
-      }
-      await _sfxPlayer.play(AssetSource('audio/$assetName'));
+      // En lugar de stop() + play() que destruye el decoder,
+      // usamos seek(0) + resume() que reutiliza el decoder existente
+      await player.seek(Duration.zero);
+      await player.resume();
     } catch (e) {
-      // Fallo silencioso
+      // Si falla, intentar método tradicional como fallback
+      try {
+        await player.stop();
+        await player.play(AssetSource('audio/$assetName'));
+      } catch (_) {
+        // Fallo silencioso
+      }
     }
   }
 
@@ -222,6 +253,11 @@ class AudioController {
     _watchdogTimer?.cancel();
     _shouldBePlaying = false;
     _musicPlayer.dispose();
-    _sfxPlayer.dispose();
+
+    // Limpiar todos los SFX players
+    for (final player in _sfxPlayers.values) {
+      player.dispose();
+    }
+    _sfxPlayers.clear();
   }
 }

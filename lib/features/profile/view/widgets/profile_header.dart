@@ -85,14 +85,16 @@ class ProfileHeader extends ConsumerWidget {
                 ),
                 // Partículas solo cuando realmente debe animar
                 child: (isAppActive && isTabVisible)
-                    ? ParticlesFly(
-                        height: 220,
-                        width: size.width,
-                        connectDots: false,
-                        numberOfParticles: 10, // optimizado
-                        particleColor: Colors.white.withAlpha(128), // ~0.5
-                        speedOfParticles: 0.5,
-                        isRandomColor: false,
+                    ? RepaintBoundary(
+                        child: ParticlesFly(
+                          height: 220,
+                          width: size.width,
+                          connectDots: false,
+                          numberOfParticles: 6, // 🔥 Reducido de 10 a 6 para mejor rendimiento
+                          particleColor: Colors.white.withAlpha(102), // ~0.4 reducido
+                          speedOfParticles: 0.4, // 🔥 Velocidad reducida para menor CPU usage
+                          isRandomColor: false,
+                        ),
                       )
                     : const SizedBox.shrink(),
               ),

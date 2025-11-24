@@ -153,16 +153,19 @@ class _RankingContentState extends ConsumerState<_RankingContent>
           children: [
             Positioned.fill(
               child: Opacity(
-                opacity: 0.4,
-                child: Lottie.asset(
-                  'assets/animations/background_train.json',
-                  fit: BoxFit.cover,
-                  controller: _lottieController,
-                  onLoaded: (composition) {
-                    _lottieController.duration = composition.duration;
-                    _isLottieLoaded = true;
-                    _updateAnimationState();
-                  },
+                opacity: 0.25, // 🔥 Reducido de 0.4 para menor costo de blending
+                child: RepaintBoundary(
+                  child: Lottie.asset(
+                    'assets/animations/background_train.json',
+                    fit: BoxFit.cover,
+                    controller: _lottieController,
+                    frameRate: FrameRate(30), // 🔥 Limitado a 30fps máximo
+                    onLoaded: (composition) {
+                      _lottieController.duration = composition.duration;
+                      _isLottieLoaded = true;
+                      _updateAnimationState();
+                    },
+                  ),
                 ),
               ),
             ),
@@ -297,11 +300,16 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                     top: 4,
                                     bottom: 160,
                                   ),
+                                  // 🔥 OPTIMIZACIONES DE RENDIMIENTO
+                                  addAutomaticKeepAlives: false,
+                                  addRepaintBoundaries: true,
+                                  cacheExtent: 300,
                                   itemCount: restOfRanking.length,
                                   itemBuilder: (context, index) {
                                     final user = restOfRanking[index];
-                                    return FadeInUp(
-                                      delay: Duration(milliseconds: index * 30),
+                                    // 🔥 ELIMINADO: FadeInUp con delay (causa jank severo)
+                                    // Cada item con animación escalonada crea un AnimationController
+                                    return RepaintBoundary(
                                       child: RankingTile(
                                         user: user,
                                         isCurrentUser:
@@ -422,17 +430,20 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
     Animation<Alignment> animation,
     double size,
   ) {
-    return AnimatedBuilder(
-      animation: widget.controller,
-      builder: (context, child) =>
-          Align(alignment: animation.value, child: child),
-      child: Opacity(
-        opacity: 0.1,
-        child: Image.asset(
-          assetPath,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: widget.controller,
+        builder: (context, child) =>
+            Align(alignment: animation.value, child: child),
+        child: Opacity(
+          opacity: 0.08, // 🔥 Reducido de 0.1 para menor costo visual
+          child: Image.asset(
+            assetPath,
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+            cacheWidth: (size * 2).toInt(), // 🔥 Cacheo eficiente
+          ),
         ),
       ),
     );
@@ -440,16 +451,17 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: Stack(
-        children: [
-          _buildIcon('assets/images/home/logo_python.webp', _animations[0], 50),
-          _buildIcon('assets/images/home/logo_java.webp', _animations[1], 60),
-          _buildIcon('assets/images/home/logo_c.webp', _animations[2], 70),
-          _buildIcon('assets/images/home/logo_python.webp', _animations[3], 40),
-          _buildIcon('assets/images/home/logo_java.webp', _animations[4], 55),
-        ],
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // 🔥 OPTIMIZADO: Reducido de 5 a 3 iconos para menor costo de animación
+            _buildIcon('assets/images/home/logo_python.webp', _animations[0], 50),
+            _buildIcon('assets/images/home/logo_java.webp', _animations[1], 60),
+            _buildIcon('assets/images/home/logo_c.webp', _animations[2], 70),
+          ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
+import 'package:kitsucode/core/widgets/shader_warmup.dart';
 
 // Asegúrate de que esta ruta sea correcta según tu estructura de carpetas
 import 'package:kitsucode/core/routes/router.dart' show setSplashCompleted;
@@ -177,6 +178,9 @@ class _SplashViewState extends ConsumerState<SplashView>
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // 🔥 Shader warm-up: Precompila todos los shaders costosos
+          const ShaderWarmUp(),
+
           Center(
             child: Image.asset('assets/images/auth/fox_login.webp', width: 150),
           ),

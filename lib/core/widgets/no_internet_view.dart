@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // Fallback
 import 'package:kitsucode/core/providers/retry_connection_provider.dart';
-
-// 🔥 1. IMPORTAR EL SNACKBAR PERSONALIZADO
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
+// ✅ Importar helpers de avatar para el color correcto
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 
 /// Un widget genérico para mostrar cuando no hay conexión a Internet
 class NoInternetView extends ConsumerStatefulWidget {
@@ -31,22 +31,17 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
       final destinationRoute = await retryFunction();
 
       // Si llegamos aquí, la conexión se recuperó
-      // Redirigir según autenticación
       if (mounted) {
         context.go(destinationRoute);
       }
     } catch (e) {
       // Si falla, mostramos el snackbar personalizado
       if (mounted) {
-        // --- 🔥 2. REEMPLAZAR EL SNACKBAR ---
-        // Usamos el 'showErrorSnackbar' (rojo) que es más apropiado
-        // que el 'showWarningSnackbar' (amarillo) para un fallo.
         showErrorSnackbar(
           context,
-          'Sin conexión', // Título
-          'No se pudo conectar. Revisa tu conexión e intenta de nuevo.', // Mensaje
+          'Sin conexión', 
+          'No se pudo conectar. Revisa tu conexión e intenta de nuevo.',
         );
-        // --- FIN DEL REEMPLAZO ---
       }
     } finally {
       if (mounted) {
@@ -61,21 +56,22 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
     final textTheme = Theme.of(context).textTheme;
 
     // --- Lógica para obtener el color dinámico ---
-    final currentAuthUserId = ref
-        .watch(authStateProvider)
-        .value
-        ?.session
-        ?.user
-        .id;
+    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    
     final profileState = (currentAuthUserId != null)
         ? ref.watch(userProfileByIdProvider(currentAuthUserId))
         : null;
 
-    final Color dynamicColor;
     final profile = profileState?.asData?.value;
 
+    // ✅ CORRECCIÓN: Obtener lista de avatares para el color real de la BD
+    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+
+    final Color dynamicColor;
     if (profile != null) {
-      dynamicColor = AllStatsView.getHeaderColor(profile, colors);
+      dynamicColor = avatarsList.isNotEmpty
+          ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+          : AllStatsView.getHeaderColor(profile, colors); // Fallback
     } else {
       dynamicColor = colors.primary;
     }

@@ -31,14 +31,24 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
           .getAvailableLanguages();
       setState(() => _languages = langs);
     } catch (e) {
-      // Manejar error de carga
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error cargando lenguajes: $e')));
+      }
     }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _selectedLanguageId == null) {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedLanguageId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos')),
+        SnackBar(
+          content: const Text('¡Elige un lenguaje para tu aventura!'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
       return;
     }
@@ -47,7 +57,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
 
     try {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
-      if (userId == null) throw Exception("No user found");
+      if (userId == null) throw Exception("No se encontró usuario autenticado");
 
       await ref
           .read(profileRepositoryProvider)
@@ -57,18 +67,14 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
             languageId: _selectedLanguageId!,
           );
 
-      // IMPORTANTE: Invalidar el provider del perfil para que la app sepa
-      // que ya completaste el onboarding y recargue los datos.
       ref.invalidate(userProfileByIdProvider(userId));
 
-      if (mounted) {
-        context.go('/'); // Ir al Home
-      }
+      if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text('Ocurrió un error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -77,59 +83,223 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
+    // Usamos el tema actual para los colores
+    final theme = Theme.of(context);
+    final primaryColor = theme.primaryColor;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Bienvenido a KitsuCode")),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Elige tu nombre de usuario único:"),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  hintText: "Ej. KitsuMaster99",
-                  border: OutlineInputBorder(),
-                ),
-                validator: (val) => val!.isEmpty || val.length < 3
-                    ? 'Mínimo 3 caracteres'
-                    : null,
-              ),
-              const SizedBox(height: 30),
-              const Text("¿Qué lenguaje quieres aprender?"),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                children: _languages.map((lang) {
-                  final isSelected = _selectedLanguageId == lang['id_lenguaje'];
-                  return ChoiceChip(
-                    label: Text(lang['nombre']),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedLanguageId = selected
-                            ? lang['id_lenguaje']
-                            : null;
-                      });
+      // Fondo limpio, podría ser un gradiente suave si lo deseas
+      backgroundColor: theme.colorScheme.surface,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // --- HEADER CON ICONO ---
+                  const SizedBox(height: 20),
+                  Icon(
+                    Icons.code_rounded, // O tu logo de KitsuCode
+                    size: 80,
+                    color: primaryColor,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "¡Bienvenido a KitsuCode!",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Configura tu perfil para comenzar la aventura.",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // --- INPUT DE USUARIO ---
+                  Text(
+                    "Tu identidad de Hacker",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _usernameController,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      hintText: "Ej. KitsuMaster99",
+                      prefixIcon: const Icon(Icons.alternate_email_rounded),
+                      filled: true,
+                      fillColor:
+                          theme.cardColor, // O Colors.grey[100] en modo claro
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: Colors.grey.withOpacity(0.2),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) return 'Requerido';
+                      if (val.length < 3) return 'Mínimo 3 caracteres';
+                      return null;
                     },
-                  );
-                }).toList(),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // --- SELECCIÓN DE LENGUAJE ---
+                  Text(
+                    "¿Qué camino elegirás?",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  _languages.isEmpty
+                      ? const Center(
+                          child: CircularProgressIndicator.adaptive(),
+                        )
+                      : Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: _languages.map((lang) {
+                            final isSelected =
+                                _selectedLanguageId == lang['id_lenguaje'];
+                            return _buildTechChip(
+                              label: lang['nombre'],
+                              isSelected: isSelected,
+                              onTap: () {
+                                setState(() {
+                                  _selectedLanguageId = isSelected
+                                      ? null
+                                      : lang['id_lenguaje'];
+                                });
+                              },
+                              primaryColor: primaryColor,
+                            );
+                          }).toList(),
+                        ),
+
+                  const SizedBox(height: 50),
+
+                  // --- BOTÓN DE ACCIÓN ---
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: _isLoading ? 0 : 4,
+                        shadowColor: primaryColor.withOpacity(0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "COMENZAR AVENTURA",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.rocket_launch_rounded),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text("Comenzar Aventura"),
-                ),
-              ),
-            ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // Widget personalizado para los Chips de tecnología
+  Widget _buildTechChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color primaryColor,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor.withOpacity(0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? primaryColor : Colors.grey.shade300,
+            width: isSelected ? 2 : 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Icon(Icons.check_circle_rounded, size: 18, color: primaryColor),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? primaryColor : Colors.grey.shade600,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 15,
+              ),
+            ),
+          ],
         ),
       ),
     );

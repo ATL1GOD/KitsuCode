@@ -108,7 +108,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           AnimatedFadeIn(
             delay: 200,
             child: CustomInputField(
@@ -132,7 +132,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               ),
             ),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           AnimatedFadeIn(
             delay: 300,
             child: PrimaryAuthButton(
@@ -141,9 +141,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               onPressed: loginState.isLoading ? null : _submit,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
           const AnimatedFadeIn(delay: 400, child: OrDivider()),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
           AnimatedFadeIn(
             delay: 500,
             child: SocialAuthButton(
@@ -153,7 +153,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               onPressed: loginState.isLoading ? null : _googleSignIn,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
           AnimatedFadeIn(
             delay: 600,
             child: SwitchFormButton(
@@ -164,17 +164,22 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   : widget.onSwitchToRegister,
             ),
           ),
-          const SizedBox(height: 8),
           AnimatedFadeIn(
             delay: 700,
             child: TextButton(
-              onPressed: () {
-                context.go('/forgot-password');
-              },
+              onPressed: () => context.go('/forgot-password'),
+              // VisualDensity compact elimina el padding extra de los botones
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero, // Elimina padding vertical
+                tapTargetSize: MaterialTapTargetSize
+                    .shrinkWrap, // Reduce área táctil vacía
+              ),
               child: Text(
                 '¿Olvidaste tu contraseña?',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -183,14 +188,17 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           AnimatedFadeIn(
             delay: 800,
             child: TextButton(
-              onPressed: () {
-                context.push('/privacy-policy'); // Nueva ruta
-              },
+              onPressed: () => context.push('/privacy-policy'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               child: Text(
                 'Política de Privacidad y Términos',
                 style: TextStyle(
                   color: Colors.white.withAlpha(150),
-                  fontSize: 12,
+                  fontSize: 11, // Un poco más pequeño para footer
                 ),
               ),
             ),

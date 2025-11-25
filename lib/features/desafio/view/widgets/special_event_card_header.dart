@@ -176,6 +176,7 @@ class SpecialEventCardHeader extends StatelessWidget {
                 progress: progress,
                 desafiosMensuales: desafiosMensuales,
                 completedRetoIds: completedRetoIds,
+                primaryColor: primaryColor, // <--- AGREGAR ESTA LÍNEA
               ),
 
               const SizedBox(height: 8),

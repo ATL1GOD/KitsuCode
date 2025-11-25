@@ -69,7 +69,8 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        // 🔥 Reducido de 10 a 5 para mejor rendimiento en dispositivos de gama media-baja
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white.withAlpha(100),

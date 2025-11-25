@@ -152,24 +152,28 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                 Expanded(
                   child: Stack(
                     children: [
+                      // 🔥 RepaintBoundary para aislar la animación de partículas
                       Positioned.fill(
-                        child: ColorFiltered(
-                          colorFilter: ColorFilter.mode(
-                            isDarkMode
-                                ? colors.secondaryFixedDim.withAlpha(77)
-                                : colors.secondary.withAlpha(102),
-                            BlendMode.srcIn,
-                          ),
-                          child: Lottie.asset(
-                            'assets/animations/particles.json',
-                            fit: BoxFit.cover,
-                            controller: _lottieController,
-                            // --- 🔥 11. DEJAR QUE LOTTIE PONGA LA DURACIÓN ---
-                            onLoaded: (composition) {
-                              _lottieController.duration = composition.duration;
-                              _isLottieLoaded = true;
-                              _updateAnimationState(); // Iniciar si debe
-                            },
+                        child: RepaintBoundary(
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(
+                              isDarkMode
+                                  ? colors.secondaryFixedDim.withAlpha(77)
+                                  : colors.secondary.withAlpha(102),
+                              BlendMode.srcIn,
+                            ),
+                            child: Lottie.asset(
+                              'assets/animations/particles.json',
+                              fit: BoxFit.cover,
+                              // 🔥 Reducir framerate para mejor rendimiento
+                              frameRate: FrameRate(30),
+                              controller: _lottieController,
+                              onLoaded: (composition) {
+                                _lottieController.duration = composition.duration;
+                                _isLottieLoaded = true;
+                                _updateAnimationState();
+                              },
+                            ),
                           ),
                         ),
                       ),

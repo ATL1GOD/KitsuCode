@@ -16,6 +16,8 @@ import 'package:kitsucode/shared/widgets/kitsu_action_modal.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE: Audio
+// 🔥 IMPORTAR FCM PROVIDER PARA LIMPIARLO
+import 'package:kitsucode/features/notifications/provider/fcm_provider.dart';
 
 class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
@@ -87,8 +89,28 @@ class _SettingsViewState extends ConsumerState<SettingsView>
 
             context.pop();
             try {
+              // 1. Cerrar sesión en Supabase (Backend)
               final authRepo = await ref.read(authRepositoryProvider.future);
               await authRepo.signOut();
+
+              // ---------------------------------------------------------
+              // 🔥 2. LIMPIEZA TOTAL DE RIVERPOD (La Magia)
+              // ---------------------------------------------------------
+              // Esto borra la memoria caché de los providers clave para que
+              // el próximo usuario no vea datos "fantasmas".
+              
+              // Invalidar Auth State fuerza a todos los watchers a resetearse
+              ref.invalidate(authStateProvider);
+              
+              // Invalidar repositorio de perfil para borrar datos viejos
+              ref.invalidate(profileRepositoryProvider);
+              
+              // Invalidar notifiers de logros y avatares (limpiar colas)
+              ref.invalidate(achievementNotifierProvider);
+              ref.invalidate(avatarNotifierProvider);
+              
+              // Invalidar FCM para forzar regeneración de token al volver a entrar
+              ref.invalidate(fcmServiceProvider);
 
               if (mounted) {
                 showSuccessSnackbar(

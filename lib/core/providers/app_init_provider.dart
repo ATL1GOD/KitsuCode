@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/settings/provider/settings_provider.dart';
-import 'package:kitsucode/features/notifications/provider/fcm_provider.dart';
 import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 
 final appInitProvider = AsyncNotifierProvider<AppInitNotifier, void>(() {
@@ -14,42 +13,34 @@ final appInitProvider = AsyncNotifierProvider<AppInitNotifier, void>(() {
 class AppInitNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {
-    // ⭐ NO bloquear → dispara bootstrap (¡Tu lógica original estaba bien!)
-    // Simplemente lo leemos para que empiece, pero NO lo esperamos.
+    // 1. Disparar bootstrap sin esperar (fire-and-forget inicial)
     ref.read(bootstrapProvider);
 
     debugPrint('AppInit: inicio');
 
     final session = ref.read(authStateProvider).value?.session;
 
-    // ⭐ Fase 2 — no esencial
+    // 2. Tarea secundaria: Cargar preferencias en segundo plano
     Future.microtask(() async {
       try {
-        // 🔥 ¡AQUÍ ES DONDE VA EL AWAIT! 🔥
-        // El microtask (que corre en segundo plano) espera a que
-        // bootstrap termine antes de continuar.
-        // El build() de AppInitNotifier ya se completó y no bloqueó nada.
+        // Esperamos a que la infraestructura (Firebase/Supabase) esté lista
         await ref.read(bootstrapProvider.future);
 
-        // Ahora esta línea es segura y no dará el error [core/no-app]
-        await Future.wait([
-          ref.read(fcmServiceProvider).initialize(),
-          if (session != null) ref.read(settingsProvider.future),
-        ]).timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            debugPrint('AppInit Timeout');
-            return <void>[]; // FIX CORRECTO
-          },
-        );
+        // Cargamos settings visuales si hay usuario
+        if (session != null) {
+          // 🔥 CORRECCIÓN: Quitamos el onTimeout manual. 
+          // Si tarda más de 5s, lanzará excepción y el catch la atrapará.
+          await ref.read(settingsProvider.future).timeout(
+            const Duration(seconds: 5),
+          );
+        }
       } catch (e) {
-        debugPrint('AppInit ERROR: $e');
+        // Aquí caerá el TimeoutException si ocurre, sin romper la app
+        debugPrint('AppInit ERROR (no crítico): $e');
       }
-
       debugPrint('AppInit: fin');
     });
 
-    // El build() retorna 'void' inmediatamente.
     return;
   }
 }

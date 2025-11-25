@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
+// 🔥 1. IMPORTANTE: Importar el AuthProvider para detectar cambios de sesión
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 const String _defaultAsset = 'assets/images/home/logo_python.webp';
 
@@ -52,7 +54,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
   final SupabaseClient _supabase;
 
   AppBarNotifier(this._supabase)
-    : super(const AppBarState(isLoading: true, languageAssetPath: _defaultAsset)) {
+      : super(const AppBarState(isLoading: true, languageAssetPath: _defaultAsset)) {
     fetchStats();
   }
 
@@ -97,7 +99,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
 
       // 3. Procesamiento Seguro de Datos
       final totalTrofeos = (responses[0] as num?)?.toInt() ?? 0;
-      
+
       final statsData = responses[1] as Map<String, dynamic>?;
       final racha = statsData?['racha_dias'] ?? 0;
       final vidas = statsData?['vidas'] ?? 5;
@@ -136,7 +138,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
 
       // Procesamiento Seguro de Datos
       final totalTrofeos = (responses[0] as num?)?.toInt() ?? 0;
-      
+
       final statsData = responses[1] as Map<String, dynamic>?;
       final racha = statsData?['racha_dias'] ?? 0;
       final vidas = statsData?['vidas'] ?? 5;
@@ -165,9 +167,9 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
   // Cambiar lenguaje (Optimista + BD + Fetch)
   Future<void> updateLanguage(String newName, int newId) async {
     final newAsset = _getAssetForLanguage(newName);
-    
+
     debugPrint('🔥 updateLanguage - Cambiando a: $newName (ID: $newId)'); // Debug
-    
+
     // 🔥 CAMBIO CRÍTICO: Solo actualizamos nombre/id/asset, NO los trofeos
     state = state.copyWith(
       languageName: newName,
@@ -185,7 +187,7 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
         debugPrint("Error update language: $e");
       }
     }
-    
+
     // 🔥 Usamos el método específico que usa el newId directamente
     await fetchStatsForLanguage(newId);
   }
@@ -197,7 +199,11 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
 }
 
 // 3. PROVIDERS
-final appBarProvider = StateNotifierProvider<AppBarNotifier, AppBarState>((ref) {
+
+// 🔥 2. CAMBIO: StateNotifierProvider.autoDispose + watch(authStateProvider)
+final appBarProvider = StateNotifierProvider.autoDispose<AppBarNotifier, AppBarState>((ref) {
+  // 🔥 MÁGIA: Si el usuario cambia (Log in/Log out), este provider se reconstruye desde CERO.
+  ref.watch(authStateProvider);
   return AppBarNotifier(Supabase.instance.client);
 });
 
@@ -207,26 +213,29 @@ final currentLanguageIdProvider = Provider<int>((ref) {
 
 // Provider Realtime (Optimizado)
 final appBarRealtimeProvider = Provider.autoDispose((ref) {
+  // 🔥 3. CAMBIO: Escuchar cambios de auth para reconectar los canales al nuevo usuario
+  ref.watch(authStateProvider);
+
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return;
 
   void refresh() {
     // Solo refrescamos si NO estamos en una pantalla que lo prohíba (ej. juego/feedback)
-    if (!ref.read(shouldRefreshStatsProvider)) {
-      ref.read(appBarProvider.notifier).fetchStats();
+    if (ref.read(shouldRefreshStatsProvider) == false) {
+       ref.read(appBarProvider.notifier).fetchStats();
     }
   }
 
   final channels = [
-    supabase.channel('public:estadistica_usuario:appbar')
+    supabase.channel('public:estadistica_usuario:appbar:$userId') // Tip: añadir userId al nombre del canal ayuda a depurar
       .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'estadistica_usuario', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id_usuario', value: userId), callback: (_) => refresh())
       .subscribe(),
-    supabase.channel('public:intento_reto:appbar')
+    supabase.channel('public:intento_reto:appbar:$userId')
       .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'intento_reto', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id_usuario', value: userId), callback: (_) => refresh())
       .subscribe(),
-    supabase.channel('public:usuarios:appbar')
-      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'usuarios', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id', value: userId), callback: (_) => refresh()) // 🔥 Cambiado para usar refresh() en lugar de fetchStats() directo
+    supabase.channel('public:usuarios:appbar:$userId')
+      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'usuarios', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id', value: userId), callback: (_) => refresh())
       .subscribe(),
   ];
 

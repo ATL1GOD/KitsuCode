@@ -5,9 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // 🔥 1. IMPORTAR EL CONNECTIVITY PROVIDER
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
+// 🔥 2. IMPORTAR AUTH PROVIDER
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 // --- Helper para convertir Hex a Color ---
-// (Tu helper _colorFromHex y tus modelos de datos se quedan igual)
 Color _colorFromHex(String hexString, {String fallback = '#808080'}) {
   final buffer = StringBuffer();
   String hex = hexString.replaceAll('#', '');
@@ -22,7 +23,6 @@ Color _colorFromHex(String hexString, {String fallback = '#808080'}) {
   return Color(int.parse(buffer.toString(), radix: 16));
 }
 
-// --- Fin del Helper ---
 // --- Clases de Modelo Simples ---
 class DesafioEspecial {
   final int idReto;
@@ -110,13 +110,13 @@ class DesafioMensualData {
 
 final supabase = Supabase.instance.client;
 
-// 🔥 MODIFICADO: Ahora reacciona a la conexión
-final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
-  // 🔥 2. AÑADIR ESTE BLOQUE
-  // Esperar a que la conexión esté confirmada
-  final connectivityStatus = await ref.watch(connectivityProvider.future);
+// 🔥 MODIFICADO: FutureProvider.autoDispose + watch(authStateProvider)
+final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((ref) async {
+  // 🔥 1. VIGILAR SESIÓN: Si cambia el usuario, se recarga todo
+  ref.watch(authStateProvider);
 
-  // Si no estamos 'online', lanza un error
+  // 🔥 2. VERIFICAR CONEXIÓN
+  final connectivityStatus = await ref.watch(connectivityProvider.future);
   if (connectivityStatus != ConnectivityStatus.online) {
     throw Exception('Sin conexión');
   }
@@ -126,7 +126,13 @@ final desafiosProvider = FutureProvider<DesafioMensualData>((ref) async {
   // 0. Obtener el ID del usuario.
   final user = supabase.auth.currentUser;
   if (user == null) {
-    throw Exception('Usuario no autenticado');
+    // Retornamos data vacía para evitar errores durante el logout
+    return DesafioMensualData(
+      agrupador: null,
+      individuales: [],
+      completedRetoIds: {},
+      isParentCompleted: false,
+    );
   }
   final userId = user.id;
 

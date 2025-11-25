@@ -141,6 +141,8 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
   @override
   Widget build(BuildContext context) {
     // 1. Obtener ID del usuario para verificar perfil
+    // Al usar watch(authStateProvider), si cambia el usuario (logout/login),
+    // este widget se reconstruye por completo.
     final userId = ref.watch(authStateProvider).value?.session?.user.id;
 
     // Si no hay usuario (caso raro pero posible), mostramos carga
@@ -167,7 +169,11 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
     // --- Lógica normal del Home ---
 
     ref.watch(mapStructureRealtimeProvider);
-    ref.read(progressRealtimeProvider);
+    
+    // 🔥 CAMBIO CRÍTICO AQUÍ: Usamos WATCH en lugar de READ
+    // Esto mantiene viva la suscripción de Realtime mientras estás en el Home.
+    // Al ser autoDispose, si usaras read, se conectaría y desconectaría al instante.
+    ref.watch(progressRealtimeProvider);
 
     final shouldRefresh = ref.watch(shouldRefreshStatsProvider);
 

@@ -81,6 +81,7 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   bool _isTabVisible = true;
   bool _isAppActive = true;
   bool _isLottieLoaded = false;
+  bool _isModalOpen = false; // 🔥 Control de modal abierto
 
   @override
   void initState() {
@@ -111,13 +112,14 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   }
 
   void _updateAnimationState() {
-    if (_isAppActive && _isTabVisible && _isLottieLoaded) {
+    // 🔥 Pausar animaciones si hay un modal abierto
+    if (_isAppActive && _isTabVisible && _isLottieLoaded && !_isModalOpen) {
       _lottieController.repeat();
     } else {
       _lottieController.stop();
     }
 
-    if (_isAppActive && _isTabVisible) {
+    if (_isAppActive && _isTabVisible && !_isModalOpen) {
       _decorativeBgController.repeat(reverse: true);
     } else {
       _decorativeBgController.stop();
@@ -151,18 +153,21 @@ class _RankingContentState extends ConsumerState<_RankingContent>
         backgroundColor: colors.primaryContainer.withValues(alpha: .05), // ⚙️
         body: Stack(
           children: [
+            // 🔥 RepaintBoundary para aislar la animación de fondo
             Positioned.fill(
-              child: Opacity(
-                opacity: 0.4,
-                child: Lottie.asset(
-                  'assets/animations/background_train.json',
-                  fit: BoxFit.cover,
-                  controller: _lottieController,
-                  onLoaded: (composition) {
-                    _lottieController.duration = composition.duration;
-                    _isLottieLoaded = true;
-                    _updateAnimationState();
-                  },
+              child: RepaintBoundary(
+                child: Opacity(
+                  opacity: 0.4,
+                  child: Lottie.asset(
+                    'assets/animations/background_train.json',
+                    fit: BoxFit.cover,
+                    controller: _lottieController,
+                    onLoaded: (composition) {
+                      _lottieController.duration = composition.duration;
+                      _isLottieLoaded = true;
+                      _updateAnimationState();
+                    },
+                  ),
                 ),
               ),
             ),
@@ -254,8 +259,11 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                       ), // ⚙️
                                       borderRadius: BorderRadius.circular(24),
                                     ),
-                                    child: _DecorativeBackground(
-                                      controller: _decorativeBgController,
+                                    // 🔥 RepaintBoundary para el fondo decorativo
+                                    child: RepaintBoundary(
+                                      child: _DecorativeBackground(
+                                        controller: _decorativeBgController,
+                                      ),
                                     ),
                                   ),
                                   if (top3.isNotEmpty)
@@ -264,6 +272,14 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                       colors: colors,
                                       currentUserId: currentUserId,
                                       avatarsList: avatarsList, // ✅ pasa lista
+                                      onModalOpen: () {
+                                        setState(() => _isModalOpen = true);
+                                        _updateAnimationState();
+                                      },
+                                      onModalClose: () {
+                                        setState(() => _isModalOpen = false);
+                                        _updateAnimationState();
+                                      },
                                     ),
                                 ],
                               ),
@@ -307,8 +323,15 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                         isCurrentUser:
                                             user.userId == currentUserId,
                                         colors: colors,
-                                        // AÑADIDO AQUÍ 👇
                                         avatarsList: avatarsList,
+                                        onModalOpen: () {
+                                          setState(() => _isModalOpen = true);
+                                          _updateAnimationState();
+                                        },
+                                        onModalClose: () {
+                                          setState(() => _isModalOpen = false);
+                                          _updateAnimationState();
+                                        },
                                       ),
                                     );
                                   },
@@ -385,6 +408,7 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   @override
   void initState() {
     super.initState();
+    // 🔥 Reducir a 3 elementos animados para mejor rendimiento
     _animations = [
       _createTween(
         const Alignment(-1, -0.8),
@@ -398,14 +422,6 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
         const Alignment(0, 1.1),
         const Alignment(0, -1.1),
       ).animate(_createCurve(0.4, 1.0)),
-      _createTween(
-        const Alignment(1.1, 1),
-        const Alignment(-1.1, 0.8),
-      ).animate(_createCurve(0.1, 0.8)),
-      _createTween(
-        const Alignment(-1.3, 0.9),
-        const Alignment(1.3, -0.9),
-      ).animate(_createCurve(0.3, 0.9)),
     ];
   }
 
@@ -444,11 +460,10 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
+          // 🔥 Reducido a 3 elementos para mejor rendimiento
           _buildIcon('assets/images/home/logo_python.webp', _animations[0], 50),
           _buildIcon('assets/images/home/logo_java.webp', _animations[1], 60),
           _buildIcon('assets/images/home/logo_c.webp', _animations[2], 70),
-          _buildIcon('assets/images/home/logo_python.webp', _animations[3], 40),
-          _buildIcon('assets/images/home/logo_java.webp', _animations[4], 55),
         ],
       ),
     );
@@ -460,12 +475,16 @@ class _PodiumWidget extends StatelessWidget {
   final ColorScheme colors;
   final String? currentUserId;
   final List<AvatarModel>? avatarsList; // ✅ lista tipada
+  final VoidCallback? onModalOpen; // 🔥 Callback cuando se abre modal
+  final VoidCallback? onModalClose; // 🔥 Callback cuando se cierra modal
 
   const _PodiumWidget({
     required this.users,
     required this.colors,
     required this.currentUserId,
     required this.avatarsList,
+    this.onModalOpen,
+    this.onModalClose,
   });
 
   @override
@@ -486,6 +505,8 @@ class _PodiumWidget extends StatelessWidget {
                 heightFactor: 0.7,
                 isCurrentUser: users[1].userId == currentUserId,
                 avatarsList: avatarsList,
+                onModalOpen: onModalOpen,
+                onModalClose: onModalClose,
               ),
             if (users.isNotEmpty)
               _PodiumPlace(
@@ -495,6 +516,8 @@ class _PodiumWidget extends StatelessWidget {
                 heightFactor: 1.0,
                 isCurrentUser: users[0].userId == currentUserId,
                 avatarsList: avatarsList,
+                onModalOpen: onModalOpen,
+                onModalClose: onModalClose,
               ),
             if (users.length > 2)
               _PodiumPlace(
@@ -504,6 +527,8 @@ class _PodiumWidget extends StatelessWidget {
                 heightFactor: 0.55,
                 isCurrentUser: users[2].userId == currentUserId,
                 avatarsList: avatarsList,
+                onModalOpen: onModalOpen,
+                onModalClose: onModalClose,
               ),
           ],
         ),
@@ -519,6 +544,8 @@ class _PodiumPlace extends StatelessWidget {
   final double heightFactor;
   final bool isCurrentUser;
   final List<AvatarModel>? avatarsList; // ✅
+  final VoidCallback? onModalOpen; // 🔥
+  final VoidCallback? onModalClose; // 🔥
 
   const _PodiumPlace({
     required this.user,
@@ -527,6 +554,8 @@ class _PodiumPlace extends StatelessWidget {
     required this.heightFactor,
     required this.isCurrentUser,
     required this.avatarsList,
+    this.onModalOpen,
+    this.onModalClose,
   });
 
   @override
@@ -541,13 +570,15 @@ class _PodiumPlace extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (isCurrentUser) return;
-        showDialog(
+        onModalOpen?.call(); // 🔥 Pausar animaciones
+        await showDialog(
           context: context,
           builder: (ctx) =>
               UserProfileModal(userId: user.userId, rank: user.rank),
         );
+        onModalClose?.call(); // 🔥 Reanudar animaciones
       },
       child: FadeInUp(
         delay: Duration(milliseconds: 100 * (4 - place)),

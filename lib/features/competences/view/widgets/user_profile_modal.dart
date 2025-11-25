@@ -146,7 +146,12 @@ class UserProfileModal extends ConsumerWidget {
                   ),
                   child: Stack(
                     children: [
-                      const Positioned.fill(child: _DecorativeBackground()),
+                      // 🔥 RepaintBoundary para aislar el fondo decorativo
+                      const Positioned.fill(
+                        child: RepaintBoundary(
+                          child: _DecorativeBackground(),
+                        ),
+                      ),
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -437,10 +442,12 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
   @override
   void initState() {
     super.initState();
+    // 🔥 Aumentar duración para animación más suave y menos costosa
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(seconds: 12),
     )..repeat(reverse: true);
+    // 🔥 Reducir a 3 elementos animados para mejor rendimiento
     _animations = [
       _createTween(
         const Alignment(-1, -0.8),
@@ -454,14 +461,6 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
         const Alignment(0, 1.1),
         const Alignment(0, -1.1),
       ).animate(_createCurve(0.4, 1.0)),
-      _createTween(
-        const Alignment(1.1, 1),
-        const Alignment(-1.1, 0.8),
-      ).animate(_createCurve(0.1, 0.8)),
-      _createTween(
-        const Alignment(-1.3, 0.9),
-        const Alignment(1.3, -0.9),
-      ).animate(_createCurve(0.3, 0.9)),
     ];
   }
 
@@ -505,11 +504,10 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
+          // 🔥 Reducido a 3 elementos para mejor rendimiento
           _buildIcon(context, 'assets/images/home/logo_python.webp', _animations[0], 50),
           _buildIcon(context, 'assets/images/home/logo_java.webp', _animations[1], 60),
           _buildIcon(context, 'assets/images/home/logo_c.webp', _animations[2], 70),
-          _buildIcon(context, 'assets/images/home/logo_python.webp', _animations[3], 40),
-          _buildIcon(context, 'assets/images/home/logo_java.webp', _animations[4], 55),
         ],
       ),
     );

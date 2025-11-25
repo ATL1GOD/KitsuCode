@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -241,52 +240,55 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                   ),
                 ),
 
-                // --- ANIMACIÓN DE FONDO ---
+                // --- ANIMACIÓN DE FONDO OPTIMIZADA ---
+                // 🔥 RepaintBoundary para aislar la animación
                 AnimatedOpacity(
                   opacity: isKeyboardVisible ? 0.0 : 1.0,
                   duration: const Duration(milliseconds: 300),
-                  child: ShaderMask(
-                    shaderCallback: (rect) {
-                      return LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.white, Colors.white.withAlpha(0)],
-                        stops: const [0.6, 1.0],
-                      ).createShader(rect);
-                    },
-                    blendMode: BlendMode.dstIn,
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: 350,
-                          child: ColorFiltered(
-                            colorFilter: ColorFilter.mode(
-                              colors.secondaryFixedDim.withAlpha(128),
-                              BlendMode.srcIn,
-                            ),
-                            child: Lottie.asset(
-                              'assets/animations/spring.json',
-                              fit: BoxFit.cover,
-                              frameRate: FrameRate(40),
-                              // --- 🔥 7. ASIGNAR CONTROLADOR Y onLoaded ---
-                              controller: _lottieController,
-                              onLoaded: (composition) {
-                                if (!mounted) return;
-                                if (_lottieController.duration !=
-                                    composition.duration) {
-                                  _lottieController.duration =
-                                      composition.duration;
-                                }
-                                _isLottieLoaded = true;
-                                _updateAnimationState();
-                              },
+                  child: RepaintBoundary(
+                    child: ShaderMask(
+                      shaderCallback: (rect) {
+                        return LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.white, Colors.white.withAlpha(0)],
+                          stops: const [0.6, 1.0],
+                        ).createShader(rect);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 350,
+                            child: ColorFiltered(
+                              colorFilter: ColorFilter.mode(
+                                colors.secondaryFixedDim.withAlpha(128),
+                                BlendMode.srcIn,
+                              ),
+                              child: Lottie.asset(
+                                'assets/animations/spring.json',
+                                fit: BoxFit.cover,
+                                // 🔥 Reducir framerate a 30 para mejor rendimiento
+                                frameRate: FrameRate(30),
+                                controller: _lottieController,
+                                onLoaded: (composition) {
+                                  if (!mounted) return;
+                                  if (_lottieController.duration !=
+                                      composition.duration) {
+                                    _lottieController.duration =
+                                        composition.duration;
+                                  }
+                                  _isLottieLoaded = true;
+                                  _updateAnimationState();
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -344,16 +346,16 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                         ),
                         const SizedBox(height: 10),
                         FadeInDown(
-                          // ... (Tu FadeInDown no cambia) ...
                           duration: const Duration(milliseconds: 450),
                           delay: const Duration(milliseconds: 80),
                           from: 30,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            alignment: Alignment.center,
-                            children: [
-                              // ... (Tu AnimatedContainer del avatar no cambia) ...
-                              AnimatedContainer(
+                          // 🔥 RepaintBoundary para aislar el avatar animado
+                          child: RepaintBoundary(
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              alignment: Alignment.center,
+                              children: [
+                                AnimatedContainer(
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeOut,
                                 width: isKeyboardVisible ? 120 : 160,
@@ -439,10 +441,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                     ),
                                   ),
                                 ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                        // ... (El resto de tu vista no cambia) ...
                         const SizedBox(height: 40),
                         FadeInUp(
                           duration: const Duration(milliseconds: 450),
@@ -648,30 +650,35 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
   }
 }
 
-// --- (El widget _GlassCard no cambia) ---
+// 🔥 OPTIMIZADO: _GlassCard sin BackdropFilter costoso
 class _GlassCard extends StatelessWidget {
   final Widget child;
   const _GlassCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha((255 * 0.4).round()),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withAlpha((255 * 0.5).round()),
-              ),
-            ),
-            child: child,
+      child: Container(
+        decoration: BoxDecoration(
+          // 🔥 Efecto de vidrio simulado sin BackdropFilter
+          color: colors.surface.withAlpha((255 * 0.85).round()),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withAlpha((255 * 0.3).round()),
+            width: 1.5,
           ),
+          // Sombra suave para dar profundidad
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha((255 * 0.1).round()),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
+        child: child,
       ),
     );
   }

@@ -11,14 +11,18 @@ class RankingTile extends StatelessWidget {
   final RankingModel user;
   final bool isCurrentUser;
   final ColorScheme colors;
-  final List<AvatarModel>? avatarsList; // <--- AÑADE ESTE CAMPO
+  final List<AvatarModel>? avatarsList;
+  final VoidCallback? onModalOpen; // 🔥 Callback cuando se abre modal
+  final VoidCallback? onModalClose; // 🔥 Callback cuando se cierra modal
 
   const RankingTile({
     super.key,
     required this.user,
     required this.isCurrentUser,
     required this.colors,
-    this.avatarsList, // <--- AÑADE ESTO AL CONSTRUCTOR
+    this.avatarsList,
+    this.onModalOpen,
+    this.onModalClose,
   });
 
   @override
@@ -64,13 +68,15 @@ class RankingTile extends StatelessWidget {
           ),
         ),
         child: InkWell(
-          onTap: () {
+          onTap: () async {
             if (isCurrentUser) return;
-            showDialog(
+            onModalOpen?.call(); // 🔥 Pausar animaciones
+            await showDialog(
               context: context,
               builder: (ctx) =>
                   UserProfileModal(userId: user.userId, rank: user.rank),
             );
+            onModalClose?.call(); // 🔥 Reanudar animaciones
           },
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(

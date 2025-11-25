@@ -494,6 +494,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
         fit: BoxFit.contain,
         color: c.primary.withAlpha(26),
         colorBlendMode: BlendMode.srcIn,
+        // 🔥 Usar caché agresivo para logos repetidos
+        cacheWidth: (size * 2).round(),
+        cacheHeight: (size * 2).round(),
       ),
     );
   }

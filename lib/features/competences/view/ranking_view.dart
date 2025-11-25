@@ -449,6 +449,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
           width: size,
           height: size,
           fit: BoxFit.contain,
+          // 🔥 Usar caché agresivo para logos repetidos
+          cacheWidth: (size * 2).round(),
+          cacheHeight: (size * 2).round(),
         ),
       ),
     );

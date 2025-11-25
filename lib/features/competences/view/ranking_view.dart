@@ -1,5 +1,3 @@
-// lib/features/competences/view/ranking_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,11 +11,9 @@ import 'package:kitsucode/features/competences/view/widgets/ranking_filters_widg
 import 'package:kitsucode/features/competences/view/widgets/ranking_tile.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-import 'package:kitsucode/features/profile/model/avatar_model.dart'; // ✅ TIPADO
+import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:lottie/lottie.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-
-// Solo se usa para los avatares (podium / tiles)
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class RankingView extends ConsumerWidget {
@@ -81,6 +77,9 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   bool _isTabVisible = true;
   bool _isAppActive = true;
   bool _isLottieLoaded = false;
+  
+  // 🔥 1. NUEVO ESTADO: Controla si hay un modal abierto
+  bool _isModalOpen = false;
 
   @override
   void initState() {
@@ -104,23 +103,56 @@ class _RankingContentState extends ConsumerState<_RankingContent>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    if (!mounted) return;
     setState(() {
       _isAppActive = state == AppLifecycleState.resumed;
       _updateAnimationState();
     });
   }
 
+  // 🔥 2. LÓGICA DE PAUSA: Ahora considera _isModalOpen
   void _updateAnimationState() {
-    if (_isAppActive && _isTabVisible && _isLottieLoaded) {
-      _lottieController.repeat();
+    // Solo animamos si la app está activa, la tab visible Y NO hay modal abierto
+    final shouldAnimate = _isAppActive && _isTabVisible && !_isModalOpen;
+
+    if (shouldAnimate && _isLottieLoaded) {
+      if (!_lottieController.isAnimating) _lottieController.repeat();
     } else {
-      _lottieController.stop();
+      if (_lottieController.isAnimating) _lottieController.stop();
     }
 
-    if (_isAppActive && _isTabVisible) {
-      _decorativeBgController.repeat(reverse: true);
+    if (shouldAnimate) {
+      if (!_decorativeBgController.isAnimating) {
+        _decorativeBgController.repeat(reverse: true);
+      }
     } else {
-      _decorativeBgController.stop();
+      if (_decorativeBgController.isAnimating) _decorativeBgController.stop();
+    }
+  }
+
+  // 🔥 3. FUNCIÓN MAESTRA: Abre el modal y pausa/reanuda animaciones
+  Future<void> _onUserTap(RankingModel user, String? currentUserId) async {
+    // No abrir modal si soy yo mismo (opcional, según tu lógica)
+    if (user.userId == currentUserId) return;
+
+    // 1. Pausar animaciones
+    setState(() {
+      _isModalOpen = true;
+      _updateAnimationState();
+    });
+
+    // 2. Esperar a que se cierre el diálogo
+    await showDialog(
+      context: context,
+      builder: (ctx) => UserProfileModal(userId: user.userId, rank: user.rank),
+    );
+
+    // 3. Reanudar animaciones
+    if (mounted) {
+      setState(() {
+        _isModalOpen = false;
+        _updateAnimationState();
+      });
     }
   }
 
@@ -129,7 +161,6 @@ class _RankingContentState extends ConsumerState<_RankingContent>
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // ✅ Traemos y TIPAMOS la lista de avatares para resolver asset_path/URL
     final List<AvatarModel>? avatarsList = ref
         .watch(currentUserAvatarsProvider)
         .value
@@ -142,15 +173,17 @@ class _RankingContentState extends ConsumerState<_RankingContent>
     return VisibilityDetector(
       key: const Key('ranking-view-detector'),
       onVisibilityChanged: (visibilityInfo) {
+        if (!mounted) return;
         setState(() {
           _isTabVisible = visibilityInfo.visibleFraction > 0.1;
           _updateAnimationState();
         });
       },
       child: Scaffold(
-        backgroundColor: colors.primaryContainer.withValues(alpha: .05), // ⚙️
+        backgroundColor: colors.primaryContainer.withValues(alpha: .05),
         body: Stack(
           children: [
+            // FONDO LOTTIE
             Positioned.fill(
               child: Opacity(
                 opacity: 0.4,
@@ -172,6 +205,7 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                   bottom: false,
                   child: Column(
                     children: [
+                      // HEADER
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
@@ -222,6 +256,7 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                         Center(child: RankingErrorWidget(error: e)),
                     data: (ranking) {
                       if (ranking.isEmpty) return const _EmptyRankingWidget();
+                      
                       final top3 = ranking.length >= 3
                           ? ranking.sublist(0, 3)
                           : ranking;
@@ -231,27 +266,22 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                       final currentUserData = (currentUserId == null)
                           ? null
                           : ranking
-                                .where((user) => user.userId == currentUserId)
-                                .firstOrNull;
+                              .where((user) => user.userId == currentUserId)
+                              .firstOrNull;
 
                       return Stack(
                         children: [
                           Column(
                             children: [
+                              // PODIUM
                               Stack(
                                 children: [
                                   Container(
                                     margin: const EdgeInsets.fromLTRB(
-                                      16,
-                                      8,
-                                      16,
-                                      0,
-                                    ),
+                                        16, 8, 16, 0),
                                     height: 280,
                                     decoration: BoxDecoration(
-                                      color: colors.surface.withValues(
-                                        alpha: .10,
-                                      ), // ⚙️
+                                      color: colors.surface.withValues(alpha: .10),
                                       borderRadius: BorderRadius.circular(24),
                                     ),
                                     child: _DecorativeBackground(
@@ -263,10 +293,13 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                       users: top3,
                                       colors: colors,
                                       currentUserId: currentUserId,
-                                      avatarsList: avatarsList, // ✅ pasa lista
+                                      avatarsList: avatarsList,
+                                      // 🔥 Pasamos la función de tap
+                                      onUserTap: (user) => _onUserTap(user, currentUserId),
                                     ),
                                 ],
                               ),
+                              // TÍTULO LISTA
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16.0,
@@ -291,6 +324,7 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                   ],
                                 ),
                               ),
+                              // LISTA RESTANTE
                               Expanded(
                                 child: ListView.builder(
                                   padding: const EdgeInsets.only(
@@ -300,15 +334,18 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                                   itemCount: restOfRanking.length,
                                   itemBuilder: (context, index) {
                                     final user = restOfRanking[index];
+                                    // 🔥 Envolvemos en GestureDetector para usar nuestra función _onUserTap
                                     return FadeInUp(
                                       delay: Duration(milliseconds: index * 30),
-                                      child: RankingTile(
-                                        user: user,
-                                        isCurrentUser:
-                                            user.userId == currentUserId,
-                                        colors: colors,
-                                        // AÑADIDO AQUÍ 👇
-                                        avatarsList: avatarsList,
+                                      child: GestureDetector(
+                                        onTap: () => _onUserTap(user, currentUserId),
+                                        child: RankingTile(
+                                          user: user,
+                                          isCurrentUser:
+                                              user.userId == currentUserId,
+                                          colors: colors,
+                                          avatarsList: avatarsList,
+                                        ),
                                       ),
                                     );
                                   },
@@ -324,7 +361,6 @@ class _RankingContentState extends ConsumerState<_RankingContent>
                               child: _CurrentUserBanner(
                                 user: currentUserData,
                                 colors: colors,
-                                // AÑADIDO AQUÍ 👇
                                 avatarsList: avatarsList,
                               ),
                             ),
@@ -385,27 +421,18 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
   @override
   void initState() {
     super.initState();
+    // Las animaciones se basan en el controlador del padre, que pausamos/reanudamos arriba
     _animations = [
-      _createTween(
-        const Alignment(-1, -0.8),
-        const Alignment(1, -0.7),
-      ).animate(_createCurve(0.0, 0.5)),
-      _createTween(
-        const Alignment(1.2, -0.2),
-        const Alignment(-1.2, 0),
-      ).animate(_createCurve(0.2, 0.7)),
-      _createTween(
-        const Alignment(0, 1.1),
-        const Alignment(0, -1.1),
-      ).animate(_createCurve(0.4, 1.0)),
-      _createTween(
-        const Alignment(1.1, 1),
-        const Alignment(-1.1, 0.8),
-      ).animate(_createCurve(0.1, 0.8)),
-      _createTween(
-        const Alignment(-1.3, 0.9),
-        const Alignment(1.3, -0.9),
-      ).animate(_createCurve(0.3, 0.9)),
+      _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
+          .animate(_createCurve(0.0, 0.5)),
+      _createTween(const Alignment(1.2, -0.2), const Alignment(-1.2, 0))
+          .animate(_createCurve(0.2, 0.7)),
+      _createTween(const Alignment(0, 1.1), const Alignment(0, -1.1))
+          .animate(_createCurve(0.4, 1.0)),
+      _createTween(const Alignment(1.1, 1), const Alignment(-1.1, 0.8))
+          .animate(_createCurve(0.1, 0.8)),
+      _createTween(const Alignment(-1.3, 0.9), const Alignment(1.3, -0.9))
+          .animate(_createCurve(0.3, 0.9)),
     ];
   }
 
@@ -413,9 +440,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
       AlignmentTween(begin: begin, end: end);
 
   CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
-    parent: widget.controller,
-    curve: Interval(begin, end, curve: Curves.easeInOutSine),
-  );
+        parent: widget.controller,
+        curve: Interval(begin, end, curve: Curves.easeInOutSine),
+      );
 
   Widget _buildIcon(
     String assetPath,
@@ -459,13 +486,16 @@ class _PodiumWidget extends StatelessWidget {
   final List<RankingModel> users;
   final ColorScheme colors;
   final String? currentUserId;
-  final List<AvatarModel>? avatarsList; // ✅ lista tipada
+  final List<AvatarModel>? avatarsList;
+  // 🔥 Callback recibido del padre
+  final Function(RankingModel) onUserTap; 
 
   const _PodiumWidget({
     required this.users,
     required this.colors,
     required this.currentUserId,
     required this.avatarsList,
+    required this.onUserTap,
   });
 
   @override
@@ -486,6 +516,7 @@ class _PodiumWidget extends StatelessWidget {
                 heightFactor: 0.7,
                 isCurrentUser: users[1].userId == currentUserId,
                 avatarsList: avatarsList,
+                onTap: () => onUserTap(users[1]), // 🔥
               ),
             if (users.isNotEmpty)
               _PodiumPlace(
@@ -495,6 +526,7 @@ class _PodiumWidget extends StatelessWidget {
                 heightFactor: 1.0,
                 isCurrentUser: users[0].userId == currentUserId,
                 avatarsList: avatarsList,
+                onTap: () => onUserTap(users[0]), // 🔥
               ),
             if (users.length > 2)
               _PodiumPlace(
@@ -504,6 +536,7 @@ class _PodiumWidget extends StatelessWidget {
                 heightFactor: 0.55,
                 isCurrentUser: users[2].userId == currentUserId,
                 avatarsList: avatarsList,
+                onTap: () => onUserTap(users[2]), // 🔥
               ),
           ],
         ),
@@ -518,7 +551,8 @@ class _PodiumPlace extends StatelessWidget {
   final Color color;
   final double heightFactor;
   final bool isCurrentUser;
-  final List<AvatarModel>? avatarsList; // ✅
+  final List<AvatarModel>? avatarsList;
+  final VoidCallback onTap; // 🔥 Callback simple
 
   const _PodiumPlace({
     required this.user,
@@ -527,6 +561,7 @@ class _PodiumPlace extends StatelessWidget {
     required this.heightFactor,
     required this.isCurrentUser,
     required this.avatarsList,
+    required this.onTap,
   });
 
   @override
@@ -534,21 +569,13 @@ class _PodiumPlace extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final size = 110.0 * heightFactor;
 
-    // ✅ Usa la misma resolución que en el modal (con lista tipada si existe)
     final String avatarPath = getAvatarAssetPathById(
       user.idAvatarSeleccionado,
       avatarsList,
     );
 
     return GestureDetector(
-      onTap: () {
-        if (isCurrentUser) return;
-        showDialog(
-          context: context,
-          builder: (ctx) =>
-              UserProfileModal(userId: user.userId, rank: user.rank),
-        );
-      },
+      onTap: onTap, // 🔥 Usamos el callback pasado
       child: FadeInUp(
         delay: Duration(milliseconds: 100 * (4 - place)),
         child: SizedBox(
@@ -627,12 +654,12 @@ class _PodiumPlace extends StatelessWidget {
 class _CurrentUserBanner extends StatelessWidget {
   final RankingModel user;
   final ColorScheme colors;
-  final List<AvatarModel>? avatarsList; // <--- AÑADIDO AQUÍ
+  final List<AvatarModel>? avatarsList;
 
   const _CurrentUserBanner({
     required this.user,
     required this.colors,
-    this.avatarsList, // <--- AÑADIDO AL CONSTRUCTOR
+    this.avatarsList,
   });
 
   @override
@@ -655,11 +682,12 @@ class _CurrentUserBanner extends StatelessWidget {
             ),
           ],
         ),
+        // Nota: El banner de usuario actual no necesita onTap porque eres tú mismo
         child: RankingTile(
           user: user,
           isCurrentUser: true,
           colors: colors,
-          avatarsList: avatarsList, // <--- PASADO AL TILE
+          avatarsList: avatarsList,
         ),
       ),
     );

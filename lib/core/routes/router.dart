@@ -74,7 +74,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == '/privacy-policy';
       final inSplash = loc == '/';
       final inNoInternet = loc == '/no-internet';
-      final inOnboarding = loc == '/onboarding'; // <--- Agregado
 
       if (inNoInternet) return null;
       if (loc == '/update-password') return null;

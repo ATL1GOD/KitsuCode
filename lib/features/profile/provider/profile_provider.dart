@@ -124,16 +124,19 @@ final currentUserAvatarsProvider = FutureProvider.autoDispose<List<AvatarModel>>
 
 // ==================== FIN PROVIDERS AVATARES ====================
 
-// --- Providers de Realtime (No necesitan cambios) ---
-// (Tu código de followRealtimeProvider, profileRealtimeProvider,
-// achievementRealtimeProvider, AchievementNotifier, AvatarNotifier, etc.
-// se queda exactamente igual que antes, ya que son event-driven
-// y no hacen un fetch inicial que pueda fallar por conexión)
+// --- Providers de Realtime (CORREGIDOS PARA REINICIO DE SESIÓN) ---
 
-final followRealtimeProvider = Provider((ref) {
+// 🔥 CAMBIO 1: autoDispose + watch(authStateProvider)
+final followRealtimeProvider = Provider.autoDispose((ref) {
+  // Si cambia el usuario, reiniciamos la conexión
+  ref.watch(authStateProvider);
+
   final supabase = Supabase.instance.client;
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return null;
+
   final channel = supabase.channel('public:seguimiento_usuario');
-  // ... (tu código de realtime de seguimiento) ...
+  
   channel
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
@@ -162,11 +165,14 @@ final followRealtimeProvider = Provider((ref) {
   return channel;
 });
 
+// 🔥 CAMBIO 2: watch(authStateProvider) añadido
 final profileRealtimeProvider = Provider.autoDispose((ref) {
+  ref.watch(authStateProvider);
+
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return;
-  // ... (tu código de realtime de perfil) ...
+  
   final userChannel = supabase.channel('public:usuarios:profile');
   userChannel
       .onPostgresChanges(
@@ -207,11 +213,14 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
   });
 });
 
+// 🔥 CAMBIO 3: watch(authStateProvider) añadido
 final achievementRealtimeProvider = Provider.autoDispose((ref) {
+  ref.watch(authStateProvider);
+
   final supabase = Supabase.instance.client;
   final currentUserId = supabase.auth.currentUser?.id;
   if (currentUserId == null) return;
-  // ... (tu código de realtime de logros) ...
+  
   final channelsToCleanup = <RealtimeChannel>[];
   final earnedChannel = supabase.channel('public:usuario_logro_earned');
   channelsToCleanup.add(earnedChannel);
@@ -281,7 +290,6 @@ class AchievementNotificationData {
 class AchievementNotifier extends StateNotifier<bool> {
   final Ref _ref;
   final Queue<AchievementNotificationData> _queue = Queue();
-  // final bool _isDisplaying = false; // <-- ✅ 2. BORRADO
 
   AchievementNotifier(this._ref) : super(false) {
     _initListener();
@@ -367,8 +375,10 @@ class AchievementNotifier extends StateNotifier<bool> {
 }
 
 // --- PASO 3: Provider de Logros ---
+// 🔥 CAMBIO 4: autoDispose + watch(authStateProvider)
 final achievementNotifierProvider =
-    StateNotifierProvider<AchievementNotifier, bool>((ref) {
+    StateNotifierProvider.autoDispose<AchievementNotifier, bool>((ref) {
+      ref.watch(authStateProvider);
       return AchievementNotifier(ref);
     });
 
@@ -395,7 +405,6 @@ class AvatarNotificationData {
 class AvatarNotifier extends StateNotifier<bool> {
   final Ref _ref;
   final Queue<AvatarNotificationData> _queue = Queue();
-  // final bool _isDisplaying = false; // <-- ✅ 2. BORRADO
 
   AvatarNotifier(this._ref) : super(false) {
     _initListener();
@@ -489,9 +498,11 @@ class AvatarNotifier extends StateNotifier<bool> {
 }
 
 // --- PASO 3 (AVATAR): Provider de Avatares ---
-final avatarNotifierProvider = StateNotifierProvider<AvatarNotifier, bool>((
+// 🔥 CAMBIO 5: autoDispose + watch(authStateProvider)
+final avatarNotifierProvider = StateNotifierProvider.autoDispose<AvatarNotifier, bool>((
   ref,
 ) {
+  ref.watch(authStateProvider);
   return AvatarNotifier(ref);
 });
 

@@ -1,43 +1,57 @@
+// lib/features/notifications/provider/fcm_provider.dart
+
 import 'package:flutter/material.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/core/routes/router.dart';
 import 'package:kitsucode/features/notifications/service/fcm_service.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
+import 'package:kitsucode/core/providers/bootstrap_provider.dart';
+// 🔥 CORRECCIÓN: Importar Supabase para que 'AuthState' sea reconocido
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Provider del servicio FCM
-/// (Este es tu provider. Está perfecto)
-/// Depende del router para poder navegar cuando se toca una notificación
+/// Provider del servicio (Clase lógica)
 final fcmServiceProvider = Provider<FCMService>((ref) {
   final router = ref.watch(routerProvider);
   return FCMService(router, ref);
 });
 
-// --- 👇 ¡AQUÍ ESTÁ LA ADICIÓN! 👇 ---
-// Añade este provider en el mismo archivo.
+// --- Provider inteligente de inicialización ---
+final fcmInitializationProvider = FutureProvider<void>((ref) async {
+  
+  // 1. Esperar a que Firebase esté listo (evita crash [core/no-app])
+  await ref.watch(bootstrapProvider.future);
+  
+  debugPrint("🔔 FCM Provider: Infraestructura lista. Iniciando vigilancia de sesión...");
 
-/// Este provider "activa" el servicio FCM cuando el usuario inicia sesión.
-/// Es de "disparar y olvidar" y se observa (watch) en MyApp.
-final fcmInitializationProvider = Provider<void>((ref) {
-  // Escucha los cambios en el estado de autenticación
-  ref.listen(authStateProvider, (previous, next) {
-    // Reacciona solo cuando el estado tenga datos
-    next.whenData((authState) {
-      if (authState.session != null) {
-        // ✅ Usuario autenticado
-        debugPrint("FCM: Usuario autenticado. Inicializando FCM Service...");
+  // 2. Definimos qué hacer cuando cambia el estado del usuario
+  void handleAuthState(AsyncValue<AuthState> authState) {
+    authState.whenData((state) {
+      // Ahora 'state' es de tipo AuthState, así que 'state.session' es seguro
+      if (state.session != null) {
+        // ✅ HAY USUARIO
         try {
-          // Obtenemos el servicio (del provider de arriba) y lo inicializamos.
-          // NO usamos 'await' para no bloquear.
           ref.read(fcmServiceProvider).initialize();
         } catch (e) {
-          debugPrint('Error al inicializar FCM Service: $e');
+          debugPrint('❌ FCM Error al inicializar: $e');
         }
       } else {
-        // ❔ Usuario cerró sesión
-        debugPrint("FCM: Usuario cerró sesión. Eliminando token.");
-        // Llamamos a deleteToken() para limpiar el token de la BD
-        ref.read(fcmServiceProvider).deleteToken();
+        // 🚪 NO HAY USUARIO
+        debugPrint("🔕 FCM: Sin usuario. Limpiando token...");
+        try {
+          ref.read(fcmServiceProvider).deleteToken();
+        } catch (e) {
+          debugPrint('❌ FCM Error al borrar token: $e');
+        }
       }
     });
+  }
+
+  // 3. Escuchar cambios en vivo
+  ref.listen(authStateProvider, (previous, next) {
+    handleAuthState(next);
   });
+
+  // 4. Ejecutar al inicio
+  final currentAuth = ref.read(authStateProvider);
+  handleAuthState(currentAuth);
 });

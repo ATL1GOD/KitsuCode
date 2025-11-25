@@ -41,7 +41,8 @@ class OptimizedGlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: enableGlassEffect
             ? BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                // 🔥 Reducir blur de 8 a 5 para mejor rendimiento
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                 child: Container(
                   decoration: BoxDecoration(
                     color: cardColor,

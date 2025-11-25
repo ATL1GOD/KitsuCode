@@ -155,23 +155,14 @@ class _RankingContentState extends ConsumerState<_RankingContent>
           children: [
             // 🔥 RepaintBoundary para aislar la animación de fondo
             Positioned.fill(
-<<<<<<< HEAD
               child: Opacity(
                 opacity: 0.25, // 🔥 Reducido de 0.4 para menor costo de blending
                 child: RepaintBoundary(
-=======
-              child: RepaintBoundary(
-                child: Opacity(
-                  opacity: 0.4,
->>>>>>> cca768f05d4113852a0757ef76bc157056d8e149
                   child: Lottie.asset(
                     'assets/animations/background_train.json',
                     fit: BoxFit.cover,
                     controller: _lottieController,
-<<<<<<< HEAD
                     frameRate: FrameRate(30), // 🔥 Limitado a 30fps máximo
-=======
->>>>>>> cca768f05d4113852a0757ef76bc157056d8e149
                     onLoaded: (composition) {
                       _lottieController.duration = composition.duration;
                       _isLottieLoaded = true;
@@ -453,7 +444,6 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
     Animation<Alignment> animation,
     double size,
   ) {
-<<<<<<< HEAD
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: widget.controller,
@@ -468,22 +458,6 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
             fit: BoxFit.contain,
             cacheWidth: (size * 2).toInt(), // 🔥 Cacheo eficiente
           ),
-=======
-    return AnimatedBuilder(
-      animation: widget.controller,
-      builder: (context, child) =>
-          Align(alignment: animation.value, child: child),
-      child: Opacity(
-        opacity: 0.1,
-        child: Image.asset(
-          assetPath,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          // 🔥 Usar caché agresivo para logos repetidos
-          cacheWidth: (size * 2).round(),
-          cacheHeight: (size * 2).round(),
->>>>>>> cca768f05d4113852a0757ef76bc157056d8e149
         ),
       ),
     );
@@ -491,7 +465,6 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
     return RepaintBoundary(
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
@@ -503,17 +476,6 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground> {
             _buildIcon('assets/images/home/logo_c.webp', _animations[2], 70),
           ],
         ),
-=======
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: Stack(
-        children: [
-          // 🔥 Reducido a 3 elementos para mejor rendimiento
-          _buildIcon('assets/images/home/logo_python.webp', _animations[0], 50),
-          _buildIcon('assets/images/home/logo_java.webp', _animations[1], 60),
-          _buildIcon('assets/images/home/logo_c.webp', _animations[2], 70),
-        ],
->>>>>>> cca768f05d4113852a0757ef76bc157056d8e149
       ),
     );
   }

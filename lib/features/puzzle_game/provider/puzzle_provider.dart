@@ -4,15 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_view.dart' show RecursoModel;
 
-
 // --- DISTRIBUIDOR DE ESTADO
 final puzzleProvider = StateNotifierProvider.autoDispose<PuzzleNotifier, PuzzleState>(
   (ref) {
-    // Este error es correcto. Se anula en PuzzleLoaderPage.
-    throw UnimplementedError(
-      'PuzzleProvider debe ser anulado (overridden) por PuzzleLoaderPage '
-      'con el id_reto y el contenido del reto.'
-    );
+    // Retornamos un Notifier vacío por defecto.
+    // PuzzleLoaderPage lo sobreescribirá con argumentos.
+    // OnboardingView usará este y llamará a loadChallengeFromModel.
+    return PuzzleNotifier(); 
   },
 );
 
@@ -23,7 +21,7 @@ enum PuzzleStatus {
   incorrect,
 }
 
-// --- PuzzleState (Corregido con isLoading y error) ---
+// --- PuzzleState (Sin cambios sustanciales) ---
 @immutable
 class PuzzleState {
   final PuzzleChallengeModel? challenge;
@@ -31,12 +29,10 @@ class PuzzleState {
   final List<PuzzleOption> availableOptions;
   final PuzzleStatus status;
   
-  // --- CAMPOS NUEVOS ---
   final int challengeId; 
-  final int nivelId; // ← ¡AÑADIDO!
+  final int nivelId;
   final List<RecursoModel> recursos;
 
-  // --- CAMPOS ORIGINALES (DE VUELTA) ---
   final bool isLoading; 
   final String? error;
 
@@ -46,9 +42,9 @@ class PuzzleState {
     this.availableOptions = const [],
     this.status = PuzzleStatus.playing,
     this.challengeId = 0,
-    this.nivelId = 0, // ← ¡AÑADIDO!
+    this.nivelId = 0,
     this.recursos = const [],
-    this.isLoading = true, // <-- Valor inicial
+    this.isLoading = true,
     this.error,
   });
 
@@ -58,7 +54,7 @@ class PuzzleState {
     List<PuzzleOption>? availableOptions,
     PuzzleStatus? status,
     int? challengeId,
-    int? nivelId, // ← ¡AÑADIDO!
+    int? nivelId,
     List<RecursoModel>? recursos,
     bool? isLoading,
     String? error,
@@ -69,7 +65,7 @@ class PuzzleState {
       availableOptions: availableOptions ?? this.availableOptions,
       status: status ?? this.status,
       challengeId: challengeId ?? this.challengeId,
-      nivelId: nivelId ?? this.nivelId, // ← ¡AÑADIDO!
+      nivelId: nivelId ?? this.nivelId,
       recursos: recursos ?? this.recursos,
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -77,23 +73,44 @@ class PuzzleState {
   }
 }
 
-
-// --- PuzzleNotifier (Corregido) ---
+// --- PuzzleNotifier MODIFICADO ---
 class PuzzleNotifier extends StateNotifier<PuzzleState> {
-  // El constructor ya no necesita 'ref'
-  PuzzleNotifier(
-    Map<String, dynamic> challengeContent,
-    int challengeId,
-    int nivelId, // ← ¡AÑADIDO!
-  ) : super(const PuzzleState()) {
-    _loadChallenge(challengeContent, challengeId, nivelId); // ← ¡MODIFICADO!
+  // 1. Constructor con parámetros OPCIONALES POSICIONALES
+  // Esto arregla el error "0 expected, but 3 found" y permite inicialización vacía.
+  PuzzleNotifier([
+    Map<String, dynamic>? challengeContent,
+    int challengeId = 0,
+    int nivelId = 0,
+  ]) : super(const PuzzleState(isLoading: true)) {
+    if (challengeContent != null) {
+      _loadChallenge(challengeContent, challengeId, nivelId);
+    } else {
+      // Si no hay contenido, iniciamos en loading false pero sin datos (para Onboarding)
+      state = state.copyWith(isLoading: false);
+    }
   }
 
-  // Lógica de carga (con duplicados y campos de estado)
-  void _loadChallenge(Map<String, dynamic> challengeContent, int challengeId, int nivelId) { // ← ¡MODIFICADO!
+  // Lógica original de carga (Mantenida)
+  void _loadChallenge(Map<String, dynamic> challengeContent, int challengeId, int nivelId) {
     try {
       final challenge = PuzzleChallengeModel.fromJson(challengeContent);
+      _initializeStateFromModel(challenge, challengeId, nivelId); // Reutilizamos lógica
+    } catch (e) {
+      debugPrint('Error al cargar reto de puzzle: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: "Error al parsear el reto: $e",
+      );
+    }
+  }
 
+  // --- NUEVO: Método público para Onboarding ---
+  void loadChallengeFromModel(PuzzleChallengeModel challenge) {
+    _initializeStateFromModel(challenge, 0, 0);
+  }
+
+  // Lógica común de inicialización (Extraída para no duplicar código)
+  void _initializeStateFromModel(PuzzleChallengeModel challenge, int challengeId, int nivelId) {
       final Map<String, PuzzleOption?> initialBlanks = {};
       for (var line in challenge.lines) {
         if (line is BlankLine) {
@@ -101,10 +118,9 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         }
       }
 
-      // --- ¡LÓGICA DE DUPLICADOS CORREGIDA! ---
       final List<PuzzleOption> bankOptions = [];
       
-      // 1. Añadir todas las opciones correctas (con duplicados)
+      // 1. Opciones correctas
       for (var line in challenge.lines) {
         if (line is BlankLine) {
           final templateOption = challenge.options.firstWhere(
@@ -115,26 +131,24 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
           bankOptions.add(PuzzleOption(
             id: templateOption.id,
             text: templateOption.text,
-            uniqueId: UniqueKey().toString(), // ¡ID único!
+            uniqueId: UniqueKey().toString(),
           ));
         }
       }
 
-      // 2. Añadir las opciones "distractoras"
+      // 2. Distractores
       final correctIds = bankOptions.map((opt) => opt.id).toSet();
-      
       for (var templateOption in challenge.options) {
         if (!correctIds.contains(templateOption.id)) {
            bankOptions.add(PuzzleOption(
             id: templateOption.id,
             text: templateOption.text,
-            uniqueId: UniqueKey().toString(), // ¡ID único!
+            uniqueId: UniqueKey().toString(),
           ));
         }
       }
 
       bankOptions.shuffle();
-      // --- FIN LÓGICA DE DUPLICADOS ---
 
       state = state.copyWith(
         challenge: challenge,
@@ -142,24 +156,17 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         availableOptions: bankOptions,
         status: PuzzleStatus.playing,
         challengeId: challengeId,
-        nivelId: nivelId, // ← ¡AÑADIDO!
+        nivelId: nivelId,
         recursos: challenge.recursos,
-        isLoading: false, // <-- Corregido
+        isLoading: false,
         error: null,
       );
-    } catch (e) {
-      debugPrint('Error al cargar reto de puzzle: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: "Error al parsear el reto: $e", // <-- Corregido
-      );
-    }
   }
 
-  // Lógica de checkSolution (simple)
+  // ... (El resto de tus métodos: checkSolution, onOptionDroppedOnBlank, etc. SE MANTIENEN IGUAL)
+  
   void checkSolution() {
     if (state.challenge == null) return;
-    
     bool isCorrect = true;
     for (var line in state.challenge!.lines) {
       if (line is BlankLine) {
@@ -170,7 +177,6 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
         }
       }
     }
-
     if (isCorrect) {
       state = state.copyWith(status: PuzzleStatus.correct);
     } else {
@@ -178,10 +184,7 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
     }
   }
 
-  // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN DEL BUG!! ---
-  
   void onOptionDroppedOnBlank(String blankId, PuzzleOption option) {
-    // 1. Buscar si la opción que se está moviendo ya estaba en otro blank
     String? sourceBlankId;
     for (var entry in state.filledBlanks.entries) {
       if (entry.value?.uniqueId == option.uniqueId) {
@@ -190,60 +193,38 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
       }
     }
 
-    // CASO ESPECIAL: Soltar en el mismo blank (no hacer nada)
-    if (sourceBlankId != null && sourceBlankId == blankId) {
-      // No hacer nada, el chip ya está en su lugar
-      return;
-    }
+    if (sourceBlankId != null && sourceBlankId == blankId) return;
 
-    // 2. Mira si ya hay una ficha en el hueco destino
     final PuzzleOption? existingOption = state.filledBlanks[blankId];
-
-    // 3. Prepara el nuevo mapa de blanks y la lista de opciones
     Map<String, PuzzleOption?> newFilledBlanks = {...state.filledBlanks};
     List<PuzzleOption> newAvailableOptions = [...state.availableOptions];
 
-    // 4. LÓGICA DE INTERCAMBIO O DEVOLUCIÓN
     if (sourceBlankId != null) {
-      // La opción viene de otro blank (ya verificamos que sourceBlankId != blankId)
       if (existingOption != null) {
-        // CASO 1: Intercambio entre dos blanks
-        // Coloca la opción que estaba en el destino en el origen
         newFilledBlanks[sourceBlankId] = existingOption;
-        // Y la opción que viene en el destino
         newFilledBlanks[blankId] = option;
       } else {
-        // CASO 2: Mover de un blank a un blank vacío
         newFilledBlanks[sourceBlankId] = null;
         newFilledBlanks[blankId] = option;
       }
     } else {
-      // La opción viene del banco de opciones
-      // Eliminamos la opción del banco
       newAvailableOptions = newAvailableOptions
           .where((o) => o.uniqueId != option.uniqueId)
           .toList();
       
       if (existingOption != null) {
-        // CASO 3: Viene del banco y hay una ficha en el destino
-        // Devolvemos la ficha que estaba en el destino al banco
         newAvailableOptions.add(existingOption);
-        newAvailableOptions.shuffle(); // (Opcional)
       }
       
-      // Colocamos la nueva opción en el blank
       newFilledBlanks[blankId] = option;
     }
 
-    // 5. Actualiza el estado
     state = state.copyWith(
       filledBlanks: newFilledBlanks,
       availableOptions: newAvailableOptions,
       status: PuzzleStatus.playing,
     );
   }
-
-  // --- FIN DE LA CORRECCIÓN ---
 
   void onOptionDroppedOnBank(PuzzleOption option) {
     String? blankIdToRemove;
@@ -255,23 +236,17 @@ class PuzzleNotifier extends StateNotifier<PuzzleState> {
     }
 
     if (blankIdToRemove != null) {
-      // Si la opción estaba en un hueco, la devolvemos al banco
       state = state.copyWith(
         filledBlanks: {...state.filledBlanks, blankIdToRemove: null},
         availableOptions: [...state.availableOptions, option]..shuffle(),
-        status: PuzzleStatus.playing, // Resetea el estado a "jugando"
+        status: PuzzleStatus.playing,
       );
     }
   }
 
   void resetPuzzle() {
      if (state.challenge == null) return;
-     // Recarga el reto con la lógica de duplicados
-     _loadChallenge(
-       {}, // Esto sigue estando mal si el JSON no está guardado,
-          // pero es la lógica que tenías.
-       state.challengeId,
-       state.nivelId, // ← ¡AÑADIDO!
-     );
+     // Recarga usando la lógica interna
+     _initializeStateFromModel(state.challenge!, state.challengeId, state.nivelId);
   }
 }

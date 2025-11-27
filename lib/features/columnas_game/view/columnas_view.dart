@@ -4,19 +4,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
-
-// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-// --- FIN MODIFICACIÓN ---
-
-// --- Importaciones para la puntuación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
-// --- FUSIÓN: Se añade el import de TU lógica de animación (dxniel7) ---
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
-
-// --- NUEVO: Importaciones para el modal y el router ---
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
@@ -24,19 +16,22 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
     show RecursoModel;
 import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
-
-// --- FIN NUEVO ---
+import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 
 class ColumnsChallengeView extends ConsumerStatefulWidget {
   final ColumnsChallenge challenge;
   final String retoId;
-  final String nivelId; // ← ¡AÑADIDO!
+  final String nivelId;
+  
+  // 🔥 Callback para modo Onboarding
+  final Function(bool isCorrect)? onOnboardingFinished;
 
   const ColumnsChallengeView({
     super.key,
     required this.challenge,
     required this.retoId,
-    required this.nivelId, // ← ¡AÑADIDO!
+    required this.nivelId,
+    this.onOnboardingFinished, // <-- AÑADIDO
   });
 
   @override
@@ -59,9 +54,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     super.initState();
     _setupItems();
   }
-
-  // ... (Las funciones _setupItems, _onItemTapped, _triggerIncorrectAnimation,
-  // y _showWinDialogAndSubmit son idénticas en ambos, se mantienen) ...
 
   void _setupItems() {
     final List<ChallengeItem> leftColumn = [];
@@ -118,16 +110,24 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
           if (_solvedPairIds.length == widget.challenge.pares.length) {
             Future.delayed(const Duration(milliseconds: 300), () {
-              _showWinDialogAndSubmit(); // <-- Llamada a la función de éxito
+              // 🔥 LÓGICA DE ÉXITO
+              if (!mounted) return;
+              
+              if (widget.onOnboardingFinished != null) {
+                 widget.onOnboardingFinished!(true);
+              } else {
+                 _showWinDialogAndSubmit(); 
+              }
             });
           }
         } else if (_selectedItem == tappedItem) {
           _selectedItem = null;
         } else {
+          // 🔥 ERROR DETECTADO
           _incorrectItem1 = _selectedItem;
           _incorrectItem2 = tappedItem;
           _selectedItem = null;
-          _triggerIncorrectAnimation(); // <-- Llamada a la función de fallo
+          _triggerIncorrectAnimation(); // <-- Inicia la secuencia de fallo
         }
       }
     });
@@ -135,16 +135,31 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
   Future<void> _triggerIncorrectAnimation() async {
     setState(() {
-      _isIncorrect = true;
+      _isIncorrect = true; // Muestra rojo
     });
 
-    if (mounted) {
-      _showFeedbackModal(false);
-    }
+    // Esperamos 1 segundo para que el usuario vea el error visualmente
+    await Future.delayed(const Duration(seconds: 1));
 
-    // Reseteamos el estado de error después del modal
-    // (Esto se maneja ahora en onContinue del modal)
-    // Ya no es necesario el 'Future.delayed' aquí
+    if (!mounted) return;
+
+    // 🔥 DECISIÓN FINAL (Modo Estricto)
+    if (widget.onOnboardingFinished != null) {
+        // En Onboarding: Se acabó, fallaste.
+        widget.onOnboardingFinished!(false);
+    } else {
+        // En Juego Normal: Muestra modal de fallo
+        _showFeedbackModal(false);
+    }
+    
+    // Limpiamos la selección visual (por si acaso el usuario se queda o reintenta en otro contexto)
+    if (mounted) {
+      setState(() {
+        _isIncorrect = false;
+        _incorrectItem1 = null;
+        _incorrectItem2 = null;
+      });
+    }
   }
 
   Future<void> _showWinDialogAndSubmit() async {
@@ -153,11 +168,8 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     }
   }
 
-  // --- NUEVO: Función helper de Tema ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-
-    // Asumiendo que tienes AppThemes.
     switch (langName.toLowerCase().trim()) {
       case 'python':
         return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
@@ -169,12 +181,15 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
     }
   }
-  // --- FIN NUEVO ---
 
-  // --- FUSIÓN: Se usa TU '_showFeedbackModal' (dxniel7) ---
-  // ¡¡Esta es la lógica CORRECTA!!
   void _showFeedbackModal(bool esCorrecto) {
     if (_hasSubmitted) return;
+
+    // 🔥 SEGURIDAD: Si por alguna razón llegamos aquí en onboarding, salimos.
+    if (widget.onOnboardingFinished != null) {
+      widget.onOnboardingFinished!(esCorrecto);
+      return;
+    }
 
     final appBarState = ref.read(appBarProvider);
     final challengeTheme = _getLanguageTheme(
@@ -194,97 +209,67 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
           child: ChallengeFeedbackModal(
             challengeId: int.parse(widget.retoId),
             isCorrect: esCorrecto,
-            // --- ¡¡TU LÓGICA DE 'onContinue'!! ---
             onContinue: () async {
-              Navigator.of(
-                ctx,
-              ).pop(); // Cierra el modal usando el ctx del builder
+              Navigator.of(ctx).pop(); 
 
               if (_hasSubmitted) return;
               _hasSubmitted = true;
 
               try {
-                // 0. GUARDAR valores actuales (¡TU LÓGICA DE ANIMACIÓN!)
                 final currentStats = ref.read(appBarProvider);
-                // ignore: use_of_void_result
                 ref.read(oldStatsValuesProvider.notifier).state = [
                   currentStats.lives,
                   currentStats.trophies,
                   currentStats.streak,
                 ];
 
-                // Marcar flag (¡TU LÓGICA DE ANIMACIÓN!)
                 markForStatsRefresh(ref);
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-                final int nivelIdAsInt = int.parse(
-                  widget.nivelId,
-                ); // ← ¡AÑADIDO!
+                final int nivelIdAsInt = int.parse(widget.nivelId); 
 
                 if (esCorrecto) {
-                  // 1. Enviar intento y OBTENER trofeos (¡TU LÓGICA DE TROFEOS!)
                   final int trofeos = await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
-                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
+                    nivelId: nivelIdAsInt,
                     fueExitoso: true,
                     tiempoQueTardo: 0,
                   );
 
-                  // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
+                  ref.invalidate(desafiosProvider);
 
-                  // 3. Navegar CON TROFEOS
                   if (!context.mounted) return;
-                  // ignore: use_build_context_synchronously
                   context.push('/challenge_success', extra: trofeos);
                 } else {
-                  // 1. Enviar intento fallido
                   await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
-                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
+                    nivelId: nivelIdAsInt,
                     fueExitoso: false,
                     tiempoQueTardo: 0,
                   );
 
-                  // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.challenge.recursos;
 
-                  // 3. Navegar
                   if (!context.mounted) return;
-                  // ignore: use_build_context_synchronously
                   context.push('/challenge_failure', extra: recursos);
                 }
-
-                // Lógica extra para resetear el estado de error de columnas
-                if (!esCorrecto && mounted) {
-                  setState(() {
-                    _isIncorrect = false;
-                    _incorrectItem1 = null;
-                    _incorrectItem2 = null;
-                  });
-                }
               } catch (e) {
-                // Mostrar error al usuario
                 if (context.mounted) {
-                  // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
                   showErrorSnackbar(
-                    // ignore: use_build_context_synchronously
                     context,
                     'Error',
                     'Error al enviar resultado: $e',
                   );
-                  // --- FIN MODIFICACIÓN ---
                 }
               }
             },
-            // --- FIN DE TU LÓGICA ---
           ),
         );
       },
     );
   }
-  // --- FIN FUSIÓN ---
 
   @override
   Widget build(BuildContext context) {
@@ -304,9 +289,10 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         backgroundColor: colorScheme.surface,
         appBar: ChallengeAppBar2(
           progress: progress,
-          onClose: () {
-            showExitDialog(context, ref);
-          },
+          // 🔥 FIX: Ocultar botón de cierre si es Onboarding
+          onClose: widget.onOnboardingFinished != null 
+              ? null 
+              : () => showExitDialog(context, ref),
         ),
         body: SafeArea(
           child: Column(
@@ -364,6 +350,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                   ),
                 ),
               ),
+              // Botón Comprobar (En modo estricto puede no usarse, pero lo dejamos)
               _buildCheckButton(isComplete, colorScheme),
             ],
           ),
@@ -440,7 +427,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
     );
   }
 
-  // --- FUSIÓN: Se usa el '_buildCheckButton' de ELLOS (theme-aware) ---
   Widget _buildCheckButton(bool isComplete, ColorScheme colorScheme) {
     return Container(
       width: double.infinity,
@@ -448,7 +434,11 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
       child: ElevatedButton(
         onPressed: isComplete
             ? () {
-                _showWinDialogAndSubmit();
+                if (widget.onOnboardingFinished != null) {
+                  widget.onOnboardingFinished!(true);
+                } else {
+                  _showWinDialogAndSubmit();
+                }
               }
             : null,
         style: ElevatedButton.styleFrom(

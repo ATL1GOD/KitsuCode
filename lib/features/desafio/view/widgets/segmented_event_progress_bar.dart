@@ -8,7 +8,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
   final double progress;
   final List<RetoIndividual> desafiosMensuales;
   final Set<int> completedRetoIds;
-  final Color primaryColor; // <--- Nuevo parámetro para coordinar colores
+  final Color primaryColor;
 
   const SegmentedEventProgressBar({
     super.key,
@@ -16,20 +16,18 @@ class SegmentedEventProgressBar extends StatelessWidget {
     required this.progress,
     required this.desafiosMensuales,
     required this.completedRetoIds,
-    this.primaryColor = Colors.blue, // Valor por defecto por seguridad
+    this.primaryColor = Colors.blue,
   });
 
-  // --- Widget Helper para los Hitos (Candados) Mejorado ---
   Widget _buildMilestone({required bool isLocked}) {
-    const double size = 28.0; // Un poco más grandes para que destaquen
+    const double size = 28.0;
 
-    // Diseño Desbloqueado (Completado)
     if (!isLocked) {
       return Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: Colors.white, // Fondo blanco puro
+          color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -43,20 +41,19 @@ class SegmentedEventProgressBar extends StatelessWidget {
         child: Center(
           child: Icon(
             Icons.check_rounded,
-            color: primaryColor, // El check toma el color del evento
+            color: primaryColor,
             size: size * 0.6,
-            weight: 800, // Icono más "gordito"
+            weight: 800,
           ),
         ),
       );
     }
 
-    // Diseño Bloqueado
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3), // Fondo semitransparente oscuro
+        color: Colors.black.withOpacity(0.3),
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
       ),
@@ -72,36 +69,36 @@ class SegmentedEventProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Constantes para la barra ---
-    const double barHeight = 8.0; // Barra más fina para elegancia
-    const double iconSize =
-        28.0; // Debe coincidir con el size de _buildMilestone
-    // Calculamos el padding vertical necesario para centrar la barra respecto a los iconos
-    const double verticalPadding = (iconSize - barHeight) / 2;
+    const double barHeight = 8.0;
+    const double iconSize = 28.0;
+    // Definimos el padding como constante para usarlo en el cálculo
+    const double horizontalPadding = 2.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
-        // Evitar división por cero si no hay retos
+
+        // Calculamos el ancho real disponible restando el padding de ambos lados
+        final availableWidth = totalWidth - (horizontalPadding * 2);
+
         if (totalChallenges == 0) return const SizedBox();
 
         return SizedBox(
-          height:
-              iconSize, // La altura total es la del elemento más alto (el icono)
+          height: iconSize,
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
               // --- Capa 1: Fondo de la Barra (Track) ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                ),
                 child: Center(
                   child: Container(
                     height: barHeight,
-                    width: totalWidth,
+                    width: availableWidth, // Usamos el ancho corregido
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(
-                        0.2,
-                      ), // Track oscuro sutil
+                      color: Colors.black.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(barHeight / 2),
                     ),
                   ),
@@ -110,27 +107,28 @@ class SegmentedEventProgressBar extends StatelessWidget {
 
               // --- Capa 2: Progreso de la Barra (Relleno) ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                child: Center(
-                  child: Row(
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.easeOutCubic,
-                        height: barHeight,
-                        width: totalWidth * progress, // Ancho dinámico
-                        decoration: BoxDecoration(
-                          color: Colors.white, // Barra blanca brillante
-                          borderRadius: BorderRadius.circular(barHeight / 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white.withOpacity(0.5),
-                              blurRadius: 6,
-                            ),
-                          ],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                ),
+                child: Align(
+                  // 🔥 CAMBIO: Usamos Align en lugar de Center+Row
+                  alignment: Alignment.centerLeft,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOutCubic,
+                    height: barHeight,
+                    // 🔥 CORRECCIÓN: Calculamos el ancho basado en el espacio disponible (sin padding)
+                    width: availableWidth * progress,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(barHeight / 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.5),
+                          blurRadius: 6,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -141,7 +139,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
                 final isCompleted = completedRetoIds.contains(desafio.idReto);
                 final isLocked = !isCompleted;
 
-                // Lógica de posición: Centrado en su segmento
+                // Ajustamos el cálculo de posición para que coincida con el área "dibujable"
                 final segmentWidth = totalWidth / totalChallenges;
                 final hitoPosition =
                     (segmentWidth * index) +
@@ -150,8 +148,6 @@ class SegmentedEventProgressBar extends StatelessWidget {
 
                 return Positioned(
                   left: hitoPosition.clamp(0.0, totalWidth - iconSize),
-                  // No necesitamos top, ya que el Stack centra o usamos Center,
-                  // pero como usamos Positioned, alineamos verticalmente:
                   top: 0,
                   bottom: 0,
                   child: _buildMilestone(isLocked: isLocked),

@@ -99,7 +99,7 @@ class SpecialEventCardHeader extends StatelessWidget {
                           ),
                           child: Text(
                             isParentCompleted
-                                ? "¡CONQUISTADO!"
+                                ? "¡COMPLETADO!"
                                 : _getMes(evento.fechaFin),
                             style: TextStyle(
                               color: primaryColor,
@@ -148,7 +148,7 @@ class SpecialEventCardHeader extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         isParentCompleted
-                            ? "¡Todas las recompensas obtenidas!"
+                            ? "¡Has completado el evento!"
                             : _formatTiempoRestante(evento.fechaFin),
                         style: const TextStyle(
                           color: Colors.white,

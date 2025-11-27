@@ -31,13 +31,10 @@ class SpecialEventCardHeader extends StatelessWidget {
     required this.primaryColor,
   });
 
-  // ... (tus funciones _formatTiempoRestante y _getMes se quedan igual) ...
   String _formatTiempoRestante(DateTime fechaFin) {
     final now = DateTime.now();
     final difference = fechaFin.difference(now);
-    if (difference.isNegative) {
-      return 'FINALIZADO';
-    }
+    if (difference.isNegative) return 'FINALIZADO';
     final days = difference.inDays;
     if (days == 0) {
       final hours = difference.inHours;
@@ -59,7 +56,7 @@ class SpecialEventCardHeader extends StatelessWidget {
       'SEPTIEMBRE',
       'OCTUBRE',
       'NOVIEMBRE',
-      'DECEMBRE',
+      'DICIEMBRE',
     ];
     return meses[fecha.month - 1];
   }
@@ -67,16 +64,14 @@ class SpecialEventCardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
-      // 3. PERMITE QUE LOS HIJOS SE "SALGAN" DEL STACK
       clipBehavior: Clip.none,
       children: [
-        // --- CONTENIDO PRINCIPAL DE LA TARJETA ---
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- Fila Superior (Info + Espacio para la estampa) ---
+              // --- Fila Superior ---
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -84,7 +79,7 @@ class SpecialEventCardHeader extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // TAG (Mes)
+                        // TAG (Mes / Completado)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -93,9 +88,19 @@ class SpecialEventCardHeader extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(4),
+                            boxShadow: isParentCompleted
+                                ? [
+                                    const BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : [],
                           ),
                           child: Text(
-                            _getMes(evento.fechaFin),
+                            isParentCompleted
+                                ? "¡COMPLETADO!"
+                                : _getMes(evento.fechaFin),
                             style: TextStyle(
                               color: primaryColor,
                               fontWeight: FontWeight.bold,
@@ -104,62 +109,64 @@ class SpecialEventCardHeader extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        // TÍTULO
                         Text(
                           evento.titulo,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(0, 1),
+                                blurRadius: 2,
+                                color: Colors.black26,
+                              ),
+                            ],
                           ),
-                          // No necesitas maxLines, al estar en un Expanded
-                          // se ajustará automáticamente.
                         ),
-                        const SizedBox(height: 4),
-                        // TIEMPO RESTANTE
-                        // (Lo moviste abajo, así que esta sección está bien)
                       ],
                     ),
                   ),
-
-                  // 4. DEJA UN ESPACIO PARA LA ESTAMPA
-                  //    Esto evita que el texto se ponga debajo de ella.
-                  //    Ajusta el 'width' al tamaño de tu estampa.
                   const SizedBox(width: 120),
                 ],
               ),
               const SizedBox(height: 50),
 
-              // -----------------------------------------------------
-              // --- SECCIÓN DE PROGRESO (Sin cambios) ---
-              // -----------------------------------------------------
+              // --- Fila de Estado ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       Icon(
-                        isParentCompleted ? Icons.check_circle : Icons.timer,
-                        color: isParentCompleted
-                            ? Colors.white
-                            : Colors.white70,
-                        size: 16,
+                        isParentCompleted
+                            ? Icons.emoji_events_rounded
+                            : Icons.timer,
+                        color: Colors.white,
+                        size: isParentCompleted ? 20 : 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         isParentCompleted
-                            ? "¡EVENTO COMPLETADO!"
+                            ? "¡Has completado el evento!"
                             : _formatTiempoRestante(evento.fechaFin),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                              color: Colors.black26,
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                   Text(
-                    '$completedChallenges / $totalChallenges', // "1 / X"
+                    '$completedChallenges / $totalChallenges',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -170,55 +177,63 @@ class SpecialEventCardHeader extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // --- Barra de Progreso Personalizada (Widget separado) ---
               SegmentedEventProgressBar(
                 totalChallenges: totalChallenges,
                 progress: progress,
                 desafiosMensuales: desafiosMensuales,
                 completedRetoIds: completedRetoIds,
+                primaryColor: primaryColor,
               ),
 
               const SizedBox(height: 8),
-              if (!isParentCompleted)
-                Center(
-                  child: Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
+
+              // 🔥 CLAVE: Flecha visible SIEMPRE (se quitó el if)
+              Center(
+                child: AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down,
                     color: Colors.white70,
                     size: 30,
                   ),
                 ),
+              ),
             ],
           ),
         ),
 
-        // 5. AQUÍ VA LA ESTAMPA SVG SUPERPUESTA - CON OPTIMIZEDIMAGE
+        // ESTAMPA
         Positioned(
-          top: 10, // <-- Ajusta para que "flote" hacia arriba
-          right: 30, // <-- Ajusta la posición horizontal
+          top: 10,
+          right: 30,
           child: Container(
-            width: 150, // Tamaño de la estampa
-            height: 150, // Tamaño de la estampa
+            width: 150,
+            height: 150,
             decoration: BoxDecoration(
-              // Opcional: Añade una sombra para el efecto "resaltado"
-              shape: BoxShape.circle, // Asumiendo que tu estampa es redonda
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withAlpha(26),
+                  color: Colors.black.withOpacity(0.26),
                   blurRadius: 10,
-                  offset: const Offset(2, 5), // Sombra hacia abajo y derecha
+                  offset: const Offset(2, 5),
                 ),
+                // Resplandor extra si está completo
+                if (isParentCompleted)
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.5),
+                    blurRadius: 20,
+                    spreadRadius: -2,
+                  ),
               ],
             ),
-            // --- AQUÍ EL CAMBIO PRINCIPAL ---
             child: OptimizedImage(
-              imagePath: evento.webpEspecial, // "home/alerta.webp"
+              imagePath: evento.webpEspecial,
               width: 150,
               height: 150,
               fit: BoxFit.cover,
-              enableCache: true, // Cache activado para mejor rendimiento
-              isLocalAsset: false, // Es una imagen de red desde Supabase
+              enableCache: true,
+              isLocalAsset: false,
             ),
           ),
         ),

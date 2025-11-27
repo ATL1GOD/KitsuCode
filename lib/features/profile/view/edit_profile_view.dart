@@ -10,7 +10,7 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
-// 🔥 1. IMPORTAR EL FONDO ANIMADO REUTILIZABLE
+// Importamos el fondo corregido
 import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
@@ -128,16 +128,14 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
         _currentProfileData = profile;
 
         final avatars = ref.watch(currentUserAvatarsProvider).value ?? [];
-        final selectedIdForColor =
-            _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado;
         
-        // Obtenemos el color para el avatar
-        final dynamicColor = getAvatarColorById(selectedIdForColor, avatars);
+        // ID seleccionado (ya sea el inicial o el nuevo cambiado)
+        final selectedId = _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado;
+        
+        // Obtenemos el color dinámico LOCALMENTE también para el borde del avatar
+        final dynamicColor = getAvatarColorById(selectedId, avatars);
 
-        final currentAvatarPath = getAvatarAssetPathById(
-          selectedIdForColor,
-          avatars,
-        );
+        final currentAvatarPath = getAvatarAssetPathById(selectedId, avatars);
 
         final isNameChanged = _currentName != _initialName;
         final isAvatarChanged = _currentAvatarId != _initialAvatarId;
@@ -171,18 +169,18 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
             resizeToAvoidBottomInset: true,
             body: Stack(
               children: [
-                // 🔥 1. FONDO ANIMADO REUTILIZABLE
-                // Usa tu widget optimizado 'AnimatedSettingsBackground'.
-                // Al pasar 'isKeyboardVisible', él se encarga de ocultar el Lottie.
+                // 🔥 1. FONDO ANIMADO CON COLOR DINÁMICO REACTIVO
                 RepaintBoundary(
                   child: AnimatedSettingsBackground(
-                    profile: profile, // Pasamos el perfil completo
+                    profile: profile,
                     colors: colors,
                     isKeyboardVisible: isKeyboardVisible,
+                    // 🎯 AQUÍ ESTÁ LA SOLUCIÓN: Pasamos el ID temporal para que cambie el color
+                    avatarIdOverride: _currentAvatarId, 
                   ),
                 ),
 
-                // 🔥 2. CONTENIDO SCROLLEABLE
+                // 2. CONTENIDO SCROLLEABLE
                 Positioned.fill(
                   child: SafeArea(
                     child: SingleChildScrollView(
@@ -248,13 +246,14 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                 alignment: Alignment.center,
                                 children: [
                                   AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 500), // Suavizado
                                     curve: Curves.easeOut,
                                     width: isKeyboardVisible ? 120 : 160,
                                     height: isKeyboardVisible ? 120 : 160,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       gradient: LinearGradient(
+                                        // 🔥 EL BORDE DEL AVATAR TAMBIÉN RESPONDE AL CAMBIO
                                         colors: [dynamicColor, colors.primary],
                                       ),
                                       boxShadow: [
@@ -323,8 +322,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
 
                           const SizedBox(height: 40),
 
-                          // 🔥 TARJETA DE VIDRIO (GLASS CARD)
-                          // Mantiene el aspecto original
+                          // TARJETA CON EFECTO DE VIDRIO
                           FadeInUp(
                             duration: const Duration(milliseconds: 450),
                             delay: const Duration(milliseconds: 120),
@@ -342,7 +340,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                     ),
                                     const SizedBox(height: 10),
 
-                                    // 🔥 INPUT AISLADO: Evita lag al escribir
                                     _ProfileNameInput(
                                       initialValue: _initialName,
                                       colors: colors,
@@ -460,7 +457,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
   }
 }
 
-// 🔥 WIDGET AISLADO (La pieza maestra de la optimización de input)
+// WIDGET AISLADO (IGUAL QUE ANTES)
 class _ProfileNameInput extends StatefulWidget {
   final String initialValue;
   final ColorScheme colors;
@@ -537,7 +534,7 @@ class _ProfileNameInputState extends State<_ProfileNameInput> {
   }
 }
 
-// 🔥 GLASS CARD ORIGINAL CON BLUR
+// GLASS CARD ORIGINAL (CON BLUR)
 class _GlassCard extends StatelessWidget {
   final Widget child;
   const _GlassCard({required this.child});
@@ -549,7 +546,6 @@ class _GlassCard extends StatelessWidget {
       // ClipRRect corta el blur a los bordes
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        // 🔥 RepaintBoundary: Vital para que el blur no se recalcule constantemente
         child: RepaintBoundary(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),

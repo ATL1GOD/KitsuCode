@@ -7,28 +7,23 @@ import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// ✅ OptimizedImage para cargar el avatar (asset o remoto)
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
-// AÑADE LA IMPORTACIÓN DEL MODELO DE AVATAR 👇
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 
-// Provider para el término de búsqueda (lo que el usuario escribe)
+// Provider para el término de búsqueda
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// Provider que "ejecuta" la búsqueda
+// Provider que ejecuta la búsqueda
 final userSearchResultsProvider = FutureProvider<List<UserSearchPreviewModel>>((
   ref,
 ) async {
   final query = ref.watch(userSearchQueryProvider);
-
-  if (query.trim().isEmpty) {
-    return [];
-  }
-
+  if (query.trim().isEmpty) return [];
   final repository = ref.watch(profileRepositoryProvider);
   return repository.searchUsers(query);
 });
 
+// --- 🔥 BARRA DE BÚSQUEDA REDISEÑADA (ESTILO JUGUETÓN) 🔥 ---
 class SearchField extends ConsumerStatefulWidget {
   const SearchField({super.key});
 
@@ -38,6 +33,8 @@ class SearchField extends ConsumerStatefulWidget {
 
 class _SearchFieldState extends ConsumerState<SearchField> {
   late final TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
 
   @override
   void initState() {
@@ -45,11 +42,18 @@ class _SearchFieldState extends ConsumerState<SearchField> {
     _controller = TextEditingController(
       text: ref.read(userSearchQueryProvider),
     );
+    // Escuchar cambios de foco para animar
+    _focusNode.addListener(() {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -61,80 +65,84 @@ class _SearchFieldState extends ConsumerState<SearchField> {
       }
     });
 
-    final colors = Theme.of(context).colorScheme;
-    // Colores inspirados en tu imagen
-    final Color colorVerdeOscuro =
-        Colors.green.shade800; // O el color que prefieras
-    final Color colorCrema = const Color(0xFFF5F3E5);
-    final Color colorAmarillo = Colors.yellow.shade700;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Paleta de colores "Playful"
+    final Color colorFondo = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+    final Color colorBordeActivo = const Color(0xFF6C63FF); // Morado vibrante
+    final Color colorBordeInactivo = Colors.transparent;
+    final Color colorIconoBg = const Color(0xFF00C853); // Verde brillante
+    final Color colorBoton = const Color(0xFFFFD600); // Amarillo "Pop"
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      // 1. Contenedor principal (fondo crema, bordes redondeados)
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack, // Rebote sutil
         decoration: BoxDecoration(
-          color: colorCrema,
-          borderRadius: BorderRadius.circular(12),
+          color: colorFondo,
+          borderRadius: BorderRadius.circular(50), // Forma de cápsula total
+          border: Border.all(
+            color: _isFocused ? colorBordeActivo : colorBordeInactivo,
+            width: 2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(26),
-              blurRadius: 4,
-              offset: Offset(0, 2),
+              color: _isFocused
+                  ? colorBordeActivo.withOpacity(0.3)
+                  : Colors.black.withOpacity(0.1),
+              blurRadius: _isFocused ? 12 : 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        // 2. Usamos ClipRRect para forzar a los hijos a tener bordes redondeados
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 3. Parte 1: El contenedor del icono
-              // (La versión con ángulo es muy compleja, usamos un rectángulo)
+              // 1. Icono "Burbuja"
               Container(
-                color: colorVerdeOscuro,
-                padding: const EdgeInsets.all(12.0),
-                child: Icon(Icons.search, color: Colors.white),
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: colorIconoBg,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorIconoBg.withOpacity(0.4),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.search_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
 
-              // 4. Parte 2: El campo de texto (expandido)
+              const SizedBox(width: 12),
+
+              // 2. Campo de Texto
               Expanded(
                 child: TextField(
                   controller: _controller,
+                  focusNode: _focusNode,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
-                    hintText: 'Encuentra nuevos amigos...',
+                    hintText: 'Buscar amigos...',
                     hintStyle: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? colors.surface.withOpacity(
-                              0.9,
-                            ) // Color más visible en tema oscuro
-                          : colors.onSurface.withOpacity(
-                              0.6,
-                            ), // Color en tema claro
+                      color: isDark ? Colors.white54 : Colors.grey.shade500,
+                      fontWeight: FontWeight.normal,
                     ),
-                    // Aquí tu lógica de 'X' funciona perfectamente
-                    suffixIcon: _controller.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.close, color: Colors.grey[600]),
-                            onPressed: () {
-                              _controller.clear();
-                              ref.read(userSearchQueryProvider.notifier).state =
-                                  '';
-                            },
-                          )
-                        : null,
-
-                    // Quitamos todos los bordes y el fondo
-                    filled: false,
-                    border: InputBorder.none, //
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-
-                    // Ajustamos el padding interno
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16.0,
-                      horizontal: 16.0,
-                    ),
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                   ),
                   onChanged: (query) {
                     ref.read(userSearchQueryProvider.notifier).state = query;
@@ -143,25 +151,53 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                 ),
               ),
 
-              // 5. Parte 3: El botón de "Search"
-              SizedBox(
-                height: 56, // Ajusta a la altura del TextField
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Opcional: puedes forzar la búsqueda aquí si lo deseas
-                    // o simplemente dejar que sea decorativo.
+              // 3. Botón de Limpiar (si hay texto)
+              if (_controller.text.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    _controller.clear();
+                    ref.read(userSearchQueryProvider.notifier).state = '';
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorAmarillo,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero, // Sin bordes
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Colors.grey,
                     ),
                   ),
-                  child: const Text(
-                    'Amigos',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+
+              // 4. Botón "Action" Juguetón
+              Container(
+                height: 42,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: colorBoton,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorBoton.withOpacity(0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    '🦊',
+                    style: TextStyle(
+                      color: Colors.black.withOpacity(0.8),
+                      fontWeight:
+                          FontWeight.w900, // Extra negrita para estilo cartoon
+                      fontSize: 14,
+                      letterSpacing: 1.0,
+                    ),
                   ),
                 ),
               ),
@@ -173,18 +209,16 @@ class _SearchFieldState extends ConsumerState<SearchField> {
   }
 }
 
-// CAMBIO AQUÍ: StatelessWidget -> ConsumerWidget 👇
+// ... (El resto del código: UserSearchCard y EmptyState se mantienen igual) ...
+
 class UserSearchCard extends ConsumerWidget {
-  // ¡Actualizado para usar el modelo ligero!
   final UserSearchPreviewModel user;
   const UserSearchCard({super.key, required this.user});
 
   @override
-  // CAMBIO AQUÍ: Añadir WidgetRef ref 👇
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
 
-    // AÑADIDO AQUÍ: Observamos el provider de avatares 👇
     final List<AvatarModel>? avatarsList = ref
         .watch(currentUserAvatarsProvider)
         .value
@@ -192,18 +226,20 @@ class UserSearchCard extends ConsumerWidget {
 
     return Card(
       elevation: 5,
-      shadowColor: Colors.black.withAlpha(77), // (era withAlpha(77))
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias, // Para que la imagen no se salga
+      shadowColor: Colors.black.withOpacity(0.3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ), // Más redondeado
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
           showDialog(
             context: context,
-            barrierColor: Colors.black.withAlpha(128),
+            barrierColor: Colors.black.withOpacity(0.5),
             builder: (context) => UserProfileModal(
               userId: user.userId,
               rank: user.rank,
-              rankLanguageIds: user.rankLanguageIds, // <-- ¡AÑADIDO!
+              rankLanguageIds: user.rankLanguageIds,
             ),
           );
         },
@@ -214,37 +250,42 @@ class UserSearchCard extends ConsumerWidget {
               'assets/images/mensual/fondo.svg',
               fit: BoxFit.cover,
             ),
-
             Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withAlpha(102),
-              ), // (era withOpacity(0.40))
+              decoration: BoxDecoration(color: Colors.black.withOpacity(0.4)),
             ),
-
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ✅ Avatar con OptimizedImage (soporta asset o remoto)
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: colors.surfaceContainer,
-                    child: ClipOval(
-                      child: OptimizedImage(
-                        // CAMBIO AQUÍ: Pasar la lista de avatares 👇
-                        imagePath: getAvatarAssetPathById(
-                          user.idAvatarSeleccionado,
-                          avatarsList,
+                  // Avatar con borde divertido
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black26, blurRadius: 8),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 36,
+                      backgroundColor: colors.surfaceContainer,
+                      child: ClipOval(
+                        child: OptimizedImage(
+                          imagePath: getAvatarAssetPathById(
+                            user.idAvatarSeleccionado,
+                            avatarsList,
+                          ),
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                          enableCache: true,
                         ),
-                        width: 80, // 🔴 requerido por OptimizedImage
-                        height: 80, // 🔴 requerido por OptimizedImage
-                        fit: BoxFit.cover,
-                        enableCache: true,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
                   Text(
                     user.nombrePerfil,
@@ -253,12 +294,11 @@ class UserSearchCard extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 16, // Un poco más pequeño pero más limpio
                       fontWeight: FontWeight.bold,
-                      shadows: [Shadow(blurRadius: 2, color: Colors.black)],
+                      shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
                     ),
                   ),
-                  const SizedBox(height: 4),
 
                   Text(
                     '@${user.nombreUsuario}',
@@ -266,13 +306,11 @@ class UserSearchCard extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      // --- ADVERTENCIA CORREGIDA ---
-                      color: Colors.white.withAlpha(
-                        204,
-                      ), // (era withAlpha(204))
-                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       shadows: const [
-                        Shadow(blurRadius: 2, color: Colors.black),
+                        Shadow(blurRadius: 2, color: Colors.black45),
                       ],
                     ),
                   ),
@@ -288,7 +326,7 @@ class UserSearchCard extends ConsumerWidget {
 
 class EmptyState extends StatelessWidget {
   final Widget iconWidget;
-  final String? message; //
+  final String? message;
   const EmptyState({super.key, required this.iconWidget, this.message});
 
   @override
@@ -304,7 +342,11 @@ class EmptyState extends StatelessWidget {
           child: Text(
             message ?? '',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         const SizedBox(height: 16),

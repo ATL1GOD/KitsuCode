@@ -7,7 +7,7 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
-// --- Íconos de lenguajes (assets locales) ---
+// --- Íconos de lenguajes ---
 const Map<int, String> _languageAssets = {
   1: 'assets/images/home/logo_c.webp',
   2: 'assets/images/home/logo_java.webp',
@@ -44,9 +44,6 @@ IconData _getRankIcon(String rank) {
   }
 }
 
-/// Renderiza imágenes:
-/// - `assets/...` -> Image.asset
-/// - URL / ruta remota -> OptimizedImage
 Widget _smartImage({
   required String path,
   required double width,
@@ -57,7 +54,13 @@ Widget _smartImage({
     return const ColoredBox(color: Colors.transparent);
   }
   if (path.startsWith('assets/')) {
-    return Image.asset(path, width: width, height: height, fit: fit);
+    return Image.asset(
+      path,
+      width: width,
+      height: height,
+      fit: fit,
+      gaplessPlayback: true, // 🔥 Evita parpadeo
+    );
   }
   return OptimizedImage(
     imagePath: path,
@@ -87,10 +90,8 @@ class UserProfileModal extends ConsumerWidget {
     final rankColor = _getRankColor(rank);
     final rankIcon = _getRankIcon(rank);
 
-    // Para resolver correctamente rutas de avatares (assets/URL)
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
 
-    // Íconos de lenguajes (assets locales)
     final List<Widget> languageIcons = [
       if (rankLanguageIds != null)
         for (final id in rankLanguageIds!)
@@ -102,198 +103,167 @@ class UserProfileModal extends ConsumerWidget {
                 width: 20,
                 height: 20,
                 fit: BoxFit.contain,
+                gaplessPlayback: true,
               ),
             ),
     ];
 
     return ZoomIn(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300), // 👈 Duración de entrada
+      curve: Curves.easeOutBack,
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: userProfileAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const SizedBox(
+            height: 300,
+            child: Center(child: CircularProgressIndicator()),
+          ),
           error: (err, _) => _buildErrorCard(colors, err),
           data: (user) {
-            // Ruta final del avatar (puede ser asset o URL)
             final String avatarPath = getAvatarAssetPathById(
               user.idAvatarSeleccionado,
-              avatarsList, // <--- IMPORTANTE
+              avatarsList,
             );
 
-            return Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.topCenter,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 60),
-                  padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: rankColor.withAlpha(204),
-                      width: 2.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: rankColor.withAlpha(128),
-                        blurRadius: 15,
-                        spreadRadius: 2,
+            // 🔥 RepaintBoundary MAESTRO:
+            // Como la animación de fondo ahora tiene un "delay",
+            // durante los primeros 400ms el contenido de este Stack es ESTÁTICO.
+            // Flutter rasteriza esto UNA VEZ y la animación de ZoomIn vuela a 60FPS.
+            return RepaintBoundary(
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.topCenter,
+                children: [
+                  // 1. Tarjeta Base
+                  Container(
+                    margin: const EdgeInsets.only(top: 60),
+                    padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: rankColor.withAlpha(204),
+                        width: 2.5,
                       ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      // 🔥 RepaintBoundary para aislar el fondo decorativo
-                      const Positioned.fill(
-                        child: RepaintBoundary(
-                          child: _DecorativeBackground(),
+                      boxShadow: [
+                        BoxShadow(
+                          color: rankColor.withAlpha(128),
+                          blurRadius: 15,
+                          spreadRadius: 2,
                         ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            user.nombrePerfil,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          Text(
-                            '@${user.nombreUsuario}',
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(color: colors.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildStatColumn(
-                                context,
-                                user.siguiendoCount.toString(),
-                                'Siguiendo',
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        // 🔥 Fondo Decorativo (Con Delay Interno)
+                        const Positioned.fill(child: _DecorativeBackground()),
+                        
+                        // Contenido de Texto y Botones
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              user.nombrePerfil,
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              _buildStatColumn(
-                                context,
-                                user.seguidoresCount.toString(),
-                                'Seguidores',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          FollowButton(userId: userId),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                context.pop();
-                                context.push('/profile/${user.userId}');
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: colors.primary,
-                                side: BorderSide(
-                                  color: colors.primary.withAlpha(128),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              child: const Text('Ver Perfil'),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                            Text(
+                              '@${user.nombreUsuario}',
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildStatColumn(
+                                  context,
+                                  user.siguiendoCount.toString(),
+                                  'Siguiendo',
+                                ),
+                                _buildStatColumn(
+                                  context,
+                                  user.seguidoresCount.toString(),
+                                  'Seguidores',
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            FollowButton(userId: userId),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  context.pop();
+                                  context.push('/profile/${user.userId}');
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: colors.primary,
+                                  side: BorderSide(
+                                    color: colors.primary.withAlpha(128),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                child: const Text('Ver Perfil'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 2. Avatar Flotante
+                  Positioned(
+                    top: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: rankColor, width: 5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: rankColor.withAlpha(100),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-
-                // Avatar grande (usa helper inteligente)
-                Positioned(
-                  top: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: rankColor, width: 5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: rankColor.withAlpha(100),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: SizedBox(
-                        width: 110,
-                        height: 110,
-                        child: _smartImage(
-                          path: avatarPath,
+                      child: ClipOval(
+                        child: SizedBox(
                           width: 110,
                           height: 110,
-                          fit: BoxFit.cover,
+                          child: _smartImage(
+                            path: avatarPath,
+                            width: 110,
+                            height: 110,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                // Badge de rango
-                Positioned(
-                  top: 70,
-                  right: 15,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: rankColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.surface, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(38),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(rankIcon, color: Colors.black, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          rank[0].toUpperCase() +
-                              rank.substring(1).toLowerCase(),
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Lenguajes (assets locales)
-                if (languageIcons.isNotEmpty)
+                  // 3. Badge de Rango
                   Positioned(
                     top: 70,
-                    left: 15,
+                    right: 15,
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 100),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: 10,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
@@ -310,11 +280,54 @@ class UserProfileModal extends ConsumerWidget {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: languageIcons,
+                        children: [
+                          Icon(rankIcon, color: Colors.black, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            rank[0].toUpperCase() +
+                                rank.substring(1).toLowerCase(),
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-              ],
+
+                  // 4. Iconos de Lenguaje
+                  if (languageIcons.isNotEmpty)
+                    Positioned(
+                      top: 70,
+                      left: 15,
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 100),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: rankColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: colors.surface, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(38),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: languageIcons,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             );
           },
         ),
@@ -335,19 +348,9 @@ class UserProfileModal extends ConsumerWidget {
           Icon(Icons.error_outline, color: colors.error, size: 48),
           const SizedBox(height: 16),
           Text(
-            'Error al cargar el perfil',
+            'Error al cargar',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colors.error,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            err.toString(),
-            style: TextStyle(color: colors.onSurfaceVariant),
-            textAlign: TextAlign.center,
+                fontSize: 18, fontWeight: FontWeight.bold, color: colors.error),
           ),
         ],
       ),
@@ -365,6 +368,7 @@ class UserProfileModal extends ConsumerWidget {
   }
 }
 
+// --- Botón de Seguir (Sin Cambios) ---
 class FollowButton extends ConsumerWidget {
   final String userId;
   const FollowButton({super.key, required this.userId});
@@ -382,32 +386,22 @@ class FollowButton extends ConsumerWidget {
           onPressed: isLoading
               ? null
               : () => ref
-                    .read(followControllerProvider.notifier)
-                    .toggleFollow(userId),
+                  .read(followControllerProvider.notifier)
+                  .toggleFollow(userId),
           style: ElevatedButton.styleFrom(
-            backgroundColor: isFollowing
-                ? c.surfaceContainerHighest
-                : c.primary,
+            backgroundColor:
+                isFollowing ? c.surfaceContainerHighest : c.primary,
             foregroundColor: isFollowing ? c.onSurfaceVariant : c.onPrimary,
             padding: const EdgeInsets.symmetric(vertical: 13),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
             ),
+            textStyle:
+                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             elevation: 2,
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.8, end: 1.0).animate(animation),
-                child: child,
-              ),
-            ),
             child: isLoading
                 ? const SizedBox(
                     width: 20,
@@ -420,7 +414,8 @@ class FollowButton extends ConsumerWidget {
                   ),
           ),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const SizedBox(
+            height: 48, child: Center(child: CircularProgressIndicator())),
         error: (_, __) =>
             ElevatedButton(onPressed: null, child: const Text('Error')),
       ),
@@ -428,6 +423,7 @@ class FollowButton extends ConsumerWidget {
   }
 }
 
+// --- 🔥 ANIMACIÓN DE FONDO OPTIMIZADA (CON DELAY) ---
 class _DecorativeBackground extends StatefulWidget {
   const _DecorativeBackground();
   @override
@@ -438,6 +434,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final List<Animation<Alignment>> _animations;
+  
+  // 🔥 Flag para saber si ya podemos empezar a pintar la animación
+  bool _shouldAnimate = false; 
 
   @override
   void initState() {
@@ -445,31 +444,43 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
     // 🔥 Aumentar duración para animación más suave y menos costosa
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
-    )..repeat(reverse: true);
-    // 🔥 Reducir a 3 elementos animados para mejor rendimiento
+      duration: const Duration(seconds: 8),
+    );
+
+    // Configuración de animaciones (igual que antes)
     _animations = [
-      _createTween(
-        const Alignment(-1, -0.8),
-        const Alignment(1, -0.7),
-      ).animate(_createCurve(0.0, 0.5)),
-      _createTween(
-        const Alignment(1.2, -0.2),
-        const Alignment(-1.2, 0),
-      ).animate(_createCurve(0.2, 0.7)),
-      _createTween(
-        const Alignment(0, 1.1),
-        const Alignment(0, -1.1),
-      ).animate(_createCurve(0.4, 1.0)),
+      _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
+          .animate(_createCurve(0.0, 0.5)),
+      _createTween(const Alignment(1.2, -0.2), const Alignment(-1.2, 0))
+          .animate(_createCurve(0.2, 0.7)),
+      _createTween(const Alignment(0, 1.1), const Alignment(0, -1.1))
+          .animate(_createCurve(0.4, 1.0)),
+      _createTween(const Alignment(1.1, 1), const Alignment(-1.1, 0.8))
+          .animate(_createCurve(0.1, 0.8)),
+      _createTween(const Alignment(-1.3, 0.9), const Alignment(1.3, -0.9))
+          .animate(_createCurve(0.3, 0.9)),
     ];
+
+    // 🔥 EL FIX DE ORO: 
+    // Esperamos 400ms (más que la duración de 300ms del ZoomIn).
+    // Durante este tiempo, _shouldAnimate es false, así que no hay movimiento.
+    // El RepaintBoundary puede cachear la tarjeta estática y el ZoomIn es fluido.
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() {
+          _shouldAnimate = true;
+        });
+        _controller.repeat(reverse: true);
+      }
+    });
   }
 
   AlignmentTween _createTween(Alignment begin, Alignment end) =>
       AlignmentTween(begin: begin, end: end);
   CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
-    parent: _controller,
-    curve: Interval(begin, end, curve: Curves.easeInOutSine),
-  );
+        parent: _controller,
+        curve: Interval(begin, end, curve: Curves.easeInOutSine),
+      );
 
   @override
   void dispose() {
@@ -484,6 +495,24 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
     double size,
   ) {
     final c = Theme.of(context).colorScheme;
+    
+    // Si aún no debemos animar, mostramos el icono estático en su posición inicial.
+    // Esto evita el "pop" visual de que aparezcan de la nada.
+    if (!_shouldAnimate) {
+      return Align(
+        alignment: anim.value, // Usará el valor inicial (begin)
+        child: Image.asset(
+            assetPath,
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+            color: c.primary.withAlpha(26),
+            colorBlendMode: BlendMode.srcIn,
+            gaplessPlayback: true,
+        ),
+      );
+    }
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (_, child) => Align(alignment: anim.value, child: child),
@@ -494,9 +523,7 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
         fit: BoxFit.contain,
         color: c.primary.withAlpha(26),
         colorBlendMode: BlendMode.srcIn,
-        // 🔥 Usar caché agresivo para logos repetidos
-        cacheWidth: (size * 2).round(),
-        cacheHeight: (size * 2).round(),
+        gaplessPlayback: true,
       ),
     );
   }

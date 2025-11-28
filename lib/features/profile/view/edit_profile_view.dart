@@ -543,6 +543,7 @@ class _GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      // ClipRRect corta el blur a los bordes
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: RepaintBoundary(

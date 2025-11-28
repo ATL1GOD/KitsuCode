@@ -441,6 +441,7 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
   @override
   void initState() {
     super.initState();
+    // 🔥 Aumentar duración para animación más suave y menos costosa
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
@@ -533,11 +534,10 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
+          // 🔥 Reducido a 3 elementos para mejor rendimiento
           _buildIcon(context, 'assets/images/home/logo_python.webp', _animations[0], 50),
           _buildIcon(context, 'assets/images/home/logo_java.webp', _animations[1], 60),
           _buildIcon(context, 'assets/images/home/logo_c.webp', _animations[2], 70),
-          _buildIcon(context, 'assets/images/home/logo_python.webp', _animations[3], 40),
-          _buildIcon(context, 'assets/images/home/logo_java.webp', _animations[4], 55),
         ],
       ),
     );

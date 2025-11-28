@@ -3,6 +3,7 @@ import 'dart:ui'; // Para BackdropFilter (blur)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // 👈 IMPORTANTE PARA HAPTICS
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Importar para verificar sesión
 
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -10,7 +11,7 @@ import 'package:kitsucode/shared/widgets/animated_stat_badge.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE PARA AUDIO
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
 /// WIDGET PARA ANIMACIÓN ESCALONADA (STAGGER)
 class _StaggerItem extends StatefulWidget {
@@ -18,7 +19,7 @@ class _StaggerItem extends StatefulWidget {
   final int delay;
 
   const _StaggerItem({required this.child, required this.delay, Key? key})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<_StaggerItem> createState() => _StaggerItemState();
@@ -53,7 +54,6 @@ class _StaggerItemState extends State<_StaggerItem>
 
   @override
   Widget build(BuildContext context) {
-    // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints en cascada
     return RepaintBoundary(
       child: FadeTransition(
         opacity: _fade,
@@ -102,7 +102,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     });
   }
 
-  /// Tema por lenguaje (igual que en otras vistas)
+  /// Tema por lenguaje
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -144,36 +144,29 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     }
   }
 
-  /// Ajustar colores específicos para Java (más vibrantes)
   ColorScheme _adjustJavaColors(ColorScheme original) {
     final isDark = original.brightness == Brightness.dark;
 
     if (isDark) {
-      // Dark mode: Colores más brillantes
       return original.copyWith(
-        primary: const Color(0xFFFF9A7F), // Naranja pastel
-        primaryContainer: const Color(0xFFB85A40), // Naranja oscuro
+        primary: const Color(0xFFFF9A7F),
+        primaryContainer: const Color(0xFFB85A40),
         primaryFixed: const Color(0xFFFFD6CC),
-
-        secondary: const Color(0xFF5FD9CC), // Turquesa brillante
+        secondary: const Color(0xFF5FD9CC),
         secondaryContainer: const Color(0xFF1F7A70),
         secondaryFixed: const Color(0xFFB8EDE7),
-
-        tertiary: const Color(0xFFFFB77F), // Naranja claro
+        tertiary: const Color(0xFFFFB77F),
         tertiaryContainer: const Color(0xFFB86A30),
       );
     } else {
-      // Light mode: Colores vibrantes
       return original.copyWith(
-        primary: const Color(0xFFE76F51), // Naranja coral
-        primaryContainer: const Color(0xFFFFE5DD), // Naranja muy claro
+        primary: const Color(0xFFE76F51),
+        primaryContainer: const Color(0xFFFFE5DD),
         primaryFixed: const Color(0xFFFFD6CC),
-
-        secondary: const Color(0xFF2A9D8F), // Verde agua
+        secondary: const Color(0xFF2A9D8F),
         secondaryContainer: const Color(0xFFCCF5F0),
         secondaryFixed: const Color(0xFFB8EDE7),
-
-        tertiary: const Color(0xFFF4A261), // Naranja suave
+        tertiary: const Color(0xFFF4A261),
         tertiaryContainer: const Color(0xFFFFE8D6),
       );
     }
@@ -184,13 +177,17 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     ref.watch(appBarRealtimeProvider);
     final stats = ref.watch(appBarProvider);
 
-    // Tema gamer por lenguaje
     final languageTheme = _getLanguageTheme(
       stats.languageName,
       Theme.of(context).brightness,
     );
 
+    // 🔥 FIX: Escuchar cambios de lenguaje CON GUARDIA DE SESIÓN
     ref.listen<AppBarState>(appBarProvider, (previous, next) {
+      // 1. Verificamos si hay usuario logueado. Si es null, acabamos de salir.
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return; 
+
       if (previous != null &&
           !previous.isLoading &&
           !next.isLoading &&
@@ -292,7 +289,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         overlayChildBuilder: (BuildContext context) {
           return GestureDetector(
             onTap: () {
-              // 🔥 SONIDO AL CERRAR CLICANDO FUERA
               HapticFeedback.lightImpact();
               ref.read(audioControllerProvider).playClick();
 
@@ -310,7 +306,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                     child: IntrinsicWidth(
                       child: IntrinsicHeight(
                         child: GestureDetector(
-                          onTap: () {}, // Evita cerrar al tocar el menú mismo
+                          onTap: () {},
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 260),
                             switchInCurve: Curves.easeOutBack,
@@ -335,7 +331,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         },
         child: InkWell(
           onTap: () {
-            // 🔥 SONIDO Y VIBRACIÓN AL ABRIR/CERRAR EL MENÚ
             HapticFeedback.lightImpact();
             ref.read(audioControllerProvider).playClick();
 
@@ -367,7 +362,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     int currentLangId,
     ThemeData languageTheme,
   ) {
-    // 🔥 AJUSTAR COLORES SOLO PARA JAVA
     final stats = ref.watch(appBarProvider);
     final isJava = stats.languageName.toLowerCase().trim() == 'java';
 
@@ -402,7 +396,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           );
         }).toList();
 
-        // Gradiente del panel según modo
         final List<Color> panelGradientColors = isDark
             ? [
                 colorScheme.primaryContainer.withOpacity(0.90),
@@ -432,8 +425,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
               child: Container(
                 width: 260,
                 padding: const EdgeInsets.all(10),
-
-                /// PANEL CARTOON / GAMER DEPENDIENDO DEL MODO
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
                   gradient: LinearGradient(
@@ -444,7 +435,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                   border: Border.all(color: panelBorderColor, width: 3.0),
                   boxShadow: panelShadows,
                 ),
-
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,7 +501,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     final isCompleted = normalizedUnlocked.contains(normalizedLangName);
     final isDark = colorScheme.brightness == Brightness.dark;
 
-    // Gradiente por item según modo
     final List<Color> itemGradientColors = isDark
         ? [
             colorScheme.primaryContainer.withOpacity(0.85),
@@ -536,7 +525,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         setState(() => _isMenuOpen = false);
 
         if (!isCompleted) {
-          // 🔥 SONIDO DE ERROR Y VIBRACIÓN FUERTE
           HapticFeedback.heavyImpact();
           ref.read(audioControllerProvider).playError();
 
@@ -548,7 +536,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           return;
         }
 
-        // 🔥 SONIDO DE CONFIRMACIÓN Y VIBRACIÓN MEDIA
         HapticFeedback.mediumImpact();
         ref.read(audioControllerProvider).playClick();
 
@@ -568,7 +555,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         } catch (e) {
           if (!mounted) return;
 
-          // Sonido error si falla la API
           ref.read(audioControllerProvider).playError();
 
           showErrorSnackbar(
@@ -578,8 +564,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           );
         }
       },
-
-      /// ITEM CARTOON / GAMER HORIZONTAL
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
@@ -606,7 +590,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
         ),
         child: Row(
           children: [
-            // Avatar del lenguaje con backplate
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -629,9 +612,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                 ),
               ),
             ),
-
             const SizedBox(width: 12),
-
             Expanded(
               child: Text(
                 langName.toUpperCase(),
@@ -642,7 +623,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                 ),
               ),
             ),
-
             if (isCompleted)
               Icon(Icons.check_circle, color: Colors.green.shade300, size: 22)
             else

@@ -152,24 +152,28 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                 Expanded(
                   child: Stack(
                     children: [
+                      // 🔥 RepaintBoundary para aislar la animación de partículas
                       Positioned.fill(
-                        child: ColorFiltered(
-                          colorFilter: ColorFilter.mode(
-                            isDarkMode
-                                ? colors.secondaryFixedDim.withAlpha(77)
-                                : colors.secondary.withAlpha(102),
-                            BlendMode.srcIn,
-                          ),
-                          child: Lottie.asset(
-                            'assets/animations/particles.json',
-                            fit: BoxFit.cover,
-                            controller: _lottieController,
-                            // --- 🔥 11. DEJAR QUE LOTTIE PONGA LA DURACIÓN ---
-                            onLoaded: (composition) {
-                              _lottieController.duration = composition.duration;
-                              _isLottieLoaded = true;
-                              _updateAnimationState(); // Iniciar si debe
-                            },
+                        child: RepaintBoundary(
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(
+                              isDarkMode
+                                  ? colors.secondaryFixedDim.withAlpha(77)
+                                  : colors.secondary.withAlpha(102),
+                              BlendMode.srcIn,
+                            ),
+                            child: Lottie.asset(
+                              'assets/animations/particles.json',
+                              fit: BoxFit.cover,
+                              // 🔥 Reducir framerate para mejor rendimiento
+                              frameRate: FrameRate(30),
+                              controller: _lottieController,
+                              onLoaded: (composition) {
+                                _lottieController.duration = composition.duration;
+                                _isLottieLoaded = true;
+                                _updateAnimationState();
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -277,23 +281,8 @@ class _TopBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.end, 
         children: [
-          InkWell(
-            onTap: () => context.pop(),
-            borderRadius: BorderRadius.circular(30),
-            child: Container(
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: colors.surface.withAlpha((255 * 0.3).round()),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: colors.onSurface,
-              ),
-            ),
-          ),
           if (isCurrentUserProfile)
             InkWell(
               onTap: () {

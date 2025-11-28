@@ -2,18 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
-
-// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-// --- FIN MODIFICACIÓN ---
-
-// --- Importaciones para la puntuación y navegación ---
 import 'package:kitsucode/features/challenge/repository/challenge_repository.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
-
-// --- NUEVO: Importaciones para el modal y el router ---
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/challenge/widgets/challenge_feedback_modal.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
@@ -21,23 +14,22 @@ import 'package:kitsucode/features/challenge/view/feedback/challenge_failure_vie
     show RecursoModel;
 import 'package:kitsucode/features/challenge/widgets/appbar_challenge.dart';
 import 'package:kitsucode/features/challenge/widgets/exit_dialog.dart';
-
-// --- ¡CAMBIO ESTÉTICO! (Añadimos imports de animación y tarjeta) ---
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_instruction_card.dart';
-// --- FIN CAMBIO ESTÉTICO ---
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 
 class CodigoChallengeView extends ConsumerStatefulWidget {
   final CodigoChallenge challenge;
   final String retoId;
-  final String nivelId; // ← ¡AÑADIDO!
+  final String nivelId;
+  final Function(bool isCorrect)? onOnboardingFinished;
 
   const CodigoChallengeView({
     super.key,
     required this.challenge,
     required this.retoId,
-    required this.nivelId, // ← ¡AÑADIDO!
+    required this.nivelId,
+    this.onOnboardingFinished,
   });
 
   @override
@@ -47,13 +39,10 @@ class CodigoChallengeView extends ConsumerStatefulWidget {
 
 class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   late final PageController _pageController;
-
   final List<TextEditingController> _controllers = [];
   final List<FocusNode> _focusNodes = [];
   int _currentPageIndex = 0;
-
   bool _hasSubmitted = false;
-
   late final int _totalInputsDelChallenge;
   int _inputsCompletadosEnPaginasAnteriores = 0;
 
@@ -61,12 +50,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   void initState() {
     super.initState();
     _pageController = PageController();
-
     _totalInputsDelChallenge = widget.challenge.preguntas
         .expand((pregunta) => pregunta.fragmentos)
         .where((fragmento) => fragmento.tipo == 'input')
         .length;
-
     _setupControllersAndFocusNodesForPage(0);
   }
 
@@ -90,7 +77,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
   void _setupControllersAndFocusNodesForPage(int pageIndex) {
     _clearControllersAndFocusNodes();
-
     if (pageIndex >= widget.challenge.preguntas.length) return;
     final pregunta = widget.challenge.preguntas[pageIndex];
 
@@ -115,11 +101,11 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   }
 
   Future<void> _verificarRespuesta() async {
-    // ... (lógica de verificación) ...
     final preguntaActual = widget.challenge.preguntas[_currentPageIndex];
     final fragmentosInput = preguntaActual.fragmentos
         .where((f) => f.tipo == 'input')
         .toList();
+    
     bool todasCorrectas = true;
     for (int i = 0; i < fragmentosInput.length; i++) {
       final respuestaUsuario = _controllers[i].text.trim();
@@ -129,13 +115,17 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
         break;
       }
     }
-    // ... (fin lógica)
 
     if (todasCorrectas) {
       _siguientePregunta();
     } else {
+      // 🔥 FIX: Error inmediato con protección anti-crash
       if (mounted) {
-        _showFeedbackModal(false);
+        if (widget.onOnboardingFinished != null) {
+           widget.onOnboardingFinished!(false);
+        } else {
+           _showFeedbackModal(false);
+        }
       }
     }
   }
@@ -148,16 +138,18 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       );
     } else {
       if (mounted) {
-        _showFeedbackModal(true);
+        // Todas correctas, terminó el juego
+        if (widget.onOnboardingFinished != null) {
+           widget.onOnboardingFinished!(true);
+        } else {
+           _showFeedbackModal(true);
+        }
       }
     }
   }
 
-  // --- Función helper de Tema (Copiada de puzzle_view) ---
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-
-    // Asumiendo que tienes AppThemes.
     switch (langName.toLowerCase().trim()) {
       case 'python':
         return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
@@ -169,11 +161,16 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
         return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
     }
   }
-  // --- FIN NUEVO ---
 
   void _showFeedbackModal(bool esCorrecto) {
-    // Evita múltiples envíos si el usuario es muy rápido
     if (_hasSubmitted) return;
+
+    // 🔥 Si es Onboarding, el control ya se manejó arriba en _verificarRespuesta.
+    // Esta función solo debería correr en modo normal.
+    if (widget.onOnboardingFinished != null) {
+      widget.onOnboardingFinished!(esCorrecto);
+      return;
+    }
 
     final appBarState = ref.read(appBarProvider);
     final challengeTheme = _getLanguageTheme(
@@ -194,79 +191,56 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
             challengeId: int.parse(widget.retoId),
             isCorrect: esCorrecto,
             onContinue: () async {
-              Navigator.of(
-                ctx,
-              ).pop(); // Cierra el modal usando el ctx del builder
+              Navigator.of(ctx).pop();
 
               if (_hasSubmitted) return;
-              _hasSubmitted = true; // Marcamos como enviado
+              _hasSubmitted = true;
 
               try {
-                // 0. GUARDAR valores actuales
                 final currentStats = ref.read(appBarProvider);
-                // ignore: use_of_void_result
                 ref.read(oldStatsValuesProvider.notifier).state = [
                   currentStats.lives,
                   currentStats.trophies,
                   currentStats.streak,
                 ];
 
-                // Marcar flag
                 markForStatsRefresh(ref);
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-                final int nivelIdAsInt = int.parse(
-                  widget.nivelId,
-                ); // ← ¡AÑADIDO!
+                final int nivelIdAsInt = int.parse(widget.nivelId);
 
                 if (esCorrecto) {
-                  // 1. Enviar intento y OBTENER trofeos
                   final int trofeos = await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
-                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
+                    nivelId: nivelIdAsInt,
                     fueExitoso: true,
                     tiempoQueTardo: 0,
                   );
-
-                  // 2. Refrescar ranking
                   ref.invalidate(globalRankingProvider);
-                  // --- ¡¡AQUÍ!! ---
-                  // 3. Refrescar la lista de desafíos mensuales
-                  //    Esto hará que la barra de progreso se actualice.
                   ref.invalidate(desafiosProvider);
-                  // 3. Navegar CON TROFEOS
+
                   if (!context.mounted) return;
-                  // ignore: use_build_context_synchronously
                   context.push('/challenge_success', extra: trofeos);
                 } else {
-                  // 1. Enviar intento fallido
                   await repository.submitChallengeAttempt(
                     retoId: retoIdAsInt,
-                    nivelId: nivelIdAsInt, // ← ¡AÑADIDO!
+                    nivelId: nivelIdAsInt,
                     fueExitoso: false,
                     tiempoQueTardo: 0,
                   );
-
-                  // 2. Obtener recursos
                   final List<RecursoModel> recursos = widget.challenge.recursos;
 
-                  // 3. Navegar
                   if (!context.mounted) return;
-                  // ignore: use_build_context_synchronously
                   context.push('/challenge_failure', extra: recursos);
                 }
               } catch (e) {
-                // Mostrar error al usuario
                 if (context.mounted) {
-                  // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
                   showErrorSnackbar(
-                    // ignore: use_build_context_synchronously
                     context,
                     'Error',
                     'Error al enviar resultado: $e',
                   );
-                  // --- FIN MODIFICACIÓN ---
                 }
               }
             },
@@ -276,6 +250,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     );
   }
 
+  // ... (buildCodeSpans sin cambios)
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
@@ -340,20 +315,13 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Obtenemos el estado del AppBar
     final appBarState = ref.watch(appBarProvider);
-
-    // 2. Usamos la función helper
     final challengeTheme = _getLanguageTheme(
       appBarState.languageName,
       Theme.of(context).brightness,
     );
-
-    // 3. Extraemos el esquema de color
     final colorScheme = challengeTheme.colorScheme;
-    // --- FIN LÓGICA DE TEMA ---
 
-    // --- LÓGICA DE PROGRESO MODIFICADA ---
     final int inputsCompletadosPaginaActual = _controllers
         .where((controller) => controller.text.isNotEmpty)
         .length;
@@ -362,7 +330,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     final double progress = _totalInputsDelChallenge > 0
         ? (totalCompletados / _totalInputsDelChallenge)
         : 0.0;
-    // --- FIN LÓGICA DE PROGRESO ---
 
     final codeStyle = TextStyle(
       fontFamily: 'monospace',
@@ -381,13 +348,13 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     return Theme(
       data: challengeTheme,
       child: Scaffold(
-        // --- ¡CAMBIO ESTÉTICO 1! (Fondo del Scaffold) ---
         backgroundColor: colorScheme.surfaceContainerLow,
         appBar: ChallengeAppBar2(
           progress: progress,
-          onClose: () {
-            showExitDialog(context, ref);
-          },
+          // 🔥 FIX: Ocultar botón cerrar en Onboarding
+          onClose: widget.onOnboardingFinished != null
+              ? null
+              : () => showExitDialog(context, ref),
         ),
         body: Column(
           children: [
@@ -414,7 +381,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   final pregunta = widget.challenge.preguntas[index];
 
                   return SingleChildScrollView(
-                    // --- ¡CAMBIO ESTÉTICO 2! (Padding) ---
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20.0,
                       vertical: 16.0,
@@ -422,16 +388,13 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // --- ¡CAMBIO ESTÉTICO 3! (Tarjeta de Instrucción) ---
                         FadeInDown(
                           duration: const Duration(milliseconds: 300),
                           child: PuzzleInstructionCard(
                             text: pregunta.instruccion,
                           ),
                         ),
-                        // --- FIN CAMBIO 3 ---
                         const SizedBox(height: 24),
-                        // --- ¡CAMBIO ESTÉTICO 4! (Animación para el código) ---
                         FadeIn(
                           duration: const Duration(milliseconds: 300),
                           delay: const Duration(milliseconds: 150),
@@ -453,22 +416,18 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                             ),
                           ),
                         ),
-                        // --- FIN CAMBIO 4 ---
                       ],
                     ),
                   );
                 },
               ),
             ),
-            // --- El botón se movió al bottomNavigationBar ---
           ],
         ),
-        // --- ¡CAMBIO ESTÉTICO 5! (Barra de botón inferior) ---
         bottomNavigationBar: SlideInUp(
           duration: const Duration(milliseconds: 250),
           from: 100,
           child: Container(
-            // Añadimos padding, color y borde para emular la barra
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainer,
@@ -496,7 +455,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
             ),
           ),
         ),
-        // --- FIN CAMBIO 5 ---
       ),
     );
   }

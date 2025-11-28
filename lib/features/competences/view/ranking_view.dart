@@ -203,184 +203,168 @@ class _RankingContentState extends ConsumerState<_RankingContent>
               ),
             ),
             Column(
+  children: [
+    SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          // HEADER
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Row(
               children: [
-                SafeArea(
-                  bottom: false,
-                  child: Column(
-                    children: [
-                      // HEADER
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
-                        child: Row(
-                          children: [
-                            InkWell(
-                              onTap: () => context.pop(),
-                              borderRadius: BorderRadius.circular(30),
-                              child: Container(
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: colors.surface.withAlpha(50),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: colors.outlineVariant.withAlpha(130),
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  color: colors.onSurface,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                'Tabla de Clasificación',
-                                textAlign: TextAlign.center,
-                                style: textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 44),
-                          ],
-                        ),
-                      ),
-                      const RankingFiltersWidget(),
-                    ],
-                  ),
-                ),
+                // ✅ SizedBox vacío para mantener el balance visual
+                const SizedBox(width: 44),
                 Expanded(
-                  child: rankingAsync.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (e, s) =>
-                        Center(child: RankingErrorWidget(error: e)),
-                    data: (ranking) {
-                      if (ranking.isEmpty) return const _EmptyRankingWidget();
-                      
-                      final top3 = ranking.length >= 3
-                          ? ranking.sublist(0, 3)
-                          : ranking;
-                      final restOfRanking = ranking.length > 3
-                          ? ranking.sublist(3)
-                          : <RankingModel>[];
-                      final currentUserData = (currentUserId == null)
-                          ? null
-                          : ranking
-                              .where((user) => user.userId == currentUserId)
-                              .firstOrNull;
-
-                      return Stack(
-                        children: [
-                          Column(
-                            children: [
-                              // PODIUM
-                              Stack(
-                                children: [
-                                  Container(
-                                    margin: const EdgeInsets.fromLTRB(
-                                        16, 8, 16, 0),
-                                    height: 280,
-                                    decoration: BoxDecoration(
-                                      color: colors.surface.withValues(alpha: .10),
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    // 🔥 RepaintBoundary para el fondo decorativo
-                                    child: RepaintBoundary(
-                                      child: _DecorativeBackground(
-                                        controller: _decorativeBgController,
-                                      ),
-                                    ),
-                                  ),
-                                  if (top3.isNotEmpty)
-                                    _PodiumWidget(
-                                      users: top3,
-                                      colors: colors,
-                                      currentUserId: currentUserId,
-                                      avatarsList: avatarsList,
-                                      // 🔥 Pasamos la función de tap
-                                      onUserTap: (user) => _onUserTap(user, currentUserId),
-                                    ),
-                                ],
-                              ),
-                              // TÍTULO LISTA
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 12.0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.leaderboard_outlined,
-                                      color: colors.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Clasificación General',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: colors.onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // LISTA RESTANTE
-                              Expanded(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.only(
-                                    top: 4,
-                                    bottom: 160,
-                                  ),
-                                  // 🔥 OPTIMIZACIONES DE RENDIMIENTO
-                                  addAutomaticKeepAlives: false,
-                                  addRepaintBoundaries: true,
-                                  cacheExtent: 300,
-                                  itemCount: restOfRanking.length,
-                                  itemBuilder: (context, index) {
-                                    final user = restOfRanking[index];
-                                    // 🔥 Envolvemos en GestureDetector para usar nuestra función _onUserTap
-                                    return FadeInUp(
-                                      delay: Duration(milliseconds: index * 30),
-                                      child: GestureDetector(
-                                        onTap: () => _onUserTap(user, currentUserId),
-                                        child: RankingTile(
-                                          user: user,
-                                          isCurrentUser:
-                                              user.userId == currentUserId,
-                                          colors: colors,
-                                          avatarsList: avatarsList,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (currentUserData != null)
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: _CurrentUserBanner(
-                                user: currentUserData,
-                                colors: colors,
-                                avatarsList: avatarsList,
-                              ),
-                            ),
-                        ],
-                      );
-                    },
+                  child: Text(
+                    'Tabla de Clasificación',
+                    textAlign: TextAlign.center,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 44),
               ],
             ),
+          ),
+          const RankingFiltersWidget(),
+        ],
+      ),
+    ),
+    Expanded(
+      child: rankingAsync.when(
+        loading: () =>
+            const Center(child: CircularProgressIndicator()),
+        error: (e, s) =>
+            Center(child: RankingErrorWidget(error: e)),
+        data: (ranking) {
+          if (ranking.isEmpty) return const _EmptyRankingWidget();
+          
+          final top3 = ranking.length >= 3
+              ? ranking.sublist(0, 3)
+              : ranking;
+          final restOfRanking = ranking.length > 3
+              ? ranking.sublist(3)
+              : <RankingModel>[];
+          final currentUserData = (currentUserId == null)
+              ? null
+              : ranking
+                  .where((user) => user.userId == currentUserId)
+                  .firstOrNull;
+
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  // PODIUM
+                  Stack(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(
+                            16, 8, 16, 0),
+                        height: 280,
+                        decoration: BoxDecoration(
+                          color: colors.surface.withValues(alpha: .10),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        // 🔥 RepaintBoundary para el fondo decorativo
+                        child: RepaintBoundary(
+                          child: _DecorativeBackground(
+                            controller: _decorativeBgController,
+                          ),
+                        ),
+                      ),
+                      if (top3.isNotEmpty)
+                        _PodiumWidget(
+                          users: top3,
+                          colors: colors,
+                          currentUserId: currentUserId,
+                          avatarsList: avatarsList,
+                          // 🔥 Pasamos la función de tap
+                          onUserTap: (user) => _onUserTap(user, currentUserId),
+                        ),
+                    ],
+                  ),
+                  // TÍTULO LISTA
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12.0,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.leaderboard_outlined,
+                          color: colors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Clasificación General',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // LISTA RESTANTE
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(
+                        top: 4,
+                        bottom: 160,
+                      ),
+                      // 🔥 OPTIMIZACIONES DE RENDIMIENTO
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                      cacheExtent: 300,
+                      itemCount: restOfRanking.length,
+                      itemBuilder: (context, index) {
+                        final user = restOfRanking[index];
+                        // 🔥 Envolvemos en GestureDetector para usar nuestra función _onUserTap
+                        return FadeInUp(
+                          delay: Duration(milliseconds: index * 30),
+                          child: GestureDetector(
+                            onTap: () => _onUserTap(user, currentUserId),
+                            child: RankingTile(
+                              user: user,
+                              isCurrentUser:
+                                  user.userId == currentUserId,
+                              colors: colors,
+                              avatarsList: avatarsList,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              if (currentUserData != null)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _CurrentUserBanner(
+                    user: currentUserData,
+                    colors: colors,
+                    avatarsList: avatarsList,
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  ],
+),
           ],
         ),
       ),

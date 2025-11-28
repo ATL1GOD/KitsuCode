@@ -281,23 +281,8 @@ class _TopBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.end, 
         children: [
-          InkWell(
-            onTap: () => context.pop(),
-            borderRadius: BorderRadius.circular(30),
-            child: Container(
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: colors.surface.withAlpha((255 * 0.3).round()),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: colors.onSurface,
-              ),
-            ),
-          ),
           if (isCurrentUserProfile)
             InkWell(
               onTap: () {

@@ -10,6 +10,7 @@ import 'package:kitsucode/core/utils/app_colors.dart';
 
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_profile.dart';
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_challenge.dart';
+import 'package:kitsucode/features/onboarding/view/widgets/onboarding_result.dart';
 
 class OnboardingView extends ConsumerStatefulWidget {
   const OnboardingView({super.key});
@@ -35,6 +36,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
   int _totalScore = 0;
   bool _isProfileStep = true;
   bool _isLoading = false;
+  bool _showResults = false; // <--- AGREGA ESTO
 
   @override
   void initState() {
@@ -158,6 +160,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       if (_totalScore > 30) nivel = 2;
       if (_totalScore > 70) nivel = 3;
 
+      // 1. Guardar en Supabase (Se mantiene igual)
       await Supabase.instance.client.rpc(
         'completar_onboarding_final',
         params: {
@@ -168,26 +171,24 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
         },
       );
 
+      // 2. Refrescar providers (Se mantiene igual)
       ref.invalidate(appBarProvider);
       ref.invalidate(userProfileByIdProvider(userId));
 
+      // 3. EN LUGAR DE IR AL HOME, MOSTRAR RESULTADOS
       if (mounted) {
-        String rango = nivel == 1
-            ? "Aprendiz"
-            : (nivel == 2 ? "Programador" : "Arquitecto");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("¡Bienvenido! Nivel detectado: $rango")),
-        );
-        context.go('/home');
+        setState(() {
+          _isLoading = false; // Dejamos de cargar
+          _showResults = true; // Mostramos la pantalla de resultados
+        });
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Error: $e")));
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -198,75 +199,103 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // PASO 1: PERFIL
-    if (_isProfileStep) {
-      final activeColorScheme = _getDynamicColorScheme(context);
-
-      return AnimatedTheme(
-        data: Theme.of(context).copyWith(
-          colorScheme: activeColorScheme,
-          primaryColor: activeColorScheme.primary,
-          progressIndicatorTheme: ProgressIndicatorThemeData(
-            color: activeColorScheme.primary,
+    final activeColorScheme = _getDynamicColorScheme(context);
+    return AnimatedTheme(
+      data: Theme.of(context).copyWith(
+        colorScheme: activeColorScheme,
+        primaryColor: activeColorScheme.primary,
+        scaffoldBackgroundColor:
+            activeColorScheme.surface, // Importante para el fondo
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: activeColorScheme.primary,
+            foregroundColor: activeColorScheme.onPrimary,
           ),
         ),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-        child: Scaffold(
-          backgroundColor: activeColorScheme.surface,
-          body: OnboardingProfileStep(
-            formKey: _formKey,
-            usernameController: _usernameController,
-            languages: _languages,
-            selectedLanguageId: _selectedLanguageId,
-            colorScheme: activeColorScheme,
-            onLanguageSelected: (id, name) {
-              setState(() {
-                if (_selectedLanguageId == id) {
-                  _selectedLanguageId = null;
-                  _selectedLanguageName = null;
-                } else {
-                  _selectedLanguageId = id;
-                  _selectedLanguageName = name;
-                }
-              });
-            },
-            onStartTest: _startTest,
-          ),
-        ),
-      );
-    }
-
-    // PASO 2: JUEGOS
-    if (_onboardingChallenges.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    final currentData = _onboardingChallenges[_currentChallengeIndex];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Test (${_currentChallengeIndex + 1}/${_onboardingChallenges.length})",
-        ),
-        automaticallyImplyLeading: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4),
-          child: LinearProgressIndicator(
-            value: (_currentChallengeIndex + 1) / _onboardingChallenges.length,
-          ),
-        ),
+        iconTheme: IconThemeData(color: activeColorScheme.primary),
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          OnboardingGameRenderer(
-            tipoReto: currentData['tipo_reto'] as int,
-            content: currentData['contenido'],
-            onFinished: _onChallengeFinished,
-          ),
-        ],
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      child: Builder(
+        // Usamos Builder para que el contexto tenga el nuevo Theme
+        builder: (innerContext) {
+          // --- MOSTRAR RESULTADOS ---
+          if (_showResults) {
+            return OnboardingResultsView(
+              score: _totalScore,
+              username: _usernameController.text,
+              languageName: _selectedLanguageName ?? 'Desconocido',
+              onContinue: () {
+                context.go('/home');
+              },
+            );
+          }
+          // PASO 1: PERFIL
+          if (_isProfileStep) {
+            final activeColorScheme = _getDynamicColorScheme(context);
+
+            return AnimatedTheme(
+              data: Theme.of(context).copyWith(
+                colorScheme: activeColorScheme,
+                primaryColor: activeColorScheme.primary,
+                progressIndicatorTheme: ProgressIndicatorThemeData(
+                  color: activeColorScheme.primary,
+                ),
+              ),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+              child: Scaffold(
+                backgroundColor: activeColorScheme.surface,
+                body: OnboardingProfileStep(
+                  formKey: _formKey,
+                  usernameController: _usernameController,
+                  languages: _languages,
+                  selectedLanguageId: _selectedLanguageId,
+                  colorScheme: activeColorScheme,
+                  onLanguageSelected: (id, name) {
+                    setState(() {
+                      if (_selectedLanguageId == id) {
+                        _selectedLanguageId = null;
+                        _selectedLanguageName = null;
+                      } else {
+                        _selectedLanguageId = id;
+                        _selectedLanguageName = name;
+                      }
+                    });
+                  },
+                  onStartTest: _startTest,
+                ),
+              ),
+            );
+          }
+
+          // PASO 2: JUEGOS
+          if (_onboardingChallenges.isEmpty) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final currentData = _onboardingChallenges[_currentChallengeIndex];
+
+          return Scaffold(
+            body: MediaQuery.removePadding(
+              context: context,
+              removeTop: true, // <--- ESTO ELIMINA EL ESPACIO SUPERIOR
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  OnboardingGameRenderer(
+                    tipoReto: currentData['tipo_reto'] as int,
+                    content: currentData['contenido'],
+                    onFinished: _onChallengeFinished,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -78,7 +78,7 @@ class OnboardingProfileStep extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: Text(
-                    "Tu camino ninja en la programación comienza aquí.",
+                    "Tu camino en la programación comienza aquí.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 20,
@@ -257,7 +257,7 @@ class OnboardingProfileStep extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "COMENZAR AVENTURA",
+                    "COMENZAR TEST",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

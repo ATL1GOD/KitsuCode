@@ -10,7 +10,7 @@ class OnboardingProfileStep extends StatelessWidget {
   final VoidCallback onStartTest;
   final ColorScheme colorScheme;
 
-  // Rutas de imágenes
+  // Rutas de imágenes estáticas
   final String mobileLogoPath = 'assets/images/auth/fox_login.webp';
   final String desktopHeroPath = 'assets/images/auth/fox_login.webp';
 
@@ -24,6 +24,16 @@ class OnboardingProfileStep extends StatelessWidget {
     required this.onStartTest,
     required this.colorScheme,
   });
+
+  // HELPER: Obtener ruta del asset según el nombre del lenguaje
+  String _getLanguageAsset(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('python')) return 'assets/images/home/logo_python.webp';
+    if (n.contains('java')) return 'assets/images/home/logo_java.webp';
+    // Asumimos que si contiene 'c' y es corto, o es "C", es el logo de C.
+    if (n.contains('c') || n == 'c') return 'assets/images/home/logo_c.webp';
+    return ''; // Fallback si no hay imagen
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +131,7 @@ class OnboardingProfileStep extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 20.0),
               child: Image.asset(
                 mobileLogoPath,
-                height: 250,
+                height: 200,
                 fit: BoxFit.contain,
               ),
             ),
@@ -219,8 +229,11 @@ class OnboardingProfileStep extends StatelessWidget {
                   children: languages.map((lang) {
                     final isSelected =
                         selectedLanguageId == lang['id_lenguaje'];
+                    final assetPath = _getLanguageAsset(lang['nombre']);
+
                     return _buildTechChip(
                       label: lang['nombre'],
+                      assetPath: assetPath,
                       isSelected: isSelected,
                       onTap: () => onLanguageSelected(
                         lang['id_lenguaje'],
@@ -275,8 +288,10 @@ class OnboardingProfileStep extends StatelessWidget {
     );
   }
 
+  // MODIFICADO: Ahora acepta assetPath
   Widget _buildTechChip({
     required String label,
+    required String assetPath,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -284,12 +299,12 @@ class OnboardingProfileStep extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primary
               : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? colorScheme.primary : Colors.transparent,
             width: 2,
@@ -307,7 +322,18 @@ class OnboardingProfileStep extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isSelected) ...[
+            // Si tenemos ruta de imagen, la mostramos
+            if (assetPath.isNotEmpty) ...[
+              Image.asset(
+                assetPath,
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 10),
+            ],
+            // Si está seleccionado y no hay imagen (o como indicador extra), mantenemos el check
+            if (isSelected && assetPath.isEmpty) ...[
               Icon(Icons.check_circle, size: 18, color: colorScheme.onPrimary),
               const SizedBox(width: 8),
             ],

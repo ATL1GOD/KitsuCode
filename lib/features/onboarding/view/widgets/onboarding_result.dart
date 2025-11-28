@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:kitsucode/core/utils/app_colors.dart'; // Asegúrate de importar tus colores si los necesitas
+import 'package:kitsucode/features/onboarding/model/onboarding_model.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class OnboardingResultsView extends StatefulWidget {
   final int score;
   final String username;
   final String languageName;
+  final OnboardingResultModel resultModel;
   final VoidCallback onContinue;
 
   const OnboardingResultsView({
@@ -13,6 +14,7 @@ class OnboardingResultsView extends StatefulWidget {
     required this.score,
     required this.username,
     required this.languageName,
+    required this.resultModel,
     required this.onContinue,
   });
 
@@ -52,40 +54,39 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
     super.dispose();
   }
 
-  // Lógica para determinar el rango basado en el puntaje
-  Map<String, dynamic> _getRankData() {
-    if (widget.score > 70) {
-      return {
-        'title': 'Arquitecto de 9 Colas',
-        'subtitle': '¡Nivel Legendario!',
-        'desc': 'Tu conocimiento es vasto. El dojo espera grandes cosas de ti.',
-        'icon': Icons.auto_awesome,
-        'color': Colors.amber, // Dorado
-      };
-    } else if (widget.score > 30) {
-      return {
-        'title': 'Zorro Programador',
-        'subtitle': '¡Nivel Avanzado!',
-        'desc': 'Tienes instintos agudos para el código. ¡Sigue así!',
-        'icon': Icons.code,
-        'color': Colors.cyan, // Cyan tecnológico
-      };
-    } else {
-      return {
-        'title': 'Kitsu Aprendiz',
-        'subtitle': '¡El viaje comienza!',
-        'desc': 'Todo gran maestro comenzó escribiendo su primer "Hola Mundo".',
-        'icon': Icons.pets,
-        'color': Colors.orange, // Naranja zorro
-      };
+  // Helper para imagen local (logo lenguaje)
+  String _getLanguageAsset(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('python')) return 'assets/images/home/logo_python.webp';
+    if (n.contains('java')) return 'assets/images/home/logo_java.webp';
+    if (n.contains('c') || n == 'c') return 'assets/images/home/logo_c.webp';
+    return '';
+  }
+
+  /// Limpia la URL si viene completa de la BD, ya que OptimizedImage
+  /// construye su propia URL con el ProjectID.
+  /// Si en tu BD guardas solo "rank_aprendiz.png", esto lo deja pasar igual.
+  String _extractPath(String urlOrPath) {
+    if (urlOrPath.contains('/public/assets/')) {
+      return urlOrPath.split('/public/assets/').last;
     }
+    return urlOrPath;
   }
 
   @override
   Widget build(BuildContext context) {
-    final rankData = _getRankData();
+    final model = widget.resultModel;
     final theme = Theme.of(context);
+
+    final primaryColor = theme.colorScheme.primary;
+    final secondaryColor = theme.colorScheme.secondary;
     final colorScheme = theme.colorScheme;
+
+    // Obtenemos el logo del lenguaje seleccionado
+    final langAsset = _getLanguageAsset(widget.languageName);
+
+    // Preparamos el path limpio para el optimizador
+    final cleanImagePath = _extractPath(model.imagenUrl);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -99,23 +100,29 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
               ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  padding: const EdgeInsets.all(30),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: rankData['color'].withOpacity(0.1),
+                    color: primaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: rankData['color'], width: 4),
+                    border: Border.all(color: primaryColor, width: 4),
                     boxShadow: [
                       BoxShadow(
-                        color: rankData['color'].withOpacity(0.3),
-                        blurRadius: 20,
+                        color: primaryColor.withOpacity(0.4),
+                        blurRadius: 25,
                         spreadRadius: 5,
                       ),
                     ],
                   ),
-                  child: Icon(
-                    rankData['icon'],
-                    size: 80,
-                    color: rankData['color'],
+                  child: ClipOval(
+                    // USAMOS EL OPTIMIZADOR AQUÍ
+                    child: OptimizedImage(
+                      imagePath: cleanImagePath,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      enableCache: true,
+                      isLocalAsset: false, // Indica que viene de Supabase
+                    ),
                   ),
                 ),
               ),
@@ -131,6 +138,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -142,21 +150,25 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // TITULO DE LA BD
                     Text(
-                      rankData['title'],
+                      model.titulo,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.displaySmall?.copyWith(
-                        color: rankData['color'],
+                        color: primaryColor,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                       ),
                     ),
+
+                    // SUBTITULO DE LA BD
                     Text(
-                      rankData['subtitle'],
+                      model.subtitulo,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                        color: secondaryColor,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -165,9 +177,13 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: primaryColor.withOpacity(0.2),
+                        ),
                       ),
+                      // DESCRIPCION DE LA BD
                       child: Text(
-                        rankData['desc'],
+                        model.descripcion,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -177,7 +193,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Estadísticas rápidas
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -185,14 +201,15 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                           context,
                           "Puntaje",
                           "${widget.score} pts",
-                          Icons.star,
+                          icon: Icons.star,
                         ),
                         const SizedBox(width: 16),
                         _buildStatBadge(
                           context,
                           "Lenguaje",
                           widget.languageName,
-                          Icons.terminal,
+                          imageAsset: langAsset.isNotEmpty ? langAsset : null,
+                          icon: langAsset.isEmpty ? Icons.terminal : null,
                         ),
                       ],
                     ),
@@ -210,12 +227,13 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                   child: ElevatedButton(
                     onPressed: widget.onContinue,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
+                      backgroundColor: primaryColor,
                       foregroundColor: colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      elevation: 4,
+                      elevation: 8,
+                      shadowColor: primaryColor.withOpacity(0.5),
                     ),
                     child: const Text(
                       "COMENZAR AVENTURA",
@@ -238,21 +256,34 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
   Widget _buildStatBadge(
     BuildContext context,
     String label,
-    String value,
-    IconData icon,
-  ) {
+    String value, {
+    IconData? icon,
+    String? imageAsset,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = colorScheme.primary;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(color: primaryColor.withOpacity(0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: colorScheme.primary),
+          if (imageAsset != null)
+            // USAMOS EL OPTIMIZADOR AQUÍ (Local)
+            OptimizedImage(
+              imagePath: imageAsset,
+              width: 20,
+              height: 20,
+              fit: BoxFit.contain, // Importante para logos
+              isLocalAsset: true,
+            )
+          else if (icon != null)
+            Icon(icon, size: 20, color: primaryColor),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +296,13 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                value,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
+              ),
             ],
           ),
         ],

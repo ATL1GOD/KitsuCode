@@ -11,6 +11,7 @@ import 'package:kitsucode/core/utils/app_colors.dart';
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_profile.dart';
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_challenge.dart';
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_result.dart';
+import 'package:kitsucode/features/onboarding/model/onboarding_model.dart';
 
 class OnboardingView extends ConsumerStatefulWidget {
   const OnboardingView({super.key});
@@ -23,7 +24,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
   // UI Helpers
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
-
+  OnboardingResultModel? _resultData;
   // Profile State
   int? _selectedLanguageId;
   String? _selectedLanguageName;
@@ -156,30 +157,38 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId == null) return;
 
-      int nivel = 1;
-      if (_totalScore > 30) nivel = 2;
-      if (_totalScore > 70) nivel = 3;
+      // 1. OBTENER DATOS DEL RESULTADO DESDE SUPABASE
+      // Usamos la función RPC que creamos en el Paso 1
+      final resultResponse = await Supabase.instance.client.rpc(
+        'get_onboarding_resultado_por_score',
+        params: {'score_input': _totalScore},
+      );
 
-      // 1. Guardar en Supabase (Se mantiene igual)
+      if (resultResponse == null)
+        throw "No se encontró un rango para este puntaje";
+
+      // Parseamos la respuesta
+      _resultData = OnboardingResultModel.fromJson(resultResponse);
+
+      // 2. GUARDAR PROGRESO (Usamos el nivel_interno que vino de la BD)
       await Supabase.instance.client.rpc(
         'completar_onboarding_final',
         params: {
           'p_user_id': userId,
           'p_nombre_perfil': _usernameController.text.trim(),
           'p_id_lenguaje': _selectedLanguageId,
-          'p_nivel_conocimiento': nivel,
+          'p_nivel_conocimiento':
+              _resultData!.nivelInterno, // <--- Dato dinámico
         },
       );
 
-      // 2. Refrescar providers (Se mantiene igual)
       ref.invalidate(appBarProvider);
       ref.invalidate(userProfileByIdProvider(userId));
 
-      // 3. EN LUGAR DE IR AL HOME, MOSTRAR RESULTADOS
       if (mounted) {
         setState(() {
-          _isLoading = false; // Dejamos de cargar
-          _showResults = true; // Mostramos la pantalla de resultados
+          _isLoading = false;
+          _showResults = true;
         });
       }
     } catch (e) {
@@ -192,7 +201,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     }
   }
 
-  // --- BUILD ---
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -220,11 +228,13 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
         // Usamos Builder para que el contexto tenga el nuevo Theme
         builder: (innerContext) {
           // --- MOSTRAR RESULTADOS ---
-          if (_showResults) {
+          // Ahora pasamos el objeto _resultData completo
+          if (_showResults && _resultData != null) {
             return OnboardingResultsView(
               score: _totalScore,
               username: _usernameController.text,
               languageName: _selectedLanguageName ?? 'Desconocido',
+              resultModel: _resultData!, // <--- PASAMOS EL MODELO
               onContinue: () {
                 context.go('/home');
               },

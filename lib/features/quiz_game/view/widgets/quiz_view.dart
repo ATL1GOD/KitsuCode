@@ -329,7 +329,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         child: Scaffold(
           appBar: ChallengeAppBar2(
             progress: progress,
-            // OCULTAR X EN ONBOARDING
             onClose: widget.onOnboardingFinished != null ? null : () => showExitDialog(context, ref),
           ),
           body: _buildQuizBody(colorScheme, questionKey),
@@ -345,6 +344,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
      final topPadding = mediaQuery.padding.top;
 
     return SingleChildScrollView(
+      // --- CORRECCIÓN SCROLL QUIZ: Bloquear scroll manual ---
+      physics: const NeverScrollableScrollPhysics(),
+      // ------------------------------------------------------
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ConstrainedBox(

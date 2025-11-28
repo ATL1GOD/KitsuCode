@@ -5,12 +5,10 @@ import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
-// ✅ IMPORTAR EL OPTIMIZADOR DE IMÁGENES
+// ✅ IMPORTAR EL OPTIMIZADOR
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class AchievementModal extends StatelessWidget {
-  // Estos campos son necesarios para que el constructor de la clase
-  // sea válido, aunque no los usemos directamente
   final UserAchievementModel achievement;
   final UserProfileModel profile;
   final bool isCurrentUser;
@@ -18,12 +16,10 @@ class AchievementModal extends StatelessWidget {
   const AchievementModal({
     super.key,
     required this.achievement,
-    // Añadimos por si acaso, aunque 'show' es el método principal
     required this.profile,
     required this.isCurrentUser,
   });
 
-  // ✅ 1. MÉTODO 'show' ACTUALIZADO
   static Future<void> show(
     BuildContext context,
     UserAchievementModel achievement, {
@@ -45,9 +41,8 @@ class AchievementModal extends StatelessWidget {
                 scale: Tween<double>(begin: 0.8, end: 1.0).animate(
                   CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
                 ),
-                // ✅ 2. PASAMOS LOS DATOS A _ModalContent
                 child: Scaffold(
-                  backgroundColor: Colors.transparent, // Fondo transparente
+                  backgroundColor: Colors.transparent,
                   body: _ModalContent(
                     achievement: achievement,
                     profile: profile,
@@ -75,7 +70,6 @@ class AchievementModal extends StatelessWidget {
   }
 }
 
-// ✅ 3. CLASE _ModalContent ACTUALIZADA
 class _ModalContent extends StatelessWidget {
   final UserAchievementModel achievement;
   final UserProfileModel profile;
@@ -94,20 +88,29 @@ class _ModalContent extends StatelessWidget {
     final Color borderColor = getRarityColor(raridad);
     final String rarityText = getRarityText(raridad);
     final isUnlocked = achievement.obtenido;
-    final lockedColor = colors.onSurfaceVariant.withAlpha(128);
+    final lockedColor = colors.onSurfaceVariant.withValues(alpha: 0.5);
 
-    // --- Lógica de Imagen, Animación y Aura ---
+    // --- Lógica de Imagen ---
     Widget img = ColorFiltered(
       colorFilter: isUnlocked
           ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
           : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
-      // ✅ CAMBIO: Usamos OptimizedImage para cargar desde Supabase
-      child: OptimizedImage(
-        imagePath: achievement.iconUrl, // URL del logro
-        height: 200,
-        // Usamos el max width del modal (320px) para la optimización
-        width: 320,
-        fit: BoxFit.cover,
+      
+      // ✅ SOLUCIÓN: Usar Transform para subir la imagen
+      child: Transform.translate(
+        offset: const Offset(0, -10), // Sube la imagen 10 píxeles
+        child: Container(
+          width: 320,
+          height: 210, // Aumentamos la altura para compensar
+          padding: const EdgeInsets.all(0), 
+          
+          child: OptimizedImage(
+            imagePath: achievement.iconUrl,
+            width: 320, 
+            height: 210,
+            fit: BoxFit.contain, 
+          ),
+        ),
       ),
     );
 
@@ -116,7 +119,7 @@ class _ModalContent extends StatelessWidget {
       child: img
           .animate()
           .scale(
-            begin: const Offset(1.3, 1.3),
+            begin: const Offset(1.1, 1.1),
             end: const Offset(1.0, 1.0),
             duration: 500.ms,
             curve: Curves.easeOutBack,
@@ -134,32 +137,31 @@ class _ModalContent extends StatelessWidget {
 
     final aura = isUnlocked
         ? Icon(
-                Icons.auto_awesome,
-                size: 120,
-                color: borderColor.withOpacity(0.35),
-              )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .fadeIn(duration: 600.ms)
-              .scale(
-                begin: const Offset(0.8, 0.8),
-                end: const Offset(1.2, 1.2),
-                duration: 800.ms,
-              )
+            Icons.auto_awesome,
+            size: 120,
+            color: borderColor.withValues(alpha: 0.35),
+          )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fadeIn(duration: 600.ms)
+            .scale(
+              begin: const Offset(0.8, 0.8),
+              end: const Offset(1.2, 1.2),
+              duration: 800.ms,
+            )
         : Icon(
-                Icons.auto_awesome,
-                size: 120,
-                color: Colors.grey.shade600.withAlpha(128),
-              )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .fadeIn(duration: 600.ms)
-              .scale(
-                begin: const Offset(0.8, 0.8),
-                end: const Offset(1.2, 1.2),
-                duration: 800.ms,
-              );
-    // --- Fin Lógica sin cambios ---
+            Icons.auto_awesome,
+            size: 120,
+            color: Colors.grey.shade600.withValues(alpha: 0.5),
+          )
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fadeIn(duration: 600.ms)
+            .scale(
+              begin: const Offset(0.8, 0.8),
+              end: const Offset(1.2, 1.2),
+              duration: 800.ms,
+            );
 
-    // ✅ 4. LÓGICA DE TEXTO PERSONALIZADA
+    // --- Lógica de Texto ---
     final String descriptionTitle;
     if (isUnlocked) {
       descriptionTitle = isCurrentUser
@@ -174,10 +176,9 @@ class _ModalContent extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        // Fondo semi-transparente para el "dim"
-        color: Colors.black.withAlpha(179),
+        color: Colors.black.withValues(alpha: 0.7), 
         child: GestureDetector(
-          onTap: () {}, // Evita cerrar al tocar el modal
+          onTap: () {},
           child: Material(
             type: MaterialType.transparency,
             child: Center(
@@ -197,8 +198,8 @@ class _ModalContent extends StatelessWidget {
                       boxShadow: [
                         BoxShadow(
                           color: isUnlocked
-                              ? borderColor.withAlpha(179)
-                              : Colors.grey.shade600.withAlpha(153),
+                              ? borderColor.withValues(alpha: 0.7)
+                              : Colors.grey.shade600.withValues(alpha: 0.6),
                           blurRadius: isUnlocked ? 30 : 20,
                           spreadRadius: isUnlocked ? 5 : 3,
                         ),
@@ -220,14 +221,13 @@ class _ModalContent extends StatelessWidget {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // --- Círculo de ID con color de raridad ---
                                   Container(
                                     width: 32,
                                     height: 32,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: isUnlocked
-                                          ? borderColor.withAlpha(51)
+                                          ? borderColor.withValues(alpha: 0.2)
                                           : Colors.grey.shade700,
                                       border: Border.all(
                                         color: isUnlocked
@@ -256,7 +256,7 @@ class _ModalContent extends StatelessWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color: isUnlocked
-                                          ? borderColor.withAlpha(204)
+                                          ? borderColor.withValues(alpha: 0.8)
                                           : Colors.grey.shade500,
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -267,7 +267,7 @@ class _ModalContent extends StatelessWidget {
                                         fontSize: 11,
                                         color: isUnlocked
                                             ? colors.onPrimary
-                                            : Colors.white, // Texto de tag
+                                            : Colors.white,
                                       ),
                                     ),
                                   ),
@@ -306,7 +306,7 @@ class _ModalContent extends StatelessWidget {
                               boxShadow: !isUnlocked
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black.withAlpha(128),
+                                        color: Colors.black.withValues(alpha: 0.5),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                         offset: const Offset(0, 2),
@@ -354,7 +354,7 @@ class _ModalContent extends StatelessWidget {
                                       child: Column(
                                         children: [
                                           Text(
-                                            descriptionTitle, // <-- ¡USANDO LA VARIABLE!
+                                            descriptionTitle,
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
@@ -379,24 +379,22 @@ class _ModalContent extends StatelessWidget {
                                     const SizedBox(height: 15),
                                   ],
                                 ),
-                                // Overlay de Bloqueado (solo se aplica al contenido no al fondo)
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(11),
-                                        color: Colors.black.withAlpha(77),
+                                        color: Colors.black.withValues(alpha: 0.3),
                                       ),
                                     ),
                                   ),
-                                // Icono de Bloqueo
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Center(
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withAlpha(179),
+                                          color: Colors.black.withValues(alpha: 0.7),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -417,7 +415,7 @@ class _ModalContent extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: () => Navigator.of(context).pop(),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.primary, // Botón gris
+                              backgroundColor: colors.primary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 40,
                                 vertical: 12,

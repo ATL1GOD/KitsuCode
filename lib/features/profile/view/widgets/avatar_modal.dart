@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui'; // Para la clase Color
+// ✅ 1. IMPORTAR EL OPTIMIZADOR
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 // --- Función de ayuda para el color ---
 Color _safeParseColor(String colorString) {
@@ -77,11 +79,12 @@ class _ModalContent extends StatelessWidget {
         tipo.substring(0, 1).toUpperCase() + tipo.substring(1);
     final lockedColor = colors.onSurfaceVariant.withAlpha(128);
 
-    // --- Lógica de Imagen (SIEMPRE A COLOR) ---
-    Widget img = Image.asset(
-      avatar.assetPath,
+    // --- Lógica de Imagen (SIEMPRE A COLOR + OPTIMIZADA) ---
+    // ✅ CAMBIO: Usamos OptimizedImage en lugar de Image.asset
+    Widget img = OptimizedImage(
+      imagePath: avatar.assetPath, // Ahora esto debe ser la URL/Path de Supabase
       height: 200,
-      width: double.infinity,
+      width: 320, // Ajustamos al ancho máximo del modal para optimizar descarga
       fit: BoxFit.cover,
     );
 
@@ -282,8 +285,8 @@ class _ModalContent extends StatelessWidget {
                                       color: isUnlocked
                                           ? borderColor
                                           : Colors
-                                                .grey
-                                                .shade500, // Gris si está bloqueado
+                                              .grey
+                                              .shade500, // Gris si está bloqueado
                                       size: 24,
                                     ),
                                     const SizedBox(height: 10),

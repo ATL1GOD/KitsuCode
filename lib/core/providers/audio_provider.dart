@@ -10,8 +10,13 @@ final audioControllerProvider = Provider<AudioController>((ref) {
 class AudioController {
   final Ref ref;
 
-  // 🔥 OPTIMIZACIÓN CRÍTICA: Pool de players precargados
-  final Map<String, AudioPlayer> _sfxPlayers = {};
+  // Players para efectos
+  final AudioPlayer _clickPlayer = AudioPlayer();
+  final AudioPlayer _successPlayer = AudioPlayer();
+  final AudioPlayer _errorPlayer = AudioPlayer();
+  final AudioPlayer _unlockPlayer = AudioPlayer();
+
+  // Player para música
   final AudioPlayer _musicPlayer = AudioPlayer();
 
   String? _currentMusicTrack;
@@ -19,53 +24,75 @@ class AudioController {
   Timer? _watchdogTimer;
 
   AudioController(this.ref) {
-    // Optimización 1: Música en modo Loop
-    _musicPlayer.setReleaseMode(ReleaseMode.loop);
-
-    final AudioContext audioContext = AudioContext(
-      iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.playback,
-        options: {
-          AVAudioSessionOptions.mixWithOthers,
-        },
-      ),
-      android: AudioContextAndroid(
-        isSpeakerphoneOn: false,
-        stayAwake: false,
-        contentType: AndroidContentType.music,
-        usageType: AndroidUsageType.game,
-        audioFocus: AndroidAudioFocus.none,
-      ),
-    );
-
-    AudioPlayer.global.setAudioContext(audioContext);
-
-    // 🔥 OPTIMIZACIÓN: Precargar todos los SFX
-    _preloadSfx();
-
+    _initAudioContext();
+    // No llamamos a _preloadSfx aquí inmediatamente para dar tiempo al contexto global
+    Future.delayed(Duration(milliseconds: 100), () => _preloadSfx());
     _startWatchdog();
   }
 
-  // 🎯 Precarga de SFX para evitar recrear MediaCodec
-  Future<void> _preloadSfx() async {
-    final sfxFiles = ['click.mp3', 'success.mp3', 'error.mp3', 'unlock.mp3'];
-
-    for (final file in sfxFiles) {
-      final player = AudioPlayer();
-      await player.setPlayerMode(PlayerMode.lowLatency);
-      await player.setReleaseMode(ReleaseMode.stop);
-
-      // Precargar el archivo sin reproducir
-      try {
-        await player.setSource(AssetSource('audio/$file'));
-        await player.setVolume(1.0);
-        _sfxPlayers[file] = player;
-      } catch (e) {
-        // Si falla la precarga, continuar
-        player.dispose();
-      }
+  // 1. CORRECCIÓN DEL CRASH (CRÍTICO)
+  Future<void> _initAudioContext() async {
+    try {
+      final AudioContext audioContext = AudioContext(
+        iOS: AudioContextIOS(
+          // 'ambient' ya implica mezcla. No pongas 'mixWithOthers' aquí o crashea.
+          category: AVAudioSessionCategory.ambient,
+          options: <AVAudioSessionOptions>{}, 
+        ),
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          // Music + Game + None = La combinación ganadora para que no se corte
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.none, 
+        ),
+      );
+      
+      await AudioPlayer.global.setAudioContext(audioContext);
+      
+      // Configuramos el player de música
+      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _musicPlayer.setPlayerMode(PlayerMode.mediaPlayer); // Música siempre en MediaPlayer
+    } catch (e) {
+      print("Error configurando contexto de audio: $e");
     }
   }
+
+  Future<void> _preloadSfx() async {
+    // Configuramos los players de efectos
+    await _setupSfxPlayer(_clickPlayer, 'click.wav');
+    await _setupSfxPlayer(_successPlayer, 'success.wav');
+    await _setupSfxPlayer(_errorPlayer, 'error.wav');
+    await _setupSfxPlayer(_unlockPlayer, 'unlock.wav');
+  }
+
+  Future<void> _setupSfxPlayer(AudioPlayer player, String file) async {
+    // ReleaseMode.stop es vital para que no "muera" después de sonar una vez
+    await player.setReleaseMode(ReleaseMode.stop);
+    // LowLatency usa SoundPool (Cero Lag)
+    await player.setPlayerMode(PlayerMode.lowLatency);
+    await player.setSource(AssetSource('audio/$file'));
+  }
+
+  // --- REPRODUCCIÓN EFECTOS ---
+  Future<void> _playSfx(AudioPlayer player) async {
+    if (!_areSfxEnabled()) return;
+    
+    try {
+      // stop() reinicia el cabezal a 0. Vital para LowLatency.
+      await player.stop();
+      await player.resume();
+    } catch (e) {
+      print("Error SFX: $e");
+    }
+  }
+
+  // API Pública
+  Future<void> playClick() async => await _playSfx(_clickPlayer);
+  Future<void> playSuccess() async => await _playSfx(_successPlayer);
+  Future<void> playError() async => await _playSfx(_errorPlayer);
+  Future<void> playLevelUnlock() async => await _playSfx(_unlockPlayer);
 
   // --- HELPERS ---
   double _getMusicVolume() {
@@ -83,71 +110,25 @@ class AudioController {
   // --- WATCHDOG ---
   void _startWatchdog() {
     _watchdogTimer?.cancel();
-    _watchdogTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      _checkMusicState();
-    });
+    _watchdogTimer = Timer.periodic(const Duration(milliseconds: 800), (_) => _checkMusicState());
   }
 
   Future<void> _checkMusicState() async {
-    // Si el volumen es 0, no forzamos play (ahorro de batería)
     if (_getMusicVolume() <= 0) return;
+    if (!_shouldBePlaying || _currentMusicTrack == null) return;
 
-    // Si la bandera dice que NO debe sonar, el watchdog se detiene aquí.
-    if (!_shouldBePlaying || _currentMusicTrack == null) {
-      return;
-    }
-
-    final currentState = _musicPlayer.state;
-    
-    // Solo intervenir si debería sonar y no lo hace
-    if (currentState != PlayerState.playing) {
+    if (_musicPlayer.state != PlayerState.playing) {
       try {
-        if (currentState == PlayerState.paused) {
+        if (_musicPlayer.state == PlayerState.paused) {
           await _musicPlayer.resume();
-          await Future.delayed(const Duration(milliseconds: 150));
-          
-          if (_musicPlayer.state == PlayerState.playing) {
-            return;
-          }
+        } else {
+          await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
         }
-        await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
-      } catch (e) {
-        // Fallo silencioso
-      }
+      } catch (_) {}
     }
   }
 
-  // --- SFX ---
-  // 🔥 OPTIMIZACIÓN CRÍTICA: Reutilizar players precargados
-  Future<void> _playSfx(String assetName) async {
-    // Si efectos desactivados, salir rápido
-    if (!_areSfxEnabled()) return;
-
-    final player = _sfxPlayers[assetName];
-    if (player == null) return;
-
-    try {
-      // En lugar de stop() + play() que destruye el decoder,
-      // usamos seek(0) + resume() que reutiliza el decoder existente
-      await player.seek(Duration.zero);
-      await player.resume();
-    } catch (e) {
-      // Si falla, intentar método tradicional como fallback
-      try {
-        await player.stop();
-        await player.play(AssetSource('audio/$assetName'));
-      } catch (_) {
-        // Fallo silencioso
-      }
-    }
-  }
-
-  Future<void> playClick() async => await _playSfx('click.mp3');
-  Future<void> playSuccess() async => await _playSfx('success.mp3');
-  Future<void> playError() async => await _playSfx('error.mp3');
-  Future<void> playLevelUnlock() async => await _playSfx('unlock.mp3');
-
-  // --- MÚSICA ---
+  // --- MÚSICA DE FONDO ---
   Future<void> playBackgroundMusic(String languageName) async {
     String trackName;
     switch (languageName.toLowerCase().trim()) {
@@ -166,23 +147,17 @@ class AudioController {
 
     _currentMusicTrack = trackName;
 
-    // Si volumen es 0, pausar y no cargar nada nuevo
     if (_getMusicVolume() <= 0) {
-      if (_musicPlayer.state == PlayerState.playing) {
-        await _musicPlayer.pause();
-      }
+      if (_musicPlayer.state == PlayerState.playing) await _musicPlayer.pause();
       return;
     }
 
     try {
       await updateMusicVolume();
-      if (_musicPlayer.state == PlayerState.playing) {
-        await _musicPlayer.stop();
-      }
+      if (_musicPlayer.state == PlayerState.playing) await _musicPlayer.stop();
       await Future.delayed(const Duration(milliseconds: 50));
       await _musicPlayer.play(AssetSource('audio/music/$trackName'));
-    } catch (e) {
-      _currentMusicTrack = null;
+    } catch (_) {
       _shouldBePlaying = false;
     }
   }
@@ -192,20 +167,15 @@ class AudioController {
     double volumenFinal = volumenDb * 0.6; 
 
     if (volumenFinal <= 0) {
-      if (_musicPlayer.state == PlayerState.playing) {
-        await _musicPlayer.pause();
-      }
+      if (_musicPlayer.state == PlayerState.playing) await _musicPlayer.pause();
     } else {
       await _musicPlayer.setVolume(volumenFinal);
-
-      if (_shouldBePlaying && 
-          _currentMusicTrack != null && 
-          _musicPlayer.state != PlayerState.playing) {
-        if (_musicPlayer.state == PlayerState.paused) {
+      if (_shouldBePlaying && _currentMusicTrack != null && _musicPlayer.state != PlayerState.playing) {
+         if (_musicPlayer.state == PlayerState.paused) {
            await _musicPlayer.resume();
-        } else {
+         } else {
            await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
-        }
+         }
       }
     }
   }
@@ -215,49 +185,30 @@ class AudioController {
     await _musicPlayer.pause();
   }
 
-  // 🔥 CORRECCIÓN CRÍTICA:
-  // Al salir de la app, ponemos la bandera en false.
-  // Así el watchdog sabe que NO debe intentar reproducir nada.
   Future<void> pauseMusicAppLifecycle() async {
-    _shouldBePlaying = false; // 👈 ESTO ES LO QUE FALTABA
-    
-    if (_musicPlayer.state == PlayerState.playing) {
-      await _musicPlayer.pause();
-    }
+    _shouldBePlaying = false;
+    if (_musicPlayer.state == PlayerState.playing) await _musicPlayer.pause();
   }
 
   Future<void> forceResumeMusic() async {
-    if (_currentMusicTrack == null) return;
-    if (_getMusicVolume() <= 0) return; 
-
+    if (_currentMusicTrack == null || _getMusicVolume() <= 0) return;
     _shouldBePlaying = true;
-
     try {
-      final currentState = _musicPlayer.state;
-      if (currentState == PlayerState.paused) {
+      if (_musicPlayer.state == PlayerState.paused) {
         await _musicPlayer.resume();
-        await Future.delayed(const Duration(milliseconds: 200));
-        if (_musicPlayer.state == PlayerState.playing) {
-          await updateMusicVolume();
-          return;
-        }
+      } else {
+        await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
       }
       await updateMusicVolume();
-      await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
-    } catch (e) {
-      // Fallo silencioso
-    }
+    } catch (_) {}
   }
 
   void dispose() {
     _watchdogTimer?.cancel();
-    _shouldBePlaying = false;
+    _clickPlayer.dispose();
+    _successPlayer.dispose();
+    _errorPlayer.dispose();
+    _unlockPlayer.dispose();
     _musicPlayer.dispose();
-
-    // Limpiar todos los SFX players
-    for (final player in _sfxPlayers.values) {
-      player.dispose();
-    }
-    _sfxPlayers.clear();
   }
 }

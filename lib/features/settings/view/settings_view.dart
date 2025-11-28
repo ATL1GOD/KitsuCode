@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart'; // 👈 IMPORTANTE: Haptics
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -15,8 +15,7 @@ import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/shared/widgets/kitsu_action_modal.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE: Audio
-// 🔥 IMPORTAR FCM PROVIDER PARA LIMPIARLO
+import 'package:kitsucode/core/providers/audio_provider.dart';
 import 'package:kitsucode/features/notifications/provider/fcm_provider.dart';
 
 class SettingsView extends ConsumerStatefulWidget {
@@ -30,9 +29,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
     with WidgetsBindingObserver {
   bool _isPageVisible = true;
   bool _isAppActive = true;
-
-  // 🔥 1. VARIABLE DE ESTADO OPTIMISTA
-  // Sirve para engañar al ojo y mover el switch antes de que la BD responda
   bool? _optimisticDarkMode;
 
   @override
@@ -89,32 +85,17 @@ class _SettingsViewState extends ConsumerState<SettingsView>
 
             context.pop();
             try {
-              // 1. Cerrar sesión en Supabase (Backend)
               final authRepo = await ref.read(authRepositoryProvider.future);
               await authRepo.signOut();
 
-              // ---------------------------------------------------------
-              // 🔥 2. LIMPIEZA TOTAL DE RIVERPOD (La Magia)
-              // ---------------------------------------------------------
-              // Esto borra la memoria caché de los providers clave para que
-              // el próximo usuario no vea datos "fantasmas".
-              
-              // Invalidar Auth State fuerza a todos los watchers a resetearse
               ref.invalidate(authStateProvider);
-              
-              // Invalidar repositorio de perfil para borrar datos viejos
               ref.invalidate(profileRepositoryProvider);
-              
-              // Invalidar notifiers de logros y avatares (limpiar colas)
               ref.invalidate(achievementNotifierProvider);
               ref.invalidate(avatarNotifierProvider);
-              
-              // Invalidar FCM para forzar regeneración de token al volver a entrar
               ref.invalidate(fcmServiceProvider);
 
               if (mounted) {
                 showSuccessSnackbar(
-                  // ignore: use_build_context_synchronously
                   context,
                   '¡Sesión cerrada!',
                   'Vuelve pronto a KitsuCode.',
@@ -122,7 +103,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
               }
             } catch (e) {
               if (mounted) {
-                // ignore: use_build_context_synchronously
                 showErrorSnackbar(context, 'Error', e.toString());
               }
             }
@@ -257,7 +237,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                       await authRepo.deleteAccount();
                     } catch (e) {
                       if (!mounted) return;
-                      // ignore: use_build_context_synchronously
                       showErrorSnackbar(context, 'Error', e.toString());
                     }
                   }
@@ -279,16 +258,22 @@ class _SettingsViewState extends ConsumerState<SettingsView>
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     final authState = ref.watch(authStateProvider);
 
+    // 1. CARGA INICIAL AUTH
     if (authState.isLoading) {
       return Scaffold(
         backgroundColor: colors.surfaceContainerLowest,
         body: _SettingsLoadingShimmer(colors: colors),
       );
     }
+
     final currentAuthUserId = authState.value?.session?.user.id;
+
+    // 🔥 FIX 1: Si no hay usuario (porque se acaba de borrar/salir),
+    // mostramos el Shimmer en vez de texto feo o error.
     if (currentAuthUserId == null) {
-      return const Scaffold(
-        body: Center(child: Text("Usuario no autenticado")),
+      return Scaffold(
+        backgroundColor: colors.surfaceContainerLowest,
+        body: _SettingsLoadingShimmer(colors: colors),
       );
     }
 
@@ -299,7 +284,11 @@ class _SettingsViewState extends ConsumerState<SettingsView>
       backgroundColor: colors.surfaceContainerLowest,
       body: profileState.when(
         loading: () => _SettingsLoadingShimmer(colors: colors),
-        error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
+        
+        // 🔥 FIX 2: Si da error (porque el usuario ya no existe en la BD),
+        // mostramos el Shimmer. Esto oculta el mensaje "Error al cargar perfil".
+        error: (e, s) => _SettingsLoadingShimmer(colors: colors),
+        
         data: (profile) {
           final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
           final dynamicColor = avatarsList.isNotEmpty
@@ -316,8 +305,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
             },
             child: Stack(
               children: [
-                // 🔥 2. OPTIMIZACIÓN: RepaintBoundary
-                // Aísla el fondo animado para que no se repinte cuando se mueve el switch
                 if (_isAppActive && _isPageVisible)
                   RepaintBoundary(
                     child: AnimatedSettingsBackground(
@@ -413,7 +400,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                 child: Text('Error al cargar preferencias: $e'),
                               ),
                               data: (prefs) {
-                                // 🔥 LÓGICA ANTI-LAG (Optimistic UI)
                                 final String themeFromDB = prefs.temaVisual;
                                 final bool realIsDark;
                                 if (themeFromDB == 'system') {
@@ -422,7 +408,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                   realIsDark = (themeFromDB == 'dark');
                                 }
 
-                                // Si tenemos un valor optimista (mientras el usuario espera), usamos ese.
                                 final bool switchValue =
                                     _optimisticDarkMode ?? realIsDark;
 
@@ -440,23 +425,17 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                         subtitle:
                                             'Alternar entre tema claro y oscuro',
                                         dynamicColor: dynamicColor,
-
-                                        // 🔥 Valor instantáneo
                                         initialValue: switchValue,
-
                                         onChanged: (value) {
-                                          // 1. Feedback Inmediato
                                           HapticFeedback.lightImpact();
                                           ref
                                               .read(audioControllerProvider)
                                               .playClick();
 
-                                          // 2. Actualización Visual Inmediata (Sin tocar BD aún)
                                           setState(() {
                                             _optimisticDarkMode = value;
                                           });
 
-                                          // 3. Pausa para permitir animación del switch (320ms)
                                           Future.delayed(
                                             const Duration(milliseconds: 320),
                                             () {
@@ -466,14 +445,12 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                                                   ? 'dark'
                                                   : 'light';
 
-                                              // 4. Ahora sí, trabajo pesado
                                               ref
                                                   .read(
                                                     settingsProvider.notifier,
                                                   )
                                                   .updateTemaVisual(newTheme)
                                                   .then((_) {
-                                                    // 5. Limpieza
                                                     if (mounted) {
                                                       setState(() {
                                                         _optimisticDarkMode =

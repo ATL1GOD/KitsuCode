@@ -1,28 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-// --- IMPORTS DE UTILIDADES VISUALES (Asegúrate de que estas rutas sean correctas) ---
 import 'package:kitsucode/core/utils/app_colors.dart';
-import 'package:kitsucode/core/utils/responsive_layout.dart';
 
-// --- IMPORTS DE TUS JUEGOS Y MODELOS ---
-import 'package:kitsucode/features/puzzle_game/view/puzzle_view.dart';
-import 'package:kitsucode/features/puzzle_game/provider/puzzle_provider.dart';
-import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
-
-import 'package:kitsucode/features/columnas_game/view/columnas_view.dart';
-import 'package:kitsucode/features/columnas_game/model/columnas_model.dart';
-
-import 'package:kitsucode/features/codigo_game/view/codigo_view.dart';
-import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
-
-import 'package:kitsucode/features/quiz_game/view/widgets/quiz_view.dart';
-import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
+import 'package:kitsucode/features/onboarding/view/widgets/onboarding_profile.dart';
+import 'package:kitsucode/features/onboarding/view/widgets/onboarding_challenge.dart';
 
 class OnboardingView extends ConsumerStatefulWidget {
   const OnboardingView({super.key});
@@ -32,20 +19,16 @@ class OnboardingView extends ConsumerStatefulWidget {
 }
 
 class _OnboardingViewState extends ConsumerState<OnboardingView> {
-  // --- VARIABLES DE UI Y PERFIL (MEZCLA DE AMBOS ARCHIVOS) ---
+  // UI Helpers
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
 
+  // Profile State
   int? _selectedLanguageId;
-  String? _selectedLanguageName; // Necesario para la lógica de colores
-
+  String? _selectedLanguageName;
   List<Map<String, dynamic>> _languages = [];
 
-  // Rutas de imágenes
-  final String mobileLogoPath = 'assets/images/auth/fox_login.webp';
-  final String desktopHeroPath = 'assets/images/auth/fox_login.webp';
-
-  // --- VARIABLES DEL TEST (LÓGICA ORIGINAL) ---
+  // Game/Test State
   final PageController _pageController = PageController();
   List<Map<String, dynamic>> _onboardingChallenges = [];
   int _currentChallengeIndex = 0;
@@ -60,8 +43,14 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     _loadOnboardingChallenges();
   }
 
-  // --- 1. LÓGICA DE CARGA ---
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
 
+  // --- CARGA DE DATOS ---
   Future<void> _loadLanguages() async {
     try {
       final langs = await ref
@@ -88,14 +77,12 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     }
   }
 
-  // --- 2. LÓGICA DE COLORES DINÁMICOS (DEL FRONTEND MEJORADO) ---
+  // --- LOGICA DEL NEGOCIO ---
   ColorScheme _getDynamicColorScheme(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    if (_selectedLanguageName == null) {
-      return Theme.of(context).colorScheme;
-    }
+    if (_selectedLanguageName == null) return Theme.of(context).colorScheme;
 
     final name = _selectedLanguageName!.toLowerCase();
 
@@ -124,10 +111,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     return Theme.of(context).colorScheme;
   }
 
-  // --- 3. LÓGICA DE NAVEGACIÓN (DEL ARCHIVO ORIGINAL) ---
-
   void _startTest() {
-    // Validaciones
     if (!_formKey.currentState!.validate()) return;
     if (_selectedLanguageId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,7 +123,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       return;
     }
 
-    // Si no cargaron los retos, reintentar
     if (_onboardingChallenges.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cargando test... espera un momento.')),
@@ -148,7 +131,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       return;
     }
 
-    // CAMBIO DE FASE: De Perfil a Test
     setState(() => _isProfileStep = false);
   }
 
@@ -156,10 +138,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     if (isCorrect) _totalScore += 10;
 
     if (_currentChallengeIndex < _onboardingChallenges.length - 1) {
-      setState(() {
-        _currentChallengeIndex++;
-      });
-
+      setState(() => _currentChallengeIndex++);
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -169,19 +148,15 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     }
   }
 
-  int _calculateLevel() {
-    if (_totalScore <= 30) return 1;
-    if (_totalScore <= 70) return 2;
-    return 3;
-  }
-
   Future<void> _finishOnboarding() async {
     setState(() => _isLoading = true);
     try {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId == null) return;
 
-      final nivel = _calculateLevel();
+      int nivel = 1;
+      if (_totalScore > 30) nivel = 2;
+      if (_totalScore > 70) nivel = 3;
 
       await Supabase.instance.client.rpc(
         'completar_onboarding_final',
@@ -197,14 +172,12 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       ref.invalidate(userProfileByIdProvider(userId));
 
       if (mounted) {
-        String mensaje = "¡Bienvenido! Nivel detectado: ";
-        if (nivel == 1) mensaje += "Aprendiz (Básico)";
-        if (nivel == 2) mensaje += "Programador (Intermedio)";
-        if (nivel == 3) mensaje += "Arquitecto (Avanzado)";
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(mensaje)));
+        String rango = nivel == 1
+            ? "Aprendiz"
+            : (nivel == 2 ? "Programador" : "Arquitecto");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("¡Bienvenido! Nivel detectado: $rango")),
+        );
         context.go('/home');
       }
     } catch (e) {
@@ -218,16 +191,14 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     }
   }
 
-  // --- 4. BUILD PRINCIPAL ---
-
+  // --- BUILD ---
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // AQUI ES DONDE OCURRE LA MAGIA DE FUSIÓN
-    // Si estamos en el paso de perfil, mostramos el diseño MEJORADO
+    // PASO 1: PERFIL
     if (_isProfileStep) {
       final activeColorScheme = _getDynamicColorScheme(context);
 
@@ -243,23 +214,35 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
         curve: Curves.easeInOut,
         child: Scaffold(
           backgroundColor: activeColorScheme.surface,
-          // Usamos el ResponsiveLayout del archivo mejorado
-          body: ResponsiveLayout(
-            smallScaffold: _buildMobileLayout(activeColorScheme),
-            largeScaffold: _buildDesktopLayout(activeColorScheme),
+          body: OnboardingProfileStep(
+            formKey: _formKey,
+            usernameController: _usernameController,
+            languages: _languages,
+            selectedLanguageId: _selectedLanguageId,
+            colorScheme: activeColorScheme,
+            onLanguageSelected: (id, name) {
+              setState(() {
+                if (_selectedLanguageId == id) {
+                  _selectedLanguageId = null;
+                  _selectedLanguageName = null;
+                } else {
+                  _selectedLanguageId = id;
+                  _selectedLanguageName = name;
+                }
+              });
+            },
+            onStartTest: _startTest,
           ),
         ),
       );
     }
 
-    // Si NO es el paso de perfil (es decir, son los retos), usamos el diseño ORIGINAL
+    // PASO 2: JUEGOS
     if (_onboardingChallenges.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final currentData = _onboardingChallenges[_currentChallengeIndex];
-    final tipoReto = currentData['tipo_reto'] as int;
-    final contenido = currentData['contenido'];
 
     return Scaffold(
       appBar: AppBar(
@@ -277,363 +260,13 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        children: [_buildGameWidget(tipoReto, contenido)],
-      ),
-    );
-  }
-
-  // --- 5. WIDGETS DE JUEGO (LÓGICA ORIGINAL) ---
-
-  Widget _buildGameWidget(int tipo, dynamic jsonContent) {
-    switch (tipo) {
-      case 1: // PUZZLE
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final model = PuzzleChallengeModel.fromJson(jsonContent);
-          ref.read(puzzleProvider.notifier).loadChallengeFromModel(model);
-        });
-        return PuzzleView(onOnboardingFinished: _onChallengeFinished);
-
-      case 2: // RELACIÓN
-        final model = ColumnsChallenge.fromJson(jsonContent);
-        return ColumnsChallengeView(
-          challenge: model,
-          retoId: "onboarding",
-          nivelId: "0",
-          onOnboardingFinished: _onChallengeFinished,
-        );
-
-      case 3: // CÓDIGO
-        final model = CodigoChallenge.fromJson(jsonContent);
-        return CodigoChallengeView(
-          challenge: model,
-          retoId: "onboarding",
-          nivelId: "0",
-          onOnboardingFinished: _onChallengeFinished,
-        );
-
-      case 4: // QUIZ
-        final model = QuizData.fromJson(jsonContent);
-        return QuizPage(
-          mydata: model,
-          retoId: "onboarding",
-          nivelId: "0",
-          onOnboardingFinished: _onChallengeFinished,
-        );
-
-      default:
-        return Center(child: Text("Tipo de reto desconocido: $tipo"));
-    }
-  }
-
-  // --- 6. WIDGETS VISUALES DEL PERFIL (DEL FRONTEND MEJORADO) ---
-
-  Widget _buildMobileLayout(ColorScheme colorScheme) {
-    return SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: _buildFormContent(colorScheme, isCompact: true),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopLayout(ColorScheme colorScheme) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 4,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 400),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              image: DecorationImage(
-                image: AssetImage(desktopHeroPath),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  colorScheme.primary.withOpacity(0.85),
-                  BlendMode.srcOver,
-                ),
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "KitsuCode",
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: colorScheme.onPrimary,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: Text(
-                    "Tu camino ninja en la programación comienza aquí.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onPrimary.withOpacity(0.9),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 5,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 60,
-                  vertical: 40,
-                ),
-                child: _buildFormContent(colorScheme, isCompact: false),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFormContent(ColorScheme colorScheme, {required bool isCompact}) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (isCompact) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
-              child: Image.asset(
-                mobileLogoPath,
-                height: 250,
-                fit: BoxFit.contain,
-              ),
-            ),
-            Text(
-              "¡Bienvenido a KitsuCode!",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Configura tu perfil para comenzar",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 40),
-          ] else ...[
-            Text(
-              "Crea tu Perfil",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            Text(
-              "Completa tus datos para acceder al dojo.",
-              style: TextStyle(
-                fontSize: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
-
-          Text(
-            "Elige tu nombre de usuario",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextFormField(
-            controller: _usernameController,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-            decoration: InputDecoration(
-              hintText: "Ej. KitsuCode_Pro",
-              prefixIcon: Icon(Icons.person_pin, color: colorScheme.primary),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Colors.transparent),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: colorScheme.primary, width: 2),
-              ),
-            ),
-            validator: (val) {
-              if (val == null || val.isEmpty) return 'Requerido';
-              if (val.length < 3) return 'Mínimo 3 caracteres';
-              return null;
-            },
-          ),
-
-          const SizedBox(height: 30),
-
-          Text(
-            "Elige tu lenguaje de programación favorito",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 15),
-
-          _languages.isEmpty
-              ? const Center(child: CircularProgressIndicator.adaptive())
-              : Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: isCompact
-                      ? WrapAlignment.center
-                      : WrapAlignment.start,
-                  children: _languages.map((lang) {
-                    final isSelected =
-                        _selectedLanguageId == lang['id_lenguaje'];
-                    return _buildTechChip(
-                      label: lang['nombre'],
-                      isSelected: isSelected,
-                      colorScheme: colorScheme,
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            _selectedLanguageId = null;
-                            _selectedLanguageName = null;
-                          } else {
-                            _selectedLanguageId = lang['id_lenguaje'];
-                            _selectedLanguageName = lang['nombre'];
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-
-          const SizedBox(height: 50),
-
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            // IMPORTANTE: Aquí cambiamos el onPressed para que llame a _startTest
-            // en lugar de enviar los datos al backend directamente.
-            child: ElevatedButton(
-              onPressed: _startTest,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "COMENZAR AVENTURA",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_rounded),
-                ],
-              ),
-            ),
+          OnboardingGameRenderer(
+            tipoReto: currentData['tipo_reto'] as int,
+            content: currentData['contenido'],
+            onFinished: _onChallengeFinished,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTechChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? colorScheme.primary : Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              Icon(Icons.check_circle, size: 18, color: colorScheme.onPrimary),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurfaceVariant,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -20,7 +20,7 @@ class QuizData {
     required this.recursos,
   }) : totalQuestions = questions.length;
 
-  factory QuizData.fromChallengeContent(Map<String, dynamic> challengeContent) {
+  factory QuizData.fromJson(Map<String, dynamic> challengeContent) {
     // Obtenemos la lista original completa
     List<dynamic> preguntasList = challengeContent['preguntas'] ?? [];
 
@@ -82,7 +82,7 @@ class QuizLoaderPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final QuizData mydata;
     try {
-      mydata = QuizData.fromChallengeContent(challengeContent);
+      mydata = QuizData.fromJson(challengeContent);
     } catch (e) {
       debugPrint("Error creando QuizData: $e");
       return Scaffold(

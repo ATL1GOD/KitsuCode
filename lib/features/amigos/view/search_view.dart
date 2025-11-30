@@ -369,6 +369,7 @@ class UserSearchCard extends ConsumerWidget {
                       const SizedBox(width: 16),
 
                       // --- Textos (Siempre blancos por el fondo oscuro) ---
+                      // ... Dentro de UserSearchCard ...
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,22 +382,31 @@ class UserSearchCard extends ConsumerWidget {
                               style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white, // Texto blanco
+                                color: Colors.white,
                                 letterSpacing: 0.5,
                               ),
                             ),
                             const SizedBox(height: 4),
+
+                            // --- AQUÍ ESTÁ EL CAMBIO ---
                             Row(
                               children: [
-                                Text(
-                                  '@${user.nombreUsuario}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.white.withOpacity(0.8),
+                                // 1. Envolvemos el texto en Flexible
+                                Flexible(
+                                  child: Text(
+                                    '@${user.nombreUsuario}',
+                                    // 2. Agregamos el comportamiento de puntos suspensivos
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white.withOpacity(0.8),
+                                    ),
                                   ),
                                 ),
-                                // Pequeña etiqueta del rango
+
+                                // El contenedor del rango se queda igual,
+                                // pero ahora el texto anterior le respetará su espacio.
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(
@@ -422,10 +432,10 @@ class UserSearchCard extends ConsumerWidget {
                                 ),
                               ],
                             ),
+                            // --- FIN DEL CAMBIO ---
                           ],
                         ),
                       ),
-
                       // --- Icono Arrow ---
                       Icon(
                         Icons.arrow_forward_ios_rounded,

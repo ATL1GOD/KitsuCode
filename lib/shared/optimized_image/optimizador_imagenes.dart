@@ -1,4 +1,3 @@
-// lib/shared/optimized_image/optimizador_imagenes.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -29,7 +28,18 @@ class OptimizedImage extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final devicePixelRatio = mediaQuery.devicePixelRatio;
 
-    final targetWidth = (width * devicePixelRatio).round();
+    // --- LÓGICA DE SEGURIDAD ---
+    int targetWidth;
+
+    // 1. Si tienes un ancho definido (lo que usabas antes), sigue igual.
+    if (width.isFinite) {
+      targetWidth = (width * devicePixelRatio).round();
+    }
+    // 2. Si es infinito (tu nuevo banner), usamos un ancho estándar de pantalla (ej. 1080px)
+    //    para pedirle a Supabase una imagen de buena calidad pero no gigante.
+    else {
+      targetWidth = 1080;
+    }
 
     return 'https://$projectId.supabase.co/storage/v1/object/public/$bucketName/$imagePath'
         '?width=$targetWidth'
@@ -65,7 +75,11 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      cacheWidth: (width * 2).round(),
+      // AQUÍ ESTÁ LA PROTECCIÓN:
+      // Si width es número (ej. 100), calcula 200. Si es infinito, pasa NULL.
+      // Cuando pasas NULL a cacheWidth, Flutter usa el tamaño original del archivo.
+      // Esto es seguro y no rompe nada.
+      cacheWidth: width.isFinite ? (width * 2).round() : null,
       errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context),
     );
   }
@@ -79,8 +93,12 @@ class OptimizedImage extends StatelessWidget {
       fadeInDuration: const Duration(milliseconds: 0),
       fadeOutDuration: const Duration(milliseconds: 200),
       useOldImageOnUrlChange: true,
-      memCacheWidth: (width * 2).round(),
-      memCacheHeight: (height * 2).round(),
+
+      // PROTECCIÓN IGUAL QUE ARRIBA
+      memCacheWidth: width.isFinite ? (width * 2).round() : null,
+      // Si la altura también fuera infinita (raro), también lo protegemos
+      memCacheHeight: height.isFinite ? (height * 2).round() : null,
+
       placeholder: (context, url) => _buildSkeletonWidget(context),
       errorWidget: (context, url, error) => _buildErrorWidget(context),
     );
@@ -92,7 +110,8 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      cacheWidth: (width * 2).round(),
+      // PROTECCIÓN
+      cacheWidth: width.isFinite ? (width * 2).round() : null,
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded) return child;
         return AnimatedOpacity(
@@ -115,15 +134,18 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey[200], // Un gris más claro para el fondo
+        color: Colors.grey[200],
         borderRadius: BorderRadius.circular(4),
       ),
       child: Center(
+        // PROTECCIÓN VISUAL:
+        // Si el ancho es infinito, la barrita de carga no puede ser "infinita * 0.4".
+        // Le ponemos un tamaño fijo de 100px para que se vea bien.
         child: SizedBox(
-          width: width * 0.4, // Ancho del indicador de progreso
+          width: width.isFinite ? width * 0.4 : 100.0,
           child: LinearProgressIndicator(
-            color: Colors.grey[300], // Color de la barra de progreso
-            backgroundColor: Colors.grey[200], // Fondo de la barra
+            color: Colors.grey[300],
+            backgroundColor: Colors.grey[200],
           ),
         ),
       ),
@@ -131,52 +153,25 @@ class OptimizedImage extends StatelessWidget {
   }
 
   Widget _buildErrorWidget(BuildContext context) {
-    final minSize = width < height ? width : height;
+    // PROTECCIÓN PARA EL ICONO DE ERROR
+    final safeWidth = width.isFinite ? width : 100.0;
+    final safeHeight = height.isFinite ? height : 100.0;
+
+    // Usamos los valores seguros para calcular el tamaño del icono
+    final minSize = safeWidth < safeHeight ? safeWidth : safeHeight;
+
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHigh, // Un color un poco más oscuro que el surface normal
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Icon(
-        Icons
-            .image_not_supported_outlined, // Un icono de error más moderno y menos "roto"
-        color: Theme.of(
-          context,
-        ).colorScheme.outlineVariant, // Color del borde o un gris más oscuro
+        Icons.image_not_supported_outlined,
+        color: Theme.of(context).colorScheme.outlineVariant,
         size: minSize * 0.3,
       ),
-    );
-  }
-}
-
-class OptimizedImageListTile extends StatelessWidget {
-  final String imagePath;
-  final double width;
-  final double height;
-  final BoxFit fit;
-
-  const OptimizedImageListTile({
-    super.key,
-    required this.imagePath,
-    required this.width,
-    required this.height,
-    this.fit = BoxFit.cover,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return OptimizedImage(
-      imagePath: imagePath,
-      width: width,
-      height: height,
-      fit: fit,
-      enableCache: true,
-      isLocalAsset:
-          !imagePath.startsWith('http') && !imagePath.startsWith('avatares/'),
     );
   }
 }

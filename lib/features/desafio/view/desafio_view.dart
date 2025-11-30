@@ -6,11 +6,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event_card.dart';
 import 'package:kitsucode/features/amigos/view/search_view.dart';
-
-// --- NUEVO: Imports necesarios para el fondo (copiados de tu ejemplo) ---
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/shared/widgets/static_settings_background.dart';
+import 'package:kitsucode/shared/elastic_list_view/flutter_elastic_list_view.dart';
 
 class DesafioBusquedaView extends ConsumerWidget {
   const DesafioBusquedaView({super.key});
@@ -152,14 +151,24 @@ class DesafioBusquedaView extends ConsumerWidget {
                               );
                             }
 
-                            return ListView.separated(
-                              // Añadimos un poco de padding inferior para que no choque con el borde
-                              padding: const EdgeInsets.only(bottom: 20),
+                            // En desafio_view.dart, dentro de searchResults.when(data: (users) { ...
+
+                            return ElasticListView.separated(
+                              // Mantienes el padding para que respiren las tarjetas
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
                               itemCount: users.length,
+
+                              // Puedes ajustar la elasticidad (4 es el default, prueba subirlo a 6 si quieres más rebote)
+                              elasticityFactor: 4,
+
+                              // Builder del separador (igual que antes)
                               separatorBuilder: (context, index) =>
-                                  const SizedBox(
-                                    height: 12,
-                                  ), // Espacio entre items
+                                  const SizedBox(height: 12),
+
+                              // Builder de los items (igual que antes)
                               itemBuilder: (context, index) {
                                 return UserSearchCard(user: users[index]);
                               },

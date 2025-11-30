@@ -6,7 +6,6 @@ import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.d
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/amigos/model/search_model.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 
@@ -209,122 +208,236 @@ class _SearchFieldState extends ConsumerState<SearchField> {
   }
 }
 
-// ... (El resto del código: UserSearchCard y EmptyState se mantienen igual) ...
 class UserSearchCard extends ConsumerWidget {
   final UserSearchPreviewModel user;
   const UserSearchCard({super.key, required this.user});
 
+  // --- 🎨 Helper para mapear el Rango -> Ruta del Banner Local ---
+  String _getRankBannerPath(String rank) {
+    // Normalizamos el texto a minúsculas para evitar errores
+    switch (rank.toLowerCase()) {
+      case 'diamante':
+        return 'assets/images/mensual/banner1.webp';
+      case 'platino':
+        return 'assets/images/banners/banner_platino.webp';
+      case 'oro':
+        return 'assets/images/banners/banner_oro.webp';
+      case 'plata':
+        return 'assets/images/banners/banner_plata.webp';
+      case 'bronce':
+      default:
+        // Asegúrate de tener este asset por defecto
+        return 'assets/images/banners/banner_bronce.webp';
+    }
+  }
+
+  // --- 🎨 Helper para obtener el color del borde según rango (Opcional) ---
+  Color _getRankBorderColor(String rank) {
+    switch (rank.toLowerCase()) {
+      case 'diamante':
+        return const Color(0xFFB9F2FF);
+      case 'platino':
+        return const Color(0xFFE5E4E2);
+      case 'oro':
+        return const Color(0xFFFFD700);
+      case 'plata':
+        return const Color(0xFFC0C0C0);
+      default:
+        return const Color(0xFFCD7F32); // Bronce
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final List<AvatarModel>? avatarsList = ref
         .watch(currentUserAvatarsProvider)
         .value
         ?.cast<AvatarModel>();
 
+    // Obtenemos la ruta y el color
+    final bannerPath = _getRankBannerPath(user.rank);
+    final rankColor = _getRankBorderColor(user.rank);
+
     return Container(
+      height: 90, // Altura fija para uniformidad en la lista
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            showDialog(
-              context: context,
-              barrierColor: Colors.black.withOpacity(0.5),
-              builder: (context) => UserProfileModal(
-                userId: user.userId,
-                rank: user.rank,
-                rankLanguageIds: user.rankLanguageIds,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // --------------------------------------------------
+            // CAPA 1: Banner de Fondo (Local .webp)
+            // --------------------------------------------------
+            Positioned.fill(
+              child: OptimizedImage(
+                imagePath: bannerPath,
+                width: double.infinity,
+                height: 90,
+                fit: BoxFit.cover,
+                isLocalAsset: true, // Importante: indica que está en assets
+                enableCache: true,
               ),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                // 1. Avatar (Izquierda)
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colors.primary.withOpacity(0.2),
-                      width: 2,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 28, // Tamaño más compacto para lista
-                    backgroundColor: colors.surfaceContainer,
-                    child: ClipOval(
-                      child: OptimizedImage(
-                        imagePath: getAvatarAssetPathById(
-                          user.idAvatarSeleccionado,
-                          avatarsList,
-                        ),
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        enableCache: true,
-                      ),
-                    ),
+            ),
+
+            // --------------------------------------------------
+            // CAPA 2: Overlay (Oscurecer para legibilidad)
+            // --------------------------------------------------
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.black.withOpacity(
+                        0.8,
+                      ), // Más oscuro a la izquierda (texto)
+                      Colors.black.withOpacity(
+                        0.4,
+                      ), // Más claro a la derecha (banner visible)
+                    ],
                   ),
                 ),
+              ),
+            ),
 
-                const SizedBox(width: 16),
-
-                // 2. Información (Centro)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+            // --------------------------------------------------
+            // CAPA 3: Contenido Interactiva
+            // --------------------------------------------------
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierColor: Colors.black.withOpacity(0.5),
+                    builder: (context) => UserProfileModal(
+                      userId: user.userId,
+                      rank: user.rank,
+                      rankLanguageIds: user.rankLanguageIds,
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        user.nombrePerfil,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+                      // --- Avatar con borde de color del rango ---
+                      Container(
+                        padding: const EdgeInsets.all(2), // Grosor del borde
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: rankColor, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: rankColor.withOpacity(0.4),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 26,
+                          backgroundColor: Colors.grey[800],
+                          child: ClipOval(
+                            child: OptimizedImage(
+                              imagePath: getAvatarAssetPathById(
+                                user.idAvatarSeleccionado,
+                                avatarsList,
+                              ),
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
+                              enableCache: true,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '@${user.nombreUsuario}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+
+                      const SizedBox(width: 16),
+
+                      // --- Textos (Siempre blancos por el fondo oscuro) ---
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              user.nombrePerfil,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white, // Texto blanco
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  '@${user.nombreUsuario}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.white.withOpacity(0.8),
+                                  ),
+                                ),
+                                // Pequeña etiqueta del rango
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: rankColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: rankColor.withOpacity(0.5),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    user.rank.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: rankColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
+                      ),
+
+                      // --- Icono Arrow ---
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: Colors.white.withOpacity(0.5),
                       ),
                     ],
                   ),
                 ),
-
-                // 3. Icono de acción o Rango (Derecha)
-                // Opcional: Mostrar un pequeño indicador o flecha
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: isDark ? Colors.white24 : Colors.grey.shade300,
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

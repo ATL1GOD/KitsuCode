@@ -69,9 +69,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/home/
-    - assets/images/logros/
     - assets/images/auth/
-    - assets/images/mensual/
+    - assets/images/banner/
     - assets/lottie/
     #- assets/icons/
     #- assets/fonts/

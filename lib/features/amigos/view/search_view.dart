@@ -217,17 +217,15 @@ class UserSearchCard extends ConsumerWidget {
     // Normalizamos el texto a minúsculas para evitar errores
     switch (rank.toLowerCase()) {
       case 'diamante':
-        return 'assets/images/mensual/banner1.webp';
-      case 'platino':
-        return 'assets/images/banners/banner_platino.webp';
+        return 'assets/images/banner/banner_diamante.webp';
       case 'oro':
-        return 'assets/images/banners/banner_oro.webp';
+        return 'assets/images/banner/banner_oro.webp';
       case 'plata':
-        return 'assets/images/banners/banner_plata.webp';
+        return 'assets/images/banner/banner_plata.webp';
       case 'bronce':
       default:
         // Asegúrate de tener este asset por defecto
-        return 'assets/images/banners/banner_bronce.webp';
+        return 'assets/images/banner/banner_bronce.webp';
     }
   }
 

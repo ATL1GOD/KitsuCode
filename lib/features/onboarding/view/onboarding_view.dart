@@ -1,3 +1,5 @@
+// lib/features/onboarding/view/onboarding_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +14,10 @@ import 'package:kitsucode/features/onboarding/view/widgets/onboarding_profile.da
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_challenge.dart';
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_result.dart';
 import 'package:kitsucode/features/onboarding/model/onboarding_model.dart';
+
+// 🔥 IMPORTACIONES NUEVAS NECESARIAS
+import 'package:kitsucode/core/providers/connectivity_provider.dart';
+import 'package:kitsucode/core/widgets/no_internet_view.dart';
 
 class OnboardingView extends ConsumerStatefulWidget {
   const OnboardingView({super.key});
@@ -37,7 +43,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
   int _totalScore = 0;
   bool _isProfileStep = true;
   bool _isLoading = false;
-  bool _showResults = false; // <--- AGREGA ESTO
+  bool _showResults = false;
 
   @override
   void initState() {
@@ -157,8 +163,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId == null) return;
 
-      // 1. OBTENER DATOS DEL RESULTADO DESDE SUPABASE
-      // Usamos la función RPC que creamos en el Paso 1
       final resultResponse = await Supabase.instance.client.rpc(
         'get_onboarding_resultado_por_score',
         params: {'score_input': _totalScore},
@@ -167,18 +171,15 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       if (resultResponse == null)
         throw "No se encontró un rango para este puntaje";
 
-      // Parseamos la respuesta
       _resultData = OnboardingResultModel.fromJson(resultResponse);
 
-      // 2. GUARDAR PROGRESO (Usamos el nivel_interno que vino de la BD)
       await Supabase.instance.client.rpc(
         'completar_onboarding_final',
         params: {
           'p_user_id': userId,
           'p_nombre_perfil': _usernameController.text.trim(),
           'p_id_lenguaje': _selectedLanguageId,
-          'p_nivel_conocimiento':
-              _resultData!.nivelInterno, // <--- Dato dinámico
+          'p_nivel_conocimiento': _resultData!.nivelInterno,
         },
       );
 
@@ -203,6 +204,14 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 SOLUCIÓN: Interceptamos el estado offline AQUÍ MISMO.
+    // Esto evita que los widgets hijos (juegos, imágenes) intenten renderizarse
+    // y fallen antes de que el router haga el cambio de página.
+    final connectivityStatus = ref.watch(connectivityProvider).valueOrNull;
+    if (connectivityStatus == ConnectivityStatus.offline) {
+      return const NoInternetView();
+    }
+
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -212,8 +221,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       data: Theme.of(context).copyWith(
         colorScheme: activeColorScheme,
         primaryColor: activeColorScheme.primary,
-        scaffoldBackgroundColor:
-            activeColorScheme.surface, // Importante para el fondo
+        scaffoldBackgroundColor: activeColorScheme.surface,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: activeColorScheme.primary,
@@ -225,22 +233,19 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
       child: Builder(
-        // Usamos Builder para que el contexto tenga el nuevo Theme
         builder: (innerContext) {
-          // --- MOSTRAR RESULTADOS ---
-          // Ahora pasamos el objeto _resultData completo
           if (_showResults && _resultData != null) {
             return OnboardingResultsView(
               score: _totalScore,
               username: _usernameController.text,
               languageName: _selectedLanguageName ?? 'Desconocido',
-              resultModel: _resultData!, // <--- PASAMOS EL MODELO
+              resultModel: _resultData!,
               onContinue: () {
                 context.go('/home');
               },
             );
           }
-          // PASO 1: PERFIL
+
           if (_isProfileStep) {
             final activeColorScheme = _getDynamicColorScheme(context);
 
@@ -279,7 +284,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
             );
           }
 
-          // PASO 2: JUEGOS
           if (_onboardingChallenges.isEmpty) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
@@ -291,7 +295,7 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
           return Scaffold(
             body: MediaQuery.removePadding(
               context: context,
-              removeTop: true, // <--- ESTO ELIMINA EL ESPACIO SUPERIOR
+              removeTop: true,
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),

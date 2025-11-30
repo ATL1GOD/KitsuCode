@@ -39,7 +39,7 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
       if (mounted) {
         showErrorSnackbar(
           context,
-          'Sin conexión', 
+          'Sin conexión',
           'No se pudo conectar. Revisa tu conexión e intenta de nuevo.',
         );
       }
@@ -55,25 +55,39 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // --- Lógica para obtener el color dinámico ---
-    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
-    
-    final profileState = (currentAuthUserId != null)
-        ? ref.watch(userProfileByIdProvider(currentAuthUserId))
-        : null;
+    // --- LÓGICA BLINDADA PARA EL COLOR ---
+    // Usamos un valor por defecto seguro para evitar la pantalla roja
+    Color dynamicColor = colors.primary;
 
-    final profile = profileState?.asData?.value;
+    try {
+      // 1. Intentamos obtener el usuario actual de forma segura
+      // Usamos .valueOrNull para que no lance excepción si está cargando o falla
+      final authState = ref.watch(authStateProvider).valueOrNull;
+      final currentAuthUserId = authState?.session?.user.id;
 
-    // ✅ CORRECCIÓN: Obtener lista de avatares para el color real de la BD
-    final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
+      if (currentAuthUserId != null) {
+        // 2. Intentamos leer el perfil
+        // Importante: .asData?.value evita que el error se propague si el provider falló
+        final profileState = ref.watch(
+          userProfileByIdProvider(currentAuthUserId),
+        );
+        final profile = profileState.asData?.value;
 
-    final Color dynamicColor;
-    if (profile != null) {
-      dynamicColor = avatarsList.isNotEmpty
-          ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
-          : AllStatsView.getHeaderColor(profile, colors); // Fallback
-    } else {
-      dynamicColor = colors.primary;
+        // 3. Intentamos leer los avatares
+        final avatarsState = ref.watch(currentUserAvatarsProvider);
+        final avatarsList = avatarsState.asData?.value ?? [];
+
+        if (profile != null) {
+          dynamicColor = avatarsList.isNotEmpty
+              ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
+              : AllStatsView.getHeaderColor(profile, colors);
+        }
+      }
+    } catch (e) {
+      // Si algo falla al intentar obtener el color (común cuando no hay internet
+      // y los providers lanzan excepciones), simplemente ignoramos el error
+      // y usamos el color por defecto (colors.primary) definido arriba.
+      // Esto previene la "Red Screen of Death" en el Onboarding.
     }
 
     return Scaffold(

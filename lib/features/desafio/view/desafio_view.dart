@@ -152,15 +152,14 @@ class DesafioBusquedaView extends ConsumerWidget {
                               );
                             }
 
-                            return GridView.builder(
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 16,
-                                    childAspectRatio: 0.7,
-                                  ),
+                            return ListView.separated(
+                              // Añadimos un poco de padding inferior para que no choque con el borde
+                              padding: const EdgeInsets.only(bottom: 20),
                               itemCount: users.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(
+                                    height: 12,
+                                  ), // Espacio entre items
                               itemBuilder: (context, index) {
                                 return UserSearchCard(user: users[index]);
                               },

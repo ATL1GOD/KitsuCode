@@ -210,7 +210,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
 }
 
 // ... (El resto del código: UserSearchCard y EmptyState se mantienen igual) ...
-
 class UserSearchCard extends ConsumerWidget {
   final UserSearchPreviewModel user;
   const UserSearchCard({super.key, required this.user});
@@ -218,106 +217,114 @@ class UserSearchCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final List<AvatarModel>? avatarsList = ref
         .watch(currentUserAvatarsProvider)
         .value
         ?.cast<AvatarModel>();
 
-    return Card(
-      elevation: 5,
-      shadowColor: Colors.black.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ), // Más redondeado
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          showDialog(
-            context: context,
-            barrierColor: Colors.black.withOpacity(0.5),
-            builder: (context) => UserProfileModal(
-              userId: user.userId,
-              rank: user.rank,
-              rankLanguageIds: user.rankLanguageIds,
-            ),
-          );
-        },
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            SvgPicture.asset(
-              'assets/images/mensual/fondo.svg',
-              fit: BoxFit.cover,
-            ),
-            Container(
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.4)),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Avatar con borde divertido
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black26, blurRadius: 8),
-                      ],
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            showDialog(
+              context: context,
+              barrierColor: Colors.black.withOpacity(0.5),
+              builder: (context) => UserProfileModal(
+                userId: user.userId,
+                rank: user.rank,
+                rankLanguageIds: user.rankLanguageIds,
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                // 1. Avatar (Izquierda)
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colors.primary.withOpacity(0.2),
+                      width: 2,
                     ),
-                    child: CircleAvatar(
-                      radius: 36,
-                      backgroundColor: colors.surfaceContainer,
-                      child: ClipOval(
-                        child: OptimizedImage(
-                          imagePath: getAvatarAssetPathById(
-                            user.idAvatarSeleccionado,
-                            avatarsList,
-                          ),
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                          enableCache: true,
+                  ),
+                  child: CircleAvatar(
+                    radius: 28, // Tamaño más compacto para lista
+                    backgroundColor: colors.surfaceContainer,
+                    child: ClipOval(
+                      child: OptimizedImage(
+                        imagePath: getAvatarAssetPathById(
+                          user.idAvatarSeleccionado,
+                          avatarsList,
                         ),
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        enableCache: true,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                ),
 
-                  Text(
-                    user.nombrePerfil,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16, // Un poco más pequeño pero más limpio
-                      fontWeight: FontWeight.bold,
-                      shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
-                    ),
-                  ),
+                const SizedBox(width: 16),
 
-                  Text(
-                    '@${user.nombreUsuario}',
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      shadows: const [
-                        Shadow(blurRadius: 2, color: Colors.black45),
-                      ],
-                    ),
+                // 2. Información (Centro)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        user.nombrePerfil,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '@${user.nombreUsuario}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+
+                // 3. Icono de acción o Rango (Derecha)
+                // Opcional: Mostrar un pequeño indicador o flecha
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -54,7 +54,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
     super.dispose();
   }
 
-  // Helper para imagen local (logo lenguaje)
+  // Helper para imagen local (logo del lenguaje, estos sí son assets locales)
   String _getLanguageAsset(String name) {
     final n = name.toLowerCase();
     if (n.contains('python')) return 'assets/images/home/logo_python.webp';
@@ -63,9 +63,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
     return '';
   }
 
-  /// Limpia la URL si viene completa de la BD, ya que OptimizedImage
-  /// construye su propia URL con el ProjectID.
-  /// Si en tu BD guardas solo "rank_aprendiz.png", esto lo deja pasar igual.
   String _extractPath(String urlOrPath) {
     if (urlOrPath.contains('/public/assets/')) {
       return urlOrPath.split('/public/assets/').last;
@@ -82,10 +79,8 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
     final secondaryColor = theme.colorScheme.secondary;
     final colorScheme = theme.colorScheme;
 
-    // Obtenemos el logo del lenguaje seleccionado
     final langAsset = _getLanguageAsset(widget.languageName);
 
-    // Preparamos el path limpio para el optimizador
     final cleanImagePath = _extractPath(model.imagenUrl);
 
     return Scaffold(
@@ -96,7 +91,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 1. Animación del Icono / Rango
               ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
@@ -114,21 +108,22 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                     ],
                   ),
                   child: ClipOval(
-                    // USAMOS EL OPTIMIZADOR AQUÍ
                     child: OptimizedImage(
-                      imagePath: cleanImagePath,
+                      imagePath:
+                          cleanImagePath, // Ruta limpia (ej: "rango.webp")
                       width: 120,
                       height: 120,
                       fit: BoxFit.cover,
-                      enableCache: true,
-                      isLocalAsset: false, // Indica que viene de Supabase
+                      enableCache: true, // Importante para rendimiento
+                      isLocalAsset:
+                          false, // FALSE = Descarga de Supabase Storage
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 32),
 
-              // 2. Textos de Resultado (Fade In)
+              // --- TEXTOS ---
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(
@@ -151,7 +146,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                     ),
                     const SizedBox(height: 16),
 
-                    // TITULO DE LA BD
+                    // Título del Rango
                     Text(
                       model.titulo,
                       textAlign: TextAlign.center,
@@ -162,7 +157,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       ),
                     ),
 
-                    // SUBTITULO DE LA BD
+                    // Subtítulo del Rango
                     Text(
                       model.subtitulo,
                       textAlign: TextAlign.center,
@@ -172,6 +167,8 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // Descripción
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -181,7 +178,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                           color: primaryColor.withOpacity(0.2),
                         ),
                       ),
-                      // DESCRIPCION DE LA BD
                       child: Text(
                         model.descripcion,
                         textAlign: TextAlign.center,
@@ -194,13 +190,14 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                     ),
                     const SizedBox(height: 16),
 
+                    // Badges de estadísticas
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _buildStatBadge(
                           context,
                           "Puntaje",
-                          "${widget.score} pts",
+                          "${widget.score}",
                           icon: Icons.star,
                         ),
                         const SizedBox(width: 16),
@@ -218,7 +215,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
               ),
               const SizedBox(height: 48),
 
-              // 3. Botón de Continuar
+              // --- BOTÓN CONTINUAR ---
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: SizedBox(
@@ -274,13 +271,12 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
         mainAxisSize: MainAxisSize.min,
         children: [
           if (imageAsset != null)
-            // USAMOS EL OPTIMIZADOR AQUÍ (Local)
             OptimizedImage(
               imagePath: imageAsset,
               width: 20,
               height: 20,
-              fit: BoxFit.contain, // Importante para logos
-              isLocalAsset: true,
+              fit: BoxFit.contain,
+              isLocalAsset: true, // TRUE = Carga desde assets de la app
             )
           else if (icon != null)
             Icon(icon, size: 20, color: primaryColor),

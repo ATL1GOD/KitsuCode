@@ -57,7 +57,7 @@ class DesafioEspecial {
       colorClaro: _colorFromHex(detalles?['color_claro'] ?? '#66bb6a'),
       colorOscuro: _colorFromHex(detalles?['color_oscuro'] ?? '#2e7d32'),
       webpEspecial:
-          detalles?['asset_especial'] ?? 'assets/images/default_fallback.webp',
+          detalles?['asset_especial'] ?? 'assets/images/home/alerta.webp',
     );
   }
 }
@@ -111,7 +111,9 @@ class DesafioMensualData {
 final supabase = Supabase.instance.client;
 
 // 🔥 MODIFICADO: FutureProvider.autoDispose + watch(authStateProvider)
-final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((ref) async {
+final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((
+  ref,
+) async {
   // 🔥 1. VIGILAR SESIÓN: Si cambia el usuario, se recarga todo
   ref.watch(authStateProvider);
 

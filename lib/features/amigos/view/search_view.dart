@@ -8,6 +8,7 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
+import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event_card.dart'; // Asegúrate de que la ruta sea correcta
 
 // Provider para el término de búsqueda
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
@@ -46,6 +47,11 @@ class _SearchFieldState extends ConsumerState<SearchField> {
       setState(() {
         _isFocused = _focusNode.hasFocus;
       });
+
+      // 🔥 LÓGICA NUEVA: Si el usuario hace foco (toca la barra), contraer tarjeta
+      if (_focusNode.hasFocus) {
+        ref.read(specialEventExpandedProvider.notifier).state = false;
+      }
     });
   }
 

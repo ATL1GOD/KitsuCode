@@ -82,17 +82,20 @@ flutter:
 
 flutter_launcher_icons:
   android: "launcher_icon"
+  adaptive_icon_background: "#FFDAB5"
+
+  # 2. Tu logo SIN FONDO (PNG transparente)
+  # Asegúrate de crear esta imagen.
+  adaptive_icon_foreground: "assets/icons/icon.png"
+
+  # --- Configuración para iOS ---
+  # iOS sigue usando la imagen cuadrada completa
   ios: true
   image_path: "assets/icons/icon.png"
-  min_sdk_android: 21
+
+  # --- Otras plataformas ---
   web:
     generate: true
     image_path: "assets/icons/icon.png"
-    background_color: "#hex_code"
-    theme_color: "#hex_code"
-  windows:
-    generate: true
-    icon_size: 48 # min:48, max:256, default: 48
-  macos:
-    generate: true
-    image_path: "assets/icons/icon.png"
+    background_color: "#FFDAB5"
+    theme_color: "#FFDAB5"

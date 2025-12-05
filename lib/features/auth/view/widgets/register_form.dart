@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
@@ -19,6 +20,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  // Variable local para controlar el loading durante la verificación manual
+  bool _isCheckingUser = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -29,54 +33,75 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
   void _submit() async {
     if (_formKey.currentState!.validate()) {
+      // 1. Referencias a los providers
       final registerNotifier = ref.read(registerStateProvider.notifier);
+      // Obtenemos el repositorio para usar la función personalizada userExists
+      final authRepository = ref.read(authRepositoryProvider).value;
+
+      setState(() {
+        _isCheckingUser = true;
+      });
+
       try {
+        // --- PASO CRÍTICO: VERIFICACIÓN MANUAL DE EXISTENCIA ---
+        // Esto evita que Supabase oculte el error por seguridad
+        if (authRepository != null) {
+          final bool yaExiste = await authRepository.userExists(_emailController.text);
+          
+          if (yaExiste) {
+            if (mounted) {
+              setState(() => _isCheckingUser = false);
+              
+              // Limpiamos campos para dar feedback visual
+              _passwordController.clear();
+              _confirmPasswordController.clear();
+
+              // Mostramos el error real
+              showWarningSnackbar(
+                context, 
+                'Cuenta ya registrada', 
+                'Este correo ya existe. Por favor inicia sesión.'
+              );
+              
+              // Opcional: Cambiar automáticamente al tab de login
+              widget.onSwitchToLogin();
+            }
+            return; // DETENEMOS EL PROCESO AQUÍ
+          }
+        }
+        // -------------------------------------------------------
+
+        // 2. Si no existe, procedemos con el registro normal
         await registerNotifier.signUpWithEmailPassword(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        
+
         if (mounted) {
-          // Limpiar los campos del formulario
+          setState(() => _isCheckingUser = false);
+          
+          // Limpiar los campos
           _emailController.clear();
           _passwordController.clear();
           _confirmPasswordController.clear();
-          
-          // Mostrar snackbar de éxito
+
+          // Mostrar éxito
           showSuccessSnackbar(
             context,
             '¡Registro Exitoso!',
-            'Te hemos enviado un enlace de confirmación a tu correo. Por favor, verifica tu correo antes de iniciar sesión.',
+            'Revisa tu correo para confirmar la cuenta antes de entrar.',
           );
-          
+
           // Cambiar al tab de login
           widget.onSwitchToLogin();
         }
+
       } catch (e) {
         if (mounted) {
-          // Detectar si el correo ya está registrado
-          final errorMessage = e.toString().toLowerCase();
-          if (errorMessage.contains('user already registered') ||
-              errorMessage.contains('already registered') ||
-              errorMessage.contains('already exists') ||
-              errorMessage.contains('email already in use') ||
-              errorMessage.contains('already been registered')) {
-            // Limpiar los campos
-            _emailController.clear();
-            _passwordController.clear();
-            _confirmPasswordController.clear();
-            
-            showWarningSnackbar(
-              context,
-              'Correo Ya Registrado',
-              'Este correo ya está registrado. Por favor, inicia sesión con tu cuenta existente.',
-            );
-            
-            // Cambiar al tab de login
-            widget.onSwitchToLogin();
-          } else {
-            showErrorSnackbar(context, 'Error en el Registro', e.toString());
-          }
+          setState(() => _isCheckingUser = false);
+          // Ya no necesitamos filtrar el mensaje "User already registered" aquí
+          // porque lo capturamos arriba, pero dejamos esto por seguridad.
+          showErrorSnackbar(context, 'Error en el Registro', e.toString());
         }
       }
     }
@@ -86,7 +111,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   Widget build(BuildContext context) {
     final registerState = ref.watch(registerStateProvider);
     final loginState = ref.watch(loginStateProvider);
-    final isLoading = registerState.isLoading || loginState.isLoading;
+    
+    // El loading ahora considera tanto el estado de Riverpod como nuestra verificación manual
+    final isLoading = registerState.isLoading || loginState.isLoading || _isCheckingUser;
 
     return Form(
       key: _formKey,
@@ -125,12 +152,11 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 if (value.length < 8) {
                   return 'Mínimo 8 caracteres';
                 }
+                // Tus validaciones de contraseña existentes
                 final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
                 final hasLowercase = RegExp(r'[a-z]').hasMatch(value);
                 final hasDigits = RegExp(r'[0-9]').hasMatch(value);
-                final hasSpecialChars = RegExp(
-                  r'[!@#$%^&*(),.?":{}|<>]',
-                ).hasMatch(value);
+                final hasSpecialChars = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value);
 
                 if (!hasUppercase) return 'Incluye al menos una mayúscula';
                 if (!hasLowercase) return 'Incluye al menos una minúscula';

@@ -158,6 +158,25 @@ class AuthRepository {
     }
   }
 
+  // Validar si el usuario existe antes del registro
+  Future<bool> userExists(String email) async {
+    try {
+      // Llamamos a la función SQL que creamos en el Paso 1
+      final bool exists = await _supabaseClient.rpc(
+        'check_if_user_exists',
+        params: {'email_to_check': email.trim()},
+      );
+      return exists;
+    } catch (e) {
+      // Si hay error de red u otro, imprimimos en debug y retornamos false
+      // para no bloquear el registro (que Supabase maneje el error después si es necesario)
+      if (kDebugMode) {
+        print('Error verificando existencia de usuario: $e');
+      }
+      return false;
+    }
+  }
+
   // --- NUEVO: Método de utilidad para validar email ---
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(

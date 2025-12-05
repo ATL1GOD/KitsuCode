@@ -177,6 +177,9 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: GridView.builder(
+                          addAutomaticKeepAlives: false,
+                          addRepaintBoundaries: true,
+                          cacheExtent: 200,
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,

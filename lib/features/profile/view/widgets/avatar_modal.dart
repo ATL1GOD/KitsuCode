@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'dart:ui'; // Para la clase Color
+// Para la clase Color
 // ✅ 1. IMPORTAR EL OPTIMIZADOR
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 

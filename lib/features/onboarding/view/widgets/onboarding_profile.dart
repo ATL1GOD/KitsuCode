@@ -132,6 +132,7 @@ class OnboardingProfileStep extends StatelessWidget {
               child: Image.asset(
                 mobileLogoPath,
                 height: 200,
+                cacheHeight: 400,
                 fit: BoxFit.contain,
               ),
             ),
@@ -328,6 +329,8 @@ class OnboardingProfileStep extends StatelessWidget {
                 assetPath,
                 height: 24,
                 width: 24,
+                cacheWidth: 48,
+                cacheHeight: 48,
                 fit: BoxFit.contain,
               ),
               const SizedBox(width: 10),

@@ -57,26 +57,27 @@ class AchievementCard extends StatelessWidget {
     // 2 líneas * 15px + 2 * 1.5px padding = ~33px de alto mínimo.
     final double minTextContainerHeight = isSmallScreen ? 30 : 35;
 
-    Widget cardContent = Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor, width: borderWidth),
-        // ✅ Usar colores del tema
-        color: isUnlocked ? colors.surface : lockedBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            // ✅ Sombra según estado usando colores del tema
-            color: isUnlocked
-                ? effectColor.withAlpha(77)
-                : colors.shadow.withOpacity(0.15),
-            blurRadius: 3,
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
+    Widget cardContent = RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: borderWidth),
+          // ✅ Usar colores del tema
+          color: isUnlocked ? colors.surface : lockedBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              // ✅ Sombra según estado usando colores del tema
+              color: isUnlocked
+                  ? effectColor.withAlpha(77)
+                  : colors.shadow.withOpacity(0.15),
+              blurRadius: 3,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
           // 1. IMAGEN (Ocupa el espacio que queda libre)
           Padding(
             padding: const EdgeInsets.all(4.0),
@@ -145,6 +146,7 @@ class AchievementCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
 

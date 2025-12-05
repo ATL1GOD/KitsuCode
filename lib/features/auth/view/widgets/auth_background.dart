@@ -118,6 +118,7 @@ class _AuthBackgroundState extends State<AuthBackground>
                             Image.asset(
                               'assets/images/auth/fox_login.webp',
                               height: 280,
+                              cacheHeight: 560,
                             ),
                             const SizedBox(height: 24),
                           ],

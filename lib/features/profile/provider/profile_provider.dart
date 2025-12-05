@@ -36,8 +36,8 @@ final profileRepositoryProvider = Provider((ref) {
 });
 
 // Provider para obtener el perfil de un usuario por su ID
-// 🔥 MODIFICADO: Ahora reacciona a la conexión
-final userProfileByIdProvider = StreamProvider.family<UserProfileModel, String>(
+// 🔥 MODIFICADO: Ahora reacciona a la conexión + autoDispose para memory leaks
+final userProfileByIdProvider = StreamProvider.autoDispose.family<UserProfileModel, String>(
   (ref, userId) {
     // "Escuchar" la conexión
     final connectivity = ref.watch(connectivityProvider);

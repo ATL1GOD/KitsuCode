@@ -118,7 +118,11 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // 1. La imagen del zorro
-                    Image.asset('assets/images/home/alerta.webp', width: 200),
+                    Image.asset(
+                      'assets/images/home/alerta.webp',
+                      width: 200,
+                      cacheWidth: 400,
+                    ),
                     const SizedBox(height: 24),
 
                     // 2. Mensaje de Título

@@ -87,6 +87,7 @@ class GenericErrorView extends ConsumerWidget {
                     Image.asset(
                       'assets/images/home/alerta.webp', 
                       width: 200,
+                      cacheWidth: 400,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 32),

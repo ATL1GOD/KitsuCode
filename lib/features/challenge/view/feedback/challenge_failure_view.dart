@@ -81,6 +81,7 @@ class ChallengeFailureView extends ConsumerWidget {
                   Image.asset(
                     'assets/images/zorro_oops.png',
                     height: 200,
+                    cacheHeight: 400,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 24),

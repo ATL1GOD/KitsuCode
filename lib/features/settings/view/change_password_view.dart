@@ -237,6 +237,7 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                                         child: Image.asset(
                                           'assets/images/auth/fox_login.webp',
                                           height: 180,
+                                          cacheHeight: 360,
                                         ),
                                       )
                                     : const SizedBox.shrink(

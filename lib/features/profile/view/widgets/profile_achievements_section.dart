@@ -107,6 +107,8 @@ class ProfileAchievementsSection extends ConsumerWidget {
                             'assets/images/zorro_oops.png',
                             width: 60,
                             height: 60,
+                            cacheWidth: 120,
+                            cacheHeight: 120,
                           ),
                           const SizedBox(width: 20),
                           Expanded(
@@ -133,6 +135,9 @@ class ProfileAchievementsSection extends ConsumerWidget {
                     height: 120,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                      cacheExtent: 200,
                       itemCount: obtained.length,
                       itemBuilder: (context, index) {
                         final achievement = obtained[index];
@@ -182,22 +187,24 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: colors.surfaceContainerHigh,
-      highlightColor: colors.surfaceContainerHighest,
-      child: SizedBox(
-        height: 120, // Ajustado a la altura de la tarjeta
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: 4,
-          itemBuilder: (context, index) => Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: Container(
-              width: 90,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+    return RepaintBoundary(
+      child: Shimmer.fromColors(
+        baseColor: colors.surfaceContainerHigh,
+        highlightColor: colors.surfaceContainerHighest,
+        child: SizedBox(
+          height: 120, // Ajustado a la altura de la tarjeta
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: 4,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: Container(
+                width: 90,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),

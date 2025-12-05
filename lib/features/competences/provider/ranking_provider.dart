@@ -54,8 +54,8 @@ final globalRankingProvider = FutureProvider.autoDispose<List<RankingModel>>((
   return repository.fetchGlobalRanking(langId, diffId);
 });
 
-// --- Provider de Realtime (Sin cambios) ---
-final realtimeUpdateProvider = Provider((ref) {
+// --- Provider de Realtime con autoDispose para cerrar canales ---
+final realtimeUpdateProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
   final user = supabase.auth.currentUser;
 

@@ -387,6 +387,7 @@ class _EmptyRankingWidget extends StatelessWidget {
             Image.asset(
               'assets/images/zorro_oops.png',
               width: 150,
+              cacheWidth: 300,
               color: colors.primaryContainer.withAlpha(128),
             ),
             const SizedBox(height: 24),

@@ -214,8 +214,8 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
               widget.onChanged(newValue);
             },
             activeThumbColor: widget.dynamicColor,
-            trackColor: MaterialStateProperty.resolveWith((states) {
-              final on = states.contains(MaterialState.selected);
+            trackColor: WidgetStateProperty.resolveWith((states) {
+              final on = states.contains(WidgetState.selected);
               return on
                   ? widget.dynamicColor.withOpacity(.35)
                   : c.surfaceContainerHigh; // contraste cuando está off

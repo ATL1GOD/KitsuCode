@@ -241,7 +241,13 @@ class SocialAuthButton extends StatelessWidget {
       onPressed: isLoading ? null : onPressed,
       icon: isLoading
           ? const SizedBox.shrink()
-          : Image.asset(iconPath, height: 22.0, width: 22.0),
+          : Image.asset(
+              iconPath,
+              height: 22.0,
+              width: 22.0,
+              cacheWidth: 44,
+              cacheHeight: 44,
+            ),
       label: isLoading
           ? const SizedBox(
               height: 22,

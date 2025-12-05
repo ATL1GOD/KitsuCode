@@ -59,8 +59,8 @@ final newlyUnlockedLevelProvider = StateProvider<int?>((ref) => null);
 
 // --- ¡¡INICIO DE LA MODIFICACIÓN!! ---
 /// Provider que escucha cambios ESTRUCTURALES en el mapa (nuevos niveles/secciones).
-/// ¡Se quitó .autoDispose para hacerlo persistente!
-final mapStructureRealtimeProvider = Provider((ref) { // <-- ¡CAMBIO AQUÍ!
+/// Ahora con autoDispose para evitar memory leaks
+final mapStructureRealtimeProvider = Provider.autoDispose((ref) {
   final supabase = Supabase.instance.client;
 
   final channel = supabase.channel('public:map_structure_changes');

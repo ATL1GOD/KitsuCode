@@ -168,8 +168,9 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
         params: {'score_input': _totalScore},
       );
 
-      if (resultResponse == null)
+      if (resultResponse == null) {
         throw "No se encontró un rango para este puntaje";
+      }
 
       _resultData = OnboardingResultModel.fromJson(resultResponse);
 

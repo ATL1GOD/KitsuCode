@@ -44,6 +44,7 @@ void showExitDialog(BuildContext context, WidgetRef ref) {
             Image.asset(
               "assets/images/home/alerta.webp",
               height: 220,
+              cacheHeight: 440,
               fit: BoxFit.cover,
             ),
             const SizedBox(height: 16),

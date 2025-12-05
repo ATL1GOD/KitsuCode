@@ -44,6 +44,8 @@ class RankingFiltersWidget extends ConsumerWidget {
                       'assets/${entry.value['logo']!}',
                       width: 20,
                       height: 20,
+                      cacheWidth: 40,
+                      cacheHeight: 40,
                     ),
                     label: Text(entry.value['name']!),
                   );

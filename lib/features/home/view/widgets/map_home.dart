@@ -108,9 +108,11 @@ class Section extends ConsumerWidget {
                 top: (i * 96.0) + 40.0,
                 left: getLeft(i),
                 right: getRight(i),
-                child: AnimatedLevelNode(
-                  levelId: level.idNivel,
-                  child: levelNodeWidget,
+                child: RepaintBoundary(
+                  child: AnimatedLevelNode(
+                    levelId: level.idNivel,
+                    child: levelNodeWidget,
+                  ),
                 ),
               );
             }).toList(),

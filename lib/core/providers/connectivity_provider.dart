@@ -15,7 +15,7 @@ enum ConnectivityStatus {
 }
 
 /// Provider que monitorea la conectividad en tiempo real
-final connectivityProvider = StreamProvider<ConnectivityStatus>((ref) async* {
+final connectivityProvider = StreamProvider.autoDispose<ConnectivityStatus>((ref) async* {
   
   // 🔥 CORRECCIÓN 1: Esperar a que bootstrap termine ANTES de hacer nada
   await ref.watch(bootstrapProvider.future);

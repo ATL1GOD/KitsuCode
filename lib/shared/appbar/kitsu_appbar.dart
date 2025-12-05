@@ -18,8 +18,7 @@ class _StaggerItem extends StatefulWidget {
   final Widget child;
   final int delay;
 
-  const _StaggerItem({required this.child, required this.delay, Key? key})
-      : super(key: key);
+  const _StaggerItem({required this.child, required this.delay});
 
   @override
   State<_StaggerItem> createState() => _StaggerItemState();

@@ -23,8 +23,8 @@ final authRepositoryProvider = FutureProvider<AuthRepository>((ref) async {
   return repository;
 });
 
-// --- MEJORA 2: AuthStateProvider con manejo mejorado de estados ---
-final authStateProvider = StreamProvider<AuthState>((ref) {
+// --- MEJORA 2: AuthStateProvider con manejo mejorado de estados + autoDispose
+final authStateProvider = StreamProvider.autoDispose<AuthState>((ref) {
   final authRepositoryAsync = ref.watch(authRepositoryProvider);
 
   return authRepositoryAsync.when(

@@ -138,6 +138,8 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                                     'assets/images/zorro_oops.png',
                                     width: 180,
                                     height: 180,
+                                    cacheWidth: 360,
+                                    cacheHeight: 360,
                                   ),
                                   const SizedBox(height: 24),
                                   Padding(
@@ -159,6 +161,8 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                             duration: const Duration(milliseconds: 400),
                             child: ListView.builder(
                               cacheExtent: 200.0,
+                              addAutomaticKeepAlives: false,
+                              addRepaintBoundaries: true,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               itemCount: users.length,
                               itemBuilder: (_, i) => FadeInDown(
@@ -488,37 +492,39 @@ class _FollowListLoadingShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    return Shimmer.fromColors(
-      baseColor: c.surfaceContainerHigh,
-      highlightColor: c.surfaceContainerHighest,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: 8,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                children: [
-                  Container(width: double.infinity, height: 14, color: Colors.white),
-                  const SizedBox(height: 6),
-                  Container(width: 120, height: 12, color: Colors.white),
-                ],
+    return RepaintBoundary(
+      child: Shimmer.fromColors(
+        baseColor: c.surfaceContainerHigh,
+        highlightColor: c.surfaceContainerHighest,
+        child: ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: 8,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, __) => Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
               ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 80,
-              height: 32,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  children: [
+                    Container(width: double.infinity, height: 14, color: Colors.white),
+                    const SizedBox(height: 6),
+                    Container(width: 120, height: 12, color: Colors.white),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 80,
+                height: 32,
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+              ),
+            ],
+          ),
         ),
       ),
     );

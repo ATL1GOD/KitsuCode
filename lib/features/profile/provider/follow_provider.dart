@@ -28,7 +28,7 @@ class FollowListArgs {
 }
 
 // Provider que carga la lista de seguidores/siguiendo.
-final followListProvider = FutureProvider.family<List<FollowListModel>, FollowListArgs>((ref, args) {
+final followListProvider = FutureProvider.autoDispose.family<List<FollowListModel>, FollowListArgs>((ref, args) {
   // 🔥 1. VIGILAR SESIÓN: Si cambia el usuario, recargar las listas
   ref.watch(authStateProvider);
 
@@ -41,7 +41,7 @@ final followListProvider = FutureProvider.family<List<FollowListModel>, FollowLi
 });
 
 
-final isFollowingProvider = FutureProvider.family<bool, String>((ref, userId) {
+final isFollowingProvider = FutureProvider.autoDispose.family<bool, String>((ref, userId) {
   // 🔥 2. VIGILAR SESIÓN: Crucial para saber si EL NUEVO usuario sigue a 'userId'
   ref.watch(authStateProvider);
 

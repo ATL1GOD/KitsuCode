@@ -182,7 +182,11 @@ class _SplashViewState extends ConsumerState<SplashView>
           const ShaderWarmUp(),
 
           Center(
-            child: Image.asset('assets/images/auth/fox_login.webp', width: 150),
+            child: Image.asset(
+              'assets/images/auth/fox_login.webp',
+              width: 150,
+              cacheWidth: 300,
+            ),
           ),
 
           Positioned(

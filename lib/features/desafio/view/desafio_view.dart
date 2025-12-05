@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event_card.dart';
 import 'package:kitsucode/features/amigos/view/search_view.dart';

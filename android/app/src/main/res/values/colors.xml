@@ -1,4 +1,5 @@
 <resources>
     <color name="orange">#B86914</color>
     <color name="kitsu_orange">#F79126</color> 
+	<color name="ic_launcher_background">#FFDAB5</color>
 </resources>

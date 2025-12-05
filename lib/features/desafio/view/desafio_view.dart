@@ -8,6 +8,7 @@ import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event
 import 'package:kitsucode/features/amigos/view/search_view.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'package:kitsucode/shared/widgets/static_settings_background.dart';
 import 'package:kitsucode/shared/elastic_list_view/flutter_elastic_list_view.dart';
 
@@ -124,17 +125,20 @@ class DesafioBusquedaView extends ConsumerWidget {
                                       horizontal: 16.0,
                                       vertical: 8.0,
                                     ),
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Positioned.fill(
-                                          child: SvgPicture.asset(
-                                            'assets/images/mensual/amigos4.svg',
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
-                                      ],
+                                    // --- AQUÍ ESTÁ EL CAMBIO ---
+                                    child: OptimizedImage(
+                                      imagePath:
+                                          'assets/images/banner/amigos.webp',
+                                      isLocalAsset:
+                                          true, // Importante: indica que no use Supabase
+                                      width: double
+                                          .infinity, // Ocupa todo el ancho disponible (como el Positioned.fill)
+                                      height: double
+                                          .infinity, // Ocupa todo el alto disponible
+                                      fit: BoxFit
+                                          .contain, // Mantiene la proporción sin recortar (igual que el SVG)
                                     ),
+                                    // ---------------------------
                                   ),
                                 ),
                               );

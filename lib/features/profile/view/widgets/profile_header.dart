@@ -36,10 +36,8 @@ class ProfileHeader extends ConsumerWidget {
     return profileState.when(
       skipLoadingOnRefresh: true,
       loading: () => const SizedBox(height: 365),
-      error: (error, _) => SizedBox(
-        height: 365,
-        child: Center(child: Text('Error: $error')),
-      ),
+      error: (error, _) =>
+          SizedBox(height: 365, child: Center(child: Text('Error: $error'))),
       data: (userProfile) {
         // Lista de avatares desde BD
         final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
@@ -51,7 +49,10 @@ class ProfileHeader extends ConsumerWidget {
 
         // Asset del avatar (fallback vacío → ícono de error)
         final avatarPath = (avatarsList.isNotEmpty)
-            ? getAvatarAssetPathById(userProfile.idAvatarSeleccionado, avatarsList)
+            ? getAvatarAssetPathById(
+                userProfile.idAvatarSeleccionado,
+                avatarsList,
+              )
             : "";
 
         final Widget avatarImage = avatarPath.isEmpty
@@ -79,7 +80,7 @@ class ProfileHeader extends ConsumerWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       dynamicColor.withAlpha(153), // ~0.6
-                      dynamicColor.withAlpha(51),  // ~0.2
+                      dynamicColor.withAlpha(51), // ~0.2
                     ],
                   ),
                 ),
@@ -90,9 +91,13 @@ class ProfileHeader extends ConsumerWidget {
                           height: 220,
                           width: size.width,
                           connectDots: false,
-                          numberOfParticles: 6, // 🔥 Reducido de 10 a 6 para mejor rendimiento
-                          particleColor: Colors.white.withAlpha(102), // ~0.4 reducido
-                          speedOfParticles: 0.4, // 🔥 Velocidad reducida para menor CPU usage
+                          numberOfParticles:
+                              6, // 🔥 Reducido de 10 a 6 para mejor rendimiento
+                          particleColor: Colors.white.withAlpha(
+                            102,
+                          ), // ~0.4 reducido
+                          speedOfParticles:
+                              0.4, // 🔥 Velocidad reducida para menor CPU usage
                           isRandomColor: false,
                         ),
                       )
@@ -106,8 +111,8 @@ class ProfileHeader extends ConsumerWidget {
               child: Column(
                 children: [
                   SizedBox(
-                    width: 150,
-                    height: 150,
+                    width: 160,
+                    height: 160,
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -116,22 +121,32 @@ class ProfileHeader extends ConsumerWidget {
                             duration: const Duration(milliseconds: 300),
                             delay: const Duration(milliseconds: 50),
                             child: Container(
+                              // ✅ 1. Estilo idéntico a _SelectedAvatarDisplay
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
+                                // El "borde" ahora es este gradiente
+                                gradient: LinearGradient(
+                                  colors: [dynamicColor, colors.primary],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: dynamicColor.withAlpha(128), // ~0.5
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
+                                    // Sombra más intensa y amplia como en el editor
+                                    color: dynamicColor.withAlpha(179),
+                                    blurRadius: 25,
+                                    spreadRadius: 4,
                                   ),
                                 ],
                               ),
+                              // ✅ 2. El padding crea el grosor del borde (4px)
+                              padding: const EdgeInsets.all(4),
                               child: ClipOval(
-                                child: SizedBox(
-                                  width: 140,
-                                  height: 140,
-                                  child: avatarImage,
+                                child: Container(
+                                  color: Colors
+                                      .transparent, // Previene artefactos visuales
+                                  child:
+                                      avatarImage, // Tu widget OptimizedImage ya definido
                                 ),
                               ),
                             ),
@@ -157,7 +172,8 @@ class ProfileHeader extends ConsumerWidget {
                                       color: colors.onSecondary,
                                       size: 20,
                                     ),
-                                    onPressed: () => context.push('/edit-profile'),
+                                    onPressed: () =>
+                                        context.push('/edit-profile'),
                                   ),
                                 ),
                               ),
@@ -255,7 +271,9 @@ class ProfileHeader extends ConsumerWidget {
           children: [
             Text(
               count,
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             Text(
               label,
@@ -285,8 +303,10 @@ class WaveClipper extends CustomClipper<Path> {
       firstEndPoint.dx,
       firstEndPoint.dy,
     );
-    final secondControlPoint =
-        Offset(size.width - (size.width / 4), size.height - 60);
+    final secondControlPoint = Offset(
+      size.width - (size.width / 4),
+      size.height - 60,
+    );
     final secondEndPoint = Offset(size.width, size.height - 40);
     path.quadraticBezierTo(
       secondControlPoint.dx,

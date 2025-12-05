@@ -48,6 +48,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter_native_splash:
   android: true
@@ -72,9 +73,29 @@ flutter:
     - assets/images/auth/
     - assets/images/banner/
     - assets/lottie/
-    #- assets/icons/
+    - assets/icons/
     #- assets/fonts/
     - assets/.env
     - assets/animations/
     - assets/audio/
     - assets/audio/music/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  adaptive_icon_background: "#FFDAB5"
+
+  # 2. Tu logo SIN FONDO (PNG transparente)
+  # Asegúrate de crear esta imagen.
+  adaptive_icon_foreground: "assets/icons/icon.png"
+
+  # --- Configuración para iOS ---
+  # iOS sigue usando la imagen cuadrada completa
+  ios: true
+  image_path: "assets/icons/icon.png"
+
+  # --- Otras plataformas ---
+  web:
+    generate: true
+    image_path: "assets/icons/icon.png"
+    background_color: "#FFDAB5"
+    theme_color: "#FFDAB5"

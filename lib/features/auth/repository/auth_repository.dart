@@ -35,8 +35,16 @@ class AuthRepository {
     if (!_isValidEmail(email)) {
       throw AuthException('Formato de email inválido');
     }
+    // Definimos la URL de redirección igual que en el reset password
+    final String redirectUrl = kIsWeb
+        ? 'http://localhost:3000/auth'
+        : 'kitsucode://auth-done';
 
-    await _supabaseClient.auth.signUp(email: email.trim(), password: password);
+    await _supabaseClient.auth.signUp(
+      email: email.trim(),
+      password: password,
+      emailRedirectTo: redirectUrl,
+    );
   }
 
   Future<void> signInWithGoogle() async {

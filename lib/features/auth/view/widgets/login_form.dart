@@ -88,9 +88,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   void _googleSignIn() async {
     try {
       await ref.read(loginStateProvider.notifier).signInWithGoogle();
-      if (mounted) {
-        showSuccessSnackbar(context, '¡Éxito!', 'Inicio de sesión con Google exitoso.');
-      }
+      // NO mostrar snackbar aquí - el flujo OAuth continúa en el navegador
+      // El éxito se detectará automáticamente por el authStateProvider cuando vuelva
     } catch (e) {
       if (mounted) {
         final errorMessage = e.toString().toLowerCase();

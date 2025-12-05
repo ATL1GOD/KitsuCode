@@ -55,15 +55,31 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
           showSuccessSnackbar(context, '¡Éxito!', 'Inicio de sesión exitoso.');
         }
       } catch (e) {
         setState(() => _showError = true);
-        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
-          showErrorSnackbar(context, 'Error', e.toString());
+          // Detectar si el error es por correo no confirmado
+          final errorMessage = e.toString().toLowerCase();
+          if (errorMessage.contains('email not confirmed') || 
+              errorMessage.contains('email_not_confirmed') ||
+              errorMessage.contains('not confirmed')) {
+            showWarningSnackbar(
+              context,
+              'Correo No Verificado',
+              'Por favor, confirma tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada o spam.',
+            );
+          } else if (errorMessage.contains('invalid') && errorMessage.contains('credentials')) {
+            showErrorSnackbar(
+              context,
+              'Error de Inicio de Sesión',
+              'Correo o contraseña incorrectos. Por favor, verifica tus datos.',
+            );
+          } else {
+            showErrorSnackbar(context, 'Error', e.toString());
+          }
         }
       }
     }
@@ -72,10 +88,29 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   void _googleSignIn() async {
     try {
       await ref.read(loginStateProvider.notifier).signInWithGoogle();
-    } catch (e) {
-      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
-        showErrorSnackbar(context, 'Error con Google', e.toString());
+        showSuccessSnackbar(context, '¡Éxito!', 'Inicio de sesión con Google exitoso.');
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMessage = e.toString().toLowerCase();
+        // Detectar si el correo de Google ya está registrado con otro método
+        if (errorMessage.contains('user already registered') ||
+            errorMessage.contains('already registered') ||
+            errorMessage.contains('already exists') ||
+            errorMessage.contains('email already in use') ||
+            errorMessage.contains('already been registered')) {
+          showWarningSnackbar(
+            context,
+            'Cuenta Ya Registrada',
+            'Este correo de Google ya está registrado. Por favor, inicia sesión con Google o usa tu correo y contraseña.',
+          );
+        } else if (errorMessage.contains('cancelled') || errorMessage.contains('canceled')) {
+          // Usuario canceló el inicio de sesión con Google, no mostrar error
+          return;
+        } else {
+          showErrorSnackbar(context, 'Error con Google', e.toString());
+        }
       }
     }
   }

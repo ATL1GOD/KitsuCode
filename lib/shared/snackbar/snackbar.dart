@@ -20,7 +20,12 @@ void showAwesomeSnackbar(
     backgroundColor: Colors.transparent,
     elevation: 0,
     behavior: SnackBarBehavior.floating,
-    duration: const Duration(seconds: 3),
+    duration: const Duration(seconds: 5),
+    margin: const EdgeInsets.only(
+      bottom: 20,
+      left: 10,
+      right: 10,
+    ),
   );
 
   ScaffoldMessenger.of(context).showSnackBar(snackBar);

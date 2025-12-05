@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_bottons.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
@@ -36,19 +35,48 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
+        
         if (mounted) {
+          // Limpiar los campos del formulario
+          _emailController.clear();
+          _passwordController.clear();
+          _confirmPasswordController.clear();
+          
+          // Mostrar snackbar de éxito
           showSuccessSnackbar(
             context,
-            'Registro Exitoso',
-            'Revisa tu correo para confirmar la cuenta.',
+            '¡Registro Exitoso!',
+            'Te hemos enviado un enlace de confirmación a tu correo. Por favor, verifica tu correo antes de iniciar sesión.',
           );
-          context.go('/login');
+          
+          // Cambiar al tab de login
+          widget.onSwitchToLogin();
         }
       } catch (e) {
-        // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
         if (mounted) {
-          showErrorSnackbar(context, 'Error en el Registro', e.toString());
+          // Detectar si el correo ya está registrado
+          final errorMessage = e.toString().toLowerCase();
+          if (errorMessage.contains('user already registered') ||
+              errorMessage.contains('already registered') ||
+              errorMessage.contains('already exists') ||
+              errorMessage.contains('email already in use') ||
+              errorMessage.contains('already been registered')) {
+            // Limpiar los campos
+            _emailController.clear();
+            _passwordController.clear();
+            _confirmPasswordController.clear();
+            
+            showWarningSnackbar(
+              context,
+              'Correo Ya Registrado',
+              'Este correo ya está registrado. Por favor, inicia sesión con tu cuenta existente.',
+            );
+            
+            // Cambiar al tab de login
+            widget.onSwitchToLogin();
+          } else {
+            showErrorSnackbar(context, 'Error en el Registro', e.toString());
+          }
         }
       }
     }

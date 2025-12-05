@@ -349,6 +349,8 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       data: challengeTheme,
       child: Scaffold(
         backgroundColor: colorScheme.surfaceContainerLow,
+        // 🔥 En onboarding, no redimensionar cuando aparece el teclado
+        resizeToAvoidBottomInset: widget.onOnboardingFinished == null,
         appBar: ChallengeAppBar2(
           progress: progress,
           // 🔥 FIX: Ocultar botón cerrar en Onboarding
@@ -380,7 +382,11 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   }
                   final pregunta = widget.challenge.preguntas[index];
 
+                  // 🔥 Si es onboarding, deshabilitar scroll para evitar desplazamiento con teclado
+                  final isOnboarding = widget.onOnboardingFinished != null;
+                  
                   return SingleChildScrollView(
+                    physics: isOnboarding ? const NeverScrollableScrollPhysics() : null,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20.0,
                       vertical: 16.0,

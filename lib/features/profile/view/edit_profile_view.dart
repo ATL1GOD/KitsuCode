@@ -12,6 +12,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 // Importamos el fondo corregido
 import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
+import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
   const EditProfileView({super.key});
@@ -392,6 +393,23 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                               
                                               if (!context.mounted) return;
                                               if (updated != null) {
+                                                // Mostrar snackbar si se cambió el avatar
+                                                if (isAvatarChanged) {
+                                                  final cambiosRestantes = 2 - updated.cambiosAvatarHoy;
+                                                  if (cambiosRestantes > 0) {
+                                                    showSuccessSnackbar(
+                                                      context,
+                                                      'Avatar Actualizado',
+                                                      'Te ${cambiosRestantes == 1 ? 'queda' : 'quedan'} $cambiosRestantes ${cambiosRestantes == 1 ? 'cambio' : 'cambios'} de avatar hoy.',
+                                                    );
+                                                  } else {
+                                                    showWarningSnackbar(
+                                                      context,
+                                                      'Avatar Actualizado',
+                                                      'Has alcanzado el límite de cambios de avatar por hoy.',
+                                                    );
+                                                  }
+                                                }
                                                 context.pop();
                                               }
                                             },

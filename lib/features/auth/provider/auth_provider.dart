@@ -255,3 +255,18 @@ class UpdatePasswordState extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
+
+//////////////
+// Este provider descarga el JSON de la base de datos
+final privacyPolicyProvider = FutureProvider.autoDispose<List<dynamic>>((
+  ref,
+) async {
+  final response = await Supabase.instance.client
+      .from('app_textos')
+      .select('contenido')
+      .eq('id', 'politica_privacidad')
+      .single();
+
+  // Retornamos la lista que está dentro del campo 'contenido'
+  return response['contenido'] as List<dynamic>;
+});

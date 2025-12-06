@@ -1,4 +1,3 @@
-// [COMIENZO DEL ARCHIVO profile_provider.dart]
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
 import 'package:kitsucode/features/profile/repository/profile_repository.dart';
@@ -12,77 +11,59 @@ import 'package:kitsucode/shared/widgets/achievement_toast.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:collection';
-// Import para la clase Color
 
-// 🔥 1. IMPORTAR EL CONNECTIVITY PROVIDER
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 
-// ✅ 1. EL CANDADO GLOBAL
-// (Tu código de candado y notifiers está perfecto, no se toca)
 final globalToastLockProvider = StateProvider<bool>((ref) => false);
 Color _safeParseColor(String colorString) {
   try {
     return Color(int.parse(colorString));
   } catch (e) {
     debugPrint('Error al parsear color "$colorString": $e');
-    return const Color(0xFF9E9E9E); // Gris
+    return const Color(0xFF9E9E9E);
   }
 }
 
-// Provider para el repositorio de perfil
 final profileRepositoryProvider = Provider((ref) {
   final supabaseClient = Supabase.instance.client;
   return ProfileRepository(supabaseClient);
 });
 
-// Provider para obtener el perfil de un usuario por su ID
-// 🔥 MODIFICADO: Ahora reacciona a la conexión + autoDispose para memory leaks
-final userProfileByIdProvider = StreamProvider.autoDispose.family<UserProfileModel, String>(
-  (ref, userId) {
-    // "Escuchar" la conexión
-    final connectivity = ref.watch(connectivityProvider);
+final userProfileByIdProvider = StreamProvider.autoDispose
+    .family<UserProfileModel, String>((ref, userId) {
+      final connectivity = ref.watch(connectivityProvider);
 
-    // Usar .when para manejar el estado de la conexión
-    return connectivity.when(
-      data: (status) {
-        if (status == ConnectivityStatus.online) {
-          // CONECTADO: Devolver el stream real
-          final profileRepository = ref.watch(profileRepositoryProvider);
-          return profileRepository.watchUserProfileById(userId);
-        } else {
-          // OFFLINE: Devolver un stream que emite un error
-          return Stream.error('Sin conexión');
-        }
-      },
-      // CARGANDO CONEXIÓN: Devolver un stream vacío mientras se verifica
-      loading: () => const Stream.empty(),
-      // ERROR DE CONEXIÓN: Devolver un stream con el error
-      error: (e, s) => Stream.error(e),
-    );
-  },
-);
+      return connectivity.when(
+        data: (status) {
+          if (status == ConnectivityStatus.online) {
+            final profileRepository = ref.watch(profileRepositoryProvider);
+            return profileRepository.watchUserProfileById(userId);
+          } else {
+            return Stream.error('Sin conexión');
+          }
+        },
 
-// Provider para los logros
-// 🔥 MODIFICADO: Ahora reacciona a la conexión
+        loading: () => const Stream.empty(),
+
+        error: (e, s) => Stream.error(e),
+      );
+    });
+
 final userAchievementsProvider =
     FutureProvider.family<List<UserAchievementModel>, String>((
       ref,
       userId,
     ) async {
-      // Esperar a que la conexión esté confirmada
       final connectivityStatus = await ref.watch(connectivityProvider.future);
 
-      // Si no estamos 'online', lanza un error
       if (connectivityStatus != ConnectivityStatus.online) {
         throw Exception('Sin conexión');
       }
 
-      // --- LÓGICA ORIGINAL ---
       final profileRepository = ref.watch(profileRepositoryProvider);
       return profileRepository.fetchUserAchievementsById(userId);
     });
 
-// 🔥 MODIFICADO: Ahora reacciona a la conexión
 final userStatsByIdProvider = FutureProvider.autoDispose
     .family<UserStatsModel, String>((ref, userId) async {
       final connectivityStatus = await ref.watch(connectivityProvider.future);
@@ -90,13 +71,10 @@ final userStatsByIdProvider = FutureProvider.autoDispose
         throw Exception('Sin conexión');
       }
 
-      // --- LÓGICA ORIGINAL ---
       final repository = ref.watch(profileRepositoryProvider);
       return repository.fetchUserStatsById(userId);
     });
 
-// ==================== PROVIDERS PARA AVATARES ====================
-// 🔥 MODIFICADO: Ahora reacciona a la conexión
 final userAvatarsProvider = FutureProvider.family
     .autoDispose<List<AvatarModel>, String>((ref, userId) async {
       final connectivityStatus = await ref.watch(connectivityProvider.future);
@@ -104,31 +82,22 @@ final userAvatarsProvider = FutureProvider.family
         throw Exception('Sin conexión');
       }
 
-      // --- LÓGICA ORIGINAL ---
       ref.keepAlive();
       final repository = ref.watch(profileRepositoryProvider);
       return repository.fetchUserAvatars(userId);
     });
 
-final currentUserAvatarsProvider = FutureProvider.autoDispose<List<AvatarModel>>(
-  (ref) async {
-    final userId = ref.watch(authStateProvider).value?.session?.user.id;
-    if (userId == null) {
-      throw Exception('Usuario no autenticado');
-    }
-    // No necesita check de conexión, porque 'userAvatarsProvider' ya lo tiene.
-    // Si 'userAvatarsProvider' falla, este también lo hará.
-    return ref.watch(userAvatarsProvider(userId).future);
-  },
-);
+final currentUserAvatarsProvider =
+    FutureProvider.autoDispose<List<AvatarModel>>((ref) async {
+      final userId = ref.watch(authStateProvider).value?.session?.user.id;
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
 
-// ==================== FIN PROVIDERS AVATARES ====================
+      return ref.watch(userAvatarsProvider(userId).future);
+    });
 
-// --- Providers de Realtime (CORREGIDOS PARA REINICIO DE SESIÓN) ---
-
-// 🔥 CAMBIO 1: autoDispose + watch(authStateProvider)
 final followRealtimeProvider = Provider.autoDispose((ref) {
-  // Si cambia el usuario, reiniciamos la conexión
   ref.watch(authStateProvider);
 
   final supabase = Supabase.instance.client;
@@ -136,7 +105,7 @@ final followRealtimeProvider = Provider.autoDispose((ref) {
   if (userId == null) return null;
 
   final channel = supabase.channel('public:seguimiento_usuario');
-  
+
   channel
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
@@ -165,14 +134,13 @@ final followRealtimeProvider = Provider.autoDispose((ref) {
   return channel;
 });
 
-// 🔥 CAMBIO 2: watch(authStateProvider) añadido
 final profileRealtimeProvider = Provider.autoDispose((ref) {
   ref.watch(authStateProvider);
 
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return;
-  
+
   final userChannel = supabase.channel('public:usuarios:profile');
   userChannel
       .onPostgresChanges(
@@ -213,14 +181,13 @@ final profileRealtimeProvider = Provider.autoDispose((ref) {
   });
 });
 
-// 🔥 CAMBIO 3: watch(authStateProvider) añadido
 final achievementRealtimeProvider = Provider.autoDispose((ref) {
   ref.watch(authStateProvider);
 
   final supabase = Supabase.instance.client;
   final currentUserId = supabase.auth.currentUser?.id;
   if (currentUserId == null) return;
-  
+
   final channelsToCleanup = <RealtimeChannel>[];
   final earnedChannel = supabase.channel('public:usuario_logro_earned');
   channelsToCleanup.add(earnedChannel);
@@ -273,7 +240,6 @@ final achievementRealtimeProvider = Provider.autoDispose((ref) {
   return;
 });
 
-// --- PASO 1: Modelo de datos de Logros ---
 class AchievementNotificationData {
   final String nombreLogro;
   final String iconUrl;
@@ -286,7 +252,6 @@ class AchievementNotificationData {
   });
 }
 
-// --- PASO 2: Notifier de Logros ---
 class AchievementNotifier extends StateNotifier<bool> {
   final Ref _ref;
   final Queue<AchievementNotificationData> _queue = Queue();
@@ -294,7 +259,6 @@ class AchievementNotifier extends StateNotifier<bool> {
   AchievementNotifier(this._ref) : super(false) {
     _initListener();
 
-    // ✅ 3. AÑADIDO: Escucha el candado global
     _ref.listen(globalToastLockProvider, (previous, next) {
       if (next == false) {
         _processQueue();
@@ -343,13 +307,11 @@ class AchievementNotifier extends StateNotifier<bool> {
     });
   }
 
-  // ✅ 4. MODIFICADO: Llama a _processQueue
   void _addToQueue(AchievementNotificationData data) {
     _queue.add(data);
-    _processQueue(); // Intenta procesar la fila
+    _processQueue();
   }
 
-  // ✅ 5. MODIFICADO: Usa el candado global
   Future<void> _processQueue() async {
     if (_queue.isEmpty || _ref.read(globalToastLockProvider)) {
       return;
@@ -374,19 +336,12 @@ class AchievementNotifier extends StateNotifier<bool> {
   }
 }
 
-// --- PASO 3: Provider de Logros ---
-// 🔥 CAMBIO 4: autoDispose + watch(authStateProvider)
 final achievementNotifierProvider =
     StateNotifierProvider.autoDispose<AchievementNotifier, bool>((ref) {
       ref.watch(authStateProvider);
       return AchievementNotifier(ref);
     });
 
-// ===================================================================
-// ¡COMIENZA LA SECCIÓN DE AVATARES!
-// ===================================================================
-
-// --- PASO 1 (AVATAR): Modelo de datos ---
 class AvatarNotificationData {
   final String nombreAvatar;
   final String assetPath;
@@ -401,7 +356,6 @@ class AvatarNotificationData {
   });
 }
 
-// --- PASO 2 (AVATAR): Notifier de Avatares ---
 class AvatarNotifier extends StateNotifier<bool> {
   final Ref _ref;
   final Queue<AvatarNotificationData> _queue = Queue();
@@ -409,7 +363,6 @@ class AvatarNotifier extends StateNotifier<bool> {
   AvatarNotifier(this._ref) : super(false) {
     _initListener();
 
-    // ✅ 3. AÑADIDO: Escucha el candado global
     _ref.listen(globalToastLockProvider, (previous, next) {
       if (next == false) {
         _processQueue();
@@ -463,13 +416,11 @@ class AvatarNotifier extends StateNotifier<bool> {
     });
   }
 
-  // ✅ 4. MODIFICADO: Llama a _processQueue
   void _addToQueue(AvatarNotificationData data) {
     _queue.add(data);
-    _processQueue(); // Intenta procesar la fila
+    _processQueue();
   }
 
-  // ✅ 5. MODIFICADO: Usa el candado global
   Future<void> _processQueue() async {
     if (_queue.isEmpty || _ref.read(globalToastLockProvider)) {
       return;
@@ -497,16 +448,12 @@ class AvatarNotifier extends StateNotifier<bool> {
   }
 }
 
-// --- PASO 3 (AVATAR): Provider de Avatares ---
-// 🔥 CAMBIO 5: autoDispose + watch(authStateProvider)
-final avatarNotifierProvider = StateNotifierProvider.autoDispose<AvatarNotifier, bool>((
-  ref,
-) {
-  ref.watch(authStateProvider);
-  return AvatarNotifier(ref);
-});
+final avatarNotifierProvider =
+    StateNotifierProvider.autoDispose<AvatarNotifier, bool>((ref) {
+      ref.watch(authStateProvider);
+      return AvatarNotifier(ref);
+    });
 
-// --- Providers de Historial ---
 final historyDateRangeProvider = StateProvider.autoDispose<DateTimeRange>((
   ref,
 ) {
@@ -515,7 +462,6 @@ final historyDateRangeProvider = StateProvider.autoDispose<DateTimeRange>((
   return DateTimeRange(start: thirtyDaysAgo, end: now);
 });
 
-// 🔥 MODIFICADO: Ahora reacciona a la conexión
 final challengeHistoryProvider = FutureProvider.autoDispose
     .family<List<ChallengeHistoryModel>, String>((ref, userId) async {
       final connectivityStatus = await ref.watch(connectivityProvider.future);
@@ -523,7 +469,6 @@ final challengeHistoryProvider = FutureProvider.autoDispose
         throw Exception('Sin conexión');
       }
 
-      // --- LÓGICA ORIGINAL ---
       final profileRepo = ref.watch(profileRepositoryProvider);
       final dateRange = ref.watch(historyDateRangeProvider);
       return profileRepo.getChallengeHistory(
@@ -532,4 +477,3 @@ final challengeHistoryProvider = FutureProvider.autoDispose
         endDate: dateRange.end,
       );
     });
-// [FIN DEL ARCHIVO profile_provider.dart]

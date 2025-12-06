@@ -47,17 +47,15 @@ class _UpdatePasswordCardState extends ConsumerState<UpdatePasswordCard> {
           .read(updatePasswordProvider.notifier)
           .updatePassword(_passwordController.text);
 
-      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
         showSuccessSnackbar(
           context,
           '¡Éxito!',
           'Contraseña actualizada con éxito.',
         );
-        context.go('/home'); // ¡Éxito! Lo mandamos al Home.
+        context.go('/home');
       }
     } catch (e) {
-      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
         showErrorSnackbar(context, 'Error', e.toString());
       }
@@ -72,7 +70,6 @@ class _UpdatePasswordCardState extends ConsumerState<UpdatePasswordCard> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        // 🔥 Reducido de 10 a 5 para mejor rendimiento en dispositivos de gama media-baja
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
           decoration: BoxDecoration(

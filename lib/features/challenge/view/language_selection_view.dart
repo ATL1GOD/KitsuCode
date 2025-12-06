@@ -1,5 +1,3 @@
-// lib/features/challenge/view/language_selection_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,7 +7,6 @@ import 'package:kitsucode/features/challenge/provider/language_completion_provid
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
-// Modelo para representar un lenguaje
 class Language {
   final String name;
   final String displayName;
@@ -31,8 +28,8 @@ class Language {
 }
 
 class LanguageSelectionView extends ConsumerStatefulWidget {
-  final List<String> unlockedLanguages; // ["Python", "Java"] por ejemplo
-  final String currentLanguage; // El que acaba de completar
+  final List<String> unlockedLanguages;
+  final String currentLanguage;
 
   const LanguageSelectionView({
     super.key,
@@ -49,10 +46,8 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
   String? _selectedLanguage;
   bool _isLoading = false;
 
-  // Definición de todos los lenguajes disponibles
   late final List<Language> _allLanguages;
 
-  // funcion helper para obtener el tema del lenguaje
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -64,27 +59,19 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
       case 'java':
         return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
       default:
-        // Fallback al tema principal
         return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
     }
   }
-  // ------------------------------------
 
   @override
   void initState() {
     super.initState();
 
-    // Normalizar los nombres de los lenguajes desbloqueados (completados)
     final normalizedUnlocked = widget.unlockedLanguages
         .map((l) => l.trim().toLowerCase())
         .toList();
 
-    // Normalizar el lenguaje actual (el que acaba de completar)
     widget.currentLanguage.trim().toLowerCase();
-
-    // LÓGICA CORRECTA:
-    // - Los lenguajes COMPLETADOS están bloqueados (ya los terminaste)
-    // - Los lenguajes NO completados están desbloqueados (puedes elegirlos)
 
     _allLanguages = [
       Language(
@@ -96,9 +83,7 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
         description: normalizedUnlocked.contains('c')
             ? 'Ya dominaste este lenguaje'
             : 'El lenguaje de los sistemas',
-        isLocked: normalizedUnlocked.contains(
-          'c',
-        ), // Bloqueado si ya lo completaste
+        isLocked: normalizedUnlocked.contains('c'),
       ),
       Language(
         name: 'Java',
@@ -109,9 +94,7 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
         description: normalizedUnlocked.contains('java')
             ? 'Ya dominaste este lenguaje'
             : 'Programación orientada a objetos',
-        isLocked: normalizedUnlocked.contains(
-          'java',
-        ), // Bloqueado si ya lo completaste
+        isLocked: normalizedUnlocked.contains('java'),
       ),
       Language(
         name: 'Python',
@@ -122,9 +105,7 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
         description: normalizedUnlocked.contains('python')
             ? 'Ya dominaste este lenguaje'
             : 'Lenguaje versátil y fácil de aprender',
-        isLocked: normalizedUnlocked.contains(
-          'python',
-        ), // Bloqueado si ya lo completaste
+        isLocked: normalizedUnlocked.contains('python'),
       ),
     ];
   }
@@ -138,15 +119,12 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
     });
 
     try {
-      // Obtener el userId
       final userId = ref.read(authStateProvider).value?.session?.user.id;
 
       if (userId == null) {
         throw Exception('Usuario no autenticado');
       }
 
-      // 🔥 CAMBIO CRÍTICO: updateFavoriteLanguage ya actualiza el AppBar internamente
-      // No necesitamos hacer fetchStats() de nuevo aquí
       await ref
           .read(languageCompletionProvider.notifier)
           .updateFavoriteLanguage(
@@ -155,36 +133,26 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
             previousLanguage: widget.currentLanguage,
           );
 
-      // CRÍTICO: Volver a verificar lenguajes completados
       await ref
           .read(languageCompletionProvider.notifier)
           .checkLanguageCompletion(userId);
 
-      // CRÍTICO: Resetear el estado de completitud
       ref.read(languageCompletionProvider.notifier).resetCompletionState();
 
-      // ❌ ELIMINADO: No hacemos fetchStats() aquí porque updateFavoriteLanguage
-      // ya llamó a appBarProvider.updateLanguage() que hace el fetch correcto
-      // await ref.read(appBarProvider.notifier).fetchStats();
-
       if (mounted) {
-        //Usando AwesomeSnackbar
         showSuccessSnackbar(
           context,
           '¡Éxito!',
           'Cambiado a ${language.displayName}',
         );
 
-        // Pequeño delay para que el usuario vea el mensaje
         await Future.delayed(const Duration(milliseconds: 500));
 
-        // Navegar al home
         if (mounted) {
           context.go('/home');
         }
       }
     } catch (e) {
-      // Manejar error
       if (mounted) {
         showErrorSnackbar(context, '¡Oops! Hubo un error', e.toString());
         setState(() {
@@ -197,8 +165,6 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
 
   @override
   Widget build(BuildContext context) {
-    // cambios de tema basados en el lenguaje
-    // El tema se basa en el lenguaje que se acaba de completar
     final challengeTheme = _getLanguageTheme(
       widget.currentLanguage,
       Theme.of(context).brightness,
@@ -210,7 +176,6 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
       backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
-          // Fondo con gradiente
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -230,10 +195,8 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Encabezado
                   Column(
                     children: [
-                      // Ícono de estrella (Naranja intencional para recompensa)
                       Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -269,7 +232,6 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
 
                       const SizedBox(height: 24),
 
-                      // Título
                       Text(
                             '¡Nuevo Lenguaje Disponible!',
                             style: textTheme.displaySmall?.copyWith(
@@ -285,7 +247,6 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
 
                       const SizedBox(height: 12),
 
-                      // Subtítulo
                       Text(
                             'Selecciona el próximo lenguaje que quieres dominar',
                             style: textTheme.bodyLarge?.copyWith(
@@ -302,7 +263,6 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
 
                   const SizedBox(height: 40),
 
-                  // Lista de lenguajes
                   Expanded(
                     child: ListView.builder(
                       itemCount: _allLanguages.length,
@@ -332,7 +292,6 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
                     ),
                   ),
 
-                  // Nota informativa
                   Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -346,7 +305,7 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
                           children: [
                             Icon(
                               Icons.info_outline,
-                              color: Colors.orange.shade300, // OK
+                              color: Colors.orange.shade300,
                               size: 20,
                             ),
                             const SizedBox(width: 12),
@@ -390,7 +349,6 @@ class _LanguageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tema y estilos
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -401,7 +359,6 @@ class _LanguageCard extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          // Los colores del lenguaje (azul, naranja) son intencionales
           gradient: language.isLocked
               ? LinearGradient(
                   colors: [Colors.grey.shade800, Colors.grey.shade900],
@@ -435,7 +392,6 @@ class _LanguageCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                // Ícono del lenguaje (colores intencionales)
                 Container(
                   width: 60,
                   height: 60,
@@ -462,7 +418,6 @@ class _LanguageCard extends StatelessWidget {
 
                 const SizedBox(width: 16),
 
-                // Información del lenguaje
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,7 +456,6 @@ class _LanguageCard extends StatelessWidget {
                   ),
                 ),
 
-                // Indicador de selección o loading (colores intencionales)
                 if (!language.isLocked)
                   SizedBox(
                     width: 40,

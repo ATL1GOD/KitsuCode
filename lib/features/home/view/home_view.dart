@@ -50,10 +50,8 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
     }
   }
 
-  // Detectar cuando REGRESAS al Home
   @override
   void didPopNext() {
-    // Delay para que la pantalla se estabilice
     Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
 
@@ -64,9 +62,7 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
         if (currentLang.isNotEmpty) {
           audioController.playBackgroundMusic(currentLang);
         }
-      } catch (e) {
-        // Fallo silencioso
-      }
+      } catch (e) {}
     });
   }
 
@@ -140,25 +136,17 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Obtener ID del usuario para verificar perfil
-    // Al usar watch(authStateProvider), si cambia el usuario (logout/login),
-    // este widget se reconstruye por completo.
     final userId = ref.watch(authStateProvider).value?.session?.user.id;
 
-    // Si no hay usuario (caso raro pero posible), mostramos carga
     if (userId == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // 2. CHECK DE ONBOARDING: Usamos ref.listen para no romper el build
     ref.listen(userProfileByIdProvider(userId), (previous, next) {
       next.whenData((profile) {
-        // Si ya cargó el perfil y onboarding_completado es false...
         if (!profile.onboardingCompletado) {
-          // ...redirigimos. Usamos microtask para asegurar que sea post-render.
           Future.microtask(() {
             if (mounted) {
-              // ignore: use_build_context_synchronously
               context.go('/onboarding');
             }
           });
@@ -166,13 +154,8 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
       });
     });
 
-    // --- Lógica normal del Home ---
-
     ref.watch(mapStructureRealtimeProvider);
-    
-    // 🔥 CAMBIO CRÍTICO AQUÍ: Usamos WATCH en lugar de READ
-    // Esto mantiene viva la suscripción de Realtime mientras estás en el Home.
-    // Al ser autoDispose, si usaras read, se conectaría y desconectaría al instante.
+
     ref.watch(progressRealtimeProvider);
 
     final shouldRefresh = ref.watch(shouldRefreshStatsProvider);

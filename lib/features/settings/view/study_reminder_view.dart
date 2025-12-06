@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 👈 Haptics
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +13,8 @@ import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
 import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 Audio
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
-// --- Helpers (Sin cambios) ---
 TimeOfDay? _stringToTimeOfDay(String? hora) {
   if (hora == null) return null;
   try {
@@ -34,7 +33,6 @@ String _timeOfDayToString(TimeOfDay time) {
   final minute = time.minute.toString().padLeft(2, '0');
   return '$hour:$minute';
 }
-// --- Fin de Helpers ---
 
 class StudyReminderView extends ConsumerStatefulWidget {
   final NotificationSetting setting;
@@ -60,7 +58,8 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
   void initState() {
     super.initState();
     _isEnabled = widget.setting.habilitado;
-    _selectedTime = _stringToTimeOfDay(widget.setting.horaNotificacion) ??
+    _selectedTime =
+        _stringToTimeOfDay(widget.setting.horaNotificacion) ??
         const TimeOfDay(hour: 19, minute: 0);
     WidgetsBinding.instance.addObserver(this);
   }
@@ -81,7 +80,6 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
   }
 
   Future<void> _pickTime(BuildContext context) async {
-    // 🔥 Sonido al abrir picker
     HapticFeedback.lightImpact();
     ref.read(audioControllerProvider).playClick();
 
@@ -91,9 +89,8 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
     );
 
     if (newTime != null) {
-      // 🔥 Sonido confirmación
       HapticFeedback.mediumImpact();
-      ref.read(audioControllerProvider).playSuccess(); // O click
+      ref.read(audioControllerProvider).playSuccess();
 
       setState(() {
         _selectedTime = newTime;
@@ -111,8 +108,12 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final currentAuthUserId =
-        ref.watch(authStateProvider).value!.session!.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value!
+        .session!
+        .user
+        .id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
@@ -171,12 +172,13 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
                               onTap: () {
-                                // 🔥 Sonido Back
                                 HapticFeedback.lightImpact();
                                 ref.read(audioControllerProvider).playClick();
                                 context.pop();
@@ -185,21 +187,25 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                    color: colors.surface.withAlpha(50),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: colors.outlineVariant
-                                            .withAlpha(130))),
-                                child: Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: colors.onSurface),
+                                  color: colors.surface.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: colors.outlineVariant.withAlpha(130),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: colors.onSurface,
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Text(
                                 'Recordatorio de Estudio',
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 48),
@@ -209,7 +215,9 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 12.0),
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
                           children: [
                             FadeInDown(
                               delay: const Duration(milliseconds: 100),
@@ -221,36 +229,42 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                                 dynamicColor: dynamicColor,
                                 initialValue: _isEnabled,
                                 onChanged: (newValue) {
-                                  // 🔥 Sonido Switch
                                   HapticFeedback.lightImpact();
                                   ref.read(audioControllerProvider).playClick();
-                                  
+
                                   setState(() {
                                     _isEnabled = newValue;
                                   });
                                   ref
-                                      .read(notificationSettingsProvider
-                                          .notifier)
+                                      .read(
+                                        notificationSettingsProvider.notifier,
+                                      )
                                       .updateEnabled(
-                                          widget.setting.preferenciaId,
-                                          newValue);
+                                        widget.setting.preferenciaId,
+                                        newValue,
+                                      );
                                   if (newValue) {
                                     debugPrint(
-                                        'Recordatorio activado para las ${_timeOfDayToString(_selectedTime)}');
+                                      'Recordatorio activado para las ${_timeOfDayToString(_selectedTime)}',
+                                    );
                                     ref
-                                        .read(notificationSettingsProvider
-                                            .notifier)
+                                        .read(
+                                          notificationSettingsProvider.notifier,
+                                        )
                                         .updateTime(
-                                            widget.setting.preferenciaId,
-                                            _timeOfDayToString(_selectedTime));
+                                          widget.setting.preferenciaId,
+                                          _timeOfDayToString(_selectedTime),
+                                        );
                                   } else {
                                     debugPrint('Recordatorio desactivado');
                                     ref
-                                        .read(notificationSettingsProvider
-                                            .notifier)
+                                        .read(
+                                          notificationSettingsProvider.notifier,
+                                        )
                                         .updateTime(
-                                            widget.setting.preferenciaId,
-                                            null);
+                                          widget.setting.preferenciaId,
+                                          null,
+                                        );
                                   }
                                 },
                               ),
@@ -263,8 +277,9 @@ class _StudyReminderViewState extends ConsumerState<StudyReminderView>
                                 subtitle: timeSubtitle,
                                 icon: Icons.schedule,
                                 dynamicColor: dynamicColor,
-                                onTap:
-                                    _isEnabled ? () => _pickTime(context) : null,
+                                onTap: _isEnabled
+                                    ? () => _pickTime(context)
+                                    : null,
                               ),
                             ),
                           ],

@@ -2,12 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
-// 🔥 1. IMPORTANTE: Importar el AuthProvider para detectar cambios de sesión
+
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
 const String _defaultAsset = 'assets/images/home/logo_python.webp';
 
-// 1. EL MODELO DEL ESTADO
 @immutable
 class AppBarState {
   final int lives;
@@ -49,21 +48,26 @@ class AppBarState {
   }
 }
 
-// 2. EL NOTIFIER (LÓGICA)
 class AppBarNotifier extends StateNotifier<AppBarState> {
   final SupabaseClient _supabase;
 
   AppBarNotifier(this._supabase)
-      : super(const AppBarState(isLoading: true, languageAssetPath: _defaultAsset)) {
+    : super(
+        const AppBarState(isLoading: true, languageAssetPath: _defaultAsset),
+      ) {
     fetchStats();
   }
 
   String _getAssetForLanguage(String langName) {
     switch (langName.toLowerCase().trim()) {
-      case 'python': return 'assets/images/home/logo_python.webp';
-      case 'java': return 'assets/images/home/logo_java.webp';
-      case 'c': return 'assets/images/home/logo_c.webp';
-      default: return _defaultAsset;
+      case 'python':
+        return 'assets/images/home/logo_python.webp';
+      case 'java':
+        return 'assets/images/home/logo_java.webp';
+      case 'c':
+        return 'assets/images/home/logo_c.webp';
+      default:
+        return _defaultAsset;
     }
   }
 
@@ -76,12 +80,13 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
           languageId: 1,
           languageName: 'Python',
           languageAssetPath: _getAssetForLanguage('Python'),
-          lives: 0, streak: 0, trophies: 0,
+          lives: 0,
+          streak: 0,
+          trophies: 0,
         );
         return;
       }
 
-      // 1. Obtener ID de lenguaje favorito
       final userData = await _supabase
           .from('usuarios')
           .select('lenguaje_favorito')
@@ -90,14 +95,23 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
 
       final langId = (userData?['lenguaje_favorito'] ?? 1) as int;
 
-      // 2. Carga Paralela: Trofeos (RPC), Stats y Nombre Lenguaje
       final responses = await Future.wait<dynamic>([
-        _supabase.rpc('get_my_language_score', params: {'p_language_id': langId}),
-        _supabase.from('estadistica_usuario').select('racha_dias, vidas').eq('id_usuario', user.id).maybeSingle(),
-        _supabase.from('lenguaje').select('nombre').eq('id_lenguaje', langId).single(),
+        _supabase.rpc(
+          'get_my_language_score',
+          params: {'p_language_id': langId},
+        ),
+        _supabase
+            .from('estadistica_usuario')
+            .select('racha_dias, vidas')
+            .eq('id_usuario', user.id)
+            .maybeSingle(),
+        _supabase
+            .from('lenguaje')
+            .select('nombre')
+            .eq('id_lenguaje', langId)
+            .single(),
       ]);
 
-      // 3. Procesamiento Seguro de Datos
       final totalTrofeos = (responses[0] as num?)?.toInt() ?? 0;
 
       final statsData = responses[1] as Map<String, dynamic>?;
@@ -123,20 +137,28 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
     }
   }
 
-  // 🔥 Nuevo método específico para fetch con languageId conocido
   Future<void> fetchStatsForLanguage(int langId) async {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      // Carga Paralela: Trofeos (RPC), Stats y Nombre Lenguaje
       final responses = await Future.wait<dynamic>([
-        _supabase.rpc('get_my_language_score', params: {'p_language_id': langId}),
-        _supabase.from('estadistica_usuario').select('racha_dias, vidas').eq('id_usuario', user.id).maybeSingle(),
-        _supabase.from('lenguaje').select('nombre').eq('id_lenguaje', langId).single(),
+        _supabase.rpc(
+          'get_my_language_score',
+          params: {'p_language_id': langId},
+        ),
+        _supabase
+            .from('estadistica_usuario')
+            .select('racha_dias, vidas')
+            .eq('id_usuario', user.id)
+            .maybeSingle(),
+        _supabase
+            .from('lenguaje')
+            .select('nombre')
+            .eq('id_lenguaje', langId)
+            .single(),
       ]);
 
-      // Procesamiento Seguro de Datos
       final totalTrofeos = (responses[0] as num?)?.toInt() ?? 0;
 
       final statsData = responses[1] as Map<String, dynamic>?;
@@ -147,7 +169,9 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
       final langName = (langData['nombre'] as String).trim();
       final langAsset = _getAssetForLanguage(langName);
 
-      debugPrint('🔥 fetchStatsForLanguage - Lang: $langName, Trofeos: $totalTrofeos'); // Debug
+      debugPrint(
+        '🔥 fetchStatsForLanguage - Lang: $langName, Trofeos: $totalTrofeos',
+      );
 
       state = state.copyWith(
         lives: vidas,
@@ -164,13 +188,11 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
     }
   }
 
-  // Cambiar lenguaje (Optimista + BD + Fetch)
   Future<void> updateLanguage(String newName, int newId) async {
     final newAsset = _getAssetForLanguage(newName);
 
-    debugPrint('🔥 updateLanguage - Cambiando a: $newName (ID: $newId)'); // Debug
+    debugPrint('🔥 updateLanguage - Cambiando a: $newName (ID: $newId)');
 
-    // 🔥 CAMBIO CRÍTICO: Solo actualizamos nombre/id/asset, NO los trofeos
     state = state.copyWith(
       languageName: newName,
       languageId: newId,
@@ -178,42 +200,41 @@ class AppBarNotifier extends StateNotifier<AppBarState> {
       isLoading: true,
     );
 
-    // Actualizamos BD
     final user = _supabase.auth.currentUser;
     if (user != null) {
       try {
-        await _supabase.from('usuarios').update({'lenguaje_favorito': newId}).eq('id', user.id);
+        await _supabase
+            .from('usuarios')
+            .update({'lenguaje_favorito': newId})
+            .eq('id', user.id);
       } catch (e) {
         debugPrint("Error update language: $e");
       }
     }
 
-    // 🔥 Usamos el método específico que usa el newId directamente
     await fetchStatsForLanguage(newId);
   }
 
-  // Método para el "Truco del Rebobinado"
-  void updateStatsDirectly({required int lives, required int trophies, required int streak}) {
+  void updateStatsDirectly({
+    required int lives,
+    required int trophies,
+    required int streak,
+  }) {
     state = state.copyWith(lives: lives, trophies: trophies, streak: streak);
   }
 }
 
-// 3. PROVIDERS
-
-// 🔥 2. CAMBIO: StateNotifierProvider.autoDispose + watch(authStateProvider)
-final appBarProvider = StateNotifierProvider.autoDispose<AppBarNotifier, AppBarState>((ref) {
-  // 🔥 MÁGIA: Si el usuario cambia (Log in/Log out), este provider se reconstruye desde CERO.
-  ref.watch(authStateProvider);
-  return AppBarNotifier(Supabase.instance.client);
-});
+final appBarProvider =
+    StateNotifierProvider.autoDispose<AppBarNotifier, AppBarState>((ref) {
+      ref.watch(authStateProvider);
+      return AppBarNotifier(Supabase.instance.client);
+    });
 
 final currentLanguageIdProvider = Provider<int>((ref) {
   return ref.watch(appBarProvider.select((state) => state.languageId));
 });
 
-// Provider Realtime (Optimizado)
 final appBarRealtimeProvider = Provider.autoDispose((ref) {
-  // 🔥 3. CAMBIO: Escuchar cambios de auth para reconectar los canales al nuevo usuario
   ref.watch(authStateProvider);
 
   final supabase = Supabase.instance.client;
@@ -221,22 +242,54 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
   if (userId == null) return;
 
   void refresh() {
-    // Solo refrescamos si NO estamos en una pantalla que lo prohíba (ej. juego/feedback)
     if (ref.read(shouldRefreshStatsProvider) == false) {
-       ref.read(appBarProvider.notifier).fetchStats();
+      ref.read(appBarProvider.notifier).fetchStats();
     }
   }
 
   final channels = [
-    supabase.channel('public:estadistica_usuario:appbar:$userId') // Tip: añadir userId al nombre del canal ayuda a depurar
-      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'estadistica_usuario', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id_usuario', value: userId), callback: (_) => refresh())
-      .subscribe(),
-    supabase.channel('public:intento_reto:appbar:$userId')
-      .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public', table: 'intento_reto', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id_usuario', value: userId), callback: (_) => refresh())
-      .subscribe(),
-    supabase.channel('public:usuarios:appbar:$userId')
-      .onPostgresChanges(event: PostgresChangeEvent.update, schema: 'public', table: 'usuarios', filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id', value: userId), callback: (_) => refresh())
-      .subscribe(),
+    supabase
+        .channel('public:estadistica_usuario:appbar:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'estadistica_usuario',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id_usuario',
+            value: userId,
+          ),
+          callback: (_) => refresh(),
+        )
+        .subscribe(),
+    supabase
+        .channel('public:intento_reto:appbar:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'intento_reto',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id_usuario',
+            value: userId,
+          ),
+          callback: (_) => refresh(),
+        )
+        .subscribe(),
+    supabase
+        .channel('public:usuarios:appbar:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'usuarios',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: userId,
+          ),
+          callback: (_) => refresh(),
+        )
+        .subscribe(),
   ];
 
   ref.onDispose(() {
@@ -246,7 +299,9 @@ final appBarRealtimeProvider = Provider.autoDispose((ref) {
   });
 });
 
-final languageListProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final languageListProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   final supabase = Supabase.instance.client;
   return await supabase.from('lenguaje').select('id_lenguaje, nombre');
 });

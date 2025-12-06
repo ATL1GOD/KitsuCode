@@ -19,14 +19,13 @@ class PuzzleCodeArea extends StatefulWidget {
 }
 
 class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
-  // Rastrear qué chip está siendo arrastrado y desde dónde
   String? _draggingFromBlankId;
   PuzzleOption? _draggingOption;
-  bool _isDragging = false; // Prevenir múltiples llamadas a onDragStarted
-  String? _hoveringOverBlankId; // Nuevo: rastrear sobre qué blank está el cursor
+  bool _isDragging = false;
+  String? _hoveringOverBlankId;
 
   void _onDragStarted(String blankId, PuzzleOption option) {
-    if (_isDragging) return; // Ya estamos arrastrando, ignorar
+    if (_isDragging) return;
     setState(() {
       _draggingFromBlankId = blankId;
       _draggingOption = option;
@@ -35,7 +34,6 @@ class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
   }
 
   void _onDragEnd() {
-    // Usar un pequeño delay para asegurar que el estado se limpie después del drop
     Future.microtask(() {
       if (mounted) {
         setState(() {
@@ -56,40 +54,34 @@ class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
     }
   }
 
-  // --- 1. FUNCIÓN HELPER PARA LOS COLORES ---
   TextStyle _getStyleForToken(
     String highlight,
     TextStyle baseStyle,
     ColorScheme colorScheme,
   ) {
     switch (highlight) {
-      case 'keyword': // p.ej. #include, if, return
-        // Usa el color secundario del tema del lenguaje
+      case 'keyword':
         return baseStyle.copyWith(
           color: colorScheme.secondary,
           fontWeight: FontWeight.bold,
         );
-      case 'type': // p.ej. int, void
-        // Usa el color terciario del tema del lenguaje
+      case 'type':
         return baseStyle.copyWith(
           color: colorScheme.tertiary,
           fontWeight: FontWeight.bold,
         );
-      case 'string': // p.ej. "Es par", <stdio.h>
-        // Usamos un color fijo (verde) para los strings
+      case 'string':
         return baseStyle.copyWith(color: Colors.green.shade600);
       case 'normal':
       default:
-        return baseStyle; // Estilo normal (color onSurface)
+        return baseStyle;
     }
   }
-  // fin de la función helper
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // --- 2. DEFINIMOS EL ESTILO BASE
     final baseStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
       fontFamily: 'monospace',
       color: colorScheme.onSurface,
@@ -98,16 +90,15 @@ class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
 
     return SizedBox(
       width: double.infinity,
-      // --- ALTURA AUTOMÁTICA ---
+
       child: RichText(
         text: TextSpan(
-          style: baseStyle, // Estilo base para todo
+          style: baseStyle,
           children: widget.lines.map((line) {
-            // --- 3. LÓGICA DE RENDERIZADO MODIFICADA
             if (line is TokenLine) {
               return TextSpan(
                 text: line.text,
-                // ¡Aplicamos el estilo dinámico!
+
                 style: _getStyleForToken(
                   line.highlight,
                   baseStyle,
@@ -115,7 +106,6 @@ class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
                 ),
               );
             }
-            // Lógica para BlankLine
 
             if (line is BlankLine) {
               final blankId = line.id;

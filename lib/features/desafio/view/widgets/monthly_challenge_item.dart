@@ -1,5 +1,3 @@
-// features/desafio/presentation/widgets/monthly_challenge_item.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +18,6 @@ class MonthlyChallengeItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Definimos colores base para el estado
     final backgroundColor = isCompleted
         ? Colors.green.withOpacity(0.15)
         : Colors.black.withOpacity(0.2);
@@ -31,7 +28,7 @@ class MonthlyChallengeItem extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isCompleted
-              ? null // Si quieres que se pueda volver a ver, quita el null
+              ? null
               : () {
                   ref.read(navigationReturnPathProvider.notifier).state =
                       '/desafiomensual';
@@ -62,7 +59,6 @@ class MonthlyChallengeItem extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                // --- 1. Icono / Badge de Nivel ---
                 Container(
                   width: 45,
                   height: 45,
@@ -91,12 +87,10 @@ class MonthlyChallengeItem extends ConsumerWidget {
 
                 const SizedBox(width: 16),
 
-                // --- 2. Información del Reto ---
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Badge pequeña de "Nivel X"
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -140,7 +134,6 @@ class MonthlyChallengeItem extends ConsumerWidget {
 
                 const SizedBox(width: 8),
 
-                // --- 3. Botón de Acción (Play / Check) ---
                 if (isCompleted)
                   const Icon(
                     Icons.check_circle_rounded,

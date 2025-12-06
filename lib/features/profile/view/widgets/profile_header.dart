@@ -1,5 +1,3 @@
-// lib/features/profile/view/widgets/profile_header.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,7 +12,6 @@ class ProfileHeader extends ConsumerWidget {
   final String userId;
   final bool isCurrentUserProfile;
 
-  // Control de efectos (por si el contenedor padre pausa pestañas/páginas)
   final bool isAppActive;
   final bool isTabVisible;
 
@@ -39,15 +36,12 @@ class ProfileHeader extends ConsumerWidget {
       error: (error, _) =>
           SizedBox(height: 365, child: Center(child: Text('Error: $error'))),
       data: (userProfile) {
-        // Lista de avatares desde BD
         final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
 
-        // Color dinámico (fallback al cálculo previo si aún no cargan avatares)
         final dynamicColor = (avatarsList.isNotEmpty)
             ? getAvatarColorById(userProfile.idAvatarSeleccionado, avatarsList)
             : AllStatsView.getHeaderColor(userProfile, colors);
 
-        // Asset del avatar (fallback vacío → ícono de error)
         final avatarPath = (avatarsList.isNotEmpty)
             ? getAvatarAssetPathById(
                 userProfile.idAvatarSeleccionado,
@@ -68,7 +62,6 @@ class ProfileHeader extends ConsumerWidget {
         return Stack(
           alignment: Alignment.topCenter,
           children: [
-            // Header ondulado con degradado del color del avatar
             ClipPath(
               clipper: const WaveClipper(),
               child: Container(
@@ -79,25 +72,21 @@ class ProfileHeader extends ConsumerWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      dynamicColor.withAlpha(153), // ~0.6
-                      dynamicColor.withAlpha(51), // ~0.2
+                      dynamicColor.withAlpha(153),
+                      dynamicColor.withAlpha(51),
                     ],
                   ),
                 ),
-                // Partículas solo cuando realmente debe animar
+
                 child: (isAppActive && isTabVisible)
                     ? RepaintBoundary(
                         child: ParticlesFly(
                           height: 220,
                           width: size.width,
                           connectDots: false,
-                          numberOfParticles:
-                              6, // 🔥 Reducido de 10 a 6 para mejor rendimiento
-                          particleColor: Colors.white.withAlpha(
-                            102,
-                          ), // ~0.4 reducido
-                          speedOfParticles:
-                              0.4, // 🔥 Velocidad reducida para menor CPU usage
+                          numberOfParticles: 6,
+                          particleColor: Colors.white.withAlpha(102),
+                          speedOfParticles: 0.4,
                           isRandomColor: false,
                         ),
                       )
@@ -105,7 +94,6 @@ class ProfileHeader extends ConsumerWidget {
               ),
             ),
 
-            // Contenido principal
             Padding(
               padding: const EdgeInsets.only(top: 70.0),
               child: Column(
@@ -121,10 +109,9 @@ class ProfileHeader extends ConsumerWidget {
                             duration: const Duration(milliseconds: 300),
                             delay: const Duration(milliseconds: 50),
                             child: Container(
-                              // ✅ 1. Estilo idéntico a _SelectedAvatarDisplay
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                // El "borde" ahora es este gradiente
+
                                 gradient: LinearGradient(
                                   colors: [dynamicColor, colors.primary],
                                   begin: Alignment.topLeft,
@@ -132,21 +119,18 @@ class ProfileHeader extends ConsumerWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    // Sombra más intensa y amplia como en el editor
                                     color: dynamicColor.withAlpha(179),
                                     blurRadius: 25,
                                     spreadRadius: 4,
                                   ),
                                 ],
                               ),
-                              // ✅ 2. El padding crea el grosor del borde (4px)
+
                               padding: const EdgeInsets.all(4),
                               child: ClipOval(
                                 child: Container(
-                                  color: Colors
-                                      .transparent, // Previene artefactos visuales
-                                  child:
-                                      avatarImage, // Tu widget OptimizedImage ya definido
+                                  color: Colors.transparent,
+                                  child: avatarImage,
                                 ),
                               ),
                             ),
@@ -184,7 +168,6 @@ class ProfileHeader extends ConsumerWidget {
                   ),
                   const SizedBox(height: 15),
 
-                  // Nombre
                   FadeInUp(
                     from: 15,
                     duration: const Duration(milliseconds: 400),
@@ -197,7 +180,6 @@ class ProfileHeader extends ConsumerWidget {
                     ),
                   ),
 
-                  // Username
                   FadeInUp(
                     from: 15,
                     duration: const Duration(milliseconds: 400),
@@ -205,14 +187,13 @@ class ProfileHeader extends ConsumerWidget {
                     child: Text(
                       '@${userProfile.nombreUsuario}',
                       style: textTheme.bodyLarge?.copyWith(
-                        color: colors.onSurface.withAlpha(179), // ~0.7
+                        color: colors.onSurface.withAlpha(179),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Siguiendo / Seguidores
                   FadeInUp(
                     from: 15,
                     duration: const Duration(milliseconds: 400),
@@ -230,7 +211,7 @@ class ProfileHeader extends ConsumerWidget {
                         Container(
                           height: 30,
                           width: 1,
-                          color: colors.onSurface.withAlpha(51), // ~0.2
+                          color: colors.onSurface.withAlpha(51),
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                         ),
                         _buildFollowStat(
@@ -278,7 +259,7 @@ class ProfileHeader extends ConsumerWidget {
             Text(
               label,
               style: textTheme.bodyMedium?.copyWith(
-                color: onSurface.withAlpha(153), // ~0.6
+                color: onSurface.withAlpha(153),
               ),
             ),
           ],
@@ -288,7 +269,6 @@ class ProfileHeader extends ConsumerWidget {
   }
 }
 
-// Clipper
 class WaveClipper extends CustomClipper<Path> {
   const WaveClipper();
 

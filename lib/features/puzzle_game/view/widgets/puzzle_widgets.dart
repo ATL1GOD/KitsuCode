@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
 
-// --- 1. PuzzleChip
 class PuzzleChip extends StatelessWidget {
   final String text;
   final bool isFilled;
@@ -40,7 +39,7 @@ class PuzzleChip extends StatelessWidget {
                     color: colorScheme.primary.withAlpha(100),
                     blurRadius: 0,
                     spreadRadius: 0,
-                    offset: const Offset(0, 4), // Sombra "3D"
+                    offset: const Offset(0, 4),
                   ),
                 ],
         ),
@@ -58,7 +57,6 @@ class PuzzleChip extends StatelessWidget {
   }
 }
 
-// --- 2. EmptyBlank
 class EmptyBlank extends StatelessWidget {
   final bool isHighlighted;
   const EmptyBlank({super.key, this.isHighlighted = false});
@@ -89,7 +87,6 @@ class EmptyBlank extends StatelessWidget {
   }
 }
 
-// --- 3. DraggableOption
 class DraggableOption extends StatelessWidget {
   final PuzzleOption option;
   final bool isFilled;
@@ -117,26 +114,18 @@ class DraggableOption extends StatelessWidget {
         isDragging: true,
       ),
 
-      // 'childWhenDragging' es lo que se queda atrás.
       childWhenDragging: isFilled
-          ? const EmptyBlank() // Si estaba en un hueco, deja un hueco.
+          ? const EmptyBlank()
           : Opacity(
-              // Si estaba en el banco...
-              opacity: 0.0, // invisible para evitar "saltos" visuales
-              child: PuzzleChip(
-                // pero mantenemos el tamaño
-                text: option.text,
-                isFilled: isFilled,
-              ),
+              opacity: 0.0,
+              child: PuzzleChip(text: option.text, isFilled: isFilled),
             ),
 
-      // fin de 'childWhenDragging'
       child: PuzzleChip(text: option.text, isFilled: isFilled),
     );
   }
 }
 
-// --- 4. DragTargetBlank
 class DragTargetBlank extends StatelessWidget {
   final String blankId;
   final PuzzleOption? filledOption;
@@ -167,10 +156,8 @@ class DragTargetBlank extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Determinar si este blank es el origen del arrastre
     final bool isSourceBlank = draggingFromBlankId == blankId;
 
-    // Determinar si el cursor está sobre otro blank con chip (para intercambio)
     final bool isHoveringOverOtherBlank =
         hoveringOverBlankId != null && hoveringOverBlankId != blankId;
     final PuzzleOption? hoveringBlankOption = isHoveringOverOtherBlank
@@ -179,38 +166,27 @@ class DragTargetBlank extends StatelessWidget {
 
     return DragTarget<PuzzleOption>(
       onMove: (details) {
-        // Notificar que el cursor está sobre este blank SOLO si hay drag activo
         if (draggingFromBlankId != null) {
           onHoverBlank(blankId);
         }
       },
       onLeave: (data) {
-        // Notificar que el cursor salió de este blank
         onHoverBlank(null);
       },
       builder: (context, candidateData, rejectedData) {
-        // Si hay un chip siendo arrastrado sobre este blank
         final bool isBeingDraggedOver = candidateData.isNotEmpty;
         final PuzzleOption? incomingOption = candidateData.isNotEmpty
             ? candidateData.first
             : null;
 
-        // CASO ESPECIAL 1: Este es el blank origen durante el drag ACTIVO
-        // Solo aplicar esta lógica si realmente hay un drag en progreso
-        // (verificando que filledOption coincida con draggingOption)
-        // PERO: si estamos arrastrando de vuelta sobre el mismo blank (regresando),
-        // NO aplicar esta lógica y dejar que se maneje normalmente
         if (isSourceBlank &&
             draggingOption != null &&
             draggingFromBlankId != null &&
             filledOption?.uniqueId == draggingOption?.uniqueId &&
             !isBeingDraggedOver) {
-          // <-- NUEVO: No aplicar si estamos sobre el mismo blank
-          // Si además estamos sobre otro blank con chip, mostrar preview del intercambio
           if (hoveringBlankOption != null &&
               hoveringOverBlankId != null &&
               hoveringOverBlankId != blankId) {
-            // Preview del chip que va a recibir
             return Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12.0),
@@ -229,18 +205,10 @@ class DragTargetBlank extends StatelessWidget {
             );
           }
 
-          // Si NO estamos sobre otro blank (o no tiene chip), mostrar vacío
-          // mientras se arrastra
           return const EmptyBlank();
         }
 
-        // Si estamos arrastrando de vuelta sobre el mismo blank origen,
-        // el DraggableOption maneja esto automáticamente con su childWhenDragging
-        // así que continuamos con la lógica normal
-
-        // CASO 1: Blank vacío
         if (filledOption == null) {
-          // Si están arrastrando algo sobre él, mostrar preview
           if (isBeingDraggedOver && incomingOption != null) {
             return Container(
               decoration: BoxDecoration(
@@ -259,16 +227,13 @@ class DragTargetBlank extends StatelessWidget {
               ),
             );
           }
-          // Si no, mostrar blank vacío normal
+
           return const EmptyBlank();
         }
 
-        // CASO 2: Blank con chip
-        // Si están arrastrando otro chip sobre él, SOLO mostrar el preview (sin superposición)
         if (isBeingDraggedOver &&
             incomingOption != null &&
             incomingOption.uniqueId != filledOption!.uniqueId) {
-          // Preview del chip que va a llegar
           return Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.0),
@@ -287,7 +252,6 @@ class DragTargetBlank extends StatelessWidget {
           );
         }
 
-        // Si no hay drag sobre este blank, mostrar el chip normal draggable
         return DraggableOption(
           option: filledOption!,
           isFilled: true,
@@ -297,17 +261,15 @@ class DragTargetBlank extends StatelessWidget {
       },
       onWillAcceptWithDetails: (details) => true,
       onAcceptWithDetails: (details) {
-        // Limpiar INMEDIATAMENTE el hover y llamar onDragEnd para limpiar el estado
         onHoverBlank(null);
-        onDragEnd(); // Limpiar el estado de drag inmediatamente
-        // Luego procesar el drop
+        onDragEnd();
+
         onOptionDropped(blankId, details.data);
       },
     );
   }
 }
 
-// --- 5. PuzzleBottomBar
 class PuzzleBottomBar extends StatelessWidget {
   final bool isButtonEnabled;
   final VoidCallback onCheckPressed;

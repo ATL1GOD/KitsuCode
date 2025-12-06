@@ -1,8 +1,6 @@
-// features/desafio/presentation/widgets/special_event_expandable_content.dart
-
 import 'package:flutter/material.dart';
-import 'package:kitsucode/features/desafio/provider/desafio_provider.dart'; // Modelos
-import 'monthly_challenge_item.dart'; // Importa el ítem de la lista
+import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
+import 'monthly_challenge_item.dart';
 
 class SpecialEventExpandableContent extends StatelessWidget {
   final List<RetoIndividual> desafiosMensuales;
@@ -23,7 +21,6 @@ class SpecialEventExpandableContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título de la lista de desafíos
           const Text(
             'RETOS INDIVIDUALES DEL EVENTO',
             style: TextStyle(
@@ -34,7 +31,6 @@ class SpecialEventExpandableContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Lista de Retos Mensuales
           if (desafiosMensuales.isEmpty)
             const Text(
               'No hay retos definidos para este evento.',

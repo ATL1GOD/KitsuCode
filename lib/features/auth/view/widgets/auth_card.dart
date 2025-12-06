@@ -22,7 +22,6 @@ class AuthCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        // 🔥 Reducido de 10 a 5 para mejor rendimiento en dispositivos de gama media-baja
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
           decoration: BoxDecoration(
@@ -74,5 +73,5 @@ class AuthCard extends StatelessWidget {
         ),
       ),
     );
-    }
+  }
 }

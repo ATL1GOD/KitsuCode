@@ -26,17 +26,15 @@ class AnimatedStatBadge extends StatefulWidget {
 
 class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     with TickerProviderStateMixin {
-  // 🎯 OPTIMIZACIÓN: Reducido de 5 → 2 AnimationControllers
-  late AnimationController
-  _mainController; // Combinación de flip + pop + efectos básicos
-  late AnimationController _effectsController; // Solo para streak fire (Lottie)
+  late AnimationController _mainController;
+  late AnimationController _effectsController;
 
   late int _previousValue;
   late int _displayValue;
 
-  bool _playStreakFire = false; // 🔥
-  bool _playLifeEffect = false; // 💔
-  bool _playTrophyEffect = false; // 🏆
+  bool _playStreakFire = false;
+  bool _playLifeEffect = false;
+  bool _playTrophyEffect = false;
 
   @override
   void initState() {
@@ -44,16 +42,14 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     _previousValue = widget.value;
     _displayValue = widget.value;
 
-    // Main controller: maneja flip, pop, shake y bounce
     _mainController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400), // Reducido de 650ms
+      duration: const Duration(milliseconds: 400),
     );
 
-    // Effects controller: solo para efectos Lottie (streak fire)
     _effectsController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // Reducido de 2200ms
+      duration: const Duration(milliseconds: 1500),
     );
   }
 
@@ -64,7 +60,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
     if (widget.value != _displayValue) {
       _startAnimation(oldWidget.value, widget.value);
 
-      // 🔥 Streak increase - usa effectsController
       if (widget.type == StatType.streak && widget.value > oldWidget.value) {
         setState(() => _playStreakFire = true);
         _effectsController.forward(from: 0);
@@ -77,7 +72,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         });
       }
 
-      // 💔 Life decrease - usa mainController (sin controller dedicado)
       if (widget.type == StatType.life && widget.value < oldWidget.value) {
         setState(() => _playLifeEffect = true);
         Future.delayed(const Duration(milliseconds: 400), () {
@@ -85,7 +79,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         });
       }
 
-      // 🏆 Trophy increase - usa mainController (sin controller dedicado)
       if (widget.type == StatType.trophy && widget.value > oldWidget.value) {
         setState(() => _playTrophyEffect = true);
         Future.delayed(const Duration(milliseconds: 400), () {
@@ -97,7 +90,7 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
 
   void _startAnimation(int from, int to) {
     _previousValue = from;
-    _mainController.forward(from: 0); // Solo un controller
+    _mainController.forward(from: 0);
     setState(() => _displayValue = to);
   }
 
@@ -114,7 +107,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         widget.borderColor ?? Theme.of(context).colorScheme.primary;
 
     return AnimatedBuilder(
-      // 🎯 OPTIMIZACIÓN: Solo 2 controladores en lugar de 4
       animation: Listenable.merge([_mainController, _effectsController]),
       builder: (_, __) {
         final t = _mainController.value;
@@ -125,7 +117,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
         final scale = 1.0 + 0.40 * math.sin(t * math.pi);
         final numDisplayed = showingOld ? _previousValue : _displayValue;
 
-        // 🔥 Fire animation (solo para streak)
         final fireProgress = _effectsController.value.clamp(0.0, 1.0);
 
         double lottieOpacity = 0.0;
@@ -150,37 +141,32 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
           }
         }
 
-        // 💔 Life loss - usa mainController en lugar de controller dedicado
         double shake = 0;
         double lifeScale = 1.0;
         Color iconColor = widget.color;
 
         if (_playLifeEffect && widget.type == StatType.life) {
-          shake = math.sin(t * math.pi * 8) * 4; // Reducido de 5 a 4
-          lifeScale =
-              1.0 + (0.25 * math.sin(t * math.pi * 2)); // Reducido de 0.3
+          shake = math.sin(t * math.pi * 8) * 4;
+          lifeScale = 1.0 + (0.25 * math.sin(t * math.pi * 2));
           iconColor = Color.lerp(Colors.red[700]!, widget.color, t)!;
         }
 
-        // 🏆 Trophy gain - usa mainController en lugar de controller dedicado
         double trophyBounce = 0;
         double trophyScale = 1.0;
         double trophyRotation = 0;
 
         if (_playTrophyEffect && widget.type == StatType.trophy) {
-          trophyBounce = -math.sin(t * math.pi) * 6; // Reducido de 8
-          trophyScale = 1.0 + (0.3 * math.sin(t * math.pi)); // Reducido de 0.4
-          trophyRotation = math.sin(t * math.pi * 2) * 0.15; // Reducido de 0.2
+          trophyBounce = -math.sin(t * math.pi) * 6;
+          trophyScale = 1.0 + (0.3 * math.sin(t * math.pi));
+          trophyRotation = math.sin(t * math.pi * 2) * 0.15;
           iconColor = Color.lerp(Colors.amber[400]!, widget.color, t)!;
         }
 
-        // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints innecesarios
         return RepaintBoundary(
           child: Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              // base badge
               Transform.scale(
                 scale: scale,
                 child: Container(
@@ -211,7 +197,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 🎯 icon with animations (life, trophy)
                       Transform.translate(
                         offset: Offset(shake, trophyBounce),
                         child: Transform.scale(
@@ -258,7 +243,6 @@ class _AnimatedStatBadgeState extends State<AnimatedStatBadge>
                 ),
               ),
 
-              // 🔥 streak fire lottie
               if (_playStreakFire && widget.type == StatType.streak)
                 Positioned(
                   left: -8,

@@ -1,6 +1,5 @@
-
 class PreferenciasUsuarioModel {
-  final String temaVisual; // 'system', 'light', 'dark'
+  final String temaVisual;
   final bool sonidoEfectos;
   final double volumenAudio;
 
@@ -12,17 +11,13 @@ class PreferenciasUsuarioModel {
 
   factory PreferenciasUsuarioModel.fromJson(Map<String, dynamic> json) {
     return PreferenciasUsuarioModel(
-      // --- ¡CAMBIO! ---
-      // El valor por defecto ahora es 'system'
-      temaVisual: json['tema_visual'] as String? ?? 'system', 
+      temaVisual: json['tema_visual'] as String? ?? 'system',
       sonidoEfectos: json['sonido_efectos'] as bool? ?? true,
-      // El JSON que pasaste tenía "1.00" como string, así que
-      // parseamos 'num' O 'String' para ser seguros.
+
       volumenAudio: _parseVolumen(json['volumen_audio']),
     );
   }
 
-  // Helper robusto para el volumen
   static double _parseVolumen(dynamic vol) {
     if (vol is num) {
       return vol.toDouble();
@@ -52,8 +47,7 @@ class PreferenciasUsuarioModel {
       volumenAudio: volumenAudio ?? this.volumenAudio,
     );
   }
-  
-  // ... (El resto de métodos ==, hashCode, toString se quedan igual) ...
+
   @override
   String toString() {
     return 'PreferenciasUsuarioModel(temaVisual: $temaVisual, sonidoEfectos: $sonidoEfectos, volumenAudio: $volumenAudio)';
@@ -62,13 +56,14 @@ class PreferenciasUsuarioModel {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
+
     return other is PreferenciasUsuarioModel &&
-      other.temaVisual == temaVisual &&
-      other.sonidoEfectos == sonidoEfectos &&
-      other.volumenAudio == volumenAudio;
+        other.temaVisual == temaVisual &&
+        other.sonidoEfectos == sonidoEfectos &&
+        other.volumenAudio == volumenAudio;
   }
 
   @override
-  int get hashCode => temaVisual.hashCode ^ sonidoEfectos.hashCode ^ volumenAudio.hashCode;
+  int get hashCode =>
+      temaVisual.hashCode ^ sonidoEfectos.hashCode ^ volumenAudio.hashCode;
 }

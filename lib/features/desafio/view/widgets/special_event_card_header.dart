@@ -1,5 +1,3 @@
-// features/desafio/presentation/widgets/special_event_card_header.dart
-
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
@@ -71,7 +69,6 @@ class SpecialEventCardHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- Fila Superior ---
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -79,7 +76,6 @@ class SpecialEventCardHeader extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // TAG (Mes / Completado)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -132,7 +128,6 @@ class SpecialEventCardHeader extends StatelessWidget {
               ),
               const SizedBox(height: 50),
 
-              // --- Fila de Estado ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -187,7 +182,6 @@ class SpecialEventCardHeader extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // 🔥 CLAVE: Flecha visible SIEMPRE (se quitó el if)
               Center(
                 child: AnimatedRotation(
                   turns: isExpanded ? 0.5 : 0.0,
@@ -203,7 +197,6 @@ class SpecialEventCardHeader extends StatelessWidget {
           ),
         ),
 
-        // ESTAMPA
         Positioned(
           top: 10,
           right: 30,
@@ -218,7 +211,7 @@ class SpecialEventCardHeader extends StatelessWidget {
                   blurRadius: 10,
                   offset: const Offset(2, 5),
                 ),
-                // Resplandor extra si está completo
+
                 if (isParentCompleted)
                   BoxShadow(
                     color: Colors.white.withOpacity(0.5),

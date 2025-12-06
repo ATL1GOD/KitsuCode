@@ -10,13 +10,11 @@ final audioControllerProvider = Provider<AudioController>((ref) {
 class AudioController {
   final Ref ref;
 
-  // Players para efectos
   final AudioPlayer _clickPlayer = AudioPlayer();
   final AudioPlayer _successPlayer = AudioPlayer();
   final AudioPlayer _errorPlayer = AudioPlayer();
   final AudioPlayer _unlockPlayer = AudioPlayer();
 
-  // Player para música
   final AudioPlayer _musicPlayer = AudioPlayer();
 
   String? _currentMusicTrack;
@@ -25,42 +23,38 @@ class AudioController {
 
   AudioController(this.ref) {
     _initAudioContext();
-    // No llamamos a _preloadSfx aquí inmediatamente para dar tiempo al contexto global
+
     Future.delayed(Duration(milliseconds: 100), () => _preloadSfx());
     _startWatchdog();
   }
 
-  // 1. CORRECCIÓN DEL CRASH (CRÍTICO)
   Future<void> _initAudioContext() async {
     try {
       final AudioContext audioContext = AudioContext(
         iOS: AudioContextIOS(
-          // 'ambient' ya implica mezcla. No pongas 'mixWithOthers' aquí o crashea.
           category: AVAudioSessionCategory.ambient,
-          options: <AVAudioSessionOptions>{}, 
+          options: <AVAudioSessionOptions>{},
         ),
         android: AudioContextAndroid(
           isSpeakerphoneOn: false,
           stayAwake: false,
-          // Music + Game + None = La combinación ganadora para que no se corte
+
           contentType: AndroidContentType.music,
           usageType: AndroidUsageType.game,
-          audioFocus: AndroidAudioFocus.none, 
+          audioFocus: AndroidAudioFocus.none,
         ),
       );
-      
+
       await AudioPlayer.global.setAudioContext(audioContext);
-      
-      // Configuramos el player de música
+
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-      await _musicPlayer.setPlayerMode(PlayerMode.mediaPlayer); // Música siempre en MediaPlayer
+      await _musicPlayer.setPlayerMode(PlayerMode.mediaPlayer);
     } catch (e) {
       print("Error configurando contexto de audio: $e");
     }
   }
 
   Future<void> _preloadSfx() async {
-    // Configuramos los players de efectos
     await _setupSfxPlayer(_clickPlayer, 'click.wav');
     await _setupSfxPlayer(_successPlayer, 'success.wav');
     await _setupSfxPlayer(_errorPlayer, 'error.wav');
@@ -68,19 +62,16 @@ class AudioController {
   }
 
   Future<void> _setupSfxPlayer(AudioPlayer player, String file) async {
-    // ReleaseMode.stop es vital para que no "muera" después de sonar una vez
     await player.setReleaseMode(ReleaseMode.stop);
-    // LowLatency usa SoundPool (Cero Lag)
+
     await player.setPlayerMode(PlayerMode.lowLatency);
     await player.setSource(AssetSource('audio/$file'));
   }
 
-  // --- REPRODUCCIÓN EFECTOS ---
   Future<void> _playSfx(AudioPlayer player) async {
     if (!_areSfxEnabled()) return;
-    
+
     try {
-      // stop() reinicia el cabezal a 0. Vital para LowLatency.
       await player.stop();
       await player.resume();
     } catch (e) {
@@ -88,13 +79,11 @@ class AudioController {
     }
   }
 
-  // API Pública
   Future<void> playClick() async => await _playSfx(_clickPlayer);
   Future<void> playSuccess() async => await _playSfx(_successPlayer);
   Future<void> playError() async => await _playSfx(_errorPlayer);
   Future<void> playLevelUnlock() async => await _playSfx(_unlockPlayer);
 
-  // --- HELPERS ---
   double _getMusicVolume() {
     final settingsState = ref.read(settingsProvider);
     if (!settingsState.hasValue || settingsState.value == null) return 1.0;
@@ -107,10 +96,12 @@ class AudioController {
     return settingsState.value!.sonidoEfectos;
   }
 
-  // --- WATCHDOG ---
   void _startWatchdog() {
     _watchdogTimer?.cancel();
-    _watchdogTimer = Timer.periodic(const Duration(milliseconds: 800), (_) => _checkMusicState());
+    _watchdogTimer = Timer.periodic(
+      const Duration(milliseconds: 800),
+      (_) => _checkMusicState(),
+    );
   }
 
   Future<void> _checkMusicState() async {
@@ -122,20 +113,29 @@ class AudioController {
         if (_musicPlayer.state == PlayerState.paused) {
           await _musicPlayer.resume();
         } else {
-          await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
+          await _musicPlayer.play(
+            AssetSource('audio/music/$_currentMusicTrack'),
+          );
         }
       } catch (_) {}
     }
   }
 
-  // --- MÚSICA DE FONDO ---
   Future<void> playBackgroundMusic(String languageName) async {
     String trackName;
     switch (languageName.toLowerCase().trim()) {
-      case 'python': trackName = 'bgm_python.mp3'; break;
-      case 'java': trackName = 'bgm_java.mp3'; break;
-      case 'c': trackName = 'bgm_c.mp3'; break;
-      default: trackName = 'bgm_menu.mp3'; break;
+      case 'python':
+        trackName = 'bgm_python.mp3';
+        break;
+      case 'java':
+        trackName = 'bgm_java.mp3';
+        break;
+      case 'c':
+        trackName = 'bgm_c.mp3';
+        break;
+      default:
+        trackName = 'bgm_menu.mp3';
+        break;
     }
 
     _shouldBePlaying = true;
@@ -164,18 +164,22 @@ class AudioController {
 
   Future<void> updateMusicVolume() async {
     final volumenDb = _getMusicVolume();
-    double volumenFinal = volumenDb * 0.6; 
+    double volumenFinal = volumenDb * 0.6;
 
     if (volumenFinal <= 0) {
       if (_musicPlayer.state == PlayerState.playing) await _musicPlayer.pause();
     } else {
       await _musicPlayer.setVolume(volumenFinal);
-      if (_shouldBePlaying && _currentMusicTrack != null && _musicPlayer.state != PlayerState.playing) {
-         if (_musicPlayer.state == PlayerState.paused) {
-           await _musicPlayer.resume();
-         } else {
-           await _musicPlayer.play(AssetSource('audio/music/$_currentMusicTrack'));
-         }
+      if (_shouldBePlaying &&
+          _currentMusicTrack != null &&
+          _musicPlayer.state != PlayerState.playing) {
+        if (_musicPlayer.state == PlayerState.paused) {
+          await _musicPlayer.resume();
+        } else {
+          await _musicPlayer.play(
+            AssetSource('audio/music/$_currentMusicTrack'),
+          );
+        }
       }
     }
   }

@@ -1,5 +1,3 @@
-// features/desafio/presentation/widgets/segmented_event_progress_bar.dart
-
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
 
@@ -71,14 +69,13 @@ class SegmentedEventProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     const double barHeight = 8.0;
     const double iconSize = 28.0;
-    // Definimos el padding como constante para usarlo en el cálculo
+
     const double horizontalPadding = 2.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
 
-        // Calculamos el ancho real disponible restando el padding de ambos lados
         final availableWidth = totalWidth - (horizontalPadding * 2);
 
         if (totalChallenges == 0) return const SizedBox();
@@ -88,7 +85,6 @@ class SegmentedEventProgressBar extends StatelessWidget {
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              // --- Capa 1: Fondo de la Barra (Track) ---
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: horizontalPadding,
@@ -96,7 +92,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
                 child: Center(
                   child: Container(
                     height: barHeight,
-                    width: availableWidth, // Usamos el ancho corregido
+                    width: availableWidth,
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(barHeight / 2),
@@ -105,19 +101,17 @@ class SegmentedEventProgressBar extends StatelessWidget {
                 ),
               ),
 
-              // --- Capa 2: Progreso de la Barra (Relleno) ---
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: horizontalPadding,
                 ),
                 child: Align(
-                  // 🔥 CAMBIO: Usamos Align en lugar de Center+Row
                   alignment: Alignment.centerLeft,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 500),
                     curve: Curves.easeOutCubic,
                     height: barHeight,
-                    // 🔥 CORRECCIÓN: Calculamos el ancho basado en el espacio disponible (sin padding)
+
                     width: availableWidth * progress,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -133,13 +127,11 @@ class SegmentedEventProgressBar extends StatelessWidget {
                 ),
               ),
 
-              // --- Capa 3: Los Hitos (Bolitas) ---
               ...List.generate(totalChallenges, (index) {
                 final desafio = desafiosMensuales[index];
                 final isCompleted = completedRetoIds.contains(desafio.idReto);
                 final isLocked = !isCompleted;
 
-                // Ajustamos el cálculo de posición para que coincida con el área "dibujable"
                 final segmentWidth = totalWidth / totalChallenges;
                 final hitoPosition =
                     (segmentWidth * index) +

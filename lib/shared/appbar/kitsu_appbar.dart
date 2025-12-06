@@ -1,9 +1,9 @@
-import 'dart:ui'; // Para BackdropFilter (blur)
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 👈 IMPORTANTE PARA HAPTICS
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Importar para verificar sesión
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:kitsucode/core/utils/app_themes.dart';
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
@@ -13,7 +13,6 @@ import 'package:kitsucode/features/challenge/provider/language_completion_provid
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/core/providers/audio_provider.dart';
 
-/// WIDGET PARA ANIMACIÓN ESCALONADA (STAGGER)
 class _StaggerItem extends StatefulWidget {
   final Widget child;
   final int delay;
@@ -68,8 +67,6 @@ class _StaggerItemState extends State<_StaggerItem>
   }
 }
 
-/// KITSUAPPBAR
-
 class KitsuAppBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
   const KitsuAppBar({super.key});
@@ -101,7 +98,6 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
     });
   }
 
-  /// Tema por lenguaje
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -181,11 +177,9 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
       Theme.of(context).brightness,
     );
 
-    // 🔥 FIX: Escuchar cambios de lenguaje CON GUARDIA DE SESIÓN
     ref.listen<AppBarState>(appBarProvider, (previous, next) {
-      // 1. Verificamos si hay usuario logueado. Si es null, acabamos de salir.
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return; 
+      if (user == null) return;
 
       if (previous != null &&
           !previous.isLoading &&

@@ -17,8 +17,8 @@ class _AnimatedPuzzleBorderState extends State<AnimatedPuzzleBorder>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4), // Velocidad de la rotación
-    )..repeat(); // Bucle infinito
+      duration: const Duration(seconds: 4),
+    )..repeat();
   }
 
   @override
@@ -34,22 +34,22 @@ class _AnimatedPuzzleBorderState extends State<AnimatedPuzzleBorder>
     return RotationTransition(
       turns: _controller,
       child: Container(
-        padding: const EdgeInsets.all(3.0), // Ancho del borde
+        padding: const EdgeInsets.all(3.0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18), // Radio del borde
-          // Usamos un SweepGradient para el efecto de borde animado
+          borderRadius: BorderRadius.circular(18),
+
           gradient: SweepGradient(
             center: Alignment.center,
             colors: [
-              colorScheme.primary, // Color del lenguaje
-              colorScheme.secondary, // Color del lenguaje
-              colorScheme.primary.withAlpha(50), // Transparente en medio para efecto difuminado
-              colorScheme.primary, // Vuelve al inicio
+              colorScheme.primary,
+              colorScheme.secondary,
+              colorScheme.primary.withAlpha(50),
+              colorScheme.primary,
             ],
             stops: const [0.0, 0.4, 0.7, 1.0],
           ),
         ),
-        child: widget.child, // El contenido dentro del borde de la tarjeta de instrucción
+        child: widget.child,
       ),
     );
   }

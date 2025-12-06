@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kitsucode/features/auth/provider/auth_provider.dart'; // Importa el authProvider
+import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
-import 'package:kitsucode/features/profile/provider/profile_provider.dart'; // Importa los providers de perfil
+import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
-// import 'package:lottie/lottie.dart'; // <-- YA NO SE USA
 
-// Importa el nuevo modelo y el tile que crearemos
 import 'widgets/challenge_history_tile.dart';
 
-// --- 1. ¡IMPORTA EL PAQUETE DE ANIMACIÓN! ---
 import 'package:flutter_animate/flutter_animate.dart';
 
-// --- ¡IMPORTA EL NUEVO FONDO ESTÁTICO! ---
-// (Asegúrate de que esta ruta sea correcta para tu proyecto)
 import 'package:kitsucode/shared/widgets/static_settings_background.dart';
 
 class ChallengeHistoryView extends ConsumerWidget {
   const ChallengeHistoryView({super.key});
 
-  // Lógica para el color dinámico (copiada de AllStatsView)
   static Color getHeaderColor(
     UserProfileModel userProfile,
     ColorScheme colors,
@@ -33,7 +27,6 @@ class ChallengeHistoryView extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // Obtenemos el ID del usuario actual (corrige error 'authProvider')
     final currentUserId = ref.watch(authStateProvider).value?.session?.user.id;
 
     if (currentUserId == null) {
@@ -42,31 +35,24 @@ class ChallengeHistoryView extends ConsumerWidget {
       );
     }
 
-    // Obtenemos el perfil para el color dinámico (corrige error 'profileProvider')
     final profileState = ref.watch(userProfileByIdProvider(currentUserId));
-    // Obtenemos el nuevo historial
+
     final historyState = ref.watch(challengeHistoryProvider(currentUserId));
 
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
       body: profileState.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()), // Shimmer simple
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
-          // Color dinámico basado en el avatar
           getHeaderColor(profile, colors);
 
           return Stack(
             children: [
-              // --- REEMPLAZO DE FONDO ---
-              // Eliminamos el Container(gradient...) y el ColorFiltered(Lottie.asset...)
-              // y los reemplazamos por el nuevo widget estático.
               StaticSettingsBackground(profile: profile, colors: colors),
-              // --- FIN DEL REEMPLAZO ---
 
               /* --- CÓDIGO ELIMINADO ---
-               // Gradiente de fondo (copiado de AllStatsView)
+               
                Container(
                  decoration: BoxDecoration(
                    gradient: LinearGradient(
@@ -81,7 +67,7 @@ class ChallengeHistoryView extends ConsumerWidget {
                  ),
                ),
 
-               // Animación Lottie de fondo (copiada de AllStatsView)
+               
                ColorFiltered(
                  colorFilter: ColorFilter.mode(
                    colors.secondaryFixedDim.withAlpha(204),
@@ -95,12 +81,9 @@ class ChallengeHistoryView extends ConsumerWidget {
                  ),
                ),
                --- FIN CÓDIGO ELIMINADO --- */
-
-              // Contenido principal
               SafeArea(
                 child: Column(
                   children: [
-                    // AppBar personalizada (copiada de AllStatsView)
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16.0,
@@ -128,7 +111,7 @@ class ChallengeHistoryView extends ConsumerWidget {
                           ),
                           Expanded(
                             child: Text(
-                              'Historial de Retos', // <-- Título
+                              'Historial de Retos',
                               textAlign: TextAlign.center,
                               style: textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -142,13 +125,13 @@ class ChallengeHistoryView extends ConsumerWidget {
                             ),
                             onPressed: () async {
                               final now = DateTime.now();
-                              // Define el rango seleccionable (ej. 1 año atrás)
+
                               final firstDate = DateTime(
                                 now.year - 1,
                                 now.month,
                                 now.day,
                               );
-                              // Obtiene el rango actual para pre-seleccionarlo
+
                               final currentRange = ref.read(
                                 historyDateRangeProvider,
                               );
@@ -161,13 +144,11 @@ class ChallengeHistoryView extends ConsumerWidget {
                               );
 
                               if (newRange != null) {
-                                // 1. Actualiza el provider de rango
                                 ref
                                         .read(historyDateRangeProvider.notifier)
                                         .state =
                                     newRange;
-                                // 2. Refresca manualmente el provider de datos
-                                // ignore: unused_result
+
                                 ref.refresh(
                                   challengeHistoryProvider(
                                     currentUserId,
@@ -180,7 +161,6 @@ class ChallengeHistoryView extends ConsumerWidget {
                       ),
                     ),
 
-                    // Lista del historial
                     Expanded(
                       child: historyState.when(
                         loading: () =>
@@ -193,20 +173,18 @@ class ChallengeHistoryView extends ConsumerWidget {
                             return const Center(
                               child: Text(
                                 'Sin retos completados en este rango de fechas, unicamente puedes ver tus retos completados en un rango de 30 días.',
-                                textAlign: TextAlign.center, // Centrar el texto
+                                textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 16),
                               ),
                             );
                           }
 
-                          // La lista
                           return ListView.builder(
-                            // 🎯 OPTIMIZACIÓN: cacheExtent para mejor scrolling
                             cacheExtent: 200.0,
                             addAutomaticKeepAlives: false,
                             addRepaintBoundaries: true,
                             padding: EdgeInsets.only(
-                              top: 20, // Espacio desde el appbar
+                              top: 20,
                               bottom:
                                   MediaQuery.of(context).padding.bottom + 20,
                               left: 16,
@@ -216,7 +194,6 @@ class ChallengeHistoryView extends ConsumerWidget {
                             itemBuilder: (context, index) {
                               final item = history[index];
 
-                              // --- 2. ¡AQUÍ ESTÁ LA ANIMACIÓN! ---
                               return ChallengeHistoryTile(item: item)
                                   .animate()
                                   .fadeIn(
@@ -228,7 +205,6 @@ class ChallengeHistoryView extends ConsumerWidget {
                                     end: 0,
                                     curve: Curves.easeOutCubic,
                                   );
-                              // --- FIN DE LA ANIMACIÓN ---
                             },
                           );
                         },

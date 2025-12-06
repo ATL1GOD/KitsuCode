@@ -1,5 +1,3 @@
-// lib/features/challenge/view/feedback/challenge_failure_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +7,6 @@ import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kitsucode/core/providers/app_provider.dart';
 
-// 🔥 NUEVO IMPORT
 import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart';
 
 class RecursoModel {
@@ -171,15 +168,16 @@ class ChallengeFailureView extends ConsumerWidget {
                       ref.read(appBarProvider.notifier).fetchStats();
 
                       ref.read(oldStatsValuesProvider.notifier).state = null;
-                      ref.read(shouldRefreshStatsProvider.notifier).state = false;
+                      ref.read(shouldRefreshStatsProvider.notifier).state =
+                          false;
 
-                      //REANUDAR MÚSICA ANTES DE NAVEGAR
                       resumeMusicAfterChallenge(ref);
 
                       if (!context.mounted) return;
 
                       final returnPath = ref.read(navigationReturnPathProvider);
-                      ref.read(navigationReturnPathProvider.notifier).state = '/home';
+                      ref.read(navigationReturnPathProvider.notifier).state =
+                          '/home';
                       context.go(returnPath);
                     },
                     child: const Text(

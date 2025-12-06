@@ -1,5 +1,3 @@
-// lib/features/amigos/view/widgets/search_widgets.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
@@ -8,12 +6,10 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:kitsucode/features/amigos/model/search_model.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
-import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event_card.dart'; // Asegúrate de que la ruta sea correcta
+import 'package:kitsucode/features/desafio/view/widgets/expandable_special_event_card.dart';
 
-// Provider para el término de búsqueda
 final userSearchQueryProvider = StateProvider<String>((ref) => '');
 
-// Provider que ejecuta la búsqueda
 final userSearchResultsProvider = FutureProvider<List<UserSearchPreviewModel>>((
   ref,
 ) async {
@@ -23,7 +19,6 @@ final userSearchResultsProvider = FutureProvider<List<UserSearchPreviewModel>>((
   return repository.searchUsers(query);
 });
 
-// --- 🔥 BARRA DE BÚSQUEDA REDISEÑADA (ESTILO JUGUETÓN) 🔥 ---
 class SearchField extends ConsumerStatefulWidget {
   const SearchField({super.key});
 
@@ -42,13 +37,12 @@ class _SearchFieldState extends ConsumerState<SearchField> {
     _controller = TextEditingController(
       text: ref.read(userSearchQueryProvider),
     );
-    // Escuchar cambios de foco para animar
+
     _focusNode.addListener(() {
       setState(() {
         _isFocused = _focusNode.hasFocus;
       });
 
-      // 🔥 LÓGICA NUEVA: Si el usuario hace foco (toca la barra), contraer tarjeta
       if (_focusNode.hasFocus) {
         ref.read(specialEventExpandedProvider.notifier).state = false;
       }
@@ -72,21 +66,20 @@ class _SearchFieldState extends ConsumerState<SearchField> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Paleta de colores "Playful"
     final Color colorFondo = isDark ? const Color(0xFF2C2C2C) : Colors.white;
-    final Color colorBordeActivo = const Color(0xFF6C63FF); // Morado vibrante
+    final Color colorBordeActivo = const Color(0xFF6C63FF);
     final Color colorBordeInactivo = Colors.transparent;
-    final Color colorIconoBg = const Color(0xFF00C853); // Verde brillante
-    final Color colorBoton = const Color(0xFFFFD600); // Amarillo "Pop"
+    final Color colorIconoBg = const Color(0xFF00C853);
+    final Color colorBoton = const Color(0xFFFFD600);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutBack, // Rebote sutil
+        curve: Curves.easeOutBack,
         decoration: BoxDecoration(
           color: colorFondo,
-          borderRadius: BorderRadius.circular(50), // Forma de cápsula total
+          borderRadius: BorderRadius.circular(50),
           border: Border.all(
             color: _isFocused ? colorBordeActivo : colorBordeInactivo,
             width: 2,
@@ -105,7 +98,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
           child: Row(
             children: [
-              // 1. Icono "Burbuja"
               Container(
                 width: 42,
                 height: 42,
@@ -129,7 +121,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
 
               const SizedBox(width: 12),
 
-              // 2. Campo de Texto
               Expanded(
                 child: TextField(
                   controller: _controller,
@@ -156,7 +147,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                 ),
               ),
 
-              // 3. Botón de Limpiar (si hay texto)
               if (_controller.text.isNotEmpty)
                 GestureDetector(
                   onTap: () {
@@ -178,7 +168,6 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                   ),
                 ),
 
-              // 4. Botón "Action" Juguetón
               Container(
                 height: 42,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -198,8 +187,7 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                     '🦊',
                     style: TextStyle(
                       color: Colors.black.withOpacity(0.8),
-                      fontWeight:
-                          FontWeight.w900, // Extra negrita para estilo cartoon
+                      fontWeight: FontWeight.w900,
                       fontSize: 14,
                       letterSpacing: 1.0,
                     ),
@@ -218,9 +206,7 @@ class UserSearchCard extends ConsumerWidget {
   final UserSearchPreviewModel user;
   const UserSearchCard({super.key, required this.user});
 
-  // --- 🎨 Helper para mapear el Rango -> Ruta del Banner Local ---
   String _getRankBannerPath(String rank) {
-    // Normalizamos el texto a minúsculas para evitar errores
     switch (rank.toLowerCase()) {
       case 'diamante':
         return 'assets/images/banner/banner_diamante.webp';
@@ -230,12 +216,10 @@ class UserSearchCard extends ConsumerWidget {
         return 'assets/images/banner/banner_plata.webp';
       case 'bronce':
       default:
-        // Asegúrate de tener este asset por defecto
         return 'assets/images/banner/banner_bronce.webp';
     }
   }
 
-  // --- 🎨 Helper para obtener el color del borde según rango (Opcional) ---
   Color _getRankBorderColor(String rank) {
     switch (rank.toLowerCase()) {
       case 'diamante':
@@ -247,7 +231,7 @@ class UserSearchCard extends ConsumerWidget {
       case 'plata':
         return const Color(0xFFC0C0C0);
       default:
-        return const Color(0xFFCD7F32); // Bronce
+        return const Color(0xFFCD7F32);
     }
   }
 
@@ -258,12 +242,11 @@ class UserSearchCard extends ConsumerWidget {
         .value
         ?.cast<AvatarModel>();
 
-    // Obtenemos la ruta y el color
     final bannerPath = _getRankBannerPath(user.rank);
     final rankColor = _getRankBorderColor(user.rank);
 
     return Container(
-      height: 90, // Altura fija para uniformidad en la lista
+      height: 90,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -278,23 +261,17 @@ class UserSearchCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            // --------------------------------------------------
-            // CAPA 1: Banner de Fondo (Local .webp)
-            // --------------------------------------------------
             Positioned.fill(
               child: OptimizedImage(
                 imagePath: bannerPath,
                 width: double.infinity,
                 height: 90,
                 fit: BoxFit.cover,
-                isLocalAsset: true, // Importante: indica que está en assets
+                isLocalAsset: true,
                 enableCache: true,
               ),
             ),
 
-            // --------------------------------------------------
-            // CAPA 2: Overlay (Oscurecer para legibilidad)
-            // --------------------------------------------------
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -302,21 +279,14 @@ class UserSearchCard extends ConsumerWidget {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      Colors.black.withOpacity(
-                        0.8,
-                      ), // Más oscuro a la izquierda (texto)
-                      Colors.black.withOpacity(
-                        0.4,
-                      ), // Más claro a la derecha (banner visible)
+                      Colors.black.withOpacity(0.8),
+                      Colors.black.withOpacity(0.4),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // --------------------------------------------------
-            // CAPA 3: Contenido Interactiva
-            // --------------------------------------------------
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -338,9 +308,8 @@ class UserSearchCard extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      // --- Avatar con borde de color del rango ---
                       Container(
-                        padding: const EdgeInsets.all(2), // Grosor del borde
+                        padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: rankColor, width: 2),
@@ -372,8 +341,6 @@ class UserSearchCard extends ConsumerWidget {
 
                       const SizedBox(width: 16),
 
-                      // --- Textos (Siempre blancos por el fondo oscuro) ---
-                      // ... Dentro de UserSearchCard ...
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,14 +359,12 @@ class UserSearchCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
 
-                            // --- AQUÍ ESTÁ EL CAMBIO ---
                             Row(
                               children: [
-                                // 1. Envolvemos el texto en Flexible
                                 Flexible(
                                   child: Text(
                                     '@${user.nombreUsuario}',
-                                    // 2. Agregamos el comportamiento de puntos suspensivos
+
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 13,
@@ -409,8 +374,6 @@ class UserSearchCard extends ConsumerWidget {
                                   ),
                                 ),
 
-                                // El contenedor del rango se queda igual,
-                                // pero ahora el texto anterior le respetará su espacio.
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(
@@ -436,11 +399,10 @@ class UserSearchCard extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            // --- FIN DEL CAMBIO ---
                           ],
                         ),
                       ),
-                      // --- Icono Arrow ---
+
                       Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 16,

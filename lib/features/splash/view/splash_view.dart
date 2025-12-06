@@ -9,9 +9,7 @@ import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 import 'package:kitsucode/core/widgets/shader_warmup.dart';
 
-// Asegúrate de que esta ruta sea correcta según tu estructura de carpetas
 import 'package:kitsucode/core/routes/router.dart' show setSplashCompleted;
-// O si está en core: import 'package:kitsucode/core/routes/router.dart' show setSplashCompleted;
 
 const Color _kitsuOrange = Color(0xFFf79126);
 
@@ -32,30 +30,23 @@ class _SplashViewState extends ConsumerState<SplashView>
 
   bool _bootstrapDone = false;
   bool _animationDone = false;
-  bool _navigated = false; // Flag de seguridad
+  bool _navigated = false;
 
   late ProviderSubscription<AsyncValue<void>> _bootstrapSub;
 
   void _tryNavigate() {
-    // 1. Si las pre-condiciones no están listas, esperamos.
     if (!_bootstrapDone || !_animationDone) return;
-
-    // NOTA: No ponemos _navigated = true aquí porque rompería el reintento
-    // si la conectividad está 'loading'.
 
     final connectivityState = ref.read(initialConnectivityProvider);
 
     connectivityState.when(
       data: (status) {
-        // 2. AQUÍ verificamos y bloqueamos la navegación múltiple
         if (_navigated) return;
         _navigated = true;
 
-        // 3. Abrimos el candado del Router
         setSplashCompleted();
         FlutterNativeSplash.remove();
 
-        // 4. Lógica de direccionamiento
         if (status == ConnectivityStatus.offline) {
           context.go('/no-internet');
         } else {
@@ -68,8 +59,6 @@ class _SplashViewState extends ConsumerState<SplashView>
         }
       },
       loading: () {
-        // Si está cargando, reintentamos. Como _navigated sigue false,
-        // la función volverá a entrar correctamente.
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
           _tryNavigate();
@@ -127,7 +116,6 @@ class _SplashViewState extends ConsumerState<SplashView>
   }
 
   void _listenBootstrap() {
-    // Nos aseguramos de inicializar el provider
     ref.read(bootstrapProvider);
 
     _bootstrapSub = ref.listenManual<AsyncValue<void>>(bootstrapProvider, (
@@ -140,8 +128,6 @@ class _SplashViewState extends ConsumerState<SplashView>
           _tryNavigate();
         },
         error: (_, __) {
-          // Incluso con error en bootstrap, intentamos continuar
-          // (quizás es error de red que manejaremos en connectivity)
           _bootstrapDone = true;
           _tryNavigate();
         },
@@ -156,7 +142,6 @@ class _SplashViewState extends ConsumerState<SplashView>
     _listenBootstrap();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Pequeño delay para suavizar la transición desde el splash nativo
       await Future.delayed(const Duration(milliseconds: 120));
       if (mounted) _controller.forward();
     });
@@ -178,7 +163,6 @@ class _SplashViewState extends ConsumerState<SplashView>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 🔥 Shader warm-up: Precompila todos los shaders costosos
           const ShaderWarmUp(),
 
           Center(

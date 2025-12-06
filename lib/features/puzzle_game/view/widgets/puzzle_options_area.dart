@@ -4,7 +4,7 @@ import 'package:kitsucode/features/puzzle_game/view/widgets/puzzle_widgets.dart'
 
 class PuzzleOptionsArea extends StatelessWidget {
   final List<PuzzleOption> availableOptions;
-  final void Function(PuzzleOption) onOptionDropped; 
+  final void Function(PuzzleOption) onOptionDropped;
 
   const PuzzleOptionsArea({
     super.key,
@@ -20,17 +20,16 @@ class PuzzleOptionsArea extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         return Container(
           width: double.infinity,
-          // La altura será automática
-          constraints: const BoxConstraints(minHeight: 120), 
+
+          constraints: const BoxConstraints(minHeight: 120),
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            // --- ESTILO DINÁMICO BASADO EN EL DRAGGING ---
-            color: candidateData.isNotEmpty 
-              ? colorScheme.primaryContainer.withAlpha(128) 
-              : colorScheme.surface,
+            color: candidateData.isNotEmpty
+                ? colorScheme.primaryContainer.withAlpha(128)
+                : colorScheme.surface,
             border: Border(
               top: BorderSide(
-                color: colorScheme.primary.withAlpha(100), 
+                color: colorScheme.primary.withAlpha(100),
                 width: 2,
               ),
             ),
@@ -39,23 +38,18 @@ class PuzzleOptionsArea extends StatelessWidget {
                 color: colorScheme.shadow.withAlpha(50),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
-              )
-            ]
+              ),
+            ],
           ),
-          
-          // --- REEMPLAZO DEL LISTVIEW POR WRAP ---
+
           child: Wrap(
-            spacing: 12.0, // Espacio horizontal entre chips
-            runSpacing: 12.0, // Espacio vertical entre líneas de chips
-            alignment: WrapAlignment.center, // ¡Centra las opciones!
+            spacing: 12.0,
+            runSpacing: 12.0,
+            alignment: WrapAlignment.center,
             children: availableOptions.map((option) {
-              return DraggableOption(
-                option: option,
-                isFilled: false,
-              );
+              return DraggableOption(option: option, isFilled: false);
             }).toList(),
           ),
-          // fin del Wrap 
         );
       },
       onWillAcceptWithDetails: (details) => true,

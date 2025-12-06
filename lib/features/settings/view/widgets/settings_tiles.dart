@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ... (SectionHeader queda igual) ...
-
 class SectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -80,7 +78,6 @@ class _BaseSettingsTile extends StatelessWidget {
   }
 }
 
-// --- SettingsNavigationTile (usa dynamicColor en el ícono) ---
 class SettingsNavigationTile extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -107,7 +104,7 @@ class SettingsNavigationTile extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, color: dynamicColor, size: 28), // ← cambio
+          Icon(icon, color: dynamicColor, size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -137,7 +134,6 @@ class SettingsNavigationTile extends StatelessWidget {
   }
 }
 
-// --- SettingsSwitchTile (usa dynamicColor en el ícono y track del switch) ---
 class SettingsSwitchTile extends ConsumerStatefulWidget {
   final String title;
   final String subtitle;
@@ -189,7 +185,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
       onTap: null,
       child: Row(
         children: [
-          Icon(widget.icon, color: widget.dynamicColor, size: 28), // ← cambio
+          Icon(widget.icon, color: widget.dynamicColor, size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -218,8 +214,8 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
               final on = states.contains(WidgetState.selected);
               return on
                   ? widget.dynamicColor.withOpacity(.35)
-                  : c.surfaceContainerHigh; // contraste cuando está off
-            }), // ← nuevo
+                  : c.surfaceContainerHigh;
+            }),
           ),
         ],
       ),
@@ -227,12 +223,11 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
   }
 }
 
-// --- SettingsSliderTile (usa dynamicColor en el ícono) ---
 class SettingsSliderTile extends ConsumerStatefulWidget {
   final String title;
   final IconData icon;
   final Color dynamicColor;
-  final double initialValue; // 0.0 a 1.0
+  final double initialValue;
   final Function(double) onChanged;
 
   const SettingsSliderTile({
@@ -279,11 +274,7 @@ class _SettingsSliderTileState extends ConsumerState<SettingsSliderTile> {
         children: [
           Row(
             children: [
-              Icon(
-                widget.icon,
-                color: widget.dynamicColor,
-                size: 28,
-              ), // ← cambio
+              Icon(widget.icon, color: widget.dynamicColor, size: 28),
               const SizedBox(width: 16),
               Text(
                 widget.title,
@@ -335,7 +326,7 @@ class SettingsDestructiveTile extends StatelessWidget {
     final errorColor = c.error;
 
     return _BaseSettingsTile(
-      dynamicColor: errorColor, // Borde rojo (intencional)
+      dynamicColor: errorColor,
       onTap: onTap,
       child: Row(
         children: [

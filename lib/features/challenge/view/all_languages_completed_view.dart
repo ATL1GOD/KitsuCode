@@ -1,5 +1,3 @@
-// lib/features/challenge/view/all_languages_completed_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -24,10 +22,8 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
       duration: const Duration(seconds: 5),
     );
 
-    // Iniciar confetti
     _confettiController.play();
 
-    // Mostrar contenido
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() => _showContent = true);
@@ -43,8 +39,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
 
   @override
   Widget build(BuildContext context) {
-    //inicio de cambios de tema
-    // Usamos el colorScheme principal de la app
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -52,7 +46,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
       backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
-          // Fondo con gradiente animado
           Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
@@ -67,7 +60,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
             ),
           ),
 
-          // Confetti
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -79,7 +71,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
               gravity: 0.08,
               shouldLoop: true,
               colors: [
-                //Usamos colores del tema
                 colorScheme.primary,
                 colorScheme.secondary,
                 colorScheme.tertiary,
@@ -90,7 +81,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
             ),
           ),
 
-          // Contenido principal
           if (_showContent)
             SafeArea(
               child: Padding(
@@ -100,7 +90,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                   children: [
                     const Spacer(),
 
-                    // Corona gigante (Se mantienen colores ámbar por semántica de "oro")
                     Container(
                           width: 200,
                           height: 200,
@@ -125,8 +114,7 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
                           child: const Icon(
                             Icons.emoji_events,
                             size: 140,
-                            color: Colors
-                                .white, // Se mantiene blanco por contraste
+                            color: Colors.white,
                           ),
                         )
                         .animate(onPlay: (controller) => controller.repeat())
@@ -141,7 +129,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
 
                     const SizedBox(height: 50),
 
-                    // Título épico
                     Text(
                           '¡MAESTRO DE LA\nPROGRAMACIÓN!',
                           style: textTheme.displaySmall?.copyWith(
@@ -173,7 +160,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
 
                     const SizedBox(height: 30),
 
-                    // Badges de lenguajes (Estos se quedan con sus colores fijos)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -202,7 +188,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
 
                     const SizedBox(height: 40),
 
-                    // Mensaje motivador
                     Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
@@ -241,7 +226,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
 
                     const Spacer(),
 
-                    // Botón de continuar
                     SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -286,7 +270,6 @@ class _AllLanguagesCompletedViewState extends State<AllLanguagesCompletedView> {
         ],
       ),
     );
-    // fin de cambios de tema
   }
 }
 

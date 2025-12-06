@@ -10,7 +10,7 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
-// Importamos el fondo corregido
+
 import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 
@@ -28,12 +28,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
   late UserProfileModel _currentProfileData;
   bool _isInitialized = false;
 
-  // Controladores
   AnimationController? _swingController;
   bool _isPageVisible = true;
   bool _isAppActive = true;
 
-  // Variables para recibir datos del input aislado
   String _currentName = "";
   String _initialName = "";
   bool _isNameValid = true;
@@ -87,7 +85,8 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
       if (mounted) context.pop();
       return;
     }
-    final shouldPop = await showDialog<bool>(
+    final shouldPop =
+        await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Descartar cambios'),
@@ -129,11 +128,11 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
         _currentProfileData = profile;
 
         final avatars = ref.watch(currentUserAvatarsProvider).value ?? [];
-        
-        // ID seleccionado (ya sea el inicial o el nuevo cambiado)
-        final selectedId = _isInitialized ? _currentAvatarId : profile.idAvatarSeleccionado;
-        
-        // Obtenemos el color dinámico LOCALMENTE también para el borde del avatar
+
+        final selectedId = _isInitialized
+            ? _currentAvatarId
+            : profile.idAvatarSeleccionado;
+
         final dynamicColor = getAvatarColorById(selectedId, avatars);
 
         final currentAvatarPath = getAvatarAssetPathById(selectedId, avatars);
@@ -141,7 +140,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
         final isNameChanged = _currentName != _initialName;
         final isAvatarChanged = _currentAvatarId != _initialAvatarId;
         final hasChanges = (isNameChanged || isAvatarChanged) && _isNameValid;
-        
+
         final maxAvatarChanges = _currentProfileData.cambiosAvatarHoy >= 2;
         final maxNameChanges =
             _currentProfileData.cambiosNombrePerfilEsteMes >= 2;
@@ -170,18 +169,16 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
             resizeToAvoidBottomInset: true,
             body: Stack(
               children: [
-                // 🔥 1. FONDO ANIMADO CON COLOR DINÁMICO REACTIVO
                 RepaintBoundary(
                   child: AnimatedSettingsBackground(
                     profile: profile,
                     colors: colors,
                     isKeyboardVisible: isKeyboardVisible,
-                    // 🎯 AQUÍ ESTÁ LA SOLUCIÓN: Pasamos el ID temporal para que cambie el color
-                    avatarIdOverride: _currentAvatarId, 
+
+                    avatarIdOverride: _currentAvatarId,
                   ),
                 ),
 
-                // 2. CONTENIDO SCROLLEABLE
                 Positioned.fill(
                   child: SafeArea(
                     child: SingleChildScrollView(
@@ -191,7 +188,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // HEADER
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16.0,
@@ -236,7 +232,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
 
                           const SizedBox(height: 10),
 
-                          // AVATAR
                           FadeInDown(
                             duration: const Duration(milliseconds: 450),
                             delay: const Duration(milliseconds: 80),
@@ -247,14 +242,13 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                 alignment: Alignment.center,
                                 children: [
                                   AnimatedContainer(
-                                    duration: const Duration(milliseconds: 500), // Suavizado
+                                    duration: const Duration(milliseconds: 500),
                                     curve: Curves.easeOut,
                                     width: isKeyboardVisible ? 120 : 160,
                                     height: isKeyboardVisible ? 120 : 160,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       gradient: LinearGradient(
-                                        // 🔥 EL BORDE DEL AVATAR TAMBIÉN RESPONDE AL CAMBIO
                                         colors: [dynamicColor, colors.primary],
                                       ),
                                       boxShadow: [
@@ -297,10 +291,10 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                               onPressed: () async {
                                                 final newAvatarId =
                                                     await context.push<int>(
-                                                  '/edit-avatar',
-                                                  extra: _currentProfileData
-                                                      .idAvatarSeleccionado,
-                                                );
+                                                      '/edit-avatar',
+                                                      extra: _currentProfileData
+                                                          .idAvatarSeleccionado,
+                                                    );
 
                                                 if (newAvatarId != null &&
                                                     newAvatarId !=
@@ -323,7 +317,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
 
                           const SizedBox(height: 40),
 
-                          // TARJETA CON EFECTO DE VIDRIO
                           FadeInUp(
                             duration: const Duration(milliseconds: 450),
                             delay: const Duration(milliseconds: 120),
@@ -332,7 +325,8 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                               child: Padding(
                                 padding: const EdgeInsets.all(24.0),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
@@ -380,8 +374,9 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                               }
                                               final updated = await ref
                                                   .read(
-                                                      profileControllerProvider
-                                                          .notifier)
+                                                    profileControllerProvider
+                                                        .notifier,
+                                                  )
                                                   .updateProfile(
                                                     newName: isNameChanged
                                                         ? _currentName
@@ -390,12 +385,13 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                                         ? _currentAvatarId
                                                         : null,
                                                   );
-                                              
+
                                               if (!context.mounted) return;
                                               if (updated != null) {
-                                                // Mostrar snackbar si se cambió el avatar
                                                 if (isAvatarChanged) {
-                                                  final cambiosRestantes = 2 - updated.cambiosAvatarHoy;
+                                                  final cambiosRestantes =
+                                                      2 -
+                                                      updated.cambiosAvatarHoy;
                                                   if (cambiosRestantes > 0) {
                                                     showSuccessSnackbar(
                                                       context,
@@ -417,10 +413,12 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                         backgroundColor: colors.primary,
                                         foregroundColor: colors.onPrimary,
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 16),
+                                          vertical: 16,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(30),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
                                         ),
                                       ),
                                       child: isSaving
@@ -440,13 +438,15 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: colors.primary,
                                         side: BorderSide(
-                                            color: colors.primary
-                                                .withAlpha(128)),
+                                          color: colors.primary.withAlpha(128),
+                                        ),
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 16),
+                                          vertical: 16,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(30),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
                                         ),
                                       ),
                                       child: const Text('Cancelar'),
@@ -475,7 +475,6 @@ class _EditProfileViewState extends ConsumerState<EditProfileView>
   }
 }
 
-// WIDGET AISLADO (IGUAL QUE ANTES)
 class _ProfileNameInput extends StatefulWidget {
   final String initialValue;
   final ColorScheme colors;
@@ -552,7 +551,6 @@ class _ProfileNameInputState extends State<_ProfileNameInput> {
   }
 }
 
-// GLASS CARD ORIGINAL (CON BLUR)
 class _GlassCard extends StatelessWidget {
   final Widget child;
   const _GlassCard({required this.child});
@@ -561,7 +559,7 @@ class _GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
-      // ClipRRect corta el blur a los bordes
+
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: RepaintBoundary(

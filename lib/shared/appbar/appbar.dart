@@ -12,9 +12,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Ícono de idioma
           SvgPicture.asset('assets/italian.svg', width: 26, height: 26),
-          // Sección de Racha
+
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -31,7 +30,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
-          // Sección de Diamantes
+
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -48,7 +47,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
-          // Sección de Vidas
+
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [

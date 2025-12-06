@@ -1,26 +1,22 @@
-// lib/features/challenge/provider/reto_distribuidor_page.dart (CORREGIDO)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Importa tu provider y TODOS tus loaders
 import 'package:kitsucode/features/challenge/provider/reto_provider.dart';
 import 'package:kitsucode/features/quiz_game/view/quiz_loader.dart';
-// import 'package:kitsucode/features/quiz_game/view/placeholder_loader.dart'; // Ya no se usa
+
 import 'package:kitsucode/features/columnas_game/view/columnas_loader.dart';
 import 'package:kitsucode/features/codigo_game/view/codigo_loader.dart';
 
-// --- 1. ¡IMPORTA TU NUEVO LOADER! ---
 import 'package:kitsucode/features/puzzle_game/view/puzzle_loader_page.dart';
 
 class RetoDistribuidorPage extends ConsumerWidget {
   final String retoId;
-  final String nivelId; // ← ¡AÑADIDO!
+  final String nivelId;
 
   const RetoDistribuidorPage({
-    super.key, 
+    super.key,
     required this.retoId,
-    required this.nivelId, // ← ¡AÑADIDO!
+    required this.nivelId,
   });
 
   @override
@@ -31,47 +27,39 @@ class RetoDistribuidorPage extends ConsumerWidget {
 
     return challengeDataAsync.when(
       data: (challengeData) {
-        // 1. Extrae los datos
         final String tipo = challengeData.dinamicaNombre;
 
-        // --- ¡¡AQUÍ ESTÁ LA MAGIA!! ---
-        // 2. Preparamos el contenido
         final Map<String, dynamic> challengeContent = challengeData.contenido;
 
-        // 3. Inyectamos los recursos en el mapa de contenido
-        // (Tus modelos de puzzle, codigo, etc., esperan la llave "recursos")
         challengeContent['recursos'] = challengeData.recursos;
-        // --- FIN DE LA MAGIA ---
 
-        // 4. Decide qué pantalla mostrar
         switch (tipo) {
           case 'Quiz':
             return QuizLoaderPage(
               challengeContent: challengeContent,
               retoId: retoId.toString(),
-              nivelId: nivelId, // ← ¡AÑADIDO!
+              nivelId: nivelId,
             );
 
-          // case 'Puzzle':
           case 'Bloques':
             return PuzzleLoaderPage(
               challengeContent: challengeContent,
               retoId: retoId,
-              nivelId: nivelId, // ← ¡AÑADIDO!
+              nivelId: nivelId,
             );
 
           case 'Relacion':
             return ColumnsLoader(
               challengeContent: challengeContent,
               retoId: retoId,
-              nivelId: nivelId, // ← ¡AÑADIDO!
+              nivelId: nivelId,
             );
 
           case 'Codigo':
             return CodigoLoader(
               challengeContent: challengeContent,
               retoId: retoId,
-              nivelId: nivelId, // ← ¡AÑADIDO!
+              nivelId: nivelId,
             );
 
           default:

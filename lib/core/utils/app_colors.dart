@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-//Colores principales de la app
 const ColorScheme primaryLightColorScheme = ColorScheme(
   brightness: Brightness.light,
   primary: Color(0xFFB86914),
@@ -101,7 +100,6 @@ const ColorScheme primaryDarkColorScheme = ColorScheme(
   surfaceTint: Color(0xFFEDA85E),
 );
 
-//Colores de la pantalla Python de la app
 const ColorScheme pythonLightColorScheme = ColorScheme(
   brightness: Brightness.light,
   primary: Color(0xFF19647E),
@@ -202,7 +200,6 @@ const ColorScheme pythonDarkColorScheme = ColorScheme(
   surfaceTint: Color(0xFF82BACE),
 );
 
-//Colores de la pantalla C de la app
 const ColorScheme cLightColorScheme = ColorScheme(
   brightness: Brightness.light,
   primary: Color(0xFF1565C0),
@@ -303,7 +300,6 @@ const ColorScheme cDarkColorScheme = ColorScheme(
   surfaceTint: Color(0xFF90CAF9),
 );
 
-//Colores de la pantalla Java de la app
 const ColorScheme javaLightColorScheme = ColorScheme(
   brightness: Brightness.light,
   primary: Color(0xFF023047),

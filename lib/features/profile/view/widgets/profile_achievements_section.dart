@@ -25,21 +25,16 @@ class ProfileAchievementsSection extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
-    // 3. Observar los datos del perfil que SÍ necesitamos
     final nombrePerfil = ref.watch(
       userProfileByIdProvider(
         userId,
       ).select((data) => data.value?.nombrePerfil),
     );
 
-    // 4. Observar el objeto 'userProfile' completo.
-    // Lo necesitamos para el modal.
     final userProfileData = ref.watch(userProfileByIdProvider(userId));
-    final userProfile =
-        userProfileData.value; // Puede ser null si está cargando
+    final userProfile = userProfileData.value;
 
     Widget titleWidget(bool showButton) {
-      // (Esta función interna no cambia)
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -113,10 +108,8 @@ class ProfileAchievementsSection extends ConsumerWidget {
                           const SizedBox(width: 20),
                           Expanded(
                             child: Text(
-                              // 5. Usar la variable 'nombrePerfil' observada
                               isCurrentUserProfile
                                   ? '¡Aún no has conseguido logros!'
-                                  // Usamos '??' por si 'nombrePerfil' es null
                                   : '¡${nombrePerfil ?? '...'} aún no ha conseguido logros!',
                               style: textTheme.bodyMedium,
                             ),
@@ -126,7 +119,6 @@ class ProfileAchievementsSection extends ConsumerWidget {
                     );
                   }
 
-                  // 6. Manejar el caso donde los logros cargaron pero el perfil no
                   if (userProfile == null) {
                     return _AchievementsLoadingShimmer(colors: colors);
                   }
@@ -143,7 +135,6 @@ class ProfileAchievementsSection extends ConsumerWidget {
                         final achievement = obtained[index];
                         return GestureDetector(
                           onTap: () {
-                            // 7. Usar el 'userProfile' observado
                             AchievementModal.show(
                               context,
                               achievement,
@@ -159,7 +150,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
                                 achievement: achievement,
                                 colors: colors,
                                 isCompactView: true,
-                                // 8. Usar el 'userProfile' observado
+
                                 profile: userProfile,
                                 isCurrentUser: isCurrentUserProfile,
                               ),
@@ -179,8 +170,6 @@ class ProfileAchievementsSection extends ConsumerWidget {
   }
 }
 
-// _GlassCard removido - ahora usamos OptimizedGlassCard compartido
-
 class _AchievementsLoadingShimmer extends StatelessWidget {
   final ColorScheme colors;
   const _AchievementsLoadingShimmer({required this.colors});
@@ -192,7 +181,7 @@ class _AchievementsLoadingShimmer extends StatelessWidget {
         baseColor: colors.surfaceContainerHigh,
         highlightColor: colors.surfaceContainerHighest,
         child: SizedBox(
-          height: 120, // Ajustado a la altura de la tarjeta
+          height: 120,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: 4,

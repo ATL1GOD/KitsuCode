@@ -44,7 +44,7 @@ class NavBar extends StatelessWidget {
 
       backgroundColor: colorScheme.secondaryContainer,
 
-      animationCurve: Curves.easeOutCubic, //
+      animationCurve: Curves.easeOutCubic,
       animationDuration: const Duration(milliseconds: 400),
       onTap: onTap,
       letIndexChange: (index) => true,

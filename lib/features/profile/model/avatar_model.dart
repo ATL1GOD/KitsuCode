@@ -1,12 +1,10 @@
-// lib/features/profile/model/avatar_model.dart
-
 class AvatarModel {
   final int id;
   final String nombre;
   final String descripcion;
   final String assetPath;
-  final String colorPrimario; // Formato: '0xFFE65100'
-  final String tipo; // 'comun' o 'especial'
+  final String colorPrimario;
+  final String tipo;
   final String? requisitoDescripcion;
   final int orden;
   final bool desbloqueado;
@@ -28,7 +26,8 @@ class AvatarModel {
       id: json['id'] as int,
       nombre: json['nombre'] as String? ?? 'Avatar',
       descripcion: json['descripcion'] as String? ?? 'Sin descripción',
-      assetPath: json['assetpath'] as String? ?? 'assets/images/login_zorro.png',
+      assetPath:
+          json['assetpath'] as String? ?? 'assets/images/login_zorro.png',
       colorPrimario: json['colorprimario'] as String? ?? '0xFFE65100',
       tipo: json['tipo'] as String? ?? 'comun',
       requisitoDescripcion: json['requisitodescripcion'] as String?,
@@ -51,11 +50,9 @@ class AvatarModel {
     };
   }
 
-  // Helpers
   bool get esComun => tipo == 'comun';
   bool get esEspecial => tipo == 'especial';
 
-  // CopyWith para inmutabilidad
   AvatarModel copyWith({
     int? id,
     String? nombre,

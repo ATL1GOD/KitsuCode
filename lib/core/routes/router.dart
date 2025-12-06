@@ -1,16 +1,13 @@
-// [COMIENZO DEL ARCHIVO router.dart]
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/onboarding/view/onboarding_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Providers
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_resetpassword.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_update_password.dart';
 
-// Views
 import 'package:kitsucode/features/auth/view/auth_view.dart';
 import 'package:kitsucode/shared/navbar/navigation_scaffold.dart';
 import 'package:kitsucode/features/home/view/home_view.dart';
@@ -40,15 +37,12 @@ import 'package:kitsucode/features/challenge/view/language_completion_flow.dart'
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 import 'package:kitsucode/core/widgets/no_internet_view.dart';
 
-// 🔥 NUEVO: Flag global para saber si la splash terminó
 bool _splashCompleted = false;
 
-/// 🔥 NUEVA FUNCIÓN: Permite que splash_view.dart marque que terminó
 void setSplashCompleted() {
   _splashCompleted = true;
 }
 
-// Claves
 final _navigatorKeys = {
   'home': GlobalKey<NavigatorState>(debugLabel: 'homeNav'),
   'ranking': GlobalKey<NavigatorState>(debugLabel: 'rankingNav'),
@@ -66,7 +60,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLogged = authState?.session != null;
       final loc = state.matchedLocation;
 
-      // Define rutas especiales
       final inAuthRoute =
           loc.startsWith('/auth') ||
           loc == '/forgot-password' ||
@@ -79,37 +72,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loc == '/update-password') return null;
       if (loc == '/privacy-policy') return null;
 
-      // Lógica Splash
       if (inSplash) {
-        if (!_splashCompleted) return null; // Bloquea hasta que termine splash
+        if (!_splashCompleted) return null;
         if (isLogged) return '/home';
         return '/auth';
       }
 
-      // Si no está logueado y trata de entrar a rutas privadas (excepto auth)
       if (!isLogged && !inAuthRoute) {
         return '/auth';
       }
 
-      // Si está logueado y trata de ir a auth
       if (isLogged && inAuthRoute) {
         return '/home';
       }
-
-      // NOTA: Quitamos la lógica de Onboarding de aquí para evitar bucles.
-      // La manejaremos en el HomeView o con un Wrapper.
 
       return null;
     },
 
     routes: [
-      // Asegúrate de tener la ruta de onboarding
       GoRoute(path: '/', builder: (context, state) => const SplashView()),
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingView(),
       ),
-      // Auth
+
       GoRoute(path: '/auth', builder: (context, state) => const AuthView()),
 
       GoRoute(
@@ -132,7 +118,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NoInternetView(),
       ),
 
-      // Reto
       GoRoute(
         path: '/reto/:retoId/:nivelId',
         builder: (context, state) {
@@ -142,7 +127,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Perfil
       GoRoute(
         path: '/edit-profile',
         builder: (context, state) => const EditProfileView(),
@@ -161,7 +145,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AllStatsView(),
       ),
 
-      // Settings
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsView(),
@@ -221,7 +204,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Feedback
       GoRoute(
         path: '/challenge_success',
         name: 'challenge_success',
@@ -243,7 +225,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Language completion
       GoRoute(
         path: '/language-completion',
         name: 'language-completion',
@@ -270,7 +251,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Profile routes
       GoRoute(
         path: '/profile/:userId',
         builder: (context, state) {
@@ -308,7 +288,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Navbar principal
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ScaffoldWithNavBar(navigationShell: navigationShell);
@@ -366,7 +345,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     observers: [routeObserver],
   );
 
-  // Connectivity listener
   ref.listen<AsyncValue<ConnectivityStatus>>(connectivityProvider, (
     previous,
     next,
@@ -384,7 +362,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     });
   });
 
-  // Auth listener (password recovery)
   ref.listen<AsyncValue<AuthState>>(authStateProvider, (previous, next) {
     next.whenData((authState) {
       if (authState.event == AuthChangeEvent.passwordRecovery) {

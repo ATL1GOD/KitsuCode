@@ -5,11 +5,9 @@ import 'package:kitsucode/features/auth/repository/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 
-// --- MEJORA 1: Cache del repositorio para evitar recreaciones múltiples ---
 final _authRepositoryCache = StateProvider<AuthRepository?>((ref) => null);
 
 final authRepositoryProvider = FutureProvider<AuthRepository>((ref) async {
-  // Verificar si ya tenemos una instancia en cache
   final cachedRepo = ref.read(_authRepositoryCache);
   if (cachedRepo != null) return cachedRepo;
 
@@ -17,13 +15,11 @@ final authRepositoryProvider = FutureProvider<AuthRepository>((ref) async {
 
   final repository = AuthRepository(Supabase.instance.client);
 
-  // Guardar en cache
   ref.read(_authRepositoryCache.notifier).state = repository;
 
   return repository;
 });
 
-// --- MEJORA 2: AuthStateProvider con manejo mejorado de estados + autoDispose
 final authStateProvider = StreamProvider.autoDispose<AuthState>((ref) {
   final authRepositoryAsync = ref.watch(authRepositoryProvider);
 
@@ -32,7 +28,6 @@ final authStateProvider = StreamProvider.autoDispose<AuthState>((ref) {
       return repository.authStateChanges;
     },
     error: (e, stack) {
-      // Log del error para debugging
       if (kDebugMode) {
         print('Error en authStateProvider: $e');
       }
@@ -44,14 +39,12 @@ final authStateProvider = StreamProvider.autoDispose<AuthState>((ref) {
   );
 });
 
-// --- MEJORA 3: LoginState con timeout y retry automático ---
 final loginStateProvider = StateNotifierProvider<LoginState, AsyncValue<void>>((
   ref,
 ) {
   return LoginState(ref);
 });
 
-// --- MEJORA 4: RegisterState con validación mejorada ---
 final registerStateProvider =
     StateNotifierProvider<RegisterState, AsyncValue<void>>((ref) {
       return RegisterState(ref);
@@ -64,7 +57,6 @@ class LoginState extends StateNotifier<AsyncValue<void>> {
   Future<void> signInWithEmailPassword(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      // --- MEJORA: Timeout para evitar esperas infinitas ---
       final authRepository = await _ref
           .read(authRepositoryProvider.future)
           .timeout(const Duration(seconds: 30));
@@ -105,7 +97,6 @@ class LoginState extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  // --- NUEVO: Método para limpiar estado de error ---
   void clearError() {
     if (state.hasError) {
       state = const AsyncValue.data(null);
@@ -141,7 +132,6 @@ class RegisterState extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  // --- NUEVO: Método para limpiar estado de error ---
   void clearError() {
     if (state.hasError) {
       state = const AsyncValue.data(null);
@@ -149,9 +139,6 @@ class RegisterState extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-// [En auth_provider.dart]
-
-// --- NUEVO: Provider para el cambio de contraseña ---
 final changePasswordProvider =
     StateNotifierProvider<ChangePasswordState, AsyncValue<void>>((ref) {
       return ChangePasswordState(ref);
@@ -169,20 +156,17 @@ class ChangePasswordState extends StateNotifier<AsyncValue<void>> {
     try {
       final authRepository = await _ref.read(authRepositoryProvider.future);
 
-      // 1. RE-AUTENTICAR: El usuario prueba que es él
       await authRepository.reauthenticate(currentPassword);
 
-      // 2. CAMBIAR CONTRASEÑA: Si lo anterior fue exitoso, actualiza
       await authRepository.changePassword(newPassword);
 
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
-      rethrow; // Re-lanza el error para que la UI lo atrape
+      rethrow;
     }
   }
 
-  // --- NUEVO: Método para limpiar estado de error (opcional) ---
   void clearError() {
     if (state.hasError) {
       state = const AsyncValue.data(null);
@@ -190,7 +174,6 @@ class ChangePasswordState extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-// --- BLOQUE AÑADIDO: Provider para el restablecimiento de contraseña ---
 final resetPasswordProvider =
     StateNotifierProvider<ResetPasswordState, AsyncValue<void>>((ref) {
       return ResetPasswordState(ref);
@@ -212,7 +195,6 @@ class ResetPasswordState extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  // --- Método para limpiar estado de error ---
   void clearError() {
     if (state.hasError) {
       state = const AsyncValue.data(null);
@@ -220,8 +202,6 @@ class ResetPasswordState extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-// --- ¡¡BLOQUE 100% NUEVO!! ---
-// --- Provider para ACTUALIZAR contraseña (sin re-autenticación) ---
 final updatePasswordProvider =
     StateNotifierProvider<UpdatePasswordState, AsyncValue<void>>((ref) {
       return UpdatePasswordState(ref);
@@ -236,19 +216,15 @@ class UpdatePasswordState extends StateNotifier<AsyncValue<void>> {
     try {
       final authRepository = await _ref.read(authRepositoryProvider.future);
 
-      // ¡Importante! Solo llamamos a changePassword (updateUser)
-      // Supabase lo permite porque el usuario está en el estado
-      // de "passwordRecovery"
       await authRepository.changePassword(newPassword);
 
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
-      rethrow; // Re-lanza el error para que la UI lo atrape
+      rethrow;
     }
   }
 
-  // --- Método para limpiar estado de error ---
   void clearError() {
     if (state.hasError) {
       state = const AsyncValue.data(null);
@@ -256,8 +232,6 @@ class UpdatePasswordState extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-//////////////
-// Este provider descarga el JSON de la base de datos
 final privacyPolicyProvider = FutureProvider.autoDispose<List<dynamic>>((
   ref,
 ) async {
@@ -267,6 +241,5 @@ final privacyPolicyProvider = FutureProvider.autoDispose<List<dynamic>>((
       .eq('id', 'politica_privacidad')
       .single();
 
-  // Retornamos la lista que está dentro del campo 'contenido'
   return response['contenido'] as List<dynamic>;
 });

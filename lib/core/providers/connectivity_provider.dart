@@ -1,29 +1,19 @@
-// lib/core/providers/connectivity_provider.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kitsucode/core/providers/bootstrap_provider.dart'; // Importar bootstrap
+import 'package:kitsucode/core/providers/bootstrap_provider.dart';
 
-/// Enum para el estado de conexión
-enum ConnectivityStatus {
-  online,
-  offline,
-  checking,
-}
+enum ConnectivityStatus { online, offline, checking }
 
-/// Provider que monitorea la conectividad en tiempo real
-final connectivityProvider = StreamProvider.autoDispose<ConnectivityStatus>((ref) async* {
-  
-  // 🔥 CORRECCIÓN 1: Esperar a que bootstrap termine ANTES de hacer nada
+final connectivityProvider = StreamProvider.autoDispose<ConnectivityStatus>((
+  ref,
+) async* {
   await ref.watch(bootstrapProvider.future);
 
   final connectivity = Connectivity();
 
-  // Emitir el estado inicial verificado
-  // Usamos 'initialConnectivityProvider.future' que ya tiene la lógica de espera
   try {
     final initialState = await ref.watch(initialConnectivityProvider.future);
     yield initialState;
@@ -31,19 +21,17 @@ final connectivityProvider = StreamProvider.autoDispose<ConnectivityStatus>((ref
     yield ConnectivityStatus.offline;
   }
 
-  // Escuchar cambios futuros
   await for (final result in connectivity.onConnectivityChanged) {
     if (result.contains(ConnectivityResult.none)) {
       yield ConnectivityStatus.offline;
       continue;
     }
-    
-    // Si hay conexión, verificar que realmente funcione
+
     try {
       await Future.delayed(const Duration(milliseconds: 500));
       final hasInternet = await _checkSupabaseConnection();
-      yield hasInternet 
-          ? ConnectivityStatus.online 
+      yield hasInternet
+          ? ConnectivityStatus.online
           : ConnectivityStatus.offline;
     } catch (e) {
       yield ConnectivityStatus.offline;
@@ -51,43 +39,36 @@ final connectivityProvider = StreamProvider.autoDispose<ConnectivityStatus>((ref
   }
 });
 
-/// Provider auxiliar para el estado inicial de conectividad
-final initialConnectivityProvider = FutureProvider<ConnectivityStatus>((ref) async {
-
-  // 🔥 CORRECCIÓN 2: Asegurarse de que bootstrap haya terminado PRIMERO
+final initialConnectivityProvider = FutureProvider<ConnectivityStatus>((
+  ref,
+) async {
   await ref.watch(bootstrapProvider.future);
-  
-  // --- Ahora la lógica original puede ejecutarse de forma segura ---
+
   final connectivity = Connectivity();
   final result = await connectivity.checkConnectivity();
-  
+
   if (result.contains(ConnectivityResult.none)) {
     return ConnectivityStatus.offline;
   }
-  
-  // Verificar conexión real con Supabase (ahora es seguro)
+
   try {
     final hasInternet = await _checkSupabaseConnection();
-    return hasInternet 
-        ? ConnectivityStatus.online 
-        : ConnectivityStatus.offline;
+    return hasInternet ? ConnectivityStatus.online : ConnectivityStatus.offline;
   } catch (e) {
     return ConnectivityStatus.offline;
   }
 });
 
-/// Helper privado para verificar conexión real con Supabase
 Future<bool> _checkSupabaseConnection() async {
   try {
     final supabase = Supabase.instance.client;
-    
-    // Intenta hacer una query simple
+
     await supabase
         .from('usuarios')
         .select('id')
         .limit(1)
         .timeout(const Duration(seconds: 5));
-    
+
     return true;
   } catch (e) {
     debugPrint('❌ Verificación de Supabase falló: $e');
@@ -95,5 +76,4 @@ Future<bool> _checkSupabaseConnection() async {
   }
 }
 
-/// Provider para rastrear si se está recuperando de un error de conexión
 final isRecoveringFromOfflineProvider = StateProvider<bool>((ref) => false);

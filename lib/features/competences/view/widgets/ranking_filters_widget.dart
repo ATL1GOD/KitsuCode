@@ -1,5 +1,3 @@
-// lib/features/competences/view/widgets/ranking_filters_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/competences/provider/ranking_provider.dart';
@@ -13,12 +11,11 @@ class RankingFiltersWidget extends ConsumerWidget {
     final selectedLang = ref.watch(selectedLanguageProvider);
     final allLangs = ref.watch(allLanguagesProvider);
 
-    // Ahora el widget es transparente y se enfoca solo en su contenido.
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Container(
         width: double.infinity,
-        // Fondo translúcido con borde sutil
+
         decoration: BoxDecoration(
           color: colors.surface.withAlpha(26),
           borderRadius: BorderRadius.circular(18),
@@ -27,7 +24,6 @@ class RankingFiltersWidget extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
           children: [
-            //
             SizedBox(
               width: double.infinity,
               child: SegmentedButton<int>(
@@ -59,8 +55,6 @@ class RankingFiltersWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            /// Pestañas de filtro de tiempo
-            /// (Hoy, Semana, Mes, Todos)
             const _TimeFilterTabs(),
           ],
         ),
@@ -77,20 +71,16 @@ class _TimeFilterTabs extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // --- CAMBIO 1: USA LOS PROVIDERS CORRECTOS ---
-    final selectedTime = ref.watch(selectedTimeFilterProvider); // <-- Cambiado
-    final allTimeFilters = ref.watch(allTimeFiltersProvider); // <-- Cambiado
+    final selectedTime = ref.watch(selectedTimeFilterProvider);
+    final allTimeFilters = ref.watch(allTimeFiltersProvider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: allTimeFilters.entries.map((entry) {
-        // <-- Cambiado
-        final isSelected = selectedTime == entry.key; // <-- Cambiado
+        final isSelected = selectedTime == entry.key;
         return GestureDetector(
           onTap: () {
-            // --- CAMBIO 2: ACTUALIZA EL PROVIDER CORRECTO ---
-            ref.read(selectedTimeFilterProvider.notifier).state =
-                entry.key; // <-- Cambiado
+            ref.read(selectedTimeFilterProvider.notifier).state = entry.key;
           },
           child: Column(
             children: [

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Para Haptics
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
-import 'package:kitsucode/core/providers/audio_provider.dart'; // Para Audio
-// ✅ Importar helpers de avatar para el color correcto
+import 'package:kitsucode/core/providers/audio_provider.dart';
+
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 
-/// Widget genérico para mostrar errores de aplicación/servidor (Supabase, Logic, Crash).
 class GenericErrorView extends ConsumerWidget {
   final VoidCallback? onRetry;
   final String title;
@@ -20,7 +19,8 @@ class GenericErrorView extends ConsumerWidget {
     super.key,
     this.onRetry,
     this.title = '¡Algo salió mal!',
-    this.message = 'Tuvimos un problema técnico con el servidor. El equipo de KitsuCode ya está investigando.',
+    this.message =
+        'Tuvimos un problema técnico con el servidor. El equipo de KitsuCode ya está investigando.',
     this.showGoBack = true,
   });
 
@@ -29,22 +29,22 @@ class GenericErrorView extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // --- 1. LÓGICA DE COLOR DINÁMICO ---
-    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
-    
-    // Intentamos obtener el perfil, pero manejamos si falla para no crear un bucle de errores
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value
+        ?.session
+        ?.user
+        .id;
+
     AsyncValue? profileState;
     try {
       if (currentAuthUserId != null) {
         profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
       }
-    } catch (_) {
-      // Si falla cargar el perfil, no hacemos nada, usaremos color por defecto
-    }
+    } catch (_) {}
 
     final profile = profileState?.asData?.value;
 
-    // ✅ Obtener lista de avatares para el color real
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
 
     final Color dynamicColor;
@@ -60,14 +60,13 @@ class GenericErrorView extends ConsumerWidget {
       backgroundColor: colors.surfaceContainerLowest,
       body: Stack(
         children: [
-          // --- 2. FONDO CON GRADIENTE ---
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  dynamicColor.withAlpha(100), // ~40% opacidad
+                  dynamicColor.withAlpha(100),
                   colors.surfaceContainerLowest,
                 ],
                 stops: const [0.0, 0.7],
@@ -75,7 +74,6 @@ class GenericErrorView extends ConsumerWidget {
             ),
           ),
 
-          // --- 3. CONTENIDO CENTRADO ---
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -83,16 +81,14 @@ class GenericErrorView extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // ✅ Imagen unificada (Alerta)
                     Image.asset(
-                      'assets/images/home/alerta.webp', 
+                      'assets/images/home/alerta.webp',
                       width: 200,
                       cacheWidth: 400,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 32),
 
-                    // Título
                     Text(
                       title,
                       style: textTheme.headlineSmall?.copyWith(
@@ -103,7 +99,6 @@ class GenericErrorView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Mensaje
                     Text(
                       message,
                       style: textTheme.bodyLarge?.copyWith(
@@ -114,10 +109,8 @@ class GenericErrorView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 40),
 
-                    // Botones de Acción
                     Column(
                       children: [
-                        // Botón REINTENTAR (Importante para fallos de API)
                         if (onRetry != null)
                           SizedBox(
                             width: double.infinity,
@@ -138,7 +131,6 @@ class GenericErrorView extends ConsumerWidget {
                                 ),
                               ),
                               onPressed: () {
-                                // 🔥 Feedback Sonoro y Háptico
                                 HapticFeedback.mediumImpact();
                                 ref.read(audioControllerProvider).playClick();
                                 onRetry!();
@@ -146,13 +138,15 @@ class GenericErrorView extends ConsumerWidget {
                             ),
                           ),
 
-                        if (onRetry != null && showGoBack) 
+                        if (onRetry != null && showGoBack)
                           const SizedBox(height: 16),
 
-                        // Botón VOLVER (Para salir de pantallas rotas)
                         if (showGoBack && context.canPop())
                           TextButton.icon(
-                            icon: Icon(Icons.arrow_back_rounded, color: colors.secondary),
+                            icon: Icon(
+                              Icons.arrow_back_rounded,
+                              color: colors.secondary,
+                            ),
                             label: Text(
                               'Volver atrás',
                               style: TextStyle(
@@ -161,7 +155,6 @@ class GenericErrorView extends ConsumerWidget {
                               ),
                             ),
                             onPressed: () {
-                              // 🔥 Feedback Sonoro y Háptico
                               HapticFeedback.lightImpact();
                               ref.read(audioControllerProvider).playClick();
                               context.pop();

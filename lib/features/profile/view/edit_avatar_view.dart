@@ -41,10 +41,9 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
     final avatarsAsync = ref.watch(currentUserAvatarsProvider);
     final avatarsValue = avatarsAsync.valueOrNull;
 
-    // ✅ Usa el color_primario de la BD del avatar seleccionado
     final dynamicBgColor = avatarsValue != null
         ? getAvatarColorById(_selectedAvatarId, avatarsValue)
-        : Colors.grey; // placeholder mientras carga
+        : Colors.grey;
 
     return Scaffold(
       body: AnimatedContainer(
@@ -117,7 +116,6 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
               ),
               const SizedBox(height: 20),
 
-              // ✅ Vista previa con assetPath real y color de BD
               FadeIn(
                 delay: const Duration(milliseconds: 200),
                 duration: const Duration(milliseconds: 500),
@@ -185,7 +183,7 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
                                 crossAxisCount: 3,
                                 crossAxisSpacing: 15,
                                 mainAxisSpacing: 15,
-                                childAspectRatio: 1.0, // círculos perfectos
+                                childAspectRatio: 1.0,
                               ),
                           itemCount: filteredAvatars.length,
                           itemBuilder: (context, index) {
@@ -225,8 +223,6 @@ class _EditAvatarViewState extends ConsumerState<EditAvatarView> {
   }
 }
 
-// --- WIDGETS DE UI ---
-
 class _SelectedAvatarDisplay extends ConsumerWidget {
   final int avatarId;
   final double size;
@@ -242,7 +238,6 @@ class _SelectedAvatarDisplay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
 
-    // ✅ Usa el assetPath real desde el provider
     final String avatarPath = ref
         .watch(currentUserAvatarsProvider)
         .when(

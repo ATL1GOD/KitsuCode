@@ -1,5 +1,3 @@
-// lib/features/columnas_game/view/columnas_view.dart
-
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,8 +20,7 @@ class ColumnsChallengeView extends ConsumerStatefulWidget {
   final ColumnsChallenge challenge;
   final String retoId;
   final String nivelId;
-  
-  // 🔥 Callback para modo Onboarding
+
   final Function(bool isCorrect)? onOnboardingFinished;
 
   const ColumnsChallengeView({
@@ -31,7 +28,7 @@ class ColumnsChallengeView extends ConsumerStatefulWidget {
     required this.challenge,
     required this.retoId,
     required this.nivelId,
-    this.onOnboardingFinished, // <-- AÑADIDO
+    this.onOnboardingFinished,
   });
 
   @override
@@ -110,24 +107,22 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
           if (_solvedPairIds.length == widget.challenge.pares.length) {
             Future.delayed(const Duration(milliseconds: 300), () {
-              // 🔥 LÓGICA DE ÉXITO
               if (!mounted) return;
-              
+
               if (widget.onOnboardingFinished != null) {
-                 widget.onOnboardingFinished!(true);
+                widget.onOnboardingFinished!(true);
               } else {
-                 _showWinDialogAndSubmit(); 
+                _showWinDialogAndSubmit();
               }
             });
           }
         } else if (_selectedItem == tappedItem) {
           _selectedItem = null;
         } else {
-          // 🔥 ERROR DETECTADO
           _incorrectItem1 = _selectedItem;
           _incorrectItem2 = tappedItem;
           _selectedItem = null;
-          _triggerIncorrectAnimation(); // <-- Inicia la secuencia de fallo
+          _triggerIncorrectAnimation();
         }
       }
     });
@@ -135,24 +130,19 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
   Future<void> _triggerIncorrectAnimation() async {
     setState(() {
-      _isIncorrect = true; // Muestra rojo
+      _isIncorrect = true;
     });
 
-    // Esperamos 1 segundo para que el usuario vea el error visualmente
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
 
-    // 🔥 DECISIÓN FINAL (Modo Estricto)
     if (widget.onOnboardingFinished != null) {
-        // En Onboarding: Se acabó, fallaste.
-        widget.onOnboardingFinished!(false);
+      widget.onOnboardingFinished!(false);
     } else {
-        // En Juego Normal: Muestra modal de fallo
-        _showFeedbackModal(false);
+      _showFeedbackModal(false);
     }
-    
-    // Limpiamos la selección visual (por si acaso el usuario se queda o reintenta en otro contexto)
+
     if (mounted) {
       setState(() {
         _isIncorrect = false;
@@ -185,7 +175,6 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
   void _showFeedbackModal(bool esCorrecto) {
     if (_hasSubmitted) return;
 
-    // 🔥 SEGURIDAD: Si por alguna razón llegamos aquí en onboarding, salimos.
     if (widget.onOnboardingFinished != null) {
       widget.onOnboardingFinished!(esCorrecto);
       return;
@@ -210,7 +199,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
             challengeId: int.parse(widget.retoId),
             isCorrect: esCorrecto,
             onContinue: () async {
-              Navigator.of(ctx).pop(); 
+              Navigator.of(ctx).pop();
 
               if (_hasSubmitted) return;
               _hasSubmitted = true;
@@ -227,7 +216,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
 
                 final repository = ref.read(challengeRepositoryProvider);
                 final int retoIdAsInt = int.parse(widget.retoId);
-                final int nivelIdAsInt = int.parse(widget.nivelId); 
+                final int nivelIdAsInt = int.parse(widget.nivelId);
 
                 if (esCorrecto) {
                   final int trofeos = await repository.submitChallengeAttempt(
@@ -289,9 +278,9 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
         backgroundColor: colorScheme.surface,
         appBar: ChallengeAppBar2(
           progress: progress,
-          // 🔥 FIX: Ocultar botón de cierre si es Onboarding
-          onClose: widget.onOnboardingFinished != null 
-              ? null 
+
+          onClose: widget.onOnboardingFinished != null
+              ? null
               : () => showExitDialog(context, ref),
         ),
         body: SafeArea(
@@ -350,7 +339,7 @@ class _ColumnsChallengeViewState extends ConsumerState<ColumnsChallengeView> {
                   ),
                 ),
               ),
-              // Botón Comprobar (En modo estricto puede no usarse, pero lo dejamos)
+
               _buildCheckButton(isComplete, colorScheme),
             ],
           ),

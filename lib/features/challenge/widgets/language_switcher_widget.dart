@@ -1,19 +1,13 @@
-// lib/features/settings/widgets/language_switcher_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 
-// --- MODIFICACIÓN: Importación de tu snackbar personalizado ---
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-// --- FIN MODIFICACIÓN ---
 
 import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// Widget para cambiar entre lenguajes COMPLETADOS
-/// Muestra solo los lenguajes que el usuario ya dominó
 class LanguageSwitcherWidget extends ConsumerStatefulWidget {
   const LanguageSwitcherWidget({super.key});
 
@@ -30,7 +24,7 @@ class _LanguageSwitcherWidgetState
   @override
   void initState() {
     super.initState();
-    // Cargar los lenguajes completados al iniciar
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId != null) {
@@ -48,26 +42,19 @@ class _LanguageSwitcherWidgetState
       final userId = ref.read(authStateProvider).value?.session?.user.id;
       if (userId == null) throw Exception('Usuario no autenticado');
 
-      // Actualizar lenguaje (normalizar a minúsculas)
       await ref
           .read(languageCompletionProvider.notifier)
           .updateFavoriteLanguage(userId, languageName.toLowerCase());
 
-      // 🔥 CRÍTICO: Volver a verificar lenguajes completados
       await ref
           .read(languageCompletionProvider.notifier)
           .checkLanguageCompletion(userId);
 
-      // Actualizar el appBar
       await ref.read(appBarProvider.notifier).fetchStats();
 
       if (mounted) {
-        // Mostrar confirmación
-        // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
         showSuccessSnackbar(context, 'Cambiado', 'Cambiado a $languageName');
-        // --- FIN MODIFICACIÓN ---
 
-        // Colapsar el widget
         setState(() {
           _isExpanded = false;
           _isLoading = false;
@@ -75,9 +62,8 @@ class _LanguageSwitcherWidgetState
       }
     } catch (e) {
       if (mounted) {
-        // --- MODIFICACIÓN: Se usa el snackbar personalizado ---
         showErrorSnackbar(context, 'Error', 'Error: $e');
-        // --- FIN MODIFICACIÓN ---
+
         setState(() => _isLoading = false);
       }
     }
@@ -117,7 +103,6 @@ class _LanguageSwitcherWidgetState
     final currentLanguage = languageState.currentLanguage;
     final unlockedLanguages = languageState.unlockedLanguages;
 
-    // Si solo tiene un lenguaje o ninguno, no mostrar el switcher
     if (unlockedLanguages.length <= 1) {
       return const SizedBox.shrink();
     }
@@ -130,7 +115,6 @@ class _LanguageSwitcherWidgetState
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          // Header - Siempre visible
           InkWell(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
             borderRadius: BorderRadius.circular(16),
@@ -138,7 +122,6 @@ class _LanguageSwitcherWidgetState
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Ícono del lenguaje actual
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -154,7 +137,6 @@ class _LanguageSwitcherWidgetState
 
                   const SizedBox(width: 16),
 
-                  // Info del lenguaje
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +162,6 @@ class _LanguageSwitcherWidgetState
                     ),
                   ),
 
-                  // Badge de lenguajes desbloqueados
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -214,7 +195,6 @@ class _LanguageSwitcherWidgetState
 
                   const SizedBox(width: 12),
 
-                  // Flecha de expansión
                   Icon(
                     _isExpanded
                         ? Icons.keyboard_arrow_up
@@ -226,7 +206,6 @@ class _LanguageSwitcherWidgetState
             ),
           ),
 
-          // Lista de lenguajes - Se expande/colapsa
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,

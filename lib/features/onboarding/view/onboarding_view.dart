@@ -1,5 +1,3 @@
-// lib/features/onboarding/view/onboarding_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,7 +13,6 @@ import 'package:kitsucode/features/onboarding/view/widgets/onboarding_challenge.
 import 'package:kitsucode/features/onboarding/view/widgets/onboarding_result.dart';
 import 'package:kitsucode/features/onboarding/model/onboarding_model.dart';
 
-// 🔥 IMPORTACIONES NUEVAS NECESARIAS
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 import 'package:kitsucode/core/widgets/no_internet_view.dart';
 
@@ -27,16 +24,14 @@ class OnboardingView extends ConsumerStatefulWidget {
 }
 
 class _OnboardingViewState extends ConsumerState<OnboardingView> {
-  // UI Helpers
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   OnboardingResultModel? _resultData;
-  // Profile State
+
   int? _selectedLanguageId;
   String? _selectedLanguageName;
   List<Map<String, dynamic>> _languages = [];
 
-  // Game/Test State
   final PageController _pageController = PageController();
   List<Map<String, dynamic>> _onboardingChallenges = [];
   int _currentChallengeIndex = 0;
@@ -59,7 +54,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     super.dispose();
   }
 
-  // --- CARGA DE DATOS ---
   Future<void> _loadLanguages() async {
     try {
       final langs = await ref
@@ -86,7 +80,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
     }
   }
 
-  // --- LOGICA DEL NEGOCIO ---
   ColorScheme _getDynamicColorScheme(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
@@ -205,9 +198,6 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 SOLUCIÓN: Interceptamos el estado offline AQUÍ MISMO.
-    // Esto evita que los widgets hijos (juegos, imágenes) intenten renderizarse
-    // y fallen antes de que el router haga el cambio de página.
     final connectivityStatus = ref.watch(connectivityProvider).valueOrNull;
     if (connectivityStatus == ConnectivityStatus.offline) {
       return const NoInternetView();

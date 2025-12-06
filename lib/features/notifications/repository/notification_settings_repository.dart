@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 
-// Provider para el Repositorio
 final notificationSettingsRepositoryProvider = Provider((ref) {
   return NotificationSettingsRepository(
     supabaseClient: Supabase.instance.client,
@@ -16,7 +15,6 @@ class NotificationSettingsRepository {
   NotificationSettingsRepository({required SupabaseClient supabaseClient})
     : _supabaseClient = supabaseClient;
 
-  // Obtiene la lista de preferencias de notificación del usuario actual
   Future<List<NotificationSetting>> getNotificationSettings() async {
     try {
       final userId = _supabaseClient.auth.currentUser!.id;
@@ -37,7 +35,6 @@ class NotificationSettingsRepository {
           .order('id_preferencia', ascending: true);
 
       final settings = response.map((item) {
-        // Convertir hora UTC a hora local antes de crear el modelo
         String? horaLocal;
         if (item['hora_notificacion'] != null) {
           horaLocal = _convertUtcToLocal(item['hora_notificacion'] as String);
@@ -55,14 +52,12 @@ class NotificationSettingsRepository {
     }
   }
 
-  /// Convierte hora UTC de la BD a hora local del dispositivo
   String _convertUtcToLocal(String horaUtc) {
     try {
       final parts = horaUtc.split(':');
       final utcHour = int.parse(parts[0]);
       final utcMinute = int.parse(parts[1]);
 
-      // Crear DateTime en UTC
       final now = DateTime.now();
       final utcTime = DateTime.utc(
         now.year,
@@ -72,16 +67,14 @@ class NotificationSettingsRepository {
         utcMinute,
       );
 
-      // Convertir a hora local
       final localTime = utcTime.toLocal();
 
-      // Formatear como HH:mm:ss
       return '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}:00';
     } catch (e) {
       if (kDebugMode) {
         print('Error convirtiendo hora UTC a local: $e');
       }
-      return horaUtc; // Si falla, devolver la hora original
+      return horaUtc;
     }
   }
 
@@ -102,19 +95,15 @@ class NotificationSettingsRepository {
     }
   }
 
-  // --- ¡ASEGÚRATE DE QUE ESTA OTRA TAMBIÉN EXISTA! ---
-  /// Actualiza la hora de una preferencia específica (convierte a UTC)
   Future<void> updateNotificationTime(int preferenciaId, String? hora) async {
     try {
       String? horaUTC;
 
-      // Si hay una hora, convertirla a UTC
       if (hora != null) {
         final parts = hora.split(':');
         final localHour = int.parse(parts[0]);
         final localMinute = int.parse(parts[1]);
 
-        // Crear DateTime con hora local
         final now = DateTime.now();
         final localTime = DateTime(
           now.year,
@@ -124,10 +113,8 @@ class NotificationSettingsRepository {
           localMinute,
         );
 
-        // Convertir a UTC
         final utcTime = localTime.toUtc();
 
-        // Formatear como HH:mm:ss
         horaUTC =
             '${utcTime.hour.toString().padLeft(2, '0')}:${utcTime.minute.toString().padLeft(2, '0')}:00';
       }
@@ -144,8 +131,6 @@ class NotificationSettingsRepository {
     }
   }
 
-  // --- ¡Y ASEGÚRATE DE QUE ESTA NUEVA TAMBIÉN EXISTA! ---
-  /// Actualiza el estado 'habilitado' de TODAS las preferencias del usuario.
   Future<void> updateAllEnabled(bool isEnabled) async {
     try {
       final userId = _supabaseClient.auth.currentUser!.id;

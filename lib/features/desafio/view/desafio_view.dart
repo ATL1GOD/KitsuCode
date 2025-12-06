@@ -1,5 +1,3 @@
-// lib/features/desafio/view/desafio_view.dart (o donde lo tengas)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/desafio/provider/desafio_provider.dart';
@@ -20,7 +18,6 @@ class DesafioBusquedaView extends ConsumerWidget {
     final searchResults = ref.watch(userSearchResultsProvider);
     final currentQuery = ref.watch(userSearchQueryProvider);
 
-    // --- NUEVO: Obtener perfil y colores (igual que en SupportView) ---
     final colors = Theme.of(context).colorScheme;
     final currentAuthUserId = ref
         .watch(authStateProvider)
@@ -29,7 +26,6 @@ class DesafioBusquedaView extends ConsumerWidget {
         ?.user
         .id;
 
-    // --- NUEVO: Check de autenticación ---
     if (currentAuthUserId == null) {
       return const Scaffold(
         body: Center(child: Text("Error de autenticación")),
@@ -38,31 +34,23 @@ class DesafioBusquedaView extends ConsumerWidget {
 
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
 
-    // --- MODIFICADO: Envolvemos todo en el profileState.when ---
     return profileState.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, s) =>
           Scaffold(body: Center(child: Text('Error al cargar perfil: $e'))),
       data: (profile) {
-        // --- El Scaffold original ahora está dentro del 'data' ---
         return Scaffold(
-          // --- NUEVO: Fondo base para el degradado (igual que SupportView) ---
           backgroundColor: colors.surfaceContainerLowest,
 
-          // --- MODIFICADO: El body es un Stack ---
           body: Stack(
             children: [
-              // --- FONDO ESTÁTICO (igual que SupportView) ---
               StaticSettingsBackground(profile: profile, colors: colors),
 
-              // --- CONTENIDO (envuelto en SafeArea) ---
               SafeArea(
                 child: Column(
-                  // <-- El Column original
                   children: [
                     Padding(
-                      // --- MODIFICADO: Padding superior reducido (SafeArea se encarga) ---
                       padding: const EdgeInsets.only(
                         left: 10,
                         top: 10,
@@ -99,10 +87,8 @@ class DesafioBusquedaView extends ConsumerWidget {
                       ),
                     ),
 
-                    // --- Sin cambios ---
                     const SearchField(),
 
-                    // --- Sin cambios ---
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -124,20 +110,15 @@ class DesafioBusquedaView extends ConsumerWidget {
                                       horizontal: 16.0,
                                       vertical: 8.0,
                                     ),
-                                    // --- AQUÍ ESTÁ EL CAMBIO ---
+
                                     child: OptimizedImage(
                                       imagePath:
                                           'assets/images/banner/amigos.webp',
-                                      isLocalAsset:
-                                          true, // Importante: indica que no use Supabase
-                                      width: double
-                                          .infinity, // Ocupa todo el ancho disponible (como el Positioned.fill)
-                                      height: double
-                                          .infinity, // Ocupa todo el alto disponible
-                                      fit: BoxFit
-                                          .contain, // Mantiene la proporción sin recortar (igual que el SVG)
+                                      isLocalAsset: true,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.contain,
                                     ),
-                                    // ---------------------------
                                   ),
                                 ),
                               );
@@ -154,24 +135,18 @@ class DesafioBusquedaView extends ConsumerWidget {
                               );
                             }
 
-                            // En desafio_view.dart, dentro de searchResults.when(data: (users) { ...
-
                             return ElasticListView.separated(
-                              // Mantienes el padding para que respiren las tarjetas
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
                               ),
                               itemCount: users.length,
 
-                              // Puedes ajustar la elasticidad (4 es el default, prueba subirlo a 6 si quieres más rebote)
                               elasticityFactor: 4,
 
-                              // Builder del separador (igual que antes)
                               separatorBuilder: (context, index) =>
                                   const SizedBox(height: 12),
 
-                              // Builder de los items (igual que antes)
                               itemBuilder: (context, index) {
                                 return UserSearchCard(user: users[index]);
                               },

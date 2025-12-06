@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 
-/// Obtiene el color principal de un avatar por su ID
 Color getAvatarColorById(int avatarId, [List<AvatarModel>? avatares]) {
   if (avatares != null && avatares.isNotEmpty) {
     try {
@@ -11,10 +10,9 @@ Color getAvatarColorById(int avatarId, [List<AvatarModel>? avatares]) {
       return parseColorFromString(avatares.first.colorPrimario);
     }
   }
-  return Colors.grey; 
+  return Colors.grey;
 }
 
-/// Obtiene el asset path de un avatar por su ID
 String getAvatarAssetPathById(int avatarId, [List<AvatarModel>? avatares]) {
   if (avatares != null && avatares.isNotEmpty) {
     try {
@@ -27,7 +25,6 @@ String getAvatarAssetPathById(int avatarId, [List<AvatarModel>? avatares]) {
   return '';
 }
 
-/// Convierte string "0xFFE65100" a Color
 Color parseColorFromString(String colorString) {
   try {
     final cleanColor = colorString.replaceFirst('0x', '');
@@ -38,7 +35,10 @@ Color parseColorFromString(String colorString) {
   }
 }
 
-List<AvatarModel> filterAvataresByTipo(List<AvatarModel> avatares, String tipo) {
+List<AvatarModel> filterAvataresByTipo(
+  List<AvatarModel> avatares,
+  String tipo,
+) {
   return avatares.where((a) => a.tipo == tipo).toList();
 }
 

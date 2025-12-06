@@ -6,16 +6,14 @@ class ProfileInfoCard extends StatelessWidget {
 
   const ProfileInfoCard({super.key, required this.userProfile});
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18.0),
       child: Card(
         color: const Color(0xFFF1E1D0),
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -33,13 +31,15 @@ class ProfileInfoCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Usamos los datos del modelo en lugar de texto fijo
                   Text(
                     userProfile.nombrePerfil,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   Text(
-                    '@${userProfile.nombreUsuario}', 
+                    '@${userProfile.nombreUsuario}',
                     style: const TextStyle(fontSize: 16, color: Colors.black54),
                   ),
                 ],
@@ -51,22 +51,31 @@ class ProfileInfoCard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        userProfile.siguiendoCount.toString(), 
+                        userProfile.siguiendoCount.toString(),
                         style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      const Text('Siguiendo', style: TextStyle(color: Colors.black54)),
+                      const Text(
+                        'Siguiendo',
+                        style: TextStyle(color: Colors.black54),
+                      ),
                     ],
                   ),
                   Column(
                     children: [
                       Text(
-                        userProfile.seguidoresCount.toString(), 
+                        userProfile.seguidoresCount.toString(),
                         style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      const Text('Seguidores',
-                          style: TextStyle(color: Colors.black54)),
+                      const Text(
+                        'Seguidores',
+                        style: TextStyle(color: Colors.black54),
+                      ),
                     ],
                   ),
                 ],

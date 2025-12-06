@@ -1,5 +1,3 @@
-// lib/features/profile/view/follow_list_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,19 +14,16 @@ import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class FollowListView extends ConsumerStatefulWidget {
   final String userId;
-  final String type; // 'following' o 'followers'
+  final String type;
 
-  const FollowListView({
-    super.key,
-    required this.userId,
-    required this.type,
-  });
+  const FollowListView({super.key, required this.userId, required this.type});
 
   @override
   ConsumerState<FollowListView> createState() => _FollowListViewState();
 }
 
-class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware {
+class _FollowListViewState extends ConsumerState<FollowListView>
+    with RouteAware {
   @override
   void initState() {
     super.initState();
@@ -79,7 +74,6 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
         loading: () => const _FollowListLoadingShimmer(),
         error: (_, __) => const Center(child: Text("Error cargando perfil")),
         data: (profile) {
-          // ✅ Usa el color REAL del avatar si la lista ya cargó; si no, fallback
           final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
           final dynamicColor = avatarsList.isNotEmpty
               ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
@@ -90,14 +84,12 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
 
           return Stack(
             children: [
-              // --- FONDO CON GRADIENTE DINÁMICO ---
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      // ~40% del color dinámico para que se note
                       dynamicColor.withAlpha((255 * 0.40).round()),
                       colors.surfaceContainerLowest,
                     ],
@@ -106,11 +98,16 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                 ),
               ),
 
-              // --- CONTENIDO PRINCIPAL ---
               SafeArea(
                 child: Column(
                   children: [
-                    _buildAppBar(context, colors, textTheme, title, dynamicColor),
+                    _buildAppBar(
+                      context,
+                      colors,
+                      textTheme,
+                      title,
+                      dynamicColor,
+                    ),
 
                     Expanded(
                       child: usersState.when(
@@ -143,7 +140,9 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                                   ),
                                   const SizedBox(height: 24),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32.0,
+                                    ),
                                     child: Text(
                                       emptyMessage,
                                       style: textTheme.titleMedium?.copyWith(
@@ -163,10 +162,15 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                               cacheExtent: 200.0,
                               addAutomaticKeepAlives: false,
                               addRepaintBoundaries: true,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                               itemCount: users.length,
                               itemBuilder: (_, i) => FadeInDown(
-                                duration: Duration(milliseconds: 300 + (i * 80)),
+                                duration: Duration(
+                                  milliseconds: 300 + (i * 80),
+                                ),
                                 child: _FollowUserTile(
                                   key: ValueKey(users[i].userId),
                                   user: users[i],
@@ -178,7 +182,7 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
                           );
                         },
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -206,21 +210,25 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
             child: Container(
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
-                color: colors.surface.withValues(alpha: .40), // was withOpacity(.4)
+                color: colors.surface.withValues(alpha: .40),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  // toque del color dinámico para integrarlo
                   color: dynamicColor.withAlpha((255 * 0.55).round()),
                 ),
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: colors.onSurface,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(width: 40),
@@ -230,10 +238,9 @@ class _FollowListViewState extends ConsumerState<FollowListView> with RouteAware
   }
 }
 
-// Tarjeta de usuario
 class _FollowUserTile extends ConsumerStatefulWidget {
   final FollowListModel user;
-  final Color dynamicColor; // color del header (fallback)
+  final Color dynamicColor;
   final FollowListArgs currentListArgs;
 
   const _FollowUserTile({
@@ -277,14 +284,15 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
       vsync: this,
       duration: const Duration(milliseconds: 260),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-1.2, 0),
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeInOut));
+    _slideAnimation =
+        Tween<Offset>(begin: Offset.zero, end: const Offset(-1.2, 0)).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+        );
 
-    _fadeAnimation = Tween<double>(begin: 1, end: 0).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 1,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
   }
 
   @override
@@ -325,10 +333,18 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
         context: context,
         builder: (_) => AlertDialog(
           title: const Text("Dejar de seguir"),
-          content: Text("¿Quieres dejar de seguir a @${widget.user.nombreUsuario}?"),
+          content: Text(
+            "¿Quieres dejar de seguir a @${widget.user.nombreUsuario}?",
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
-            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Sí")),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Sí"),
+            ),
           ],
         ),
       );
@@ -346,7 +362,10 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
     try {
       final result = await ref
           .read(followControllerProvider.notifier)
-          .toggleFollow(widget.user.userId, currentListArgs: widget.currentListArgs);
+          .toggleFollow(
+            widget.user.userId,
+            currentListArgs: widget.currentListArgs,
+          );
 
       if (mounted) {
         setState(() => _isFollowing = result);
@@ -367,13 +386,11 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
 
     if (_removed) return const SizedBox.shrink();
 
-    // ✅ Colores/imagen por usuario (desde BD):
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
     final String avatarPath = avatarsList.isNotEmpty
         ? getAvatarAssetPathById(widget.user.idAvatarSeleccionado, avatarsList)
         : '';
 
-    // ✅ Color real del avatar del usuario de la fila; si no hay lista, usa el del header
     final Color tileColor = avatarsList.isNotEmpty
         ? getAvatarColorById(widget.user.idAvatarSeleccionado, avatarsList)
         : widget.dynamicColor;
@@ -383,7 +400,9 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: InkWell(
-          onTap: _isCurrentUser ? null : () => context.push('/profile/${widget.user.userId}'),
+          onTap: _isCurrentUser
+              ? null
+              : () => context.push('/profile/${widget.user.userId}'),
           borderRadius: BorderRadius.circular(18),
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -397,7 +416,7 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
                   color: tileColor.withValues(alpha: .25),
                   blurRadius: 12,
                   offset: const Offset(0, 5),
-                )
+                ),
               ],
             ),
             child: Row(
@@ -443,7 +462,9 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
                       Text(
                         widget.user.nombrePerfil,
                         overflow: TextOverflow.ellipsis,
-                        style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: t.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         "@${widget.user.nombreUsuario}",
@@ -461,11 +482,16 @@ class _FollowUserTileState extends ConsumerState<_FollowUserTile>
                       onTap: _toggle,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 7,
+                        ),
                         decoration: BoxDecoration(
                           color: _isFollowing ? c.surface : tileColor,
                           borderRadius: BorderRadius.circular(50),
-                          border: _isFollowing ? Border.all(color: c.outlineVariant) : null,
+                          border: _isFollowing
+                              ? Border.all(color: c.outlineVariant)
+                              : null,
                         ),
                         child: Text(
                           _isFollowing ? "Siguiendo" : "Seguir",
@@ -505,13 +531,20 @@ class _FollowListLoadingShimmer extends StatelessWidget {
               Container(
                 width: 48,
                 height: 48,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   children: [
-                    Container(width: double.infinity, height: 14, color: Colors.white),
+                    Container(
+                      width: double.infinity,
+                      height: 14,
+                      color: Colors.white,
+                    ),
                     const SizedBox(height: 6),
                     Container(width: 120, height: 12, color: Colors.white),
                   ],
@@ -521,7 +554,10 @@ class _FollowListLoadingShimmer extends StatelessWidget {
               Container(
                 width: 80,
                 height: 32,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
             ],
           ),

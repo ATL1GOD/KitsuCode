@@ -10,7 +10,6 @@ class OnboardingProfileStep extends StatelessWidget {
   final VoidCallback onStartTest;
   final ColorScheme colorScheme;
 
-  // Rutas de imágenes estáticas
   final String mobileLogoPath = 'assets/images/auth/fox_login.webp';
   final String desktopHeroPath = 'assets/images/auth/fox_login.webp';
 
@@ -25,14 +24,13 @@ class OnboardingProfileStep extends StatelessWidget {
     required this.colorScheme,
   });
 
-  // HELPER: Obtener ruta del asset según el nombre del lenguaje
   String _getLanguageAsset(String name) {
     final n = name.toLowerCase();
     if (n.contains('python')) return 'assets/images/home/logo_python.webp';
     if (n.contains('java')) return 'assets/images/home/logo_java.webp';
-    // Asumimos que si contiene 'c' y es corto, o es "C", es el logo de C.
+
     if (n.contains('c') || n == 'c') return 'assets/images/home/logo_c.webp';
-    return ''; // Fallback si no hay imagen
+    return '';
   }
 
   @override
@@ -289,7 +287,6 @@ class OnboardingProfileStep extends StatelessWidget {
     );
   }
 
-  // MODIFICADO: Ahora acepta assetPath
   Widget _buildTechChip({
     required String label,
     required String assetPath,
@@ -323,7 +320,6 @@ class OnboardingProfileStep extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Si tenemos ruta de imagen, la mostramos
             if (assetPath.isNotEmpty) ...[
               Image.asset(
                 assetPath,
@@ -335,7 +331,7 @@ class OnboardingProfileStep extends StatelessWidget {
               ),
               const SizedBox(width: 10),
             ],
-            // Si está seleccionado y no hay imagen (o como indicador extra), mantenemos el check
+
             if (isSelected && assetPath.isEmpty) ...[
               Icon(Icons.check_circle, size: 18, color: colorScheme.onPrimary),
               const SizedBox(width: 8),

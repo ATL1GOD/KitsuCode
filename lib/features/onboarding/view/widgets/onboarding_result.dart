@@ -54,7 +54,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
     super.dispose();
   }
 
-  // Helper para imagen local (logo del lenguaje, estos sí son assets locales)
   String _getLanguageAsset(String name) {
     final n = name.toLowerCase();
     if (n.contains('python')) return 'assets/images/home/logo_python.webp';
@@ -109,21 +108,18 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                   ),
                   child: ClipOval(
                     child: OptimizedImage(
-                      imagePath:
-                          cleanImagePath, // Ruta limpia (ej: "rango.webp")
+                      imagePath: cleanImagePath,
                       width: 120,
                       height: 120,
                       fit: BoxFit.cover,
-                      enableCache: true, // Importante para rendimiento
-                      isLocalAsset:
-                          false, // FALSE = Descarga de Supabase Storage
+                      enableCache: true,
+                      isLocalAsset: false,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 32),
 
-              // --- TEXTOS ---
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(
@@ -146,7 +142,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                     ),
                     const SizedBox(height: 16),
 
-                    // Título del Rango
                     Text(
                       model.titulo,
                       textAlign: TextAlign.center,
@@ -157,7 +152,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       ),
                     ),
 
-                    // Subtítulo del Rango
                     Text(
                       model.subtitulo,
                       textAlign: TextAlign.center,
@@ -168,7 +162,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                     ),
                     const SizedBox(height: 24),
 
-                    // Descripción
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -190,7 +183,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                     ),
                     const SizedBox(height: 16),
 
-                    // Badges de estadísticas
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -215,7 +207,6 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
               ),
               const SizedBox(height: 48),
 
-              // --- BOTÓN CONTINUAR ---
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: SizedBox(
@@ -276,7 +267,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
               width: 20,
               height: 20,
               fit: BoxFit.contain,
-              isLocalAsset: true, // TRUE = Carga desde assets de la app
+              isLocalAsset: true,
             )
           else if (icon != null)
             Icon(icon, size: 20, color: primaryColor),

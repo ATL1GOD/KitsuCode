@@ -1,11 +1,9 @@
-// [COMIENZO DEL ARCHIVO desafio_provider.dart]
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitsucode/core/providers/connectivity_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 
-// --- Helper para convertir Hex a Color ---
 Color _colorFromHex(String hexString, {String fallback = '#808080'}) {
   final buffer = StringBuffer();
   String hex = hexString.replaceAll('#', '');
@@ -20,7 +18,6 @@ Color _colorFromHex(String hexString, {String fallback = '#808080'}) {
   return Color(int.parse(buffer.toString(), radix: 16));
 }
 
-// --- Clases de Modelo Simples ---
 class DesafioEspecial {
   final int idReto;
   final String titulo;
@@ -103,21 +100,17 @@ class DesafioMensualData {
   });
 }
 
-// --- El Provider ---
-
 final supabase = Supabase.instance.client;
 
 final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((
   ref,
 ) async {
-  // 1. Vigilar sesión y conexión
   ref.watch(authStateProvider);
   final connectivityStatus = await ref.watch(connectivityProvider.future);
   if (connectivityStatus != ConnectivityStatus.online) {
     throw Exception('Sin conexión');
   }
 
-  // 2. Validar usuario
   final user = supabase.auth.currentUser;
   if (user == null) {
     return DesafioMensualData(
@@ -130,19 +123,16 @@ final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((
   final userId = user.id;
   final String now = DateTime.now().toIso8601String();
 
-  // ---------------------------------------------------------
-  // PASO A: Obtener el RETO PADRE (Evento Especial Activo)
-  // ---------------------------------------------------------
   final resultsEspeciales = await supabase
       .from('reto')
       .select(
         'id_reto, titulo, descripcion, fecha_inicio, fecha_final, reto_especiales_detalles(color_claro, color_oscuro, asset_especial)',
       )
-      .eq('tipo_reto', 5) // Tipo Agrupador/Evento
+      .eq('tipo_reto', 5)
       .eq('especial', true)
       .eq('activo', true)
-      .lte('fecha_inicio', now) // Que ya haya empezado
-      .gte('fecha_final', now) // Que no haya terminado
+      .lte('fecha_inicio', now)
+      .gte('fecha_final', now)
       .limit(1);
 
   final List<DesafioEspecial> especiales = (resultsEspeciales as List)
@@ -160,14 +150,10 @@ final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((
 
   final event = especiales.first;
 
-  // ---------------------------------------------------------
-  // PASO B: Obtener RETOS HIJOS usando la NUEVA COLUMNA `id_reto_padre`
-  // ---------------------------------------------------------
-  // Ya no dependemos de fechas, sino de la relación explícita.
   final resultsRetosIndividuales = await supabase
       .from('reto')
       .select('id_reto, titulo, niveles(id_nivel)')
-      .eq('id_reto_padre', event.idReto) // <--- AQUÍ ESTÁ LA MAGIA
+      .eq('id_reto_padre', event.idReto)
       .eq('activo', true);
 
   final List<RetoIndividual> retosIndividuales =
@@ -175,11 +161,6 @@ final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((
           .map((item) => RetoIndividual.fromMap(item as Map<String, dynamic>))
           .toList();
 
-  // ---------------------------------------------------------
-  // PASO C: Calcular Progreso
-  // ---------------------------------------------------------
-
-  // Lista de IDs de los retos hijos
   final List<int> retosIndividualesIds = retosIndividuales
       .map((r) => r.idReto)
       .toList();
@@ -192,17 +173,13 @@ final desafiosProvider = FutureProvider.autoDispose<DesafioMensualData>((
         .select('id_reto')
         .eq('id_usuario', userId)
         .eq('resultado', 'completado')
-        .inFilter(
-          'id_reto',
-          retosIndividualesIds,
-        ); // Solo buscar los de este evento
+        .inFilter('id_reto', retosIndividualesIds);
 
     completedMensualRetoIds = (resultsCompleted as List)
         .map((item) => item['id_reto'] as int)
         .toSet();
   }
 
-  // Verificar si el padre está completado
   final parentResult = await supabase
       .from('intento_reto')
       .select('id_reto')

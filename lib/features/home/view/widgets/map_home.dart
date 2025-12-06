@@ -7,7 +7,7 @@ import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 import 'package:kitsucode/features/home/view/widgets/animated_level_node.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/core/providers/audio_provider.dart';
-import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart'; // 🔥 NUEVO
+import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart';
 
 class Section extends ConsumerWidget {
   final SectionData data;
@@ -15,7 +15,6 @@ class Section extends ConsumerWidget {
   const Section({super.key, required this.data});
 
   void _navegarAReto(BuildContext context, WidgetRef ref, LevelData level) {
-    // --- LÓGICA DE BLOQUEO DE NIVEL ---
     if (level.isLocked) {
       showWarningSnackbar(
         context,
@@ -25,7 +24,6 @@ class Section extends ConsumerWidget {
       return;
     }
 
-    // 1. Si no hay retoId, es una lección
     if (level.retoId == null) {
       debugPrint(
         "Lección ${level.nivel} presionada (ID: ${level.idNivel}). Sin reto.",
@@ -33,7 +31,6 @@ class Section extends ConsumerWidget {
       return;
     }
 
-    // 2. Lógica de bloqueo de vidas
     final appBarState = ref.read(appBarProvider);
 
     if (appBarState.lives <= 0) {
@@ -45,11 +42,9 @@ class Section extends ConsumerWidget {
       return;
     }
 
-    // 🔥 3. PAUSAR LA MÚSICA ANTES DE NAVEGAR
     pauseMusicForChallenge(ref);
     ref.read(audioControllerProvider).stopMusic();
 
-    // 4. Navegar al reto
     final int retoId = level.retoId!;
     final int nivelId = level.idNivel;
     context.push('/reto/$retoId/$nivelId');

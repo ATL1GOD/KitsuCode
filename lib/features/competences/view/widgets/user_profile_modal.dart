@@ -7,7 +7,6 @@ import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
-// --- Íconos de lenguajes ---
 const Map<int, String> _languageAssets = {
   1: 'assets/images/home/logo_c.webp',
   2: 'assets/images/home/logo_java.webp',
@@ -59,7 +58,7 @@ Widget _smartImage({
       width: width,
       height: height,
       fit: fit,
-      gaplessPlayback: true, // 🔥 Evita parpadeo
+      gaplessPlayback: true,
     );
   }
   return OptimizedImage(
@@ -109,7 +108,7 @@ class UserProfileModal extends ConsumerWidget {
     ];
 
     return ZoomIn(
-      duration: const Duration(milliseconds: 300), // 👈 Duración de entrada
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutBack,
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -127,16 +126,11 @@ class UserProfileModal extends ConsumerWidget {
               avatarsList,
             );
 
-            // 🔥 RepaintBoundary MAESTRO:
-            // Como la animación de fondo ahora tiene un "delay",
-            // durante los primeros 400ms el contenido de este Stack es ESTÁTICO.
-            // Flutter rasteriza esto UNA VEZ y la animación de ZoomIn vuela a 60FPS.
             return RepaintBoundary(
               child: Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.topCenter,
                 children: [
-                  // 1. Tarjeta Base
                   Container(
                     margin: const EdgeInsets.only(top: 60),
                     padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
@@ -157,18 +151,15 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                     child: Stack(
                       children: [
-                        // 🔥 Fondo Decorativo (Con Delay Interno)
                         const Positioned.fill(child: _DecorativeBackground()),
-                        
-                        // Contenido de Texto y Botones
+
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               user.nombrePerfil,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -209,7 +200,9 @@ class UserProfileModal extends ConsumerWidget {
                                   side: BorderSide(
                                     color: colors.primary.withAlpha(128),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 13,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
                                   ),
@@ -227,7 +220,6 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                   ),
 
-                  // 2. Avatar Flotante
                   Positioned(
                     top: 0,
                     child: Container(
@@ -257,7 +249,6 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                   ),
 
-                  // 3. Badge de Rango
                   Positioned(
                     top: 70,
                     right: 15,
@@ -297,7 +288,6 @@ class UserProfileModal extends ConsumerWidget {
                     ),
                   ),
 
-                  // 4. Iconos de Lenguaje
                   if (languageIcons.isNotEmpty)
                     Positioned(
                       top: 70,
@@ -350,7 +340,10 @@ class UserProfileModal extends ConsumerWidget {
           Text(
             'Error al cargar',
             style: TextStyle(
-                fontSize: 18, fontWeight: FontWeight.bold, color: colors.error),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colors.error,
+            ),
           ),
         ],
       ),
@@ -368,7 +361,6 @@ class UserProfileModal extends ConsumerWidget {
   }
 }
 
-// --- Botón de Seguir (Sin Cambios) ---
 class FollowButton extends ConsumerWidget {
   final String userId;
   const FollowButton({super.key, required this.userId});
@@ -386,18 +378,21 @@ class FollowButton extends ConsumerWidget {
           onPressed: isLoading
               ? null
               : () => ref
-                  .read(followControllerProvider.notifier)
-                  .toggleFollow(userId),
+                    .read(followControllerProvider.notifier)
+                    .toggleFollow(userId),
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                isFollowing ? c.surfaceContainerHighest : c.primary,
+            backgroundColor: isFollowing
+                ? c.surfaceContainerHighest
+                : c.primary,
             foregroundColor: isFollowing ? c.onSurfaceVariant : c.onPrimary,
             padding: const EdgeInsets.symmetric(vertical: 13),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
             ),
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
             elevation: 2,
           ),
           child: AnimatedSwitcher(
@@ -415,7 +410,9 @@ class FollowButton extends ConsumerWidget {
           ),
         ),
         loading: () => const SizedBox(
-            height: 48, child: Center(child: CircularProgressIndicator())),
+          height: 48,
+          child: Center(child: CircularProgressIndicator()),
+        ),
         error: (_, __) =>
             ElevatedButton(onPressed: null, child: const Text('Error')),
       ),
@@ -423,7 +420,6 @@ class FollowButton extends ConsumerWidget {
   }
 }
 
-// --- 🔥 ANIMACIÓN DE FONDO OPTIMIZADA (CON DELAY) ---
 class _DecorativeBackground extends StatefulWidget {
   const _DecorativeBackground();
   @override
@@ -434,37 +430,41 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final List<Animation<Alignment>> _animations;
-  
-  // 🔥 Flag para saber si ya podemos empezar a pintar la animación
-  bool _shouldAnimate = false; 
+
+  bool _shouldAnimate = false;
 
   @override
   void initState() {
     super.initState();
-    // 🔥 Aumentar duración para animación más suave y menos costosa
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
     );
 
-    // Configuración de animaciones (igual que antes)
     _animations = [
-      _createTween(const Alignment(-1, -0.8), const Alignment(1, -0.7))
-          .animate(_createCurve(0.0, 0.5)),
-      _createTween(const Alignment(1.2, -0.2), const Alignment(-1.2, 0))
-          .animate(_createCurve(0.2, 0.7)),
-      _createTween(const Alignment(0, 1.1), const Alignment(0, -1.1))
-          .animate(_createCurve(0.4, 1.0)),
-      _createTween(const Alignment(1.1, 1), const Alignment(-1.1, 0.8))
-          .animate(_createCurve(0.1, 0.8)),
-      _createTween(const Alignment(-1.3, 0.9), const Alignment(1.3, -0.9))
-          .animate(_createCurve(0.3, 0.9)),
+      _createTween(
+        const Alignment(-1, -0.8),
+        const Alignment(1, -0.7),
+      ).animate(_createCurve(0.0, 0.5)),
+      _createTween(
+        const Alignment(1.2, -0.2),
+        const Alignment(-1.2, 0),
+      ).animate(_createCurve(0.2, 0.7)),
+      _createTween(
+        const Alignment(0, 1.1),
+        const Alignment(0, -1.1),
+      ).animate(_createCurve(0.4, 1.0)),
+      _createTween(
+        const Alignment(1.1, 1),
+        const Alignment(-1.1, 0.8),
+      ).animate(_createCurve(0.1, 0.8)),
+      _createTween(
+        const Alignment(-1.3, 0.9),
+        const Alignment(1.3, -0.9),
+      ).animate(_createCurve(0.3, 0.9)),
     ];
 
-    // 🔥 EL FIX DE ORO: 
-    // Esperamos 400ms (más que la duración de 300ms del ZoomIn).
-    // Durante este tiempo, _shouldAnimate es false, así que no hay movimiento.
-    // El RepaintBoundary puede cachear la tarjeta estática y el ZoomIn es fluido.
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) {
         setState(() {
@@ -478,9 +478,9 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
   AlignmentTween _createTween(Alignment begin, Alignment end) =>
       AlignmentTween(begin: begin, end: end);
   CurvedAnimation _createCurve(double begin, double end) => CurvedAnimation(
-        parent: _controller,
-        curve: Interval(begin, end, curve: Curves.easeInOutSine),
-      );
+    parent: _controller,
+    curve: Interval(begin, end, curve: Curves.easeInOutSine),
+  );
 
   @override
   void dispose() {
@@ -495,22 +495,20 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
     double size,
   ) {
     final c = Theme.of(context).colorScheme;
-    
-    // Si aún no debemos animar, mostramos el icono estático en su posición inicial.
-    // Esto evita el "pop" visual de que aparezcan de la nada.
+
     if (!_shouldAnimate) {
       return Align(
-        alignment: anim.value, // Usará el valor inicial (begin)
+        alignment: anim.value,
         child: Image.asset(
-            assetPath,
-            width: size,
-            height: size,
-            cacheWidth: (size * 2).toInt(),
-            cacheHeight: (size * 2).toInt(),
-            fit: BoxFit.contain,
-            color: c.primary.withAlpha(26),
-            colorBlendMode: BlendMode.srcIn,
-            gaplessPlayback: true,
+          assetPath,
+          width: size,
+          height: size,
+          cacheWidth: (size * 2).toInt(),
+          cacheHeight: (size * 2).toInt(),
+          fit: BoxFit.contain,
+          color: c.primary.withAlpha(26),
+          colorBlendMode: BlendMode.srcIn,
+          gaplessPlayback: true,
         ),
       );
     }
@@ -538,10 +536,24 @@ class _DecorativeBackgroundState extends State<_DecorativeBackground>
       borderRadius: BorderRadius.circular(24),
       child: Stack(
         children: [
-          // 🔥 Reducido a 3 elementos para mejor rendimiento
-          _buildIcon(context, 'assets/images/home/logo_python.webp', _animations[0], 50),
-          _buildIcon(context, 'assets/images/home/logo_java.webp', _animations[1], 60),
-          _buildIcon(context, 'assets/images/home/logo_c.webp', _animations[2], 70),
+          _buildIcon(
+            context,
+            'assets/images/home/logo_python.webp',
+            _animations[0],
+            50,
+          ),
+          _buildIcon(
+            context,
+            'assets/images/home/logo_java.webp',
+            _animations[1],
+            60,
+          ),
+          _buildIcon(
+            context,
+            'assets/images/home/logo_c.webp',
+            _animations[2],
+            70,
+          ),
         ],
       ),
     );

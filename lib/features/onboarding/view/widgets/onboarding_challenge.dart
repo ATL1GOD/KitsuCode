@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Importa tus modelos y vistas de juegos
 import 'package:kitsucode/features/puzzle_game/view/puzzle_view.dart';
 import 'package:kitsucode/features/puzzle_game/provider/puzzle_provider.dart';
 import 'package:kitsucode/features/puzzle_game/model/puzzle_challenge_model.dart';
@@ -27,15 +26,14 @@ class OnboardingGameRenderer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     switch (tipoReto) {
-      case 1: // PUZZLE
-        // Nota: Mantenemos el postFrameCallback para cargar datos iniciales si es necesario
+      case 1:
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final model = PuzzleChallengeModel.fromJson(content);
           ref.read(puzzleProvider.notifier).loadChallengeFromModel(model);
         });
         return PuzzleView(onOnboardingFinished: onFinished);
 
-      case 2: // RELACIÓN
+      case 2:
         final model = ColumnsChallenge.fromJson(content);
         return ColumnsChallengeView(
           challenge: model,
@@ -44,7 +42,7 @@ class OnboardingGameRenderer extends ConsumerWidget {
           onOnboardingFinished: onFinished,
         );
 
-      case 3: // CÓDIGO
+      case 3:
         final model = CodigoChallenge.fromJson(content);
         return CodigoChallengeView(
           challenge: model,
@@ -53,7 +51,7 @@ class OnboardingGameRenderer extends ConsumerWidget {
           onOnboardingFinished: onFinished,
         );
 
-      case 4: // QUIZ
+      case 4:
         final model = QuizData.fromJson(content);
         return QuizPage(
           mydata: model,

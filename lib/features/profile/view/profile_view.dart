@@ -1,5 +1,3 @@
-// lib/features/profile/view/profile_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,10 +12,8 @@ import 'package:kitsucode/features/profile/view/widgets/profile_progress_section
 import 'package:animate_do/animate_do.dart';
 import 'package:lottie/lottie.dart';
 
-// 🔥 1. IMPORTAR VISIBILITY DETECTOR (ya lo tenías)
 import 'package:visibility_detector/visibility_detector.dart';
 
-// --- 🔥 2. CONVERTIR A ConsumerStatefulWidget (ya lo tenías) ---
 class ProfileView extends ConsumerStatefulWidget {
   final String? userId;
   const ProfileView({super.key, this.userId});
@@ -33,51 +29,41 @@ class ProfileView extends ConsumerStatefulWidget {
   ConsumerState<ProfileView> createState() => _ProfileViewState();
 }
 
-// --- 🔥 3. AÑADIR WidgetsBindingObserver ---
 class _ProfileViewState extends ConsumerState<ProfileView>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  // <-- AÑADIDO
-
   late final AnimationController _lottieController;
 
-  // --- 🔥 4. BANDERAS DE ESTADO ---
-  bool _isTabVisible = true; // ¿Está esta pestaña visible?
-  bool _isAppActive = true; // ¿Está la app en primer plano?
-  bool _isLottieLoaded = false; // ¿Ya cargó el Lottie?
+  bool _isTabVisible = true;
+  bool _isAppActive = true;
+  bool _isLottieLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    // --- 🔥 5. INICIALIZAR SIN DURACIÓN ---
+
     _lottieController = AnimationController(vsync: this);
 
-    // --- 🔥 6. REGISTRAR EL OBSERVADOR DE CICLO DE VIDA ---
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     _lottieController.dispose();
-    WidgetsBinding.instance.removeObserver(this); // <-- Limpiar observador
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // --- 🔥 8. MÉTODO QUE REACCIONA A LA BARRA DE NOTIFICACIONES ---
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // 'resumed' = app activa
-    // 'inactive' = app inactiva (ej. barra de notificaciones abajo)
-    // 'paused' = app en segundo plano
+
     setState(() {
       _isAppActive = state == AppLifecycleState.resumed;
       _updateAnimationState();
     });
   }
 
-  // --- 🔥 9. LÓGICA CENTRAL PARA CONTROLAR LA ANIMACIÓN ---
   void _updateAnimationState() {
-    // Solo reproducir si la app está activa, la pestaña está visible Y el Lottie ya cargó
     if (_isAppActive && _isTabVisible && _isLottieLoaded) {
       _lottieController.repeat();
     } else {
@@ -87,7 +73,6 @@ class _ProfileViewState extends ConsumerState<ProfileView>
 
   @override
   Widget build(BuildContext context) {
-    // ... (Tu lógica de providers y variables se queda igual) ...
     final currentAuthUserId = ref
         .watch(authStateProvider)
         .value
@@ -108,7 +93,6 @@ class _ProfileViewState extends ConsumerState<ProfileView>
     final colors = Theme.of(context).colorScheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // --- 🔥 10. VISIBILITYDETECTOR AHORA LLAMA A _updateAnimationState ---
     return VisibilityDetector(
       key: Key('profile-view-detector-$targetUserId'),
       onVisibilityChanged: (visibilityInfo) {
@@ -123,7 +107,6 @@ class _ProfileViewState extends ConsumerState<ProfileView>
             _ProfileBackground(userId: targetUserId, colors: colors),
             Column(
               children: [
-                // ... (Tu SafeArea y ProfileHeader no cambian) ...
                 SafeArea(
                   bottom: false,
                   child: Column(
@@ -152,7 +135,6 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                 Expanded(
                   child: Stack(
                     children: [
-                      // 🔥 RepaintBoundary para aislar la animación de partículas
                       Positioned.fill(
                         child: RepaintBoundary(
                           child: ColorFiltered(
@@ -165,11 +147,12 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                             child: Lottie.asset(
                               'assets/animations/particles.json',
                               fit: BoxFit.cover,
-                              // 🔥 Reducir framerate para mejor rendimiento
+
                               frameRate: FrameRate(30),
                               controller: _lottieController,
                               onLoaded: (composition) {
-                                _lottieController.duration = composition.duration;
+                                _lottieController.duration =
+                                    composition.duration;
                                 _isLottieLoaded = true;
                                 _updateAnimationState();
                               },
@@ -177,7 +160,7 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                           ),
                         ),
                       ),
-                      // ... (Tu ListView y su contenido no cambian) ...
+
                       ListView(
                         padding: EdgeInsets.only(
                           top: isCurrentUserProfile ? 20.0 : 0,
@@ -209,7 +192,7 @@ class _ProfileViewState extends ConsumerState<ProfileView>
                 ),
               ],
             ),
-            // ... (Tu Positioned y _TopBar no cambian) ...
+
             Positioned(
               top: 0,
               left: 0,
@@ -229,8 +212,6 @@ class _ProfileViewState extends ConsumerState<ProfileView>
   }
 }
 
-// --- (Los widgets _ProfileBackground y _TopBar no cambian) ---
-// ... (código de _ProfileBackground) ...
 class _ProfileBackground extends ConsumerWidget {
   final String userId;
   final ColorScheme colors;
@@ -245,10 +226,8 @@ class _ProfileBackground extends ConsumerWidget {
       ).select((data) => data.value?.idAvatarSeleccionado),
     );
 
-    // 👇 OBTENEMOS LA LISTA REAL DE AVATARES
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
 
-    // 👇 COLOR DINÁMICO REAL (SIN FALLBACK ANTIGUO)
     final dynamicColor = (avatarId != null && avatarsList.isNotEmpty)
         ? getAvatarColorById(avatarId, avatarsList)
         : colors.surfaceContainerLowest;
@@ -269,7 +248,6 @@ class _ProfileBackground extends ConsumerWidget {
   }
 }
 
-// ... (código de _TopBar) ...
 class _TopBar extends StatelessWidget {
   final bool isCurrentUserProfile;
   final ColorScheme colors;
@@ -281,7 +259,7 @@ class _TopBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end, 
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
           if (isCurrentUserProfile)
             InkWell(

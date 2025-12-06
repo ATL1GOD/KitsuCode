@@ -1,5 +1,3 @@
-// lib/features/settings/view/widgets/notification_category_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,17 +10,20 @@ import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
 import 'package:kitsucode/shared/widgets/animated_settings_background.dart';
 import 'package:kitsucode/features/notifications/model/notification_settings_model.dart';
 import 'package:animate_do/animate_do.dart';
-// 🔥 1. IMPORTAR
+
 import 'package:visibility_detector/visibility_detector.dart';
-// ✅ NUEVO: fallback anterior para color dinámico si aún no carga la lista de avatares
+
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 class NotificationCategoryView extends ConsumerStatefulWidget {
   final String title;
   final List<NotificationSetting> settings;
 
-  const NotificationCategoryView(
-      {super.key, required this.title, required this.settings});
+  const NotificationCategoryView({
+    super.key,
+    required this.title,
+    required this.settings,
+  });
 
   @override
   ConsumerState<NotificationCategoryView> createState() =>
@@ -30,7 +31,8 @@ class NotificationCategoryView extends ConsumerStatefulWidget {
 }
 
 class _NotificationCategoryViewState
-    extends ConsumerState<NotificationCategoryView> with WidgetsBindingObserver {
+    extends ConsumerState<NotificationCategoryView>
+    with WidgetsBindingObserver {
   bool _isPageVisible = true;
   bool _isAppActive = true;
 
@@ -55,7 +57,6 @@ class _NotificationCategoryViewState
     });
   }
 
-  // ✅ ACTUALIZADO: usa color del avatar desde BD si hay lista; si no, fallback al método previo
   Color _getDynamicColor(UserProfileModel profile, ColorScheme colors) {
     final avatarsList = ref.read(currentUserAvatarsProvider).value ?? [];
     return avatarsList.isNotEmpty
@@ -68,8 +69,12 @@ class _NotificationCategoryViewState
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final currentAuthUserId =
-        ref.watch(authStateProvider).value!.session!.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value!
+        .session!
+        .user
+        .id;
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
@@ -88,8 +93,10 @@ class _NotificationCategoryViewState
           }
           if (asyncLiveSettings.hasError) {
             return Center(
-                child: Text(
-                    'Error al cargar configuración de notificaciones: ${asyncLiveSettings.error}'));
+              child: Text(
+                'Error al cargar configuración de notificaciones: ${asyncLiveSettings.error}',
+              ),
+            );
           }
 
           final liveSettingsList = asyncLiveSettings.value ?? [];
@@ -117,7 +124,6 @@ class _NotificationCategoryViewState
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          // puedes cambiar a withAlpha((255*0.4).round()) si quieres empatar exacto
                           dynamicColor.withAlpha(100),
                           colors.surfaceContainerLowest,
                         ],
@@ -131,7 +137,9 @@ class _NotificationCategoryViewState
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
@@ -156,8 +164,9 @@ class _NotificationCategoryViewState
                               child: Text(
                                 widget.title,
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 48),
@@ -168,7 +177,9 @@ class _NotificationCategoryViewState
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 12.0),
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
                           children: [
                             ...List.generate(widget.settings.length, (index) {
                               final setting = widget.settings[index];
@@ -178,23 +189,26 @@ class _NotificationCategoryViewState
                               );
 
                               return FadeInDown(
-                                delay:
-                                    Duration(milliseconds: 100 + (index * 100)),
+                                delay: Duration(
+                                  milliseconds: 100 + (index * 100),
+                                ),
                                 child: SettingsSwitchTile(
                                   title: liveSetting.nombreTipo,
-                                  subtitle: liveSetting.descripcion ??
+                                  subtitle:
+                                      liveSetting.descripcion ??
                                       'Activar o desactivar esta alerta',
-                                  icon:
-                                      Icons.notifications_active_outlined,
+                                  icon: Icons.notifications_active_outlined,
                                   dynamicColor: dynamicColor,
                                   initialValue: liveSetting.habilitado,
                                   onChanged: (newValue) {
                                     ref
-                                        .read(notificationSettingsProvider
-                                            .notifier)
+                                        .read(
+                                          notificationSettingsProvider.notifier,
+                                        )
                                         .updateEnabled(
-                                            liveSetting.preferenciaId,
-                                            newValue);
+                                          liveSetting.preferenciaId,
+                                          newValue,
+                                        );
                                   },
                                 ),
                               );

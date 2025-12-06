@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 class AuthBackground extends StatefulWidget {
   final Widget child;
-  final bool isScrollable; // <-- AÑADE ESTO
-  final bool showFox; // <-- AÑADE ESTO
+  final bool isScrollable;
+  final bool showFox;
 
   const AuthBackground({
     super.key,
@@ -67,13 +67,12 @@ class _AuthBackgroundState extends State<AuthBackground>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Fondo con gradiente mejorado
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   colorScheme.primary.withAlpha(204),
-                  const Color(0xFF0E0028), // Un morado oscuro/azulado
+                  const Color(0xFF0E0028),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -81,7 +80,7 @@ class _AuthBackgroundState extends State<AuthBackground>
               ),
             ),
           ),
-          // Formas animadas
+
           ...List.generate(_shapeCount, (index) {
             return SlideTransition(
               position: _animations[index],
@@ -100,11 +99,9 @@ class _AuthBackgroundState extends State<AuthBackground>
               ),
             );
           }),
-          // Contenido principal centrado
+
           Center(
-            // --- ### INICIO DE LA MODIFICACIÓN ### ---
             child: widget.isScrollable
-                // 1. VERSIÓN CON SCROLL (Para Login/Registro)
                 ? SingleChildScrollView(
                     padding: const EdgeInsets.all(24.0),
                     child: ConstrainedBox(
@@ -114,7 +111,6 @@ class _AuthBackgroundState extends State<AuthBackground>
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (!isSmallScreen && widget.showFox) ...[
-                            // <-- Check
                             Image.asset(
                               'assets/images/auth/fox_login.webp',
                               height: 280,
@@ -127,15 +123,13 @@ class _AuthBackgroundState extends State<AuthBackground>
                       ),
                     ),
                   )
-                // 2. VERSIÓN SIN SCROLL (Para Política de Privacidad)
                 : Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 420),
-                      child: widget.child, // <-- Solo renderiza el hijo
+                      child: widget.child,
                     ),
                   ),
-            // --- ### FIN DE LA MODIFICACIÓN ### ---
           ),
         ],
       ),

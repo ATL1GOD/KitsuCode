@@ -1,5 +1,4 @@
-// lib/features/quiz_game/view/quiz_loader.dart
-import 'dart:math'; // <--- 1. IMPORTANTE: Agregar esto
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/quiz_game/view/widgets/quiz_view.dart';
@@ -21,25 +20,20 @@ class QuizData {
   }) : totalQuestions = questions.length;
 
   factory QuizData.fromJson(Map<String, dynamic> challengeContent) {
-    // Obtenemos la lista original completa
     List<dynamic> preguntasList = challengeContent['preguntas'] ?? [];
 
-    // --- MODIFICACIÓN: SELECCIÓN ALEATORIA DE UNA SOLA PREGUNTA ---
     if (preguntasList.isNotEmpty) {
       final random = Random();
-      // Elegimos un índice al azar entre 0 y el tamaño de la lista
+
       final randomIndex = random.nextInt(preguntasList.length);
 
-      // Sobrescribimos la lista para que solo contenga ESE elemento seleccionado
       preguntasList = [preguntasList[randomIndex]];
     }
-    // --------------------------------------------------------------
 
     final Map<String, String> mapaPreguntas = {};
     final Map<String, Map<String, dynamic>> mapaOpciones = {};
     final Map<String, String> mapaRespuestas = {};
 
-    // El ciclo ahora solo correrá 1 vez porque la lista solo tiene 1 elemento
     for (var pregunta in preguntasList) {
       try {
         final key = pregunta['key'] as String;

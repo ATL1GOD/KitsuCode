@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-// Función para oscurecer el color (usada para el relieve)
 Color _darkenColor(Color color, double factor) {
   return HSLColor.fromColor(color)
       .withLightness(
@@ -18,10 +17,8 @@ class ReliefSectionButton extends StatefulWidget {
   final double size;
   final double reliefThickness;
 
-  // --- NUEVAS PROPIEDADES ---
   final bool isLocked;
   final Color lockColor;
-  // --- FIN NUEVAS PROPIEDADES ---
 
   const ReliefSectionButton({
     super.key,
@@ -44,18 +41,14 @@ class _ReliefSectionButtonState extends State<ReliefSectionButton> {
 
   void _onTapDown(TapDownDetails details) {
     if (!widget.isLocked) {
-      // Solo si no está bloqueado
       setState(() => _isPressed = true);
     }
   }
 
   void _onTapUp(TapUpDetails details) {
-    // Llamamos a onPressed siempre, para que el widget padre (map_home)
-    // pueda manejar el SnackBar de "Bloqueado" si es necesario.
     widget.onPressed();
 
     if (!widget.isLocked) {
-      // Solo si no está bloqueado
       Future.delayed(const Duration(milliseconds: 60), () {
         if (mounted) setState(() => _isPressed = false);
       });
@@ -68,14 +61,12 @@ class _ReliefSectionButtonState extends State<ReliefSectionButton> {
 
   @override
   Widget build(BuildContext context) {
-    // --- Determinar colores dinámicos ---
     final Color currentBaseColor = widget.isLocked
         ? widget.lockColor
         : widget.baseColor;
     final Color currentReliefColor = widget.isLocked
         ? _darkenColor(widget.lockColor, 0.2)
         : widget.reliefColor;
-    // --- Fin determinación de colores ---
 
     return GestureDetector(
       onTapDown: _onTapDown,
@@ -93,7 +84,7 @@ class _ReliefSectionButtonState extends State<ReliefSectionButton> {
                 width: widget.size,
                 height: widget.size,
                 decoration: BoxDecoration(
-                  color: currentReliefColor, // Usar color dinámico
+                  color: currentReliefColor,
                   borderRadius: BorderRadius.circular(36.0),
                 ),
               ),
@@ -109,7 +100,7 @@ class _ReliefSectionButtonState extends State<ReliefSectionButton> {
                 0,
               ),
               decoration: BoxDecoration(
-                color: currentBaseColor, // Usar color dinámico
+                color: currentBaseColor,
                 borderRadius: BorderRadius.circular(36.0),
                 boxShadow: [
                   BoxShadow(
@@ -120,7 +111,6 @@ class _ReliefSectionButtonState extends State<ReliefSectionButton> {
                 ],
               ),
               child: Center(
-                // --- Mostrar candado si está bloqueado ---
                 child: widget.isLocked
                     ? const Icon(Icons.lock, color: Colors.white70, size: 24.0)
                     : SvgPicture.asset(

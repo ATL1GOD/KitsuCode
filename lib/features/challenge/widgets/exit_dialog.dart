@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 👈 IMPORTANTE: Haptics
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/challenge/provider/challenge_music_provider.dart';
-import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 IMPORTANTE: Audio
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
-/// Muestra un diálogo de confirmación genérico para salir de un reto.
 void showExitDialog(BuildContext context, WidgetRef ref) {
-  // 🔥 1. SONIDO Y VIBRACIÓN AL ABRIR EL DIÁLOGO
   HapticFeedback.lightImpact();
   ref.read(audioControllerProvider).playClick();
 
@@ -64,7 +62,6 @@ void showExitDialog(BuildContext context, WidgetRef ref) {
               textStyle: buttonTextStyle,
             ),
             onPressed: () {
-              // 🔥 2. SONIDO AL CANCELAR
               HapticFeedback.lightImpact();
               ref.read(audioControllerProvider).playClick();
               Navigator.pop(context);
@@ -73,7 +70,7 @@ void showExitDialog(BuildContext context, WidgetRef ref) {
           ),
 
           const SizedBox(width: 80),
-          
+
           TextButton(
             style: TextButton.styleFrom(
               backgroundColor: colorScheme.error,
@@ -85,16 +82,13 @@ void showExitDialog(BuildContext context, WidgetRef ref) {
               textStyle: buttonTextStyle,
             ),
             onPressed: () {
-              // 🔥 3. SONIDO AL CONFIRMAR SALIDA
-              // Usamos mediumImpact para darle "peso" a la decisión de salir
               HapticFeedback.mediumImpact();
               ref.read(audioControllerProvider).playClick();
 
-              // REANUDAR MÚSICA ANTES DE SALIR
               resumeMusicAfterChallenge(ref);
-              
-              Navigator.pop(context); // Cierra el diálogo
-              context.pop(); // Cierra la pantalla actual
+
+              Navigator.pop(context);
+              context.pop();
             },
             child: const Text('SALIR'),
           ),

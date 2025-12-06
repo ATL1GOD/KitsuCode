@@ -1,7 +1,7 @@
 class UserStatsModel {
   final int retosCompletados;
   final double porcentajeAciertos;
-  final double porcentajeFallos; 
+  final double porcentajeFallos;
   final int rachaDias;
 
   UserStatsModel({
@@ -11,7 +11,6 @@ class UserStatsModel {
     required this.rachaDias,
   });
 
-  // El valor por defecto si no se encuentran estadísticas para el usuario
   factory UserStatsModel.empty() {
     return UserStatsModel(
       retosCompletados: 0,
@@ -24,8 +23,9 @@ class UserStatsModel {
   factory UserStatsModel.fromJson(Map<String, dynamic> json) {
     return UserStatsModel(
       retosCompletados: json['retos_completados'] ?? 0,
-      porcentajeAciertos: (json['porcentaje_aciertos'] as num?)?.toDouble() ?? 0.0,
-      // Mapeamos la nueva columna de la base de datos
+      porcentajeAciertos:
+          (json['porcentaje_aciertos'] as num?)?.toDouble() ?? 0.0,
+
       porcentajeFallos: (json['porcentaje_fallos'] as num?)?.toDouble() ?? 0.0,
       rachaDias: json['racha_dias'] ?? 0,
     );

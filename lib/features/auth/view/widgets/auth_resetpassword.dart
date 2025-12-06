@@ -1,4 +1,4 @@
-import 'dart:ui'; // Para BackdropFilter
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,7 +38,6 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
     try {
       await resetNotifier.sendResetEmail(_emailController.text.trim());
 
-      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
         showSuccessSnackbar(
           context,
@@ -48,7 +47,6 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
         context.go('/auth');
       }
     } catch (e) {
-      // --- CAMBIO AQUÍ: Usamos tu Awesome Snackbar ---
       if (mounted) {
         showErrorSnackbar(context, 'Error', e.toString());
       }
@@ -69,7 +67,6 @@ class _ForgotPasswordCardState extends ConsumerState<ForgotPasswordCard> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        // 🔥 Reducido de 10 a 5 para mejor rendimiento en dispositivos de gama media-baja
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
           decoration: BoxDecoration(

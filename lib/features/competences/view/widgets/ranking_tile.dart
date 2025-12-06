@@ -1,19 +1,17 @@
-// lib/features/competences/view/widgets/ranking_tile.dart
-
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/competences/model/ranking_model.dart';
 import 'package:kitsucode/features/competences/view/widgets/user_profile_modal.dart';
-import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // ✅ AGREGADO
-import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart'; // ✅ OptimizedImage
-import 'package:kitsucode/features/profile/model/avatar_model.dart'; // <--- AÑADE ESTA IMPORTACIÓN
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
+import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
+import 'package:kitsucode/features/profile/model/avatar_model.dart';
 
 class RankingTile extends StatelessWidget {
   final RankingModel user;
   final bool isCurrentUser;
   final ColorScheme colors;
   final List<AvatarModel>? avatarsList;
-  final VoidCallback? onModalOpen; // 🔥 Callback cuando se abre modal
-  final VoidCallback? onModalClose; // 🔥 Callback cuando se cierra modal
+  final VoidCallback? onModalOpen;
+  final VoidCallback? onModalClose;
 
   const RankingTile({
     super.key,
@@ -44,14 +42,11 @@ class RankingTile extends StatelessWidget {
         rankColor = Colors.brown.shade400;
     }
 
-    // ✅ Path del avatar (desde tu helper)
-    // AHORA USA LA LISTA QUE LE PASAMOS
     final avatarPath = getAvatarAssetPathById(
       user.idAvatarSeleccionado,
-      avatarsList, // <--- USA LA LISTA AQUÍ
+      avatarsList,
     );
 
-    // 🎯 OPTIMIZACIÓN: RepaintBoundary para evitar repaints innecesarios
     return RepaintBoundary(
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -70,13 +65,13 @@ class RankingTile extends StatelessWidget {
         child: InkWell(
           onTap: () async {
             if (isCurrentUser) return;
-            onModalOpen?.call(); // 🔥 Pausar animaciones
+            onModalOpen?.call();
             await showDialog(
               context: context,
               builder: (ctx) =>
                   UserProfileModal(userId: user.userId, rank: user.rank),
             );
-            onModalClose?.call(); // 🔥 Reanudar animaciones
+            onModalClose?.call();
           },
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
@@ -99,7 +94,6 @@ class RankingTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
 
-                // ✅ Avatar con OptimizedImage (enmascarado circular)
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: colors.surfaceContainerHighest,
@@ -111,8 +105,8 @@ class RankingTile extends StatelessWidget {
                           ? const SizedBox.shrink()
                           : OptimizedImage(
                               imagePath: avatarPath,
-                              width: 44, // 🔸 requeridos por tu widget
-                              height: 44, // 🔸
+                              width: 44,
+                              height: 44,
                               fit: BoxFit.cover,
                               enableCache: true,
                             ),

@@ -258,7 +258,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     final authState = ref.watch(authStateProvider);
 
-    // 1. CARGA INICIAL AUTH
     if (authState.isLoading) {
       return Scaffold(
         backgroundColor: colors.surfaceContainerLowest,
@@ -268,8 +267,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
 
     final currentAuthUserId = authState.value?.session?.user.id;
 
-    // 🔥 FIX 1: Si no hay usuario (porque se acaba de borrar/salir),
-    // mostramos el Shimmer en vez de texto feo o error.
     if (currentAuthUserId == null) {
       return Scaffold(
         backgroundColor: colors.surfaceContainerLowest,
@@ -284,11 +281,9 @@ class _SettingsViewState extends ConsumerState<SettingsView>
       backgroundColor: colors.surfaceContainerLowest,
       body: profileState.when(
         loading: () => _SettingsLoadingShimmer(colors: colors),
-        
-        // 🔥 FIX 2: Si da error (porque el usuario ya no existe en la BD),
-        // mostramos el Shimmer. Esto oculta el mensaje "Error al cargar perfil".
+
         error: (e, s) => _SettingsLoadingShimmer(colors: colors),
-        
+
         data: (profile) {
           final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
           final dynamicColor = avatarsList.isNotEmpty
@@ -380,7 +375,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                             vertical: 12.0,
                           ),
                           children: [
-                            // 1. Sección: Preferencias
                             FadeInDown(
                               delay: const Duration(milliseconds: 100),
                               child: SectionHeader(
@@ -496,7 +490,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               },
                             ),
 
-                            // 2. Sección: SEGURIDAD
                             FadeInDown(
                               delay: const Duration(milliseconds: 500),
                               child: Column(
@@ -523,7 +516,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               ),
                             ),
 
-                            // 3. Sección: Notificaciones
                             FadeInDown(
                               delay: const Duration(milliseconds: 800),
                               child: Column(
@@ -551,7 +543,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               ),
                             ),
 
-                            // 4. Sección: Soporte
                             FadeInDown(
                               delay: const Duration(milliseconds: 1000),
                               child: Column(
@@ -579,7 +570,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                               ),
                             ),
 
-                            // 5. Sección: Zona de Riesgo
                             FadeInDown(
                               delay: const Duration(milliseconds: 1200),
                               child: Column(
@@ -640,7 +630,6 @@ class _SettingsViewState extends ConsumerState<SettingsView>
   }
 }
 
-// --- SHIMMER DE CARGA (Sin cambios) ---
 class _SettingsLoadingShimmer extends StatelessWidget {
   final ColorScheme colors;
   const _SettingsLoadingShimmer({required this.colors});

@@ -1,12 +1,10 @@
-// lib/features/challenge/view/language_completion_celebration.dart
-
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:kitsucode/core/utils/app_themes.dart';
 
 class LanguageCompletionCelebration extends StatefulWidget {
-  final String languageName; // "Python", "Java", "C"
+  final String languageName;
   final VoidCallback onContinue;
 
   const LanguageCompletionCelebration({
@@ -32,10 +30,8 @@ class _LanguageCompletionCelebrationState
       duration: const Duration(seconds: 3),
     );
 
-    // Iniciar confetti inmediatamente
     _confettiController.play();
 
-    // Mostrar contenido después de un pequeño delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() => _showContent = true);
@@ -49,7 +45,6 @@ class _LanguageCompletionCelebrationState
     super.dispose();
   }
 
-  // función helper para obtener el Tema del lenguaje
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
@@ -80,9 +75,6 @@ class _LanguageCompletionCelebrationState
 
   @override
   Widget build(BuildContext context) {
-    // Tema y estilos
-
-    // Obtenemos el tema y colores del lenguaje actual
     final challengeTheme = _getLanguageTheme(
       widget.languageName,
       Theme.of(context).brightness,
@@ -94,7 +86,6 @@ class _LanguageCompletionCelebrationState
       backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
-          // Fondo con gradiente
           Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
@@ -108,7 +99,6 @@ class _LanguageCompletionCelebrationState
             ),
           ),
 
-          // Confetti
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -130,7 +120,6 @@ class _LanguageCompletionCelebrationState
             ),
           ),
 
-          // Contenido principal
           if (_showContent)
             SafeArea(
               child: Padding(
@@ -140,7 +129,6 @@ class _LanguageCompletionCelebrationState
                   children: [
                     const Spacer(),
 
-                    // Trofeo/Medalla animada
                     Container(
                           width: 200,
                           height: 200,
@@ -178,7 +166,6 @@ class _LanguageCompletionCelebrationState
 
                     const SizedBox(height: 40),
 
-                    // Título principal
                     Text(
                           '¡LENGUAJE DOMINADO!',
                           style: textTheme.displaySmall?.copyWith(
@@ -202,7 +189,6 @@ class _LanguageCompletionCelebrationState
 
                     const SizedBox(height: 16),
 
-                    // Nombre del lenguaje
                     Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -242,7 +228,6 @@ class _LanguageCompletionCelebrationState
 
                     const SizedBox(height: 24),
 
-                    // Mensaje motivador
                     Text(
                           '¡Eres todo un programador!\n¡Sigue así! 🦊',
                           style: textTheme.bodyLarge?.copyWith(
@@ -257,7 +242,6 @@ class _LanguageCompletionCelebrationState
 
                     const Spacer(),
 
-                    // Botón de continuar
                     SizedBox(
                           width: double.infinity,
                           height: 56,

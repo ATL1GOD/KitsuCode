@@ -14,17 +14,16 @@ class PuzzleInstructionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
-        color: colorScheme.surface, 
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        // --- BRILLO / GLOW TEMÁTICO 
+
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withAlpha(60), // Sombra suave del color del lenguaje
+            color: colorScheme.primary.withAlpha(60),
             blurRadius: 12,
             spreadRadius: 2,
           ),
         ],
-        // --- FIN DEL BRILLO / GLOW TEMÁTICO
       ),
       child: Text(
         text,

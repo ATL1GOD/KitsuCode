@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// --- AÑADIDO: Import para manejar las notificaciones ---
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthRepository {
@@ -11,12 +11,10 @@ class AuthRepository {
   Stream<AuthState> get authStateChanges =>
       _supabaseClient.auth.onAuthStateChange;
 
-  // --- MEJORA: Validación de email antes del login ---
   Future<void> signInWithPassword({
     required String email,
     required String password,
   }) async {
-    // Validación básica del email
     if (!_isValidEmail(email)) {
       throw AuthException('Formato de email inválido');
     }
@@ -31,11 +29,10 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    // Validación básica del email
     if (!_isValidEmail(email)) {
       throw AuthException('Formato de email inválido');
     }
-    // Definimos la URL de redirección igual que en el reset password
+
     final String redirectUrl = kIsWeb
         ? 'http://localhost:3000/auth'
         : 'kitsucode://auth-done';
@@ -50,21 +47,16 @@ class AuthRepository {
   Future<void> signInWithGoogle() async {
     await _supabaseClient.auth.signInWithOAuth(
       OAuthProvider.google,
-      // --- MEJORA: Parámetros adicionales para mejor UX ---
+
       redirectTo: 'kitsucode://auth-done',
     );
   }
 
-  // --- CORREGIDO: Eliminada la función duplicada ---
   Future<void> resetPasswordForEmail(String email) async {
-    // Validación básica
     if (!_isValidEmail(email)) {
       throw AuthException('Formato de email inválido');
     }
 
-    // Define a dónde debe redirigir Supabase al usuario DESPUÉS
-    // de que haya creado su nueva contraseña en el enlace del correo.
-    // Lo mandamos de vuelta a la pantalla de login.
     final String redirectUrl = kIsWeb
         ? 'http://localhost:3000/auth' // Para Web
         : 'kitsucode://auth-done'; // Para Móvil
@@ -75,16 +67,11 @@ class AuthRepository {
     );
   }
 
-  // --- ¡AQUÍ ESTÁ LA CORRECCIÓN PARA LAS NOTIFICACIONES! ---
   Future<void> signOut() async {
     try {
-      // --- LÓGICA CORREGIDA BASADA EN TU ESQUEMA ---
-      // 1. Obtenemos el ID del usuario que va a cerrar sesión
       final userId = _supabaseClient.auth.currentUser?.id;
 
       if (userId != null) {
-        // 2. Actualizamos la tabla 'usuarios' para borrar su fcm_token
-        //    Esto evita que reciba notificaciones después de cerrar sesión.
         await _supabaseClient
             .from('usuarios')
             .update({'fcm_token': null})
@@ -95,19 +82,13 @@ class AuthRepository {
         }
       }
 
-      // Opcional: invalidar el token de Firebase localmente
-      // Esto fuerza a que se genere uno nuevo la próxima vez
-      // y es una buena práctica de limpieza.
       await FirebaseMessaging.instance.deleteToken();
     } catch (e) {
-      // No debemos detener el signOut si la limpieza del token falla,
-      // pero sí debemos registrarlo.
       if (kDebugMode) {
         print('Error al limpiar suscripción de notificaciones: $e');
       }
     }
 
-    // Finalmente, cerramos la sesión de Supabase
     await _supabaseClient.auth.signOut();
   }
 
@@ -149,7 +130,6 @@ class AuthRepository {
         throw AuthException('Error al eliminar la cuenta: $errorMsg');
       }
 
-      // --- IMPORTANTE: Llamamos al nuevo signOut que limpia notificaciones ---
       await signOut();
     } on Exception catch (e) {
       if (kDebugMode) {
@@ -166,18 +146,14 @@ class AuthRepository {
     }
   }
 
-  // Validar si el usuario existe antes del registro
   Future<bool> userExists(String email) async {
     try {
-      // Llamamos a la función SQL que creamos en el Paso 1
       final bool exists = await _supabaseClient.rpc(
         'check_if_user_exists',
         params: {'email_to_check': email.trim()},
       );
       return exists;
     } catch (e) {
-      // Si hay error de red u otro, imprimimos en debug y retornamos false
-      // para no bloquear el registro (que Supabase maneje el error después si es necesario)
       if (kDebugMode) {
         print('Error verificando existencia de usuario: $e');
       }
@@ -185,7 +161,6 @@ class AuthRepository {
     }
   }
 
-  // --- NUEVO: Método de utilidad para validar email ---
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
@@ -193,9 +168,7 @@ class AuthRepository {
     return emailRegex.hasMatch(email.trim());
   }
 
-  // --- NUEVO: Verificar si el usuario está autenticado ---
   bool get isAuthenticated => _supabaseClient.auth.currentUser != null;
 
-  // --- NUEVO: Obtener el usuario actual ---
   User? get currentUser => _supabaseClient.auth.currentUser;
 }

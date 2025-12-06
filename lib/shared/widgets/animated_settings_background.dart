@@ -10,24 +10,21 @@ class AnimatedSettingsBackground extends ConsumerWidget {
   final UserProfileModel profile;
   final ColorScheme colors;
   final bool isKeyboardVisible;
-  // 🔥 NUEVO: Permite forzar un ID de avatar (para la vista de edición)
-  final int? avatarIdOverride; 
+
+  final int? avatarIdOverride;
 
   const AnimatedSettingsBackground({
     super.key,
     required this.profile,
     required this.colors,
     required this.isKeyboardVisible,
-    this.avatarIdOverride, // 🔥 Recibimos el parámetro opcional
+    this.avatarIdOverride,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
-    
-    // 🔥 LÓGICA CORREGIDA: 
-    // Si nos pasan un override (vista edición), usamos ese. 
-    // Si no (vista settings), usamos el del perfil guardado.
+
     final int avatarId = avatarIdOverride ?? profile.idAvatarSeleccionado;
 
     final dynamicColor = avatarsList.isNotEmpty
@@ -37,9 +34,8 @@ class AnimatedSettingsBackground extends ConsumerWidget {
     return RepaintBoundary(
       child: Stack(
         children: [
-          // --- FONDO DEGRADADO ---
           AnimatedContainer(
-            duration: const Duration(milliseconds: 500), // Suavizamos la transición de color
+            duration: const Duration(milliseconds: 500),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -53,7 +49,6 @@ class AnimatedSettingsBackground extends ConsumerWidget {
             ),
           ),
 
-          // --- ANIMACIÓN LOTTIE ---
           Visibility(
             visible: !isKeyboardVisible,
             maintainState: false,

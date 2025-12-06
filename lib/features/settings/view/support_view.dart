@@ -1,5 +1,3 @@
-// lib/features/settings/view/support_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +9,7 @@ import 'package:kitsucode/shared/widgets/static_settings_background.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:kitsucode/features/settings/repository/support_repository.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
-import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // ✅ fallback de color
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
 
 enum ReportType { bug, suggestion, other }
 
@@ -34,7 +32,6 @@ class _SupportViewState extends ConsumerState<SupportView> {
     super.dispose();
   }
 
-  // ✅ color dinámico desde BD (lista de avatares); si aún no carga, usa fallback
   Color _computeDynamicColor(UserProfileModel profile, ColorScheme colors) {
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
     if (avatarsList.isNotEmpty) {
@@ -45,22 +42,36 @@ class _SupportViewState extends ConsumerState<SupportView> {
 
   void _submitReport(String userId, String type) async {
     if (!_formKey.currentState!.validate()) {
-      showWarningSnackbar(context, 'Campos incompletos', 'Por favor, describe tu reporte.');
+      showWarningSnackbar(
+        context,
+        'Campos incompletos',
+        'Por favor, describe tu reporte.',
+      );
       return;
     }
 
     setState(() => _isLoading = true);
-    showHelpSnackbar(context, 'Enviando...', 'Estamos procesando tu reporte. No cierres la app.');
+    showHelpSnackbar(
+      context,
+      'Enviando...',
+      'Estamos procesando tu reporte. No cierres la app.',
+    );
 
     try {
-      await ref.read(supportRepositoryProvider).submitReport(
+      await ref
+          .read(supportRepositoryProvider)
+          .submitReport(
             userId: userId,
             type: type,
             description: _descriptionController.text.trim(),
           );
 
       if (mounted) {
-        showSuccessSnackbar(context, '¡Enviado!', 'Gracias por tu feedback. Lo revisaremos pronto.');
+        showSuccessSnackbar(
+          context,
+          '¡Enviado!',
+          'Gracias por tu feedback. Lo revisaremos pronto.',
+        );
         context.pop();
         _descriptionController.clear();
         setState(() {
@@ -84,10 +95,17 @@ class _SupportViewState extends ConsumerState<SupportView> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final currentAuthUserId = ref.watch(authStateProvider).value?.session?.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value
+        ?.session
+        ?.user
+        .id;
 
     if (currentAuthUserId == null) {
-      return const Scaffold(body: Center(child: Text("Error de autenticación")));
+      return const Scaffold(
+        body: Center(child: Text("Error de autenticación")),
+      );
     }
 
     final profileState = ref.watch(userProfileByIdProvider(currentAuthUserId));
@@ -98,19 +116,20 @@ class _SupportViewState extends ConsumerState<SupportView> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error: $e')),
         data: (profile) {
-          final dynamicColor = _computeDynamicColor(profile, colors); // ✅ usar color real
+          final dynamicColor = _computeDynamicColor(profile, colors);
 
           return Stack(
             children: [
-              // Fondo estático compartido (sin cambios)
               StaticSettingsBackground(profile: profile, colors: colors),
 
               SafeArea(
                 child: Column(
                   children: [
-                    // Barra superior — borde con dynamicColor
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
                       child: Row(
                         children: [
                           InkWell(
@@ -121,16 +140,23 @@ class _SupportViewState extends ConsumerState<SupportView> {
                               decoration: BoxDecoration(
                                 color: colors.surface.withAlpha(50),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: dynamicColor.withAlpha(140)),
+                                border: Border.all(
+                                  color: dynamicColor.withAlpha(140),
+                                ),
                               ),
-                              child: Icon(Icons.arrow_back_ios_new_rounded, color: colors.onSurface),
+                              child: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: colors.onSurface,
+                              ),
                             ),
                           ),
                           Expanded(
                             child: Text(
                               'Ayuda y Sugerencias',
                               textAlign: TextAlign.center,
-                              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 48),
@@ -138,7 +164,6 @@ class _SupportViewState extends ConsumerState<SupportView> {
                       ),
                     ),
 
-                    // Formulario
                     Expanded(
                       child: Form(
                         key: _formKey,
@@ -149,7 +174,9 @@ class _SupportViewState extends ConsumerState<SupportView> {
                               delay: const Duration(milliseconds: 100),
                               child: Text(
                                 '¿Encontraste un error o tienes una idea?',
-                                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -167,7 +194,6 @@ class _SupportViewState extends ConsumerState<SupportView> {
                             ),
                             const SizedBox(height: 24),
 
-                            // SegmentedButton (usa dynamicColor)
                             FadeInDown(
                               delay: const Duration(milliseconds: 300),
                               child: SegmentedButton<ReportType>(
@@ -189,19 +215,26 @@ class _SupportViewState extends ConsumerState<SupportView> {
                                   ),
                                 ],
                                 selected: {_selectedReportType},
-                                onSelectionChanged: (Set<ReportType> newSelection) {
-                                  setState(() {
-                                    _selectedReportType = newSelection.first;
-                                  });
-                                },
+                                onSelectionChanged:
+                                    (Set<ReportType> newSelection) {
+                                      setState(() {
+                                        _selectedReportType =
+                                            newSelection.first;
+                                      });
+                                    },
                                 style: SegmentedButton.styleFrom(
                                   backgroundColor: colors.surfaceContainerHigh,
                                   foregroundColor: colors.onSurface,
-                                  side: BorderSide(color: dynamicColor.withAlpha(170), width: 1.2),
-                                  textStyle: textTheme.labelMedium?.copyWith(fontSize: 12.5),
+                                  side: BorderSide(
+                                    color: dynamicColor.withAlpha(170),
+                                    width: 1.2,
+                                  ),
+                                  textStyle: textTheme.labelMedium?.copyWith(
+                                    fontSize: 12.5,
+                                  ),
                                   selectedForegroundColor: colors.onPrimary,
                                   selectedBackgroundColor: dynamicColor,
-                                  // ✅ overlayColor aquí es Color?, no WidgetStateProperty
+
                                   overlayColor: dynamicColor.withAlpha(40),
                                 ),
                               ),
@@ -209,7 +242,6 @@ class _SupportViewState extends ConsumerState<SupportView> {
 
                             const SizedBox(height: 20),
 
-                            // Campo de texto con aura (usa dynamicColor)
                             FadeInDown(
                               delay: const Duration(milliseconds: 400),
                               child: _AuraTextFieldWrapper(
@@ -218,14 +250,18 @@ class _SupportViewState extends ConsumerState<SupportView> {
                                   controller: _descriptionController,
                                   maxLines: 8,
                                   validator: (value) =>
-                                      value == null || value.isEmpty || value.trim().isEmpty
-                                          ? 'Por favor, describe tu problema o idea.'
-                                          : null,
+                                      value == null ||
+                                          value.isEmpty ||
+                                          value.trim().isEmpty
+                                      ? 'Por favor, describe tu problema o idea.'
+                                      : null,
                                   decoration: InputDecoration(
-                                    hintText: 'Escribe tu reporte o sugerencia aquí...',
+                                    hintText:
+                                        'Escribe tu reporte o sugerencia aquí...',
                                     hintStyle: textTheme.bodyLarge?.copyWith(
-                                      // ✅ sin deprecación
-                                      color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                                      color: colors.onSurfaceVariant.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
                                     filled: true,
                                     fillColor: Colors.transparent,
@@ -239,21 +275,22 @@ class _SupportViewState extends ConsumerState<SupportView> {
 
                             const SizedBox(height: 24),
 
-                            // Botón enviar (usa dynamicColor)
                             FadeInDown(
                               delay: const Duration(milliseconds: 500),
                               child: FilledButton.icon(
                                 style: FilledButton.styleFrom(
                                   backgroundColor: dynamicColor,
                                   foregroundColor: colors.onPrimary,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                 ),
                                 onPressed: _isLoading
                                     ? null
                                     : () => _submitReport(
-                                          currentAuthUserId,
-                                          _selectedReportType.name,
-                                        ),
+                                        currentAuthUserId,
+                                        _selectedReportType.name,
+                                      ),
                                 icon: _isLoading
                                     ? const SizedBox(
                                         height: 20,
@@ -264,7 +301,11 @@ class _SupportViewState extends ConsumerState<SupportView> {
                                         ),
                                       )
                                     : const Icon(Icons.send),
-                                label: Text(_isLoading ? 'Enviando...' : 'Enviar Feedback'),
+                                label: Text(
+                                  _isLoading
+                                      ? 'Enviando...'
+                                      : 'Enviar Feedback',
+                                ),
                               ),
                             ),
                           ],
@@ -282,7 +323,6 @@ class _SupportViewState extends ConsumerState<SupportView> {
   }
 }
 
-// Wrapper con aura (sin cambios funcionales; ya usa dynamicColor)
 class _AuraTextFieldWrapper extends StatelessWidget {
   final Widget child;
   final Color dynamicColor;

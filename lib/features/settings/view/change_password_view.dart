@@ -1,18 +1,15 @@
-// lib/features/settings/view/change_password_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:kitsucode/shared/snackbar/snackbar.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
-import 'package:animate_do/animate_do.dart'; // Animaciones
-import 'package:kitsucode/features/profile/view/all_stats_view.dart'; // Fallback de color
-import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart'; // SectionHeader
+import 'package:animate_do/animate_do.dart';
+import 'package:kitsucode/features/profile/view/all_stats_view.dart';
+import 'package:kitsucode/features/settings/view/widgets/settings_tiles.dart';
 
-// ✅ NUEVOS/ACLARADOS
-import 'package:kitsucode/shared/widgets/static_settings_background.dart'; // Fondo estático compartido
-import 'package:kitsucode/features/profile/utils/avatar_helpers.dart'; // getAvatarColorById
+import 'package:kitsucode/shared/widgets/static_settings_background.dart';
+import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 
 class ChangePasswordView extends ConsumerStatefulWidget {
   const ChangePasswordView({super.key});
@@ -150,7 +147,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
         data: (profile) {
-          // ✅ Color dinámico desde BD (con fallback al método previo)
           final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
           final dynamicColor = avatarsList.isNotEmpty
               ? getAvatarColorById(profile.idAvatarSeleccionado, avatarsList)
@@ -158,13 +154,11 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
 
           return Stack(
             children: [
-              // ✅ USAR el fondo estático compartido (como en SupportView)
               StaticSettingsBackground(profile: profile, colors: colors),
 
               SafeArea(
                 child: Column(
                   children: [
-                    // --- CABECERA ---
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16.0,
@@ -204,7 +198,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                       ),
                     ),
 
-                    // --- FORMULARIO ---
                     Expanded(
                       child: Form(
                         key: _formKey,
@@ -214,7 +207,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                             vertical: 12.0,
                           ),
                           children: [
-                            // Fox image colapsa con teclado (igual que tenías)
                             FadeInDown(
                               delay: const Duration(milliseconds: 100),
                               child: AnimatedSwitcher(
@@ -255,7 +247,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // Campo 1
                             FadeInDown(
                               delay: const Duration(milliseconds: 300),
                               child: _TextFieldWrapper(
@@ -288,7 +279,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // Campo 2
                             FadeInDown(
                               delay: const Duration(milliseconds: 400),
                               child: _TextFieldWrapper(
@@ -319,7 +309,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
                               ),
                             ),
 
-                            // Campo 3
                             FadeInDown(
                               delay: const Duration(milliseconds: 500),
                               child: _TextFieldWrapper(
@@ -354,7 +343,6 @@ class _ChangePasswordViewState extends ConsumerState<ChangePasswordView> {
 
                             const SizedBox(height: 24),
 
-                            // Botón
                             FadeInDown(
                               delay: const Duration(milliseconds: 600),
                               child: _isLoading

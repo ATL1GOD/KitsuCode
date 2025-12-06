@@ -1,5 +1,3 @@
-// lib/core/providers/bootstrap_provider.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +21,6 @@ class BootstrapNotifier extends AsyncNotifier<void> {
   Future<void> build() async {
     debugPrint('Bootstrap: INICIO');
 
-    // 1) Firebase (ÚNICO BLOQUEANTE)
     if (kIsWeb) {
       await Firebase.initializeApp(
         options: const FirebaseOptions(
@@ -40,18 +37,15 @@ class BootstrapNotifier extends AsyncNotifier<void> {
     }
     debugPrint('Bootstrap: Firebase listo');
 
-    // 2) dotenv DEBE CARGARSE ANTES DE Supabase
     await dotenv.load(fileName: "assets/.env");
     debugPrint('Bootstrap: .env listo');
 
-    // 3) Supabase (YA CON .env cargado)
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL']!,
       anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
     debugPrint('Bootstrap: Supabase listo');
 
-    // 4) UI
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -59,7 +53,6 @@ class BootstrapNotifier extends AsyncNotifier<void> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     debugPrint('Bootstrap: UI lista');
 
-    // 5) Handler FCM
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     debugPrint('Bootstrap: Handler de background listo');
 

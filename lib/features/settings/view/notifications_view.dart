@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 👈 Haptics
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
@@ -16,7 +16,7 @@ import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:kitsucode/features/profile/view/all_stats_view.dart';
-import 'package:kitsucode/core/providers/audio_provider.dart'; // 👈 Audio
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
 class NotificationsView extends ConsumerStatefulWidget {
   const NotificationsView({super.key});
@@ -79,7 +79,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
     ColorScheme colors,
   ) async {
     if (newValue) {
-      // 🔥 Sonido Activación Masiva
       HapticFeedback.mediumImpact();
       ref.read(audioControllerProvider).playSuccess();
 
@@ -87,7 +86,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
       return;
     }
 
-    // 🔥 Sonido Pregunta
     HapticFeedback.lightImpact();
     ref.read(audioControllerProvider).playClick();
 
@@ -113,7 +111,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
             ),
             FilledButton(
               onPressed: () {
-                // 🔥 Sonido Desactivación Masiva
                 HapticFeedback.mediumImpact();
                 ref.read(audioControllerProvider).playClick();
                 Navigator.of(context).pop(true);
@@ -196,7 +193,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                           children: [
                             InkWell(
                               onTap: () {
-                                // 🔥 Sonido Back
                                 HapticFeedback.lightImpact();
                                 ref.read(audioControllerProvider).playClick();
                                 context.pop();
@@ -308,7 +304,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                     dynamicColor: dynamicColor,
                                     initialValue: masterSwitchState,
                                     onChanged: (newValue) {
-                                      // 🔥 Lógica con sonido dentro del dialog helper
                                       _showConfirmationDialog(
                                         context,
                                         ref,
@@ -342,7 +337,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       ),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
-                                        // 🔥 Sonido Nav
                                         HapticFeedback.lightImpact();
                                         ref
                                             .read(audioControllerProvider)
@@ -367,7 +361,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                         initialValue:
                                             streakReminderSetting.habilitado,
                                         onChanged: (newValue) {
-                                          // 🔥 Sonido Switch
                                           HapticFeedback.lightImpact();
                                           ref
                                               .read(audioControllerProvider)
@@ -404,7 +397,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       icon: _getIconForCategory('Amigos'),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
-                                        // 🔥 Sonido Nav
                                         HapticFeedback.lightImpact();
                                         ref
                                             .read(audioControllerProvider)
@@ -431,7 +423,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
                                       ),
                                       dynamicColor: dynamicColor,
                                       onTap: () {
-                                        // 🔥 Sonido Nav
                                         HapticFeedback.lightImpact();
                                         ref
                                             .read(audioControllerProvider)
@@ -470,7 +461,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
       final minute = int.parse(parts[1]);
       return TimeOfDay(hour: hour, minute: minute);
     } catch (e) {
-      // Usamos print en lugar de debugPrint para que se vea en el log de 'flutter run'
       if (kDebugMode) {
         print('Error parseando hora: $e');
       }
@@ -479,7 +469,6 @@ class _NotificationsViewState extends ConsumerState<NotificationsView>
   }
 }
 
-// --- (El shimmer no cambia) ---
 class _NotificationsLoadingShimmer extends StatelessWidget {
   final ColorScheme colors;
   const _NotificationsLoadingShimmer({required this.colors});

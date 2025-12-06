@@ -28,16 +28,11 @@ class OptimizedImage extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final devicePixelRatio = mediaQuery.devicePixelRatio;
 
-    // --- LÓGICA DE SEGURIDAD ---
     int targetWidth;
 
-    // 1. Si tienes un ancho definido (lo que usabas antes), sigue igual.
     if (width.isFinite) {
       targetWidth = (width * devicePixelRatio).round();
-    }
-    // 2. Si es infinito (tu nuevo banner), usamos un ancho estándar de pantalla (ej. 1080px)
-    //    para pedirle a Supabase una imagen de buena calidad pero no gigante.
-    else {
+    } else {
       targetWidth = 1080;
     }
 
@@ -75,10 +70,6 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      // AQUÍ ESTÁ LA PROTECCIÓN:
-      // Si width es número (ej. 100), calcula 200. Si es infinito, pasa NULL.
-      // Cuando pasas NULL a cacheWidth, Flutter usa el tamaño original del archivo.
-      // Esto es seguro y no rompe nada.
       cacheWidth: width.isFinite ? (width * 2).round() : null,
       errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context),
     );
@@ -94,9 +85,7 @@ class OptimizedImage extends StatelessWidget {
       fadeOutDuration: const Duration(milliseconds: 200),
       useOldImageOnUrlChange: true,
 
-      // PROTECCIÓN IGUAL QUE ARRIBA
       memCacheWidth: width.isFinite ? (width * 2).round() : null,
-      // Si la altura también fuera infinita (raro), también lo protegemos
       memCacheHeight: height.isFinite ? (height * 2).round() : null,
 
       placeholder: (context, url) => _buildSkeletonWidget(context),
@@ -110,7 +99,6 @@ class OptimizedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      // PROTECCIÓN
       cacheWidth: width.isFinite ? (width * 2).round() : null,
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded) return child;
@@ -138,9 +126,6 @@ class OptimizedImage extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Center(
-        // PROTECCIÓN VISUAL:
-        // Si el ancho es infinito, la barrita de carga no puede ser "infinita * 0.4".
-        // Le ponemos un tamaño fijo de 100px para que se vea bien.
         child: SizedBox(
           width: width.isFinite ? width * 0.4 : 100.0,
           child: LinearProgressIndicator(
@@ -153,11 +138,9 @@ class OptimizedImage extends StatelessWidget {
   }
 
   Widget _buildErrorWidget(BuildContext context) {
-    // PROTECCIÓN PARA EL ICONO DE ERROR
     final safeWidth = width.isFinite ? width : 100.0;
     final safeHeight = height.isFinite ? height : 100.0;
 
-    // Usamos los valores seguros para calcular el tamaño del icono
     final minSize = safeWidth < safeHeight ? safeWidth : safeHeight;
 
     return Container(

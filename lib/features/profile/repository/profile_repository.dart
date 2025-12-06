@@ -1,5 +1,3 @@
-// lib/features/profile/repository/profile_repository.dart
-
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
@@ -22,7 +20,6 @@ class ProfileRepository {
     required DateTime endDate,
   }) async {
     try {
-      // Lógica de fechas (esta estaba bien)
       final endOfDay = DateTime(
         endDate.year,
         endDate.month,
@@ -34,8 +31,6 @@ class ProfileRepository {
       final startString = startDate.toUtc().toIso8601String();
       final endString = endOfDay.toUtc().toIso8601String();
 
-      // --- CONSULTA LIMPIA ---
-      // (Sin comentarios de Dart adentro)
       final response = await _supabase
           .from('intento_reto')
           .select('''
@@ -55,11 +50,9 @@ class ProfileRepository {
           )
         ''')
           .eq('id_usuario', userId)
-          // La línea de "completado" ya la habíamos quitado, está bien
           .gte('fecha_intento', startString)
           .lte('fecha_intento', endString)
           .order('fecha_intento', ascending: false);
-      // --- FIN DE LA CONSULTA ---
 
       final List<dynamic> data = response;
       return data
@@ -76,49 +69,39 @@ class ProfileRepository {
     }
   }
 
-  // Este método observa los cambios en el perfil de un usuario en tiempo real.
   Stream<UserProfileModel> watchUserProfileById(String userId) async* {
-    // 1. Emitimos el valor inicial inmediatamente para que la UI no espere.
     yield await fetchUserProfileById(userId);
 
-    // 2. Creamos un listener de Supabase que se enfoca SÓLO en la fila de este usuario.
     final stream = _supabase
         .from('usuarios')
         .stream(primaryKey: ['id'])
         .eq('id', userId);
 
-    // 3. Escuchamos el stream. Cada vez que haya un cambio (un UPDATE)...
     await for (final _ in stream) {
-      // ...obtenemos el perfil actualizado...
       final updatedProfile = await fetchUserProfileById(userId);
-      // ...y lo emitimos.
+
       yield updatedProfile;
     }
   }
 
-  //  MÉTODO PARA OBTENER LA LISTA DE SEGUIDORES/SIGUIENDO
-  /// Llama a la función RPC get_follow_list(p_user_id, p_type).
-  /// El tipo puede ser 'following' o 'followers'.
   Future<List<FollowListModel>> getFollowList({
     required String userId,
     required String type,
   }) async {
     try {
       final data = await _supabase.rpc(
-        'get_follow_list', // La función RPC definida en el backend
+        'get_follow_list',
         params: {'p_user_id': userId, 'p_type': type},
       );
 
       final list = data as List;
       return list.map((json) => FollowListModel.fromJson(json)).toList();
     } catch (e) {
-      // ignore: avoid_print
       print('Error al cargar la lista de seguimiento ($type): $e');
       throw Exception('Error al cargar la lista de seguimiento.');
     }
   }
 
-  // Consulta si el usuario actual sigue a otro usuario
   Future<bool> isFollowing(String followedUserId) async {
     final currentUser = _supabase.auth.currentUser;
     if (currentUser == null) return false;
@@ -141,7 +124,6 @@ class ProfileRepository {
 
     final isNowFollowing = response as bool;
 
-    // Si ahora está siguiendo (true), enviar notificación
     if (isNowFollowing) {
       _sendFollowerNotification(followedUserId);
     }
@@ -149,24 +131,18 @@ class ProfileRepository {
     return isNowFollowing;
   }
 
-  /// Enviar notificación de nuevo seguidor (sin esperar respuesta)
   void _sendFollowerNotification(String followedUserId) async {
     try {
       final currentUserId = _supabase.auth.currentUser?.id;
       if (currentUserId == null) return;
 
-      // Llamar Edge Function de forma asíncrona y loguear resultado para debug
       final res = await _supabase.functions.invoke(
         'new-follower',
         body: {'follower_id': currentUserId, 'followed_id': followedUserId},
       );
 
-      // Supabase Functions.invoke puede devolver null o un objeto; imprimimos para diagnosticar
-      // ignore: avoid_print
       print('[new-follower] invoke result: $res');
     } catch (e) {
-      // Registrar el error para poder ver por qué falla en producción
-      // ignore: avoid_print
       print('[new-follower] error invoking function: $e');
     }
   }
@@ -226,7 +202,6 @@ class ProfileRepository {
 
       return UserStatsModel.fromJson(response);
     } catch (e) {
-      // ignore: avoid_print
       print('Error en fetchUserStatsById (RPC): $e');
       return UserStatsModel.empty();
     }
@@ -244,7 +219,6 @@ class ProfileRepository {
       final list = data as List;
       return list.map((json) => UserAchievementModel.fromJson(json)).toList();
     } catch (e) {
-      // ignore: avoid_print
       print('Error fetching achievements: $e');
       throw Exception('Error al cargar los logros');
     }
@@ -266,11 +240,8 @@ class ProfileRepository {
     return fetchUserAchievementsById(user.id);
   }
 
-  // ✅✅✅ ¡MÉTODO MOVIDO AQUÍ DENTRO! ✅✅✅
-  // Busca los detalles de un logro específico por su ID
   Future<Map<String, dynamic>> fetchLogroDetails(int logroId) async {
     try {
-      // ✅ Y AHORA USA '_supabase' (la variable de la clase)
       final data = await _supabase
           .from('logro')
           .select('nombre, icono, raridad')
@@ -279,7 +250,6 @@ class ProfileRepository {
 
       return data;
     } catch (e) {
-      // ignore: avoid_print
       print('Error fetching logro details: $e');
       throw Exception('Error al cargar detalles del logro');
     }
@@ -295,16 +265,11 @@ class ProfileRepository {
 
       return data;
     } catch (e) {
-      // ignore: avoid_print
       print('Error fetching avatar details: $e');
       throw Exception('Error al cargar detalles del avatar');
     }
   }
 
-  // ==================== MÉTODOS PARA AVATARES ====================
-
-  /// Obtiene todos los avatares disponibles para un usuario específico
-  /// Incluye el campo 'desbloqueado' que indica si el usuario tiene acceso
   Future<List<AvatarModel>> fetchUserAvatars(String userId) async {
     try {
       final data = await _supabase.rpc(
@@ -315,14 +280,11 @@ class ProfileRepository {
       final list = data as List;
       return list.map((json) => AvatarModel.fromJson(json)).toList();
     } catch (e) {
-      // ignore: avoid_print
       print('Error fetching avatars: $e');
       throw Exception('Error al cargar los avatares');
     }
   }
 
-  /// Desbloquea un avatar específico para un usuario
-  /// Retorna true si se desbloqueó correctamente
   Future<bool> unlockAvatar({
     required String userId,
     required int avatarId,
@@ -334,41 +296,32 @@ class ProfileRepository {
       );
       return result as bool? ?? false;
     } catch (e) {
-      // ignore: avoid_print
       print('Error unlocking avatar: $e');
       return false;
     }
   }
 
-  /// Busca usuarios por nombre de perfil o nombre de usuario
   Future<List<UserSearchPreviewModel>> searchUsers(String query) async {
-    // 1. Obtener el ID del usuario actual
     final currentUserId = _supabase.auth.currentUser?.id;
 
-    // No buscamos si el query está vacío o si el usuario no está logueado
     if (query.trim().isEmpty || currentUserId == null) {
       return [];
     }
 
     try {
       final data = await _supabase.rpc(
-        'busqueda_amigos', // <-- 2. Asegúrate que el nombre coincida
-        params: {
-          'p_query': query.trim(),
-          'p_user_id': currentUserId, // <-- 3. Envía el ID del usuario
-        },
+        'busqueda_amigos',
+        params: {'p_query': query.trim(), 'p_user_id': currentUserId},
       );
 
       final list = data as List;
       return list.map((json) => UserSearchPreviewModel.fromJson(json)).toList();
     } catch (e) {
-      // ignore: avoid_print
       print('Error al buscar usuarios: $e');
       throw Exception('Error al buscar usuarios.');
     }
   }
 
-  /// Obtiene la lista de lenguajes disponibles para elegir
   Future<List<Map<String, dynamic>>> getAvailableLanguages() async {
     final response = await _supabase
         .from('lenguaje')
@@ -377,7 +330,6 @@ class ProfileRepository {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  /// Completa el onboarding
   Future<void> completeOnboarding({
     required String userId,
     required String username,
@@ -387,8 +339,7 @@ class ProfileRepository {
       'completar_onboarding',
       params: {
         'p_user_id': userId,
-        'p_nombre_perfil':
-            username, // <--- AQUÍ CAMBIA LA CLAVE (antes era p_nombre_usuario)
+        'p_nombre_perfil': username,
         'p_id_lenguaje': languageId,
       },
     );

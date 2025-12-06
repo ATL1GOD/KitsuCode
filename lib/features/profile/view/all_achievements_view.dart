@@ -1,5 +1,3 @@
-// lib/features/profile/view/all_achievements_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +11,6 @@ import 'package:animate_do/animate_do.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 
-// ✅ NUEVO: para color de avatar desde BD
 import 'package:kitsucode/features/profile/utils/avatar_helpers.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -65,11 +62,7 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
     }
   }
 
-  // ✅ Color dinámico desde BD con fallback seguro
-  Color _computeDynamicColor(
-    UserProfileModel profile,
-    ColorScheme colors,
-  ) {
+  Color _computeDynamicColor(UserProfileModel profile, ColorScheme colors) {
     final avatarsList = ref.watch(currentUserAvatarsProvider).value ?? [];
     if (avatarsList.isNotEmpty) {
       return getAvatarColorById(profile.idAvatarSeleccionado, avatarsList);
@@ -83,15 +76,23 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
     final textTheme = Theme.of(context).textTheme;
 
     ref.watch(achievementRealtimeProvider);
-    final currentAuthUserId =
-        ref.watch(authStateProvider).value?.session?.user.id;
+    final currentAuthUserId = ref
+        .watch(authStateProvider)
+        .value
+        ?.session
+        ?.user
+        .id;
 
     if (currentAuthUserId == null) {
-      return const Scaffold(body: Center(child: Text("Usuario no autenticado")));
+      return const Scaffold(
+        body: Center(child: Text("Usuario no autenticado")),
+      );
     }
 
     final profileState = ref.watch(userProfileByIdProvider(widget.userId));
-    final achievementsState = ref.watch(userAchievementsProvider(widget.userId));
+    final achievementsState = ref.watch(
+      userAchievementsProvider(widget.userId),
+    );
 
     return VisibilityDetector(
       key: Key('all-achievements-detector-${widget.userId}'),
@@ -112,7 +113,6 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
 
             return Stack(
               children: [
-                // --- Fondo degradado con color del avatar (BD) ---
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -127,7 +127,6 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                   ),
                 ),
 
-                // --- Lottie tintado (sin withOpacity deprecado) ---
                 ColorFiltered(
                   colorFilter: ColorFilter.mode(
                     colors.secondaryFixedDim.withAlpha((255 * 0.8).round()),
@@ -152,10 +151,11 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                 SafeArea(
                   child: Column(
                     children: [
-                      // AppBar
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
                         child: Row(
                           children: [
                             InkWell(
@@ -180,8 +180,9 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                               child: Text(
                                 'Todos los Logros',
                                 textAlign: TextAlign.center,
-                                style: textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 48),
@@ -189,13 +190,12 @@ class _AllAchievementsViewState extends ConsumerState<AllAchievementsView>
                         ),
                       ),
 
-                      // Grid de logros
                       Expanded(
                         child: achievementsState.when(
                           loading: () =>
                               _AchievementsLoadingShimmer(colors: colors),
-                          error: (e, s) => Center(
-                              child: Text('Error al cargar logros: $e')),
+                          error: (e, s) =>
+                              Center(child: Text('Error al cargar logros: $e')),
                           data: (achievements) {
                             return _AchievementsGrid(
                               achievements: achievements,
@@ -233,10 +233,8 @@ class _AchievementsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unlockedAchievements =
-        achievements.where((a) => a.obtenido).toList();
-    final lockedAchievements =
-        achievements.where((a) => !a.obtenido).toList();
+    final unlockedAchievements = achievements.where((a) => a.obtenido).toList();
+    final lockedAchievements = achievements.where((a) => !a.obtenido).toList();
 
     final totalCount = achievements.length;
     final textTheme = Theme.of(context).textTheme;

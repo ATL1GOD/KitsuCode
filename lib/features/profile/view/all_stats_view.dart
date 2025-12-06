@@ -1,5 +1,3 @@
-// lib/features/profile/view/all_stats_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,13 +9,12 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
-// 🔥 Visibilidad
+
 import 'package:visibility_detector/visibility_detector.dart';
 
 class AllStatsView extends ConsumerStatefulWidget {
   const AllStatsView({super.key});
 
-  // Mantén este helper como fallback
   static Color getHeaderColor(
     UserProfileModel userProfile,
     ColorScheme colors,
@@ -83,7 +80,6 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
     final statsState = ref.watch(userStatsByIdProvider(currentUserId));
     final profileState = ref.watch(userProfileByIdProvider(currentUserId));
 
-    // 👇 Importante: evita setState tras dispose
     return VisibilityDetector(
       key: const Key('all-stats-detector'),
       onVisibilityChanged: (visibilityInfo) {
@@ -99,7 +95,6 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
           loading: () => const _StatsLoadingShimmer(),
           error: (e, s) => Center(child: Text('Error al cargar perfil: $e')),
           data: (profile) {
-            // ✅ Color dinámico desde BD si ya está la lista de avatares; sino fallback
             final avatarsList =
                 ref.watch(currentUserAvatarsProvider).value ?? [];
             final dynamicColor = avatarsList.isNotEmpty
@@ -108,7 +103,6 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
 
             return Stack(
               children: [
-                // Fondo degradado
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -123,10 +117,8 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                   ),
                 ),
 
-                // Lottie con tinte y control seguro
                 ColorFiltered(
                   colorFilter: ColorFilter.mode(
-                    // Reemplazo deprecado: withAlpha en vez de withAlpha(204)
                     colors.secondaryFixedDim.withAlpha((0.8 * 255).round()),
                     BlendMode.srcIn,
                   ),
@@ -137,7 +129,7 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                     fit: BoxFit.cover,
                     controller: _lottieController,
                     onLoaded: (composition) {
-                      if (!mounted) return; // 👈 evita setState tras dispose
+                      if (!mounted) return;
                       if (_lottieController.duration != composition.duration) {
                         _lottieController.duration = composition.duration;
                       }
@@ -150,7 +142,6 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                 SafeArea(
                   child: Column(
                     children: [
-                      // AppBar
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16.0,
@@ -190,7 +181,6 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                         ),
                       ),
 
-                      // Contenido
                       Expanded(
                         child: statsState.when(
                           loading: () => const _StatsLoadingShimmer(),
@@ -242,9 +232,8 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
                                 ),
                                 const SizedBox(height: 30),
 
-                                // 👉 Card con BORDE y AURA usando dynamicColor
                                 _StatsCard(
-                                      dynamicColor: dynamicColor, // 👈 añadido
+                                      dynamicColor: dynamicColor,
                                       child: Column(
                                         children: [
                                           _StatRow(
@@ -300,34 +289,30 @@ class _AllStatsViewState extends ConsumerState<AllStatsView>
   }
 }
 
-// -------------------- Widgets auxiliares --------------------
-
 class _StatsCard extends StatelessWidget {
   final Widget child;
-  final Color? dynamicColor; // 👈 nuevo opcional (para no romper llamadas)
+  final Color? dynamicColor;
   const _StatsCard({required this.child, this.dynamicColor});
 
   @override
   Widget build(BuildContext context) {
     final c = Theme.of(context).colorScheme;
-    final aura =
-        dynamicColor ?? c.primary; // si no pasan color, usa el primario
+    final aura = dynamicColor ?? c.primary;
 
     return Container(
       decoration: BoxDecoration(
         color: c.surfaceContainer.withAlpha(210),
         borderRadius: BorderRadius.circular(24),
-        // 👇 borde con tinte del avatar
+
         border: Border.all(color: aura.withAlpha(185), width: 1.6),
         boxShadow: [
-          // 👇 “aura” suave del color dinámico
           BoxShadow(
-            color: aura.withAlpha(72), // ~28% opacidad
+            color: aura.withAlpha(72),
             blurRadius: 22,
             spreadRadius: 2,
             offset: const Offset(0, 7),
           ),
-          // sombra base discreta
+
           BoxShadow(
             color: c.shadow.withAlpha(22),
             blurRadius: 10,
@@ -338,12 +323,11 @@ class _StatsCard extends StatelessWidget {
       child: const Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         child: _StatsCardChildProxy(),
-      ).copyWithChild(child), // truco para mantener padding constante
+      ).copyWithChild(child),
     );
   }
 }
 
-/// Pequeño helper para poder “reemplazar” el child sin duplicar padding.
 class _StatsCardChildProxy extends StatelessWidget {
   const _StatsCardChildProxy();
 
@@ -352,8 +336,6 @@ class _StatsCardChildProxy extends StatelessWidget {
 }
 
 extension on Widget {
-  /// Devuelve el mismo widget pero reemplazando el `child` del Padding superior.
-  /// (Nos evita reescribir el Padding en cada edición)
   Widget copyWithChild(Widget child) {
     if (this is Padding) {
       final p = this as Padding;

@@ -3,24 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_background.dart';
 import 'package:kitsucode/features/auth/view/widgets/auth_card.dart';
 
-// Paleta de colores mejorada
 final authTheme = ThemeData(
   brightness: Brightness.dark,
-  primaryColor: const Color(0xFFEE7D05), // Un morado vibrante
+  primaryColor: const Color(0xFFEE7D05),
   colorScheme: const ColorScheme.dark(
     primary: Color(0xFFEE7D05),
-    secondary: Color(0xFFFFF313), // Azul brillante para acentos
-    tertiary: Color.fromARGB(
-      255,
-      180,
-      55,
-      247,
-    ), // Naranja para toques de calidez
-    surface: Color.fromARGB(0, 234, 241, 39), // Para el fondo de la tarjeta
+    secondary: Color(0xFFFFF313),
+    tertiary: Color.fromARGB(255, 180, 55, 247),
+    surface: Color.fromARGB(0, 234, 241, 39),
     onSurface: Colors.white,
   ),
-  fontFamily:
-      'Poppins', // Considera agregar una fuente como Poppins a tu pubspec.yaml
+  fontFamily: 'Poppins',
 );
 
 class AuthView extends ConsumerStatefulWidget {
@@ -53,7 +46,7 @@ class _AuthViewState extends ConsumerState<AuthView>
     }
 
     return Theme(
-      data: authTheme, //authTheme,
+      data: authTheme,
       child: Scaffold(
         body: AuthBackground(
           child: AuthCard(

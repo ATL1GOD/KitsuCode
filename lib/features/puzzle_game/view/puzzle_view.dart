@@ -1,4 +1,4 @@
-// lib/features/puzzle_game/view/puzzle_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -54,8 +54,8 @@ class PuzzleView extends ConsumerWidget {
     final puzzleState = ref.watch(puzzleProvider);
     final puzzleNotifier = ref.read(puzzleProvider.notifier);
 
-    // 🔥 FIX CRÍTICO: Agregamos "|| puzzleState.challenge == null"
-    // Esto evita que la app intente pintar la pantalla antes de recibir los datos del JSON.
+    
+    
     if (puzzleState.isLoading || puzzleState.challenge == null) {
       return Theme(
         data: challengeTheme,
@@ -78,7 +78,7 @@ class PuzzleView extends ConsumerWidget {
       );
     }
 
-    // AHORA ES SEGURO USAR EL OPERADOR !
+    
     final challenge = puzzleState.challenge!;
     final bool isPuzzleComplete = !puzzleState.filledBlanks.containsValue(null);
 
@@ -97,7 +97,7 @@ class PuzzleView extends ConsumerWidget {
         backgroundColor: colorScheme.surfaceContainerLow,
         appBar: ChallengeAppBar2(
           progress: progress,
-          // Ocultar botón de cierre si es Onboarding
+          
           onClose: onOnboardingFinished != null
               ? null
               : () {
@@ -161,13 +161,13 @@ class PuzzleView extends ConsumerWidget {
             final esCorrecto =
                 ref.read(puzzleProvider).status == PuzzleStatus.correct;
 
-            // 🔥 LÓGICA ONBOARDING: Retornamos inmediatamente
+            
             if (onOnboardingFinished != null) {
               onOnboardingFinished!(esCorrecto);
               return;
             }
 
-            // --- FLUJO NORMAL ---
+            
             showModalBottomSheet(
               context: context,
               backgroundColor: Colors.transparent,

@@ -1,5 +1,3 @@
-// lib/features/challenge/view/feedback/challenge_success_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +7,6 @@ import 'package:kitsucode/shared/appbar/navigation_tracker_provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:kitsucode/core/providers/app_provider.dart';
 
-//Imports para verificación de lenguaje
 import 'package:kitsucode/features/challenge/provider/language_completion_provider.dart';
 import 'package:kitsucode/features/auth/provider/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -108,7 +105,6 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
         ref.read(oldStatsValuesProvider.notifier).state = null;
         ref.read(shouldRefreshStatsProvider.notifier).state = true;
 
-        // REANUDAR MÚSICA ANTES DE NAVEGAR
         resumeMusicAfterChallenge(ref);
 
         context.go(
@@ -138,7 +134,6 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
         ref.read(navigationReturnPathProvider.notifier).state = '/home';
         ref.read(oldStatsValuesProvider.notifier).state = null;
 
-        // REANUDAR MÚSICA ANTES DE NAVEGAR
         resumeMusicAfterChallenge(ref);
 
         context.go(returnPath);
@@ -157,7 +152,6 @@ class _ChallengeSuccessViewState extends ConsumerState<ChallengeSuccessView> {
       }
     } catch (e) {
       if (mounted) {
-        // 🔥 REANUDAR MÚSICA TAMBIÉN EN ERROR
         resumeMusicAfterChallenge(ref);
 
         final returnPath = ref.read(navigationReturnPathProvider);

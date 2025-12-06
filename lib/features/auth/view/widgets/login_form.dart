@@ -61,9 +61,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       } catch (e) {
         setState(() => _showError = true);
         if (mounted) {
-          // Detectar si el error es por correo no confirmado
           final errorMessage = e.toString().toLowerCase();
-          if (errorMessage.contains('email not confirmed') || 
+          if (errorMessage.contains('email not confirmed') ||
               errorMessage.contains('email_not_confirmed') ||
               errorMessage.contains('not confirmed')) {
             showWarningSnackbar(
@@ -71,7 +70,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               'Correo No Verificado',
               'Por favor, confirma tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada o spam.',
             );
-          } else if (errorMessage.contains('invalid') && errorMessage.contains('credentials')) {
+          } else if (errorMessage.contains('invalid') &&
+              errorMessage.contains('credentials')) {
             showErrorSnackbar(
               context,
               'Error de Inicio de Sesión',
@@ -88,12 +88,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   void _googleSignIn() async {
     try {
       await ref.read(loginStateProvider.notifier).signInWithGoogle();
-      // NO mostrar snackbar aquí - el flujo OAuth continúa en el navegador
-      // El éxito se detectará automáticamente por el authStateProvider cuando vuelva
     } catch (e) {
       if (mounted) {
         final errorMessage = e.toString().toLowerCase();
-        // Detectar si el correo de Google ya está registrado con otro método
+
         if (errorMessage.contains('user already registered') ||
             errorMessage.contains('already registered') ||
             errorMessage.contains('already exists') ||
@@ -104,8 +102,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             'Cuenta Ya Registrada',
             'Este correo de Google ya está registrado. Por favor, inicia sesión con Google o usa tu correo y contraseña.',
           );
-        } else if (errorMessage.contains('cancelled') || errorMessage.contains('canceled')) {
-          // Usuario canceló el inicio de sesión con Google, no mostrar error
+        } else if (errorMessage.contains('cancelled') ||
+            errorMessage.contains('canceled')) {
           return;
         } else {
           showErrorSnackbar(context, 'Error con Google', e.toString());
@@ -202,12 +200,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
             delay: 700,
             child: TextButton(
               onPressed: () => context.go('/forgot-password'),
-              // VisualDensity compact elimina el padding extra de los botones
+
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero, // Elimina padding vertical
-                tapTargetSize: MaterialTapTargetSize
-                    .shrinkWrap, // Reduce área táctil vacía
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
                 '¿Olvidaste tu contraseña?',
@@ -232,7 +229,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 'Política de Privacidad y Términos',
                 style: TextStyle(
                   color: Colors.white.withAlpha(150),
-                  fontSize: 11, // Un poco más pequeño para footer
+                  fontSize: 11,
                 ),
               ),
             ),

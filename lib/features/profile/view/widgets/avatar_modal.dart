@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/avatar_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-// Para la clase Color
-// ✅ 1. IMPORTAR EL OPTIMIZADOR
+
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
-// --- Función de ayuda para el color ---
 Color _safeParseColor(String colorString) {
   try {
     return Color(int.parse(colorString));
   } catch (e) {
     debugPrint('Error al parsear color "$colorString": $e');
-    return const Color(0xFF9E9E9E); // Gris
+    return const Color(0xFF9E9E9E);
   }
 }
-// --- Fin de la función de ayuda ---
 
 class AvatarModal extends StatelessWidget {
   final AvatarModel avatar;
@@ -41,7 +38,7 @@ class AvatarModal extends StatelessWidget {
                   CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
                 ),
                 child: Scaffold(
-                  backgroundColor: Colors.transparent, // Fondo transparente
+                  backgroundColor: Colors.transparent,
                   body: _ModalContent(avatar: avatar),
                 ),
               ),
@@ -71,20 +68,16 @@ class _ModalContent extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final isUnlocked = avatar.desbloqueado;
 
-    // ✅ ¡LA MAGIA DE TU IDEA!
-    // El color, el aura y la imagen siempre están a color.
     final Color borderColor = _safeParseColor(avatar.colorPrimario);
     final String tipo = avatar.tipo;
     final String tipoText =
         tipo.substring(0, 1).toUpperCase() + tipo.substring(1);
     final lockedColor = colors.onSurfaceVariant.withAlpha(128);
 
-    // --- Lógica de Imagen (SIEMPRE A COLOR + OPTIMIZADA) ---
-    // ✅ CAMBIO: Usamos OptimizedImage en lugar de Image.asset
     Widget img = OptimizedImage(
-      imagePath: avatar.assetPath, // Ahora esto debe ser la URL/Path de Supabase
+      imagePath: avatar.assetPath,
       height: 200,
-      width: 320, // Ajustamos al ancho máximo del modal para optimizar descarga
+      width: 320,
       fit: BoxFit.cover,
     );
 
@@ -109,15 +102,8 @@ class _ModalContent extends StatelessWidget {
           ),
     );
 
-    // --- Aura (SIEMPRE A COLOR) ---
     final aura =
-        Icon(
-              Icons.auto_awesome,
-              size: 120,
-              color: borderColor.withOpacity(
-                0.5,
-              ), // Siempre usa el color primario
-            )
+        Icon(Icons.auto_awesome, size: 120, color: borderColor.withOpacity(0.5))
             .animate(onPlay: (c) => c.repeat(reverse: true))
             .fadeIn(duration: 600.ms)
             .scale(
@@ -125,9 +111,7 @@ class _ModalContent extends StatelessWidget {
               end: const Offset(1.2, 1.2),
               duration: 800.ms,
             );
-    // --- Fin Lógica ---
 
-    // --- Lógica de Texto (depende de si está bloqueado) ---
     final String descriptionTitle = isUnlocked
         ? "¡Avatar desbloqueado!"
         : "Para desbloquear este avatar necesitas:";
@@ -138,9 +122,9 @@ class _ModalContent extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        color: Colors.black.withAlpha(179), // Fondo "dim"
+        color: Colors.black.withAlpha(179),
         child: GestureDetector(
-          onTap: () {}, // Evita cerrar al tocar el modal
+          onTap: () {},
           child: Material(
             type: MaterialType.transparency,
             child: Center(
@@ -148,18 +132,16 @@ class _ModalContent extends StatelessWidget {
                 alignment: Alignment.center,
                 clipBehavior: Clip.none,
                 children: [
-                  aura, // Aura de color
+                  aura,
                   Container(
                     constraints: const BoxConstraints(maxWidth: 320),
                     margin: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: colors.surface, // Fondo siempre claro/oscuro
+                      color: colors.surface,
                       boxShadow: [
                         BoxShadow(
-                          color: borderColor.withOpacity(
-                            0.7,
-                          ), // Sombra siempre de color
+                          color: borderColor.withOpacity(0.7),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -181,7 +163,6 @@ class _ModalContent extends StatelessWidget {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // --- Círculo de ID (siempre a color) ---
                                   Container(
                                     width: 32,
                                     height: 32,
@@ -204,7 +185,7 @@ class _ModalContent extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  // --- Tag de Tipo/Rareza (siempre a color) ---
+
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
@@ -219,20 +200,19 @@ class _ModalContent extends StatelessWidget {
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
-                                        color: colors
-                                            .onPrimary, // Asumimos color claro
+                                        color: colors.onPrimary,
                                       ),
                                     ),
                                   ),
-                                  // --- Texto de Estado (CAMBIA) ---
+
                                   Flexible(
                                     child: Text(
                                       isUnlocked ? "¡OBTENIDO!" : "BLOQUEADO",
                                       textAlign: TextAlign.end,
                                       style: TextStyle(
                                         color: isUnlocked
-                                            ? const Color(0xFF00FF00) // Verde
-                                            : lockedColor, // Gris
+                                            ? const Color(0xFF00FF00)
+                                            : lockedColor,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
                                       ),
@@ -243,23 +223,20 @@ class _ModalContent extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // --- Contenedor de la Imagen ---
+
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: borderColor, // Borde siempre de color
-                                width: 4,
-                              ),
+                              border: Border.all(color: borderColor, width: 4),
                               color: colors.surface,
                             ),
                             child: Stack(
                               children: [
                                 Column(
                                   children: [
-                                    animatedImg, // Imagen siempre a color
+                                    animatedImg,
                                     const SizedBox(height: 12),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -270,27 +247,24 @@ class _ModalContent extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w900,
-                                          color: colors
-                                              .onSurface, // Siempre a color
+                                          color: colors.onSurface,
                                           fontSize: 18,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    // --- Icono de Estado (CAMBIA) ---
+
                                     Icon(
                                       isUnlocked
                                           ? Icons.check_circle
                                           : Icons.lock_outline,
                                       color: isUnlocked
                                           ? borderColor
-                                          : Colors
-                                              .grey
-                                              .shade500, // Gris si está bloqueado
+                                          : Colors.grey.shade500,
                                       size: 24,
                                     ),
                                     const SizedBox(height: 10),
-                                    // --- Descripción de Requisito ---
+
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 15.0,
@@ -298,7 +272,7 @@ class _ModalContent extends StatelessWidget {
                                       child: Column(
                                         children: [
                                           Text(
-                                            descriptionTitle, // Título dinámico
+                                            descriptionTitle,
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
@@ -307,7 +281,7 @@ class _ModalContent extends StatelessWidget {
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            descriptionBody, // Cuerpo dinámico
+                                            descriptionBody,
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               color: colors.onSurfaceVariant,
@@ -319,7 +293,7 @@ class _ModalContent extends StatelessWidget {
                                     const SizedBox(height: 15),
                                   ],
                                 ),
-                                // --- Overlay de Candado (SOLO SI ESTÁ BLOQUEADO) ---
+
                                 if (!isUnlocked)
                                   Positioned.fill(
                                     child: Container(
@@ -351,7 +325,7 @@ class _ModalContent extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // --- Botón de Cerrar ---
+
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: ElevatedButton(

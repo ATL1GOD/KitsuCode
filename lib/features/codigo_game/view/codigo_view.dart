@@ -1,4 +1,3 @@
-// lib/features/codigo_game/view/codigo_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/codigo_game/model/codigo_model.dart';
@@ -105,7 +104,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     final fragmentosInput = preguntaActual.fragmentos
         .where((f) => f.tipo == 'input')
         .toList();
-    
+
     bool todasCorrectas = true;
     for (int i = 0; i < fragmentosInput.length; i++) {
       final respuestaUsuario = _controllers[i].text.trim();
@@ -119,12 +118,11 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     if (todasCorrectas) {
       _siguientePregunta();
     } else {
-      // 🔥 FIX: Error inmediato con protección anti-crash
       if (mounted) {
         if (widget.onOnboardingFinished != null) {
-           widget.onOnboardingFinished!(false);
+          widget.onOnboardingFinished!(false);
         } else {
-           _showFeedbackModal(false);
+          _showFeedbackModal(false);
         }
       }
     }
@@ -138,11 +136,10 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       );
     } else {
       if (mounted) {
-        // Todas correctas, terminó el juego
         if (widget.onOnboardingFinished != null) {
-           widget.onOnboardingFinished!(true);
+          widget.onOnboardingFinished!(true);
         } else {
-           _showFeedbackModal(true);
+          _showFeedbackModal(true);
         }
       }
     }
@@ -165,8 +162,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
   void _showFeedbackModal(bool esCorrecto) {
     if (_hasSubmitted) return;
 
-    // 🔥 Si es Onboarding, el control ya se manejó arriba en _verificarRespuesta.
-    // Esta función solo debería correr en modo normal.
     if (widget.onOnboardingFinished != null) {
       widget.onOnboardingFinished!(esCorrecto);
       return;
@@ -250,7 +245,6 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
     );
   }
 
-  // ... (buildCodeSpans sin cambios)
   List<InlineSpan> _buildCodeSpans(
     CodigoPregunta pregunta,
     TextStyle codeStyle,
@@ -349,11 +343,11 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
       data: challengeTheme,
       child: Scaffold(
         backgroundColor: colorScheme.surfaceContainerLow,
-        // 🔥 En onboarding, no redimensionar cuando aparece el teclado
+
         resizeToAvoidBottomInset: widget.onOnboardingFinished == null,
         appBar: ChallengeAppBar2(
           progress: progress,
-          // 🔥 FIX: Ocultar botón cerrar en Onboarding
+
           onClose: widget.onOnboardingFinished != null
               ? null
               : () => showExitDialog(context, ref),
@@ -382,11 +376,12 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   }
                   final pregunta = widget.challenge.preguntas[index];
 
-                  // 🔥 Si es onboarding, deshabilitar scroll para evitar desplazamiento con teclado
                   final isOnboarding = widget.onOnboardingFinished != null;
-                  
+
                   return SingleChildScrollView(
-                    physics: isOnboarding ? const NeverScrollableScrollPhysics() : null,
+                    physics: isOnboarding
+                        ? const NeverScrollableScrollPhysics()
+                        : null,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20.0,
                       vertical: 16.0,

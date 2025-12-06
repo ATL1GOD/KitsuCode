@@ -3,13 +3,13 @@ class UserProfileModel {
   final String nombreUsuario;
   final String correo;
   final String nombrePerfil;
-  final int idAvatarSeleccionado; // ¡CAMBIO! Ahora es int en lugar de String
+  final int idAvatarSeleccionado;
   final int siguiendoCount;
   final int seguidoresCount;
   final int cambiosAvatarHoy;
   final int cambiosNombrePerfilEsteMes;
   final int nivelConocimiento;
-  final bool onboardingCompletado; // <--- NUEVO: Agrega esta línea
+  final bool onboardingCompletado;
   UserProfileModel({
     required this.userId,
     required this.nombreUsuario,
@@ -21,7 +21,7 @@ class UserProfileModel {
     required this.cambiosAvatarHoy,
     required this.cambiosNombrePerfilEsteMes,
     required this.nivelConocimiento,
-    required this.onboardingCompletado, // <--- NUEVO: Agrega esto al constructor
+    required this.onboardingCompletado,
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -30,19 +30,16 @@ class UserProfileModel {
       nombreUsuario: json['nombre_usuario'] as String? ?? '',
       correo: json['correo'] ?? 'Sin correo',
       nombrePerfil: json['nombre_perfil'] as String? ?? '',
-      idAvatarSeleccionado:
-          json['id_avatar_seleccionado'] as int? ?? 1, // Default: Zorro
+      idAvatarSeleccionado: json['id_avatar_seleccionado'] as int? ?? 1,
       siguiendoCount: json['siguiendo_count'] ?? 0,
       seguidoresCount: json['seguidores_count'] ?? 0,
       cambiosAvatarHoy: json['cambios_avatar_hoy'] ?? 0,
       cambiosNombrePerfilEsteMes: json['cambios_nombre_perfil_este_mes'] ?? 0,
       nivelConocimiento: json['nivel_conocimiento'] as int? ?? 0,
-      onboardingCompletado:
-          json['onboarding_completado'] as bool? ??
-          false, // <--- NUEVO: Mapeo del JSON
+      onboardingCompletado: json['onboarding_completado'] as bool? ?? false,
     );
   }
-  // Método para clonar y modificar instancias
+
   UserProfileModel copyWith({
     String? userId,
     String? nombreUsuario,

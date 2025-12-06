@@ -1,11 +1,9 @@
-// lib/features/profile/view/widgets/achievement_modal.dart
-
 import 'package:flutter/material.dart';
 import 'package:kitsucode/features/profile/model/user_achievement_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:kitsucode/features/profile/utils/achievement_helpers.dart';
 import 'package:kitsucode/features/profile/model/user_profile_model.dart';
-// ✅ IMPORTAR EL OPTIMIZADOR
+
 import 'package:kitsucode/shared/optimized_image/optimizador_imagenes.dart';
 
 class AchievementModal extends StatelessWidget {
@@ -90,25 +88,23 @@ class _ModalContent extends StatelessWidget {
     final isUnlocked = achievement.obtenido;
     final lockedColor = colors.onSurfaceVariant.withValues(alpha: 0.5);
 
-    // --- Lógica de Imagen ---
     Widget img = ColorFiltered(
       colorFilter: isUnlocked
           ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
           : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
-      
-      // ✅ SOLUCIÓN: Usar Transform para subir la imagen
+
       child: Transform.translate(
-        offset: const Offset(0, -10), // Sube la imagen 10 píxeles
+        offset: const Offset(0, -10),
         child: Container(
           width: 320,
-          height: 210, // Aumentamos la altura para compensar
-          padding: const EdgeInsets.all(0), 
-          
+          height: 210,
+          padding: const EdgeInsets.all(0),
+
           child: OptimizedImage(
             imagePath: achievement.iconUrl,
-            width: 320, 
+            width: 320,
             height: 210,
-            fit: BoxFit.contain, 
+            fit: BoxFit.contain,
           ),
         ),
       ),
@@ -137,31 +133,30 @@ class _ModalContent extends StatelessWidget {
 
     final aura = isUnlocked
         ? Icon(
-            Icons.auto_awesome,
-            size: 120,
-            color: borderColor.withValues(alpha: 0.35),
-          )
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .fadeIn(duration: 600.ms)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.2, 1.2),
-              duration: 800.ms,
-            )
+                Icons.auto_awesome,
+                size: 120,
+                color: borderColor.withValues(alpha: 0.35),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .fadeIn(duration: 600.ms)
+              .scale(
+                begin: const Offset(0.8, 0.8),
+                end: const Offset(1.2, 1.2),
+                duration: 800.ms,
+              )
         : Icon(
-            Icons.auto_awesome,
-            size: 120,
-            color: Colors.grey.shade600.withValues(alpha: 0.5),
-          )
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .fadeIn(duration: 600.ms)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.2, 1.2),
-              duration: 800.ms,
-            );
+                Icons.auto_awesome,
+                size: 120,
+                color: Colors.grey.shade600.withValues(alpha: 0.5),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .fadeIn(duration: 600.ms)
+              .scale(
+                begin: const Offset(0.8, 0.8),
+                end: const Offset(1.2, 1.2),
+                duration: 800.ms,
+              );
 
-    // --- Lógica de Texto ---
     final String descriptionTitle;
     if (isUnlocked) {
       descriptionTitle = isCurrentUser
@@ -176,7 +171,7 @@ class _ModalContent extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        color: Colors.black.withValues(alpha: 0.7), 
+        color: Colors.black.withValues(alpha: 0.7),
         child: GestureDetector(
           onTap: () {},
           child: Material(
@@ -306,7 +301,9 @@ class _ModalContent extends StatelessWidget {
                               boxShadow: !isUnlocked
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.5),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                         offset: const Offset(0, 2),
@@ -384,7 +381,9 @@ class _ModalContent extends StatelessWidget {
                                     child: Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(11),
-                                        color: Colors.black.withValues(alpha: 0.3),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.3,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -394,7 +393,9 @@ class _ModalContent extends StatelessWidget {
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withValues(alpha: 0.7),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.7,
+                                          ),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(

@@ -1,5 +1,3 @@
-// lib/features/quiz_game/view/widgets/quiz_view.dart
-
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +80,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         i = _randomArray[j];
         j++;
       } else {
-        // FIN DEL JUEGO (Se acabaron las preguntas)
         if (context.mounted) {
           const int duration = 0;
           final double scoreRatio = marks / (totalQuestions * 5);
@@ -114,43 +111,42 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       });
     }
 
-    // 🔥 LOGICA DE FALLO EN ONBOARDING
-    // Si es onboarding y falla, esperamos 1s y terminamos con error.
     if (!correct && widget.onOnboardingFinished != null) {
-        Future.delayed(const Duration(milliseconds: 1000), () {
-            if (!mounted) return;
-            _finishGame(0, 0); // 0 puntos = fallo
-        });
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (!mounted) return;
+        _finishGame(0, 0);
+      });
     }
-    // En MODO NORMAL, no hacemos nada. El usuario debe presionar "CONTINUAR".
   }
 
   void _finishGame(int percentage, int duration) {
-      if (_hasSubmitted) return;
+    if (_hasSubmitted) return;
 
-      final bool esCorrecto = percentage > 50;
+    final bool esCorrecto = percentage > 50;
 
-      // Caso Onboarding
-      if (widget.onOnboardingFinished != null) {
-          widget.onOnboardingFinished!(esCorrecto);
-          return;
-      }
+    if (widget.onOnboardingFinished != null) {
+      widget.onOnboardingFinished!(esCorrecto);
+      return;
+    }
 
-      // Caso Normal (Modal)
-      _showFeedbackModal(
-          percentage: percentage, 
-          durationInSeconds: duration, 
-          recursos: widget.mydata.recursos
-      );
+    _showFeedbackModal(
+      percentage: percentage,
+      durationInSeconds: duration,
+      recursos: widget.mydata.recursos,
+    );
   }
 
   ThemeData _getLanguageTheme(String langName, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     switch (langName.toLowerCase().trim()) {
-      case 'python': return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
-      case 'c': return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
-      case 'java': return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
-      default: return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+      case 'python':
+        return isDark ? AppThemes.pythonDarkTheme : AppThemes.pythonTheme;
+      case 'c':
+        return isDark ? AppThemes.cDarkTheme : AppThemes.cTheme;
+      case 'java':
+        return isDark ? AppThemes.javaDarkTheme : AppThemes.javaTheme;
+      default:
+        return isDark ? AppThemes.darkTheme : AppThemes.lightTheme;
     }
   }
 
@@ -161,7 +157,6 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }) {
     if (_hasSubmitted) return;
 
-    // Doble check de seguridad
     if (widget.onOnboardingFinished != null) {
       widget.onOnboardingFinished!(percentage > 50);
       return;
@@ -286,11 +281,19 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 });
               },
         child: Text(
-          widget.mydata.options[widget.mydata.questions.keys.elementAt(i)]![k] ?? "",
+          widget.mydata.options[widget.mydata.questions.keys.elementAt(
+                i,
+              )]![k] ??
+              "",
           textAlign: TextAlign.start,
           maxLines: 5,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontFamily: "Alike", fontSize: 18.0, fontWeight: FontWeight.bold, height: 1.3),
+          style: const TextStyle(
+            fontFamily: "Alike",
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+          ),
         ),
       ),
     );
@@ -305,7 +308,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 
     final brightness = Theme.of(context).brightness;
     final appBarState = ref.watch(appBarProvider);
-    final challengeTheme = _getLanguageTheme(appBarState.languageName, brightness);
+    final challengeTheme = _getLanguageTheme(
+      appBarState.languageName,
+      brightness,
+    );
     final colorScheme = challengeTheme.colorScheme;
 
     if (_randomArray.isEmpty) {
@@ -329,7 +335,9 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         child: Scaffold(
           appBar: ChallengeAppBar2(
             progress: progress,
-            onClose: widget.onOnboardingFinished != null ? null : () => showExitDialog(context, ref),
+            onClose: widget.onOnboardingFinished != null
+                ? null
+                : () => showExitDialog(context, ref),
           ),
           body: _buildQuizBody(colorScheme, questionKey),
           bottomNavigationBar: _buildBottomBar(colorScheme),
@@ -339,25 +347,37 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   }
 
   Widget _buildQuizBody(ColorScheme colorScheme, String questionKey) {
-     final mediaQuery = MediaQuery.of(context);
-     final screenHeight = mediaQuery.size.height;
-     final topPadding = mediaQuery.padding.top;
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final topPadding = mediaQuery.padding.top;
 
     return SingleChildScrollView(
-      // --- CORRECCIÓN SCROLL QUIZ: Bloquear scroll manual ---
       physics: const NeverScrollableScrollPhysics(),
-      // ------------------------------------------------------
+
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: screenHeight - AppBar().preferredSize.height - topPadding - 100),
+          constraints: BoxConstraints(
+            minHeight:
+                screenHeight - AppBar().preferredSize.height - topPadding - 100,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               const SizedBox(height: 10),
-              Text("Selecciona la respuesta correcta", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+              Text(
+                "Selecciona la respuesta correcta",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
               const SizedBox(height: 20),
-              _buildQuestionCard(widget.mydata.questions[questionKey] ?? "Cargando...", colorScheme),
+              _buildQuestionCard(
+                widget.mydata.questions[questionKey] ?? "Cargando...",
+                colorScheme,
+              ),
               const SizedBox(height: 30),
               AbsorbPointer(
                 absorbing: disableAnswer,
@@ -370,7 +390,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 100), 
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -385,12 +405,23 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: colorScheme.shadow.withAlpha(26), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withAlpha(26),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 22.0, fontFamily: "Quando", color: colorScheme.onSurface, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 22.0,
+          fontFamily: "Quando",
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -405,10 +436,14 @@ class _QuizPageState extends ConsumerState<QuizPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: disableAnswer
                   ? (_wasCorrect == true ? Colors.green : Colors.red)
-                  : (selectedAnswer != null ? colorScheme.primary : colorScheme.surfaceContainerHighest),
+                  : (selectedAnswer != null
+                        ? colorScheme.primary
+                        : colorScheme.surfaceContainerHighest),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
             ),
             onPressed: (selectedAnswer == null && !disableAnswer)
                 ? null

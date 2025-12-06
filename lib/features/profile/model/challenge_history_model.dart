@@ -1,12 +1,10 @@
-// lib/features/profile/model/challenge_history_model.dart
-
 class ChallengeHistoryModel {
   final String challengeTitle;
   final String sectionTitle;
   final String dinamicaNombre;
   final DateTime completedAt;
   final int xpGained;
-  final String resultado; // <-- 1. AÑADE ESTA LÍNEA
+  final String resultado;
 
   ChallengeHistoryModel({
     required this.challengeTitle,
@@ -14,11 +12,10 @@ class ChallengeHistoryModel {
     required this.dinamicaNombre,
     required this.completedAt,
     required this.xpGained,
-    required this.resultado, // <-- 2. AÑADE ESTA LÍNEA
+    required this.resultado,
   });
 
   factory ChallengeHistoryModel.fromJson(Map<String, dynamic> json) {
-    // ... (el parseo de retoData, seccionData, dinamicaData no cambia)
     final retoData = json['reto'] as Map<String, dynamic>?;
     final nivelesList = retoData?['niveles'] as List? ?? [];
     final seccionData = nivelesList.isNotEmpty
@@ -34,7 +31,7 @@ class ChallengeHistoryModel {
       dinamicaNombre: dinamicaNombre,
       completedAt: DateTime.parse(json['fecha_intento'] as String),
       xpGained: json['experiencia_obtenida'] as int? ?? 0,
-      resultado: json['resultado'] as String? ?? 'fallido', // <-- 3. AÑADE ESTA LÍNEA
+      resultado: json['resultado'] as String? ?? 'fallido',
     );
   }
 }

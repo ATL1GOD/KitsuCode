@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:kitsucode/shared/appbar/app_bar_provider.dart'; // 🔥 NUEVO import
-
-// Estado para tracking de completitud de lenguajes
+import 'package:kitsucode/shared/appbar/app_bar_provider.dart';
 
 class LanguageCompletionState {
   final String currentLanguage;
@@ -15,7 +13,7 @@ class LanguageCompletionState {
 
   final bool hasCompletedLanguage;
 
-  final bool canUnlockNewLanguage; // Si este lenguaje puede desbloquear otro
+  final bool canUnlockNewLanguage;
 
   final int totalLevelsInLanguage;
 
@@ -28,7 +26,7 @@ class LanguageCompletionState {
 
     this.hasCompletedLanguage = false,
 
-    this.canUnlockNewLanguage = true, // Por defecto sí puede
+    this.canUnlockNewLanguage = true,
 
     this.totalLevelsInLanguage = 0,
 
@@ -78,19 +76,15 @@ class LanguageCompletionNotifier
     extends StateNotifier<LanguageCompletionState> {
   final SupabaseClient _supabase;
 
-  final Ref _ref; // 🔥 NUEVO: Necesitamos el ref para actualizar el AppBar
+  final Ref _ref;
 
   LanguageCompletionNotifier(this._supabase, this._ref)
     : super(
         LanguageCompletionState(currentLanguage: '', unlockedLanguages: []),
       );
 
-  /// Verifica si el usuario completó un lenguaje (Estrategia Híbrida)
-
   Future<void> checkLanguageCompletion(String userId) async {
     try {
-      // 1. Obtener el lenguaje favorito actual y arrays en UNA sola consulta
-
       final userResponse = await _supabase
           .from('usuarios')
           .select('''
@@ -118,8 +112,6 @@ class LanguageCompletionNotifier
 
       final currentLangId = userResponse['lenguaje_favorito'] as int;
 
-      // 2. Procesar Arrays
-
       final completadosList = List<String>.from(
         (userResponse['lenguajes_completados'] as List? ?? []).map(
           (e) => e.toString().trim().toLowerCase(),
@@ -132,19 +124,9 @@ class LanguageCompletionNotifier
         ),
       );
 
-      // 3. Lógica de Verificación
-
       bool isCompleted = completadosList.contains(normalizedCurrentLang);
 
-      // --- AQUÍ ESTÁ LA SOLUCIÓN ---
-
-      // Si la BD dice que NO está completado, verificamos manualmente contando niveles.
-
-      // Esto arregla el caso donde el Trigger SQL no existe o falló.
-
       if (!isCompleted) {
-        // Verificación manual (Dart contando niveles)
-
         final manualCheck = await _verifyManuallyIfCompleted(
           userId,
           currentLangId,
@@ -153,25 +135,15 @@ class LanguageCompletionNotifier
         if (manualCheck) {
           isCompleted = true;
 
-          // ¡Importante! Actualizamos la BD para que quede guardado
-
           await _addToCompletedLanguages(userId, normalizedCurrentLang);
-
-          // Actualizamos la lista local para que la lógica siguiente funcione
 
           completadosList.add(normalizedCurrentLang);
         }
       }
 
-      // -----------------------------
-
-      // 4. Determinar desbloqueo
-
       final hasBeenUsed = usadosList.contains(normalizedCurrentLang);
 
       final canUnlock = isCompleted && !hasBeenUsed;
-
-      // 5. Obtener desbloqueados
 
       final unlockedLanguages = await _getUnlockedLanguages(userId);
 
@@ -189,12 +161,8 @@ class LanguageCompletionNotifier
     }
   }
 
-  /// Cuenta niveles manualmente: Es la "red de seguridad"
-
   Future<bool> _verifyManuallyIfCompleted(String userId, int langId) async {
     try {
-      // A. Obtener secciones del lenguaje
-
       final sectionsResponse = await _supabase
           .from('secciones')
           .select('id_seccion')
@@ -205,8 +173,6 @@ class LanguageCompletionNotifier
           .toList();
 
       if (sectionIds.isEmpty) return false;
-
-      // B. Obtener total de niveles de esas secciones
 
       final levelsResponse = await _supabase
           .from('niveles')
@@ -219,8 +185,6 @@ class LanguageCompletionNotifier
 
       final levelIds = levelsResponse.map((l) => l['id_nivel'] as int).toList();
 
-      // C. Contar cuántos de esos niveles ha completado el usuario
-
       final completedResponse = await _supabase
           .from('progreso_usuario')
           .select('id_nivel')
@@ -228,8 +192,6 @@ class LanguageCompletionNotifier
           .inFilter('id_nivel', levelIds);
 
       final completedLevels = completedResponse.length;
-
-      // D. Si completó todos (o más), es true
 
       return completedLevels >= totalLevels;
     } catch (e) {
@@ -264,7 +226,6 @@ class LanguageCompletionNotifier
             .update({'lenguajes_completados': currentList})
             .eq('id', userId);
       }
-      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -295,7 +256,6 @@ class LanguageCompletionNotifier
             .update({'lenguajes_seleccionados': currentList})
             .eq('id', userId);
       }
-      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -315,8 +275,6 @@ class LanguageCompletionNotifier
       return [];
     }
   }
-
-  /// Actualiza el lenguaje favorito del usuario
 
   Future<void> updateFavoriteLanguage(
     String userId,
@@ -349,16 +307,12 @@ class LanguageCompletionNotifier
       debugPrint('   - ID del nuevo lenguaje: $languageId');
       debugPrint('   - Nombre exacto: $exactLanguageName');
 
-      // 1. Actualizar BD
-
       await _supabase
           .from('usuarios')
           .update({'lenguaje_favorito': languageId})
           .eq('id', userId);
 
       debugPrint('   ✅ BD actualizada');
-
-      // 2. Marcar lenguaje anterior como usado
 
       if (previousLanguage != null && previousLanguage.isNotEmpty) {
         await _markLanguageAsUsedForUnlock(
@@ -369,21 +323,13 @@ class LanguageCompletionNotifier
         debugPrint('   ✅ Lenguaje anterior marcado como usado');
       }
 
-      // 3. Agregar a lenguajes seleccionados
-
       await _addToSelectedLanguages(userId, normalizedName);
 
       debugPrint('   ✅ Agregado a lenguajes seleccionados');
 
-      // 4. Actualizar estado local
-
       state = state.copyWith(currentLanguage: exactLanguageName);
 
       debugPrint('   ✅ Estado local actualizado');
-
-      // 🔥 5. CRÍTICO: Actualizar AppBar con los trofeos del nuevo lenguaje
-
-      // Importamos el appBarProvider desde app_bar_provider.dart
 
       debugPrint('   🎯 Llamando a appBarProvider.updateLanguage...');
       await _ref
@@ -427,7 +373,6 @@ class LanguageCompletionNotifier
             .update({'lenguajes_usados_desbloqueo': currentList})
             .eq('id', userId);
       }
-      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -438,8 +383,5 @@ class LanguageCompletionNotifier
 
 final languageCompletionProvider =
     StateNotifierProvider<LanguageCompletionNotifier, LanguageCompletionState>(
-      (ref) => LanguageCompletionNotifier(
-        Supabase.instance.client,
-        ref,
-      ), // 🔥 Pasamos el ref
+      (ref) => LanguageCompletionNotifier(Supabase.instance.client, ref),
     );

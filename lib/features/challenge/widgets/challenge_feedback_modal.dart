@@ -1,19 +1,13 @@
-// lib/features/challenge/widgets/challenge_feedback_modal.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Importar Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 
-// Modal de reporte
 import 'package:kitsucode/features/challenge/widgets/report_error_modal.dart';
 
-// Tema principal de KitsuCode
 import 'package:kitsucode/core/utils/app_themes.dart';
 
-// Audio Controller
-import 'package:kitsucode/core/providers/audio_provider.dart'; // 2. Importar el AudioProvider
+import 'package:kitsucode/core/providers/audio_provider.dart';
 
-// 3. Cambiamos a ConsumerStatefulWidget para tener ciclo de vida (initState)
 class ChallengeFeedbackModal extends ConsumerStatefulWidget {
   final bool isCorrect;
   final VoidCallback onContinue;
@@ -27,15 +21,16 @@ class ChallengeFeedbackModal extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ChallengeFeedbackModal> createState() => _ChallengeFeedbackModalState();
+  ConsumerState<ChallengeFeedbackModal> createState() =>
+      _ChallengeFeedbackModalState();
 }
 
-class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal> {
-
+class _ChallengeFeedbackModalState
+    extends ConsumerState<ChallengeFeedbackModal> {
   @override
   void initState() {
     super.initState();
-    // 4. Disparamos el sonido al iniciar el modal
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.isCorrect) {
         ref.read(audioControllerProvider).playSuccess();
@@ -46,13 +41,12 @@ class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal>
   }
 
   Future<void> _handleReportError(BuildContext context) async {
-    // Determinar si el tema actual del reto es claro u oscuro
     final isChallengeThemeDark =
         Theme.of(context).brightness == Brightness.dark;
 
-    // Tema principal (naranja de KitsuCode)
-    final appTheme =
-        isChallengeThemeDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    final appTheme = isChallengeThemeDark
+        ? AppThemes.darkTheme
+        : AppThemes.lightTheme;
 
     await showDialog(
       context: context,
@@ -60,9 +54,7 @@ class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal>
       builder: (dialogContext) {
         return Theme(
           data: appTheme,
-          child: ReportErrorModal(
-            challengeId: widget.challengeId, // Usamos widget.challengeId
-          ),
+          child: ReportErrorModal(challengeId: widget.challengeId),
         );
       },
     );
@@ -73,20 +65,18 @@ class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal>
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // Determinar si el tema actual del reto es claro u oscuro
     final isChallengeThemeDark =
         Theme.of(context).brightness == Brightness.dark;
 
-    // Tema principal (naranja de KitsuCode)
-    final appTheme =
-        isChallengeThemeDark ? AppThemes.darkTheme : AppThemes.lightTheme;
+    final appTheme = isChallengeThemeDark
+        ? AppThemes.darkTheme
+        : AppThemes.lightTheme;
 
     final Color flagColor = appTheme.colorScheme.secondary;
 
-    // Estilos de resultado
     final Color successColor = Colors.green.shade600;
     final Color errorColor = Colors.red.shade600;
-    // Usamos widget.isCorrect
+
     final Color titleColor = widget.isCorrect ? successColor : errorColor;
 
     const String lottieAsset = 'assets/animations/fox_run.json';
@@ -95,12 +85,11 @@ class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal>
       canPop: false,
       child: Stack(
         children: [
-          // Fondo del modal
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
-                .copyWith(
-              bottom: MediaQuery.of(context).padding.bottom + 20,
-            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 20,
+            ).copyWith(bottom: MediaQuery.of(context).padding.bottom + 20),
             decoration: BoxDecoration(
               color: colors.surface,
               borderRadius: const BorderRadius.only(
@@ -119,7 +108,9 @@ class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal>
                 const SizedBox(height: 20),
 
                 Text(
-                  widget.isCorrect ? "¡Respuesta Correcta!" : "Respuesta Incorrecta",
+                  widget.isCorrect
+                      ? "¡Respuesta Correcta!"
+                      : "Respuesta Incorrecta",
                   style: textTheme.headlineMedium?.copyWith(
                     color: titleColor,
                     fontWeight: FontWeight.bold,
@@ -147,28 +138,21 @@ class _ChallengeFeedbackModalState extends ConsumerState<ChallengeFeedbackModal>
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                  onPressed: widget.onContinue, // Usamos widget.onContinue
+                  onPressed: widget.onContinue,
                   child: const Text(
                     'CONTINUAR',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Botón de bandera (reportar)
           Positioned(
             top: 16,
             right: 16,
             child: IconButton(
-              icon: Icon(
-                Icons.flag_outlined,
-                color: flagColor,
-              ),
+              icon: Icon(Icons.flag_outlined, color: flagColor),
               onPressed: () => _handleReportError(context),
               tooltip: 'Reportar un problema',
             ),

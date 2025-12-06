@@ -27,8 +27,8 @@ class OptimizedLocalImage extends StatelessWidget {
       fit: fit,
       cacheWidth: (width * devicePixelRatio).round(),
       cacheHeight: (height * devicePixelRatio).round(),
-      filterQuality: FilterQuality.low, // Máximo rendimiento para íconos
-      isAntiAlias: false, // Desactiva anti-aliasing para mejor rendimiento
+      filterQuality: FilterQuality.low,
+      isAntiAlias: false,
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded || frame != null) {
           return child;

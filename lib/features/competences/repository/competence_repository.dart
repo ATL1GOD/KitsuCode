@@ -74,12 +74,13 @@ class MockCompetenceRepository implements CompetenceRepository {
 
       if (score >= 4500) {
         rankName = 'Diamante';
-      } else if (score >= 3500)
+      } else if (score >= 3500) {
         rankName = 'Oro';
-      else if (score >= 2000)
+      } else if (score >= 2000) {
         rankName = 'Plata';
-      else
+      } else {
         rankName = 'Bronce';
+      }
 
       ranking.add(
         RankingModel(

@@ -65,7 +65,7 @@ class OnboardingProfileStep extends StatelessWidget {
                 image: AssetImage(desktopHeroPath),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  colorScheme.primary.withOpacity(0.85),
+                  colorScheme.primary.withAlpha(217),
                   BlendMode.srcOver,
                 ),
               ),
@@ -91,7 +91,7 @@ class OnboardingProfileStep extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
-                      color: colorScheme.onPrimary.withOpacity(0.9),
+                      color: colorScheme.onPrimary.withAlpha(230),
                     ),
                   ),
                 ),
@@ -249,7 +249,7 @@ class OnboardingProfileStep extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
+                  color: colorScheme.primary.withAlpha(77),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -310,7 +310,7 @@ class OnboardingProfileStep extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
+                    color: colorScheme.primary.withAlpha(51),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),

@@ -216,6 +216,7 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   ref.invalidate(desafiosProvider);
 
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_success', extra: trofeos);
                 } else {
                   await repository.submitChallengeAttempt(
@@ -227,11 +228,13 @@ class _CodigoChallengeViewState extends ConsumerState<CodigoChallengeView> {
                   final List<RecursoModel> recursos = widget.challenge.recursos;
 
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_failure', extra: recursos);
                 }
               } catch (e) {
                 if (context.mounted) {
                   showErrorSnackbar(
+                    // ignore: use_build_context_synchronously
                     context,
                     'Error',
                     'Error al enviar resultado: $e',

@@ -72,6 +72,7 @@ class _NoInternetViewState extends ConsumerState<NoInternetView> {
               : AllStatsView.getHeaderColor(profile, colors);
         }
       }
+      // ignore: empty_catches
     } catch (e) {}
 
     return Scaffold(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/settings/provider/settings_provider.dart';
 
@@ -50,7 +51,9 @@ class AudioController {
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
       await _musicPlayer.setPlayerMode(PlayerMode.mediaPlayer);
     } catch (e) {
-      print("Error configurando contexto de audio: $e");
+      if (kDebugMode) {
+        print("Error configurando contexto de audio: $e");
+      }
     }
   }
 
@@ -75,7 +78,9 @@ class AudioController {
       await player.stop();
       await player.resume();
     } catch (e) {
-      print("Error SFX: $e");
+      if (kDebugMode) {
+        print("Error SFX: $e");
+      }
     }
   }
 

@@ -190,7 +190,7 @@ class DragTargetBlank extends StatelessWidget {
             return Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12.0),
-                color: colorScheme.tertiary.withOpacity(0.25),
+                color: colorScheme.tertiary.withAlpha(64),
                 border: Border.all(color: colorScheme.tertiary, width: 3.0),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -237,7 +237,7 @@ class DragTargetBlank extends StatelessWidget {
           return Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.0),
-              color: colorScheme.primary.withOpacity(0.25),
+              color: colorScheme.primary.withAlpha(64),
               border: Border.all(color: colorScheme.primary, width: 3.0),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

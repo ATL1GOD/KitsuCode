@@ -362,6 +362,7 @@ class _CircularAvatarCell extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   width: size,
                   height: size,
+                  // ignore: deprecated_member_use
                   transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
                   transformAlignment: Alignment.center,
                   decoration: BoxDecoration(

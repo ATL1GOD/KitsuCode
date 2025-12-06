@@ -31,12 +31,12 @@ class ChallengeHistoryTile extends StatelessWidget {
     final DateFormat formatter = DateFormat('dd/MM/yyyy - hh:mm a');
 
     final bool isSuccess = item.resultado.toLowerCase() == 'completado';
-    final Color auraColor = (isSuccess ? Colors.green : Colors.red).withOpacity(
-      0.7,
+    final Color auraColor = (isSuccess ? Colors.green : Colors.red).withAlpha(
+      179,
     );
     final Color cardColor = isSuccess
         ? colorScheme.surface.withAlpha(230)
-        : colorScheme.errorContainer.withOpacity(0.5);
+        : colorScheme.errorContainer.withAlpha(128);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),

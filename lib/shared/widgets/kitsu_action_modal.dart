@@ -34,10 +34,10 @@ Future<T?> showKitsuActionModal<T>({
               topLeft: Radius.circular(28.0),
               topRight: Radius.circular(28.0),
             ),
-            border: Border.all(color: dynamicColor.withOpacity(.6)),
+            border: Border.all(color: dynamicColor.withAlpha(153)),
             boxShadow: [
               BoxShadow(
-                color: dynamicColor.withOpacity(.25),
+                color: dynamicColor.withAlpha(64),
                 blurRadius: 12,
                 offset: const Offset(0, 5),
               ),

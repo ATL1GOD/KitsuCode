@@ -207,14 +207,14 @@ class SpecialEventCardHeader extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.26),
+                  color: Colors.black.withAlpha(66),
                   blurRadius: 10,
                   offset: const Offset(2, 5),
                 ),
 
                 if (isParentCompleted)
                   BoxShadow(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withAlpha(128),
                     blurRadius: 20,
                     spreadRadius: -2,
                   ),

@@ -87,8 +87,8 @@ class _SearchFieldState extends ConsumerState<SearchField> {
           boxShadow: [
             BoxShadow(
               color: _isFocused
-                  ? colorBordeActivo.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.1),
+                  ? colorBordeActivo.withAlpha(77)
+                  : Colors.black.withAlpha(26),
               blurRadius: _isFocused ? 12 : 8,
               offset: const Offset(0, 4),
             ),
@@ -106,7 +106,7 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: colorIconoBg.withOpacity(0.4),
+                      color: colorIconoBg.withAlpha(102),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -157,7 +157,7 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withAlpha(51),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -176,7 +176,7 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: colorBoton.withOpacity(0.4),
+                      color: colorBoton.withAlpha(102),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -186,7 +186,7 @@ class _SearchFieldState extends ConsumerState<SearchField> {
                   child: Text(
                     '🦊',
                     style: TextStyle(
-                      color: Colors.black.withOpacity(0.8),
+                      color: Colors.black.withAlpha(204),
                       fontWeight: FontWeight.w900,
                       fontSize: 14,
                       letterSpacing: 1.0,
@@ -251,7 +251,7 @@ class UserSearchCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withAlpha(38),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -279,8 +279,8 @@ class UserSearchCard extends ConsumerWidget {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      Colors.black.withOpacity(0.8),
-                      Colors.black.withOpacity(0.4),
+                      Colors.black.withAlpha(204),
+                      Colors.black.withAlpha(102),
                     ],
                   ),
                 ),
@@ -293,7 +293,7 @@ class UserSearchCard extends ConsumerWidget {
                 onTap: () {
                   showDialog(
                     context: context,
-                    barrierColor: Colors.black.withOpacity(0.5),
+                    barrierColor: Colors.black.withAlpha(128),
                     builder: (context) => UserProfileModal(
                       userId: user.userId,
                       rank: user.rank,
@@ -315,7 +315,7 @@ class UserSearchCard extends ConsumerWidget {
                           border: Border.all(color: rankColor, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: rankColor.withOpacity(0.4),
+                              color: rankColor.withAlpha(102),
                               blurRadius: 10,
                               spreadRadius: 1,
                             ),
@@ -369,7 +369,7 @@ class UserSearchCard extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w400,
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withAlpha(204),
                                     ),
                                   ),
                                 ),
@@ -381,10 +381,10 @@ class UserSearchCard extends ConsumerWidget {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: rankColor.withOpacity(0.2),
+                                    color: rankColor.withAlpha(51),
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(
-                                      color: rankColor.withOpacity(0.5),
+                                      color: rankColor.withAlpha(128),
                                       width: 0.5,
                                     ),
                                   ),
@@ -406,7 +406,7 @@ class UserSearchCard extends ConsumerWidget {
                       Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 16,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withAlpha(128),
                       ),
                     ],
                   ),

@@ -62,6 +62,7 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
         if (currentLang.isNotEmpty) {
           audioController.playBackgroundMusic(currentLang);
         }
+        // ignore: empty_catches
       } catch (e) {}
     });
   }
@@ -147,6 +148,7 @@ class _HomeViewState extends ConsumerState<HomeView> with RouteAware {
         if (!profile.onboardingCompletado) {
           Future.microtask(() {
             if (mounted) {
+              // ignore: use_build_context_synchronously
               context.go('/onboarding');
             }
           });

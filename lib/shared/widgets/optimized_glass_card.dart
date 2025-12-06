@@ -48,14 +48,14 @@ class OptimizedGlassCard extends StatelessWidget {
             : Container(
                 decoration: BoxDecoration(
                   color: isDarkMode
-                      ? colors.surfaceContainerHighest.withOpacity(0.85)
-                      : Colors.white.withOpacity(0.65),
+                      ? colors.surfaceContainerHighest.withAlpha(217)
+                      : Colors.white.withAlpha(166),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: borderColor),
 
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withAlpha(20),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

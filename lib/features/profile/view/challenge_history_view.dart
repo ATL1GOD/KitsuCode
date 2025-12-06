@@ -149,6 +149,7 @@ class ChallengeHistoryView extends ConsumerWidget {
                                         .state =
                                     newRange;
 
+                                // ignore: unused_result
                                 ref.refresh(
                                   challengeHistoryProvider(
                                     currentUserId,

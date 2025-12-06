@@ -226,6 +226,7 @@ class LanguageCompletionNotifier
             .update({'lenguajes_completados': currentList})
             .eq('id', userId);
       }
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -256,6 +257,7 @@ class LanguageCompletionNotifier
             .update({'lenguajes_seleccionados': currentList})
             .eq('id', userId);
       }
+      // ignore: empty_catches
     } catch (e) {}
   }
 
@@ -373,6 +375,7 @@ class LanguageCompletionNotifier
             .update({'lenguajes_usados_desbloqueo': currentList})
             .eq('id', userId);
       }
+      // ignore: empty_catches
     } catch (e) {}
   }
 

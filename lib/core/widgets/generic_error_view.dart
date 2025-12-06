@@ -122,7 +122,7 @@ class GenericErrorView extends ConsumerWidget {
                                 backgroundColor: dynamicColor,
                                 foregroundColor: colors.onPrimary,
                                 elevation: 4,
-                                shadowColor: dynamicColor.withOpacity(0.4),
+                                shadowColor: dynamicColor.withAlpha(102),
                                 textStyle: textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),

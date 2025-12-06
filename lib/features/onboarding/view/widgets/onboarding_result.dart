@@ -95,12 +95,12 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
+                    color: primaryColor.withAlpha(26),
                     shape: BoxShape.circle,
                     border: Border.all(color: primaryColor, width: 4),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.4),
+                        color: primaryColor.withAlpha(102),
                         blurRadius: 25,
                         spreadRadius: 5,
                       ),
@@ -167,9 +167,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: primaryColor.withOpacity(0.2),
-                        ),
+                        border: Border.all(color: primaryColor.withAlpha(51)),
                       ),
                       child: Text(
                         model.descripcion,
@@ -221,7 +219,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: primaryColor.withOpacity(0.5),
+                      shadowColor: primaryColor.withAlpha(128),
                     ),
                     child: const Text(
                       "COMENZAR AVENTURA",
@@ -256,7 +254,7 @@ class _OnboardingResultsViewState extends State<OnboardingResultsView>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryColor.withOpacity(0.5)),
+        border: Border.all(color: primaryColor.withAlpha(128)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

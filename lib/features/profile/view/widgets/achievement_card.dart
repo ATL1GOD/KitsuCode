@@ -57,7 +57,7 @@ class AchievementCard extends StatelessWidget {
             BoxShadow(
               color: isUnlocked
                   ? effectColor.withAlpha(77)
-                  : colors.shadow.withOpacity(0.15),
+                  : colors.shadow.withAlpha(38),
               blurRadius: 3,
               spreadRadius: 0,
             ),

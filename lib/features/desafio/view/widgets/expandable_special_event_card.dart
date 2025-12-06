@@ -59,7 +59,7 @@ class _ExpandableSpecialEventCardState
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.orange.withOpacity(0.4),
+                color: Colors.orange.withAlpha(102),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -90,7 +90,7 @@ class _ExpandableSpecialEventCardState
                 ref.read(specialEventExpandedProvider.notifier).state =
                     !current;
               },
-              splashColor: Colors.white.withOpacity(0.2),
+              splashColor: Colors.white.withAlpha(51),
               child: SpecialEventCardHeader(
                 evento: widget.evento,
                 isParentCompleted: widget.isParentCompleted,

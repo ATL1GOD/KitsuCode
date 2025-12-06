@@ -52,12 +52,12 @@ class _BaseSettingsTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: c.surface.withOpacity(.95),
+        color: c.surface.withAlpha(243),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: dynamicColor.withOpacity(.6)),
+        border: Border.all(color: dynamicColor.withAlpha(153)),
         boxShadow: [
           BoxShadow(
-            color: dynamicColor.withOpacity(.25),
+            color: dynamicColor.withAlpha(64),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -117,7 +117,7 @@ class SettingsNavigationTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: t.bodySmall?.copyWith(
-                    color: c.onSurface.withOpacity(.6),
+                    color: c.onSurface.withAlpha(153),
                   ),
                 ),
               ],
@@ -198,7 +198,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
                 Text(
                   widget.subtitle,
                   style: t.bodySmall?.copyWith(
-                    color: c.onSurface.withOpacity(.6),
+                    color: c.onSurface.withAlpha(153),
                   ),
                 ),
               ],
@@ -213,7 +213,7 @@ class _SettingsSwitchTileState extends ConsumerState<SettingsSwitchTile> {
             trackColor: WidgetStateProperty.resolveWith((states) {
               final on = states.contains(WidgetState.selected);
               return on
-                  ? widget.dynamicColor.withOpacity(.35)
+                  ? widget.dynamicColor.withAlpha(89)
                   : c.surfaceContainerHigh;
             }),
           ),
@@ -346,7 +346,7 @@ class SettingsDestructiveTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: t.bodySmall?.copyWith(
-                    color: errorColor.withOpacity(.8),
+                    color: errorColor.withAlpha(204),
                   ),
                 ),
               ],

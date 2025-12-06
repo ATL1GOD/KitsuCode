@@ -103,7 +103,7 @@ class _ModalContent extends StatelessWidget {
     );
 
     final aura =
-        Icon(Icons.auto_awesome, size: 120, color: borderColor.withOpacity(0.5))
+        Icon(Icons.auto_awesome, size: 120, color: borderColor.withAlpha(128))
             .animate(onPlay: (c) => c.repeat(reverse: true))
             .fadeIn(duration: 600.ms)
             .scale(
@@ -141,7 +141,7 @@ class _ModalContent extends StatelessWidget {
                       color: colors.surface,
                       boxShadow: [
                         BoxShadow(
-                          color: borderColor.withOpacity(0.7),
+                          color: borderColor.withAlpha(179),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),

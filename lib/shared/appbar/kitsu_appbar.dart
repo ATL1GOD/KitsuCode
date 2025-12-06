@@ -391,19 +391,19 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
 
         final List<Color> panelGradientColors = isDark
             ? [
-                colorScheme.primaryContainer.withOpacity(0.90),
-                colorScheme.tertiaryContainer.withOpacity(0.90),
+                colorScheme.primaryContainer.withAlpha(230),
+                colorScheme.tertiaryContainer.withAlpha(230),
               ]
             : [
-                colorScheme.primaryFixed.withOpacity(0.90),
-                colorScheme.secondaryFixed.withOpacity(0.90),
+                colorScheme.primaryFixed.withAlpha(230),
+                colorScheme.secondaryFixed.withAlpha(230),
               ];
 
         final Color panelBorderColor = colorScheme.primary;
 
         final List<BoxShadow> panelShadows = [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.35),
+            color: colorScheme.primary.withAlpha(89),
             blurRadius: 24,
             spreadRadius: 2,
           ),
@@ -496,12 +496,12 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
 
     final List<Color> itemGradientColors = isDark
         ? [
-            colorScheme.primaryContainer.withOpacity(0.85),
-            colorScheme.secondaryContainer.withOpacity(0.85),
+            colorScheme.primaryContainer.withAlpha(217),
+            colorScheme.secondaryContainer.withAlpha(217),
           ]
         : [
-            colorScheme.primaryFixed.withOpacity(0.85),
-            colorScheme.secondaryFixed.withOpacity(0.85),
+            colorScheme.primaryFixed.withAlpha(217),
+            colorScheme.secondaryFixed.withAlpha(217),
           ];
     final Color itemBorderColor = isDark
         ? colorScheme.primaryFixed
@@ -570,12 +570,12 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
           border: Border.all(color: itemBorderColor, width: 3),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.35 : 0.20),
+              color: Colors.black.withAlpha(isDark ? 89 : 51),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.white.withOpacity(isDark ? 0.10 : 0.18),
+              color: Colors.white.withAlpha(isDark ? 26 : 46),
               blurRadius: 6,
               offset: const Offset(-2, -2),
             ),
@@ -589,7 +589,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
                 color: Colors.white.withAlpha(230),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.20),
+                    color: Colors.black.withAlpha(51),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -621,7 +621,7 @@ class _KitsuAppBarState extends ConsumerState<KitsuAppBar> {
             else
               Icon(
                 Icons.lock,
-                color: colorScheme.onPrimary.withOpacity(0.55),
+                color: colorScheme.onPrimary.withAlpha(140),
                 size: 20,
               ),
           ],

@@ -29,7 +29,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withAlpha(51),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -51,14 +51,14 @@ class SegmentedEventProgressBar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withAlpha(77),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+        border: Border.all(color: Colors.white.withAlpha(77), width: 1.5),
       ),
       child: Center(
         child: Icon(
           Icons.lock_outline_rounded,
-          color: Colors.white.withOpacity(0.7),
+          color: Colors.white.withAlpha(179),
           size: size * 0.55,
         ),
       ),
@@ -94,7 +94,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
                     height: barHeight,
                     width: availableWidth,
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withAlpha(51),
                       borderRadius: BorderRadius.circular(barHeight / 2),
                     ),
                   ),
@@ -118,7 +118,7 @@ class SegmentedEventProgressBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(barHeight / 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withAlpha(128),
                           blurRadius: 6,
                         ),
                       ],

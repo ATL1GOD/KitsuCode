@@ -211,6 +211,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   ref.invalidate(globalRankingProvider);
 
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_success', extra: trofeos);
                 } else {
                   await repository.submitChallengeAttempt(
@@ -222,11 +223,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                   final List<RecursoModel> recursos = widget.mydata.recursos;
 
                   if (!context.mounted) return;
+                  // ignore: use_build_context_synchronously
                   context.push('/challenge_failure', extra: recursos);
                 }
               } catch (e) {
                 if (context.mounted) {
                   showErrorSnackbar(
+                    // ignore: use_build_context_synchronously
                     context,
                     'Error',
                     'Error al enviar resultado: $e',

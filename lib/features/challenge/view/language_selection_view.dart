@@ -295,7 +295,7 @@ class _LanguageSelectionViewState extends ConsumerState<LanguageSelectionView> {
                   Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: colorScheme.onSurface.withOpacity(0.05),
+                          color: colorScheme.onSurface.withAlpha(13),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: colorScheme.onSurface.withAlpha(26),
@@ -365,8 +365,8 @@ class _LanguageCard extends StatelessWidget {
                 )
               : LinearGradient(
                   colors: [
-                    language.color.withOpacity(isSelected ? 0.3 : 0.15),
-                    language.darkColor.withOpacity(isSelected ? 0.3 : 0.15),
+                    language.color.withAlpha(isSelected ? 77 : 38),
+                    language.darkColor.withAlpha(isSelected ? 77 : 38),
                   ],
                 ),
           borderRadius: BorderRadius.circular(20),
@@ -382,7 +382,7 @@ class _LanguageCard extends StatelessWidget {
               ? []
               : [
                   BoxShadow(
-                    color: language.color.withOpacity(isSelected ? 0.4 : 0.2),
+                    color: language.color.withAlpha(isSelected ? 102 : 51),
                     blurRadius: isSelected ? 20 : 10,
                     spreadRadius: isSelected ? 2 : 0,
                   ),

@@ -97,7 +97,9 @@ class ProfileRepository {
       final list = data as List;
       return list.map((json) => FollowListModel.fromJson(json)).toList();
     } catch (e) {
-      print('Error al cargar la lista de seguimiento ($type): $e');
+      if (kDebugMode) {
+        print('Error al cargar la lista de seguimiento ($type): $e');
+      }
       throw Exception('Error al cargar la lista de seguimiento.');
     }
   }
@@ -141,9 +143,13 @@ class ProfileRepository {
         body: {'follower_id': currentUserId, 'followed_id': followedUserId},
       );
 
-      print('[new-follower] invoke result: $res');
+      if (kDebugMode) {
+        print('[new-follower] invoke result: $res');
+      }
     } catch (e) {
-      print('[new-follower] error invoking function: $e');
+      if (kDebugMode) {
+        print('[new-follower] error invoking function: $e');
+      }
     }
   }
 
@@ -202,7 +208,9 @@ class ProfileRepository {
 
       return UserStatsModel.fromJson(response);
     } catch (e) {
-      print('Error en fetchUserStatsById (RPC): $e');
+      if (kDebugMode) {
+        print('Error en fetchUserStatsById (RPC): $e');
+      }
       return UserStatsModel.empty();
     }
   }
@@ -219,7 +227,9 @@ class ProfileRepository {
       final list = data as List;
       return list.map((json) => UserAchievementModel.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching achievements: $e');
+      if (kDebugMode) {
+        print('Error fetching achievements: $e');
+      }
       throw Exception('Error al cargar los logros');
     }
   }
@@ -250,7 +260,9 @@ class ProfileRepository {
 
       return data;
     } catch (e) {
-      print('Error fetching logro details: $e');
+      if (kDebugMode) {
+        print('Error fetching logro details: $e');
+      }
       throw Exception('Error al cargar detalles del logro');
     }
   }
@@ -265,7 +277,9 @@ class ProfileRepository {
 
       return data;
     } catch (e) {
-      print('Error fetching avatar details: $e');
+      if (kDebugMode) {
+        print('Error fetching avatar details: $e');
+      }
       throw Exception('Error al cargar detalles del avatar');
     }
   }
@@ -280,7 +294,9 @@ class ProfileRepository {
       final list = data as List;
       return list.map((json) => AvatarModel.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching avatars: $e');
+      if (kDebugMode) {
+        print('Error fetching avatars: $e');
+      }
       throw Exception('Error al cargar los avatares');
     }
   }
@@ -296,7 +312,9 @@ class ProfileRepository {
       );
       return result as bool? ?? false;
     } catch (e) {
-      print('Error unlocking avatar: $e');
+      if (kDebugMode) {
+        print('Error unlocking avatar: $e');
+      }
       return false;
     }
   }
@@ -317,7 +335,9 @@ class ProfileRepository {
       final list = data as List;
       return list.map((json) => UserSearchPreviewModel.fromJson(json)).toList();
     } catch (e) {
-      print('Error al buscar usuarios: $e');
+      if (kDebugMode) {
+        print('Error al buscar usuarios: $e');
+      }
       throw Exception('Error al buscar usuarios.');
     }
   }

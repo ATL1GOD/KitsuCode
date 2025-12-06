@@ -19,8 +19,8 @@ class MonthlyChallengeItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final backgroundColor = isCompleted
-        ? Colors.green.withOpacity(0.15)
-        : Colors.black.withOpacity(0.2);
+        ? Colors.green.withAlpha(38)
+        : Colors.black.withAlpha(51);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12.0),
@@ -35,7 +35,7 @@ class MonthlyChallengeItem extends ConsumerWidget {
                   context.push('/reto/${desafio.idReto}/${desafio.nivelId}');
                 },
           borderRadius: BorderRadius.circular(16),
-          splashColor: parentColor.withOpacity(0.3),
+          splashColor: parentColor.withAlpha(77),
           child: Ink(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             decoration: BoxDecoration(
@@ -43,14 +43,14 @@ class MonthlyChallengeItem extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isCompleted
-                    ? Colors.greenAccent.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.1),
+                    ? Colors.greenAccent.withAlpha(128)
+                    : Colors.white.withAlpha(26),
                 width: 1.5,
               ),
               boxShadow: isCompleted
                   ? [
                       BoxShadow(
-                        color: Colors.greenAccent.withOpacity(0.1),
+                        color: Colors.greenAccent.withAlpha(26),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -65,12 +65,12 @@ class MonthlyChallengeItem extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isCompleted
                         ? Colors.green
-                        : Colors.white.withOpacity(0.1),
+                        : Colors.white.withAlpha(26),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isCompleted
                           ? Colors.white
-                          : parentColor.withOpacity(0.5),
+                          : parentColor.withAlpha(128),
                       width: 2,
                     ),
                   ),
@@ -98,8 +98,8 @@ class MonthlyChallengeItem extends ConsumerWidget {
                         ),
                         decoration: BoxDecoration(
                           color: isCompleted
-                              ? Colors.green.withOpacity(0.2)
-                              : parentColor.withOpacity(0.2),
+                              ? Colors.green.withAlpha(51)
+                              : parentColor.withAlpha(51),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -118,7 +118,7 @@ class MonthlyChallengeItem extends ConsumerWidget {
                         desafio.titulo,
                         style: TextStyle(
                           color: isCompleted
-                              ? Colors.white.withOpacity(0.6)
+                              ? Colors.white.withAlpha(153)
                               : Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -149,7 +149,7 @@ class MonthlyChallengeItem extends ConsumerWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withAlpha(51),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

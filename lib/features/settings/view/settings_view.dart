@@ -96,6 +96,7 @@ class _SettingsViewState extends ConsumerState<SettingsView>
 
               if (mounted) {
                 showSuccessSnackbar(
+                  // ignore: use_build_context_synchronously
                   context,
                   '¡Sesión cerrada!',
                   'Vuelve pronto a KitsuCode.',
@@ -103,6 +104,7 @@ class _SettingsViewState extends ConsumerState<SettingsView>
               }
             } catch (e) {
               if (mounted) {
+                // ignore: use_build_context_synchronously
                 showErrorSnackbar(context, 'Error', e.toString());
               }
             }
@@ -237,6 +239,7 @@ class _SettingsViewState extends ConsumerState<SettingsView>
                       await authRepo.deleteAccount();
                     } catch (e) {
                       if (!mounted) return;
+                      // ignore: use_build_context_synchronously
                       showErrorSnackbar(context, 'Error', e.toString());
                     }
                   }

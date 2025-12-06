@@ -95,12 +95,20 @@ class PrivacyPolicyView extends ConsumerWidget {
                                 top: 20,
                                 bottom: 8,
                               ),
-                              child: Text(texto, style: headingStyle),
+                              child: Text(
+                                texto,
+                                style: headingStyle,
+                                textAlign: TextAlign.left,
+                              ),
                             );
                           } else {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
-                              child: Text(texto, style: bodyStyle),
+                              child: Text(
+                                texto,
+                                style: bodyStyle,
+                                textAlign: TextAlign.justify,
+                              ),
                             );
                           }
                         },

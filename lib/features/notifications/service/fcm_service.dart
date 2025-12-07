@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kitsucode/features/profile/provider/follow_provider.dart';
 import 'package:kitsucode/features/profile/provider/profile_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FCMService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -234,10 +235,37 @@ class FCMService {
     }
   }
 
-  void _handleNotificationNavigation(Map<String, dynamic> data) {
+  void _handleNotificationNavigation(Map<String, dynamic> data) async {
     if (_router == null) return;
 
     final type = data['type'] as String?;
+    final route = data['route'] as String?; 
+
+    if (type == 'news_update') { 
+       if (route != null) {
+          if (route.startsWith('http') || route.startsWith('https')) {
+            final Uri url = Uri.parse(route);
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            } else {
+              developer.log('No se pudo abrir el link: $route', name: 'FCMService');
+            }
+            return; 
+          } 
+        
+          else {
+             _router.go('/home'); 
+             Future.delayed(const Duration(milliseconds: 300), () {
+               try {
+                 _router.push(route); 
+               } catch (e) {
+                 developer.log('Ruta inválida recibida: $route', name: 'FCMService');
+               }
+             });
+             return;
+          }
+       }
+    }
 
     switch (type) {
       case 'study_reminder':
@@ -255,7 +283,7 @@ class FCMService {
       case 'new_challenge':
         _router.go('/home');
         break;
-      case 'news':
+      case 'news': 
         _router.go('/home');
         break;
       case 'streak_reminder':

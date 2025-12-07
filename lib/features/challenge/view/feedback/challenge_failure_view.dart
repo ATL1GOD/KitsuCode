@@ -76,7 +76,7 @@ class ChallengeFailureView extends ConsumerWidget {
                   const Spacer(),
 
                   Image.asset(
-                    'assets/images/zorro_oops.png',
+                    'assets/images/zorro_oops.webp',
                     height: 200,
                     cacheHeight: 400,
                     fit: BoxFit.contain,

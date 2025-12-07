@@ -289,7 +289,7 @@ class AchievementNotifier extends StateNotifier<bool> {
                     .fetchLogroDetails(logroId);
                 final notificationData = AchievementNotificationData(
                   nombreLogro: details['nombre'] ?? 'Logro Desbloqueado',
-                  iconUrl: details['icono'] ?? 'assets/images/zorro_oops.png',
+                  iconUrl: details['icono'] ?? 'assets/images/zorro_oops.webp',
                   raridad: details['raridad'] ?? 'Común',
                 );
                 _addToQueue(notificationData);
@@ -395,7 +395,7 @@ class AvatarNotifier extends StateNotifier<bool> {
                 final notificationData = AvatarNotificationData(
                   nombreAvatar: details['nombre'] ?? 'Avatar Desbloqueado',
                   assetPath:
-                      details['asset_path'] ?? 'assets/images/zorro_oops.png',
+                      details['asset_path'] ?? 'assets/images/zorro_oops.webp',
                   tipo: details['tipo'] ?? 'Especial',
                   colorPrimario: details['color_primario'] ?? '0xFF9E9E9E',
                 );

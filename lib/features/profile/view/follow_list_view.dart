@@ -132,7 +132,7 @@ class _FollowListViewState extends ConsumerState<FollowListView>
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Image.asset(
-                                    'assets/images/zorro_oops.png',
+                                    'assets/images/zorro_oops.webp',
                                     width: 180,
                                     height: 180,
                                     cacheWidth: 360,

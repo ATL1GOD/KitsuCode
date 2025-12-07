@@ -99,7 +99,7 @@ class ProfileAchievementsSection extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
-                            'assets/images/zorro_oops.png',
+                            'assets/images/zorro_oops.webp',
                             width: 60,
                             height: 60,
                             cacheWidth: 120,

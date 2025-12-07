@@ -381,7 +381,7 @@ class _EmptyRankingWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/images/zorro_oops.png',
+              'assets/images/zorro_oops.webp',
               width: 150,
               cacheWidth: 300,
               color: colors.primaryContainer.withAlpha(128),

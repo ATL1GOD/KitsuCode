@@ -20,7 +20,7 @@ class UserAchievementModel {
       id: json['id'],
       nombre: json['nombre'] ?? 'Logro',
       descripcion: json['descripcion'] ?? 'Sin descripción',
-      iconUrl: json['iconurl'] ?? 'assets/images/zorro_oops.png',
+      iconUrl: json['iconurl'] ?? 'assets/images/zorro_oops.webp',
       obtenido: json['obtenido'] ?? false,
       raridad: json['raridad'] ?? 'Común',
     );

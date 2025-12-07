@@ -27,7 +27,7 @@ class AvatarModel {
       nombre: json['nombre'] as String? ?? 'Avatar',
       descripcion: json['descripcion'] as String? ?? 'Sin descripción',
       assetPath:
-          json['assetpath'] as String? ?? 'assets/images/login_zorro.png',
+          json['assetpath'] as String? ?? 'assets/images/login_zorro.webp',
       colorPrimario: json['colorprimario'] as String? ?? '0xFFE65100',
       tipo: json['tipo'] as String? ?? 'comun',
       requisitoDescripcion: json['requisitodescripcion'] as String?,

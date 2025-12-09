@@ -378,8 +378,8 @@ class FollowButton extends ConsumerWidget {
           onPressed: isLoading
               ? null
               : () => ref
-                    .read(followControllerProvider.notifier)
-                    .toggleFollow(userId),
+                  .read(followControllerProvider.notifier)
+                  .toggleFollow(userId),
           style: ElevatedButton.styleFrom(
             backgroundColor: isFollowing
                 ? c.surfaceContainerHighest
@@ -397,15 +397,19 @@ class FollowButton extends ConsumerWidget {
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
             child: isLoading
-                ? const SizedBox(
+                ? SizedBox(
+                    key: const ValueKey('loader'), 
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: const CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Text(
                     isFollowing ? 'Siguiendo' : 'Seguir',
-                    key: ValueKey(isFollowing),
+                    key: ValueKey('text_$isFollowing'), 
                   ),
           ),
         ),

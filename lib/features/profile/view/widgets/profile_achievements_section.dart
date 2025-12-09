@@ -100,10 +100,10 @@ class ProfileAchievementsSection extends ConsumerWidget {
                         children: [
                           Image.asset(
                             'assets/images/zorro_oops.webp',
-                            width: 60,
-                            height: 60,
-                            cacheWidth: 120,
-                            cacheHeight: 120,
+                            width: 55,
+                            height: 55,
+                            cacheWidth: 150,
+                            cacheHeight: 150,
                           ),
                           const SizedBox(width: 20),
                           Expanded(

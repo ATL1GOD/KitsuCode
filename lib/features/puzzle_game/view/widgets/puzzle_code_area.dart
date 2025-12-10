@@ -78,60 +78,87 @@ class _PuzzleCodeAreaState extends State<PuzzleCodeArea> {
     }
   }
 
+  bool _shouldBreakLine(int index) {
+    if (index == 0) return false;
+
+    final currentLine = widget.lines[index];
+    final prevLine = widget.lines[index - 1];
+
+    if (currentLine is BlankLine) {
+      if (prevLine is TokenLine) {
+        final text = prevLine.text.trim();
+        if (text.endsWith(';') || text.endsWith('}') || text.endsWith('{')) {
+          return true;
+        }
+      }
+    }
+
+    if (prevLine is BlankLine && currentLine is TokenLine) {
+       return false; 
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     final baseStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
-      fontFamily: 'monospace',
-      color: colorScheme.onSurface,
-      height: 1.6,
-    );
+          fontFamily: 'monospace',
+          color: colorScheme.onSurface,
+          height: 1.6,
+        );
+
+    List<InlineSpan> textSpans = [];
+
+    for (int i = 0; i < widget.lines.length; i++) {
+      final line = widget.lines[i];
+
+      if (_shouldBreakLine(i)) {
+        textSpans.add(const TextSpan(text: '\n'));
+      }
+
+      if (line is TokenLine) {
+        textSpans.add(TextSpan(
+          text: line.text,
+          style: _getStyleForToken(
+            line.highlight,
+            baseStyle,
+            colorScheme,
+          ),
+        ));
+      } else if (line is BlankLine) {
+        final blankId = line.id;
+        final filledOption = widget.filledBlanks[blankId];
+
+        textSpans.add(WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: DragTargetBlank(
+              blankId: blankId,
+              filledOption: filledOption,
+              onOptionDropped: widget.onOptionDropped,
+              draggingFromBlankId: _draggingFromBlankId,
+              draggingOption: _draggingOption,
+              allFilledBlanks: widget.filledBlanks,
+              onDragStarted: _onDragStarted,
+              onDragEnd: _onDragEnd,
+              hoveringOverBlankId: _hoveringOverBlankId,
+              onHoverBlank: _onHoverBlank,
+            ),
+          ),
+        ));
+      }
+    }
 
     return SizedBox(
       width: double.infinity,
-
       child: RichText(
         text: TextSpan(
           style: baseStyle,
-          children: widget.lines.map((line) {
-            if (line is TokenLine) {
-              return TextSpan(
-                text: line.text,
-
-                style: _getStyleForToken(
-                  line.highlight,
-                  baseStyle,
-                  colorScheme,
-                ),
-              );
-            }
-
-            if (line is BlankLine) {
-              final blankId = line.id;
-              final filledOption = widget.filledBlanks[blankId];
-
-              return WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: DragTargetBlank(
-                    blankId: blankId,
-                    filledOption: filledOption,
-                    onOptionDropped: widget.onOptionDropped,
-                    draggingFromBlankId: _draggingFromBlankId,
-                    draggingOption: _draggingOption,
-                    allFilledBlanks: widget.filledBlanks,
-                    onDragStarted: _onDragStarted,
-                    onDragEnd: _onDragEnd,
-                    hoveringOverBlankId: _hoveringOverBlankId,
-                    onHoverBlank: _onHoverBlank,
-                  ),
-                ),
-              );
-            }
-            return const TextSpan(text: '');
-          }).toList(),
+          children: textSpans,
         ),
       ),
     );
